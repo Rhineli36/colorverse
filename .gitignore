@@ -1,0 +1,10 @@
+node_modules/
+apps/web/dist/
+coverage/
+work/
+outputs/
+*.log
+.env*
+!.env.example
+__pycache__/
+*.pyc

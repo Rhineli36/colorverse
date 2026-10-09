@@ -1,0 +1,227 @@
+import {
+  VERSION,
+  defaultAdjustments,
+  defaultTransform,
+  type PlanetDocument,
+  type UniverseDocument,
+} from "@colorverse/contracts";
+export const uid = (n: number) =>
+  `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+export const demoSpecs = [
+  {
+    name: "日落收藏家",
+    author: "示例 · 林同学",
+    color: "#F4A76D",
+    secondary: "#AC5359",
+    accent: "#F6E0AB",
+    theme: "把落日装进一颗星球",
+    emotion: ["温暖", "自由"],
+    label: "SUNSET ARCHIVE",
+    intro: "橘色不是一天的结束，是还没有说出口的期待。",
+    position: { x: 990, y: 455 },
+    scale: 1.18,
+  },
+  {
+    name: "薄荷来信",
+    author: "示例 · 许同学",
+    color: "#96D7B9",
+    secondary: "#335F69",
+    accent: "#E1EABB",
+    theme: "写给森林的颜色练习",
+    emotion: ["宁静", "生机"],
+    label: "LETTERS IN GREEN",
+    intro: "让绿色在安静中蔓延，让每一次呼吸都留下形状。",
+    position: { x: 640, y: 180 },
+    scale: 1.02,
+  },
+  {
+    name: "海的回声",
+    author: "示例 · 周同学",
+    color: "#69B9D7",
+    secondary: "#234C81",
+    accent: "#CCD4E9",
+    theme: "海水的蓝与记忆的距离",
+    emotion: ["宁静", "自由"],
+    label: "ECHOES OF THE SEA",
+    intro: "沿着海的波纹，寻找一段被蓝色保存的记忆。",
+    position: { x: 1355, y: 225 },
+    scale: 1.08,
+  },
+  {
+    name: "紫色失眠",
+    author: "示例 · 陈同学",
+    color: "#B39EDB",
+    secondary: "#645389",
+    accent: "#EFBCDF",
+    theme: "梦境与现实之间",
+    emotion: ["梦幻", "神秘"],
+    label: "MIDNIGHT REVERIE",
+    intro: "夜晚不必只有黑色。粉紫色的念头在月亮旁边漂浮。",
+    position: { x: 590, y: 645 },
+    scale: 0.96,
+  },
+  {
+    name: "折光之境",
+    author: "示例 · 吴同学",
+    color: "#ABD3E7",
+    secondary: "#567D98",
+    accent: "#EAEDF3",
+    theme: "晶体中的冷暖对话",
+    emotion: ["清澈", "神秘"],
+    label: "REFRACTION STUDY",
+    intro: "颜色经过棱面，被拆成许多种可能。",
+    position: { x: 1120, y: 795 },
+    scale: 0.88,
+  },
+  {
+    name: "月亮的留白",
+    author: "示例 · 方同学",
+    color: "#C2BBB0",
+    secondary: "#5D646B",
+    accent: "#DDE2DB",
+    theme: "黑白之间的灰色层次",
+    emotion: ["宁静", "克制"],
+    label: "THE QUIET MOON",
+    intro: "在最轻的灰色里，为尚未发生的故事留一个位置。",
+    position: { x: 1460, y: 660 },
+    scale: 0.82,
+  },
+];
+export function fixturePlanet(i: number): PlanetDocument {
+  const s = demoSpecs[i % demoSpecs.length],
+    n = i * 20;
+  const bodyId = uid(100 + n),
+    roomId = uid(101 + n);
+  const record = (
+    assetId: string,
+    path: string,
+    width: number,
+    height: number,
+  ) => ({
+    assetId,
+    original: {
+      path,
+      sha256: "0".repeat(64),
+      byteSize: 1,
+      mimeType: "image/png" as const,
+      width,
+      height,
+    },
+    variants: [],
+    rights: {
+      creator: "COLORVERSE 系统演示素材",
+      license: "system-demo",
+      source: "仓库 scripts/generate-demo-assets.py 生成；非学生作品",
+      consentToPublish: true,
+    },
+  });
+  const sceneId = uid(3 + n),
+    archiveId = uid(8 + n);
+  return {
+    schemaVersion: VERSION,
+    planetId: uid(1 + n),
+    revision: 0,
+    metadata: {
+      name: s.name,
+      authorDisplayName: s.author,
+      theme: s.theme,
+      emotionTags: s.emotion,
+      palette: { primary: s.color, secondary: s.secondary, accent: s.accent },
+      description: s.intro,
+      monologue: "欢迎来到我的色彩练习。每一件作品，都是星球慢慢生长的痕迹。",
+    },
+    exterior: {
+      mode: "artwork",
+      scene: {
+        id: uid(2 + n),
+        width: 1600,
+        height: 900,
+        background: { type: "color", color: "#0A101B" },
+        layers: [
+          {
+            id: uid(4 + n),
+            kind: "image",
+            depth: "middle",
+            order: 0,
+            transform: { ...defaultTransform(), scaleX: 0.78, scaleY: 0.78 },
+            opacity: 1,
+            visible: true,
+            adjustments: defaultAdjustments(),
+            animation: [{ type: "float", amplitudePx: 8, periodSec: 8 }],
+            parallaxFactor: 0,
+            source: { assetId: bodyId },
+          },
+        ],
+        hotspots: [],
+        tombstones: [],
+      },
+    },
+    interior: {
+      id: sceneId,
+      width: 1600,
+      height: 900,
+      background: {
+        type: "image",
+        assetId: roomId,
+        fit: "cover",
+        color: "#0A101B",
+      },
+      layers: [],
+      hotspots: [
+        {
+          id: uid(7 + n),
+          sceneId,
+          anchorLayerId: null,
+          geometry: { type: "circle", x: 800, y: 650, radius: 45 },
+          accessibleLabel: "打开色彩练习档案",
+          action: { type: "openArchive", archiveEntryId: archiveId },
+        },
+      ],
+      tombstones: [],
+    },
+    assetRefs: [
+      record(bodyId, `assets/${bodyId}/original.png`, 512, 512),
+      record(roomId, `assets/${roomId}/original.png`, 1600, 900),
+    ],
+    archiveEntries: [
+      {
+        id: archiveId,
+        sourceType: "sample",
+        title: "色彩的第一封信",
+        createdOn: "2026-10-09",
+        courseModule: "模块一 · 色彩印象",
+        imageAssetIds: [bodyId],
+        description:
+          "这是一份系统示例档案，用于演示作品卡与场景热点。学生原创作品导入后，可在此保留创作说明与色彩关键词。",
+        colorTags: s.emotion,
+      },
+    ],
+    growthEvents: [],
+    requiredCapabilities: ["image-layer@1", "hotspots@1"],
+    optionalCapabilities: [],
+    extensions: { "colorverse.demo": { index: i, label: s.label } },
+  };
+}
+export const demoUniversePositions = [
+  { x: 500, y: 200 },
+  { x: 950, y: -50 },
+  { x: 2200, y: -600 },
+  { x: -1450, y: 950 },
+  { x: -900, y: -750 },
+  { x: 2900, y: 1300 },
+];
+export function fixtureUniverse(planets: PlanetDocument[]): UniverseDocument {
+  return {
+    schemaVersion: VERSION,
+    universeId: uid(9000),
+    name: "设计色彩 · 作品宇宙",
+    layout: { version: VERSION, seed: 42, camera: { x: 0, y: 0, zoom: 1 } },
+    entries: planets.map((p, i) => ({
+      planetId: p.planetId,
+      visible: true,
+      position: demoUniversePositions[i % demoSpecs.length],
+      scale: demoSpecs[i % demoSpecs.length].scale,
+      order: i,
+    })),
+  };
+}

@@ -1,0 +1,50 @@
+{
+  "name": "colorverse",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite --config apps/web/vite.config.ts --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build --config apps/web/vite.config.ts",
+    "preview": "vite preview --config apps/web/vite.config.ts --host 127.0.0.1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint apps packages tests scripts",
+    "format": "prettier --write apps packages tests scripts *.json *.ts *.js",
+    "schemas": "tsx scripts/generate-schemas.ts"
+  },
+  "dependencies": {
+    "@colorverse/application": "workspace:*",
+    "@colorverse/contracts": "workspace:*",
+    "@colorverse/domain": "workspace:*",
+    "@colorverse/fixtures": "workspace:*",
+    "@colorverse/package-io": "workspace:*",
+    "@colorverse/renderer": "workspace:*",
+    "fflate": "~0.8.3",
+    "idb": "^8.0.4",
+    "jszip": "^3.10.2",
+    "pixi.js": "^8.22.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "fake-indexeddb": "^6.2.5",
+    "prettier": "^3.9.9",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1",
+    "vite": "^7.3.7",
+    "vitest": "^3.2.7"
+  }
+}

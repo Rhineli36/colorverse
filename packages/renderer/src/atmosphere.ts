@@ -1,0 +1,308 @@
+import { Container, Graphics, Sprite, Texture, TilingSprite } from "pixi.js";
+import { seededRandom } from "@colorverse/domain";
+import {
+  ATMOSPHERE_BUDGET,
+  meteorFrame,
+  nebulaNoise,
+  ambientStarPosition,
+} from "./atmosphere-model";
+
+/** Universe scenery has its own layers and lifetime, outside editable scenes. */
+export class UniverseAtmosphere {
+  readonly background = new Container();
+  readonly world = new Container();
+  readonly foreground = new Container();
+  private textures: Texture[] = [];
+  private nebula: TilingSprite;
+  private glints: { node: Container; x: number; y: number; phase: number }[] =
+    [];
+  private hole = new Container();
+  private wanderers: {
+    node: Container;
+    x: number;
+    y: number;
+    phase: number;
+  }[] = [];
+  private dust: { node: Graphics; phase: number; radius: number }[] = [];
+  private meteors: Graphics[] = [];
+  private width = 1600;
+  private height = 900;
+  private visible = false;
+  private seconds = 0;
+  private budget;
+  constructor(
+    lowQuality = false,
+    private reducedMotion = false,
+  ) {
+    this.budget = ATMOSPHERE_BUDGET[lowQuality ? "low" : "normal"];
+    for (const root of [this.background, this.world, this.foreground]) {
+      root.eventMode = "none";
+      root.interactiveChildren = false;
+    }
+    this.nebula = new TilingSprite({ texture: this.nebulaTexture() });
+    this.nebula.tileScale.set(
+      6400 / this.budget.textureWidth,
+      4000 / this.budget.textureHeight,
+    );
+    this.background.addChild(this.nebula);
+    const glow = this.glowTexture();
+    const random = seededRandom(38171);
+    for (let i = 0; i < this.budget.glints; i++) {
+      const node = new Container();
+      const haze = new Sprite(glow);
+      haze.anchor.set(0.5);
+      haze.width = haze.height = 18 + random() * 18;
+      haze.tint = i % 3 ? 0xa4d9ee : 0xf8d1ae;
+      haze.alpha = 0.38;
+      const core = new Graphics().circle(0, 0, 0.9).fill(0xe1f3ff);
+      core
+        .moveTo(-4, 0)
+        .lineTo(4, 0)
+        .moveTo(0, -4)
+        .lineTo(0, 4)
+        .stroke({ color: 0xb8e3f5, alpha: 0.35, width: 0.6 });
+      node.addChild(haze, core);
+      node.scale.set(3);
+      this.background.addChild(node);
+      this.glints.push({
+        node,
+        x: random() * 6400 - 2400,
+        y: random() * 4000 - 1550,
+        phase: random() * Math.PI * 2,
+      });
+    }
+    for (let i = 0; i < this.budget.wanderers; i++) {
+      const node = new Container();
+      const haze = new Sprite(glow);
+      haze.anchor.set(0.5);
+      haze.width = haze.height = 24;
+      haze.tint = 0xa7d8f0;
+      haze.alpha = 0.35;
+      node.addChild(
+        haze,
+        new Graphics()
+          .circle(0, 0, 2 + random() * 1.6)
+          .fill({ color: 0xc7e8ff, alpha: 0.6 + random() * 0.3 }),
+      );
+      this.background.addChild(node);
+      this.wanderers.push({
+        node,
+        x: random() * 6000 - 2200,
+        y: random() * 3500 - 1300,
+        phase: random() * Math.PI * 2,
+      });
+    }
+    this.drawBlackHole(glow);
+    if (!reducedMotion)
+      for (let i = 0; i < 1; i++) {
+        const streak = new Graphics();
+        this.foreground.addChild(streak);
+        this.meteors.push(streak);
+      }
+    this.update(0);
+  }
+  private nebulaTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = this.budget.textureWidth;
+    canvas.height = this.budget.textureHeight;
+    const ctx = canvas.getContext("2d")!;
+    const pixels = ctx.createImageData(canvas.width, canvas.height);
+    for (let y = 0; y < canvas.height; y++)
+      for (let x = 0; x < canvas.width; x++) {
+        const u = x / canvas.width,
+          v = y / canvas.height;
+        const noise =
+          nebulaNoise(u * 5, v * 5) * 0.55 +
+          nebulaNoise(u * 13 + 8, v * 13) * 0.3 +
+          nebulaNoise(u * 35, v * 35 + 12) * 0.15;
+        // A broken diagonal cloud bank, with small dark channels and two color regions.
+        const ridge = v - (0.72 - u * 0.42 + (noise - 0.5) * 0.35);
+        const band = Math.exp(-ridge * ridge * 24);
+        const fine = nebulaNoise(u * 67 + 31, v * 67 + 19);
+        const channels = nebulaNoise(u * 23 + 19, v * 23 + 1);
+        const density =
+          band *
+          Math.max(0, noise - 0.32) *
+          1.65 *
+          (0.45 + channels * 0.9) *
+          (0.65 + fine * 0.7);
+        const cyan = Math.exp(-((u - 0.72) ** 2 + (v - 0.4) ** 2) * 7);
+        const violet = Math.exp(-((u - 0.25) ** 2 + (v - 0.62) ** 2) * 9);
+        const bright = Math.max(0, noise + fine * 0.13 - 0.6) * 180;
+        const i = (y * canvas.width + x) * 4;
+        pixels.data[i] = 48 + violet * 63 + bright;
+        pixels.data[i + 1] = 57 + cyan * 63 + bright;
+        pixels.data[i + 2] = 104 + cyan * 42 + violet * 55 + bright;
+        const edge = Math.min(1, u * 14, (1 - u) * 14, v * 14, (1 - v) * 14);
+        pixels.data[i + 3] = Math.min(190, density * 255) * edge;
+      }
+    ctx.putImageData(pixels, 0, 0);
+    const texture = Texture.from(canvas);
+    this.textures.push(texture);
+    return texture;
+  }
+  private glowTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 128;
+    const ctx = canvas.getContext("2d")!;
+    const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gradient.addColorStop(0, "#ffffffc0");
+    gradient.addColorStop(0.13, "#ffffff60");
+    gradient.addColorStop(0.4, "#ffffff18");
+    gradient.addColorStop(1, "#ffffff00");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 128, 128);
+    const texture = Texture.from(canvas);
+    this.textures.push(texture);
+    return texture;
+  }
+  private drawBlackHole(glow: Texture) {
+    this.hole.position.set(1750, 820);
+    this.hole.rotation = -0.2;
+    this.world.addChild(this.hole);
+    const haze = new Sprite(glow);
+    haze.anchor.set(0.5);
+    haze.width = 1400;
+    haze.height = 900;
+    haze.tint = 0xdf8152;
+    haze.alpha = 0.65;
+    this.hole.addChild(haze);
+    const diskGlow = new Sprite(glow);
+    diskGlow.anchor.set(0.5);
+    diskGlow.width = 790;
+    diskGlow.height = 165;
+    diskGlow.tint = 0xf5b778;
+    diskGlow.alpha = 0.9;
+    this.hole.addChild(diskGlow);
+    const rear = new Graphics();
+    for (let i = 0; i < 14; i++) {
+      const radius = 170 + i * 11;
+      rear.ellipse(0, 0, radius, radius * 0.24).stroke({
+        color: i % 3 ? 0xd7a276 : 0xa78dce,
+        width: i < 3 ? 4 : 2,
+        alpha: (1 - i / 17) * 0.23,
+      });
+    }
+    // Lensed light arcs over the shadow, a separate layer from the flattened disk.
+    for (let r = 0; r < 6; r++) {
+      for (let i = 0; i <= 60; i++) {
+        const angle = Math.PI + (i / 60) * Math.PI;
+        const x = Math.cos(angle) * (115 + r * 7),
+          y = Math.sin(angle) * (125 + r * 7);
+        if (i === 0) rear.moveTo(x, y);
+        else rear.lineTo(x, y);
+      }
+      rear.stroke({ color: 0xf4c99a, alpha: 0.24 - r * 0.026, width: 5 });
+    }
+    this.hole.addChild(rear);
+    const shadow = new Graphics().circle(0, 0, 103).fill(0x03060c);
+    for (let i = 0; i < 5; i++)
+      shadow.circle(0, 0, 104 + i * 2).stroke({
+        color: i < 2 ? 0xffdfb1 : 0xdf915c,
+        alpha: 0.6 / (i + 1),
+        width: 2,
+      });
+    this.hole.addChild(shadow);
+    const front = new Graphics();
+    for (let r = 0; r < 10; r++) {
+      for (let i = 0; i <= 60; i++) {
+        const a = (i / 60) * Math.PI,
+          radius = 135 + r * 15;
+        const x = Math.cos(a) * radius,
+          y = Math.sin(a) * radius * 0.24;
+        if (i === 0) front.moveTo(x, y);
+        else front.lineTo(x, y);
+      }
+      front.stroke({
+        color: r < 3 ? 0xffe2b1 : 0xc99474,
+        alpha: 0.55 - r * 0.043,
+        width: r < 3 ? 3 : 2,
+      });
+    }
+    this.hole.addChild(front);
+    const random = seededRandom(922);
+    for (let i = 0; i < this.budget.dust; i++) {
+      const node = new Graphics().circle(0, 0, 1.5 + random() * 2).fill({
+        color: i % 2 ? 0xf5c899 : 0xb49dd4,
+        alpha: 0.24 + random() * 0.35,
+      });
+      this.hole.addChild(node);
+      this.dust.push({
+        node,
+        phase: random() * Math.PI * 2,
+        radius: 175 + random() * 130,
+      });
+    }
+  }
+  layout(
+    width: number,
+    height: number,
+    worldScale: number,
+    x: number,
+    y: number,
+    visible: boolean,
+  ) {
+    const resized = width !== this.width || height !== this.height;
+    this.width = width;
+    this.height = height;
+    this.visible = visible;
+    for (const root of [this.background, this.world, this.foreground])
+      root.visible = visible;
+    this.background.scale.set(worldScale);
+    this.background.position.set(x, y);
+    const left = -x / worldScale,
+      top = -y / worldScale;
+    this.nebula.width = width / worldScale;
+    this.nebula.height = height / worldScale;
+    this.nebula.position.set(left, top);
+    this.nebula.tilePosition.set(-2400 - left, -1550 - top);
+    for (const star of this.glints) star.node.position.set(star.x, star.y);
+    this.world.scale.set(worldScale);
+    this.world.position.set(x, y);
+    if (resized) this.update(this.seconds);
+  }
+  update(seconds: number): number {
+    this.seconds = seconds;
+    for (const star of this.glints)
+      star.node.alpha = 0.6 + Math.sin(seconds * 0.55 + star.phase) * 0.22;
+    for (const star of this.wanderers) {
+      const p = ambientStarPosition(star.x, star.y, star.phase, seconds);
+      star.node.position.set(p.x, p.y);
+    }
+    for (const p of this.dust) {
+      const angle = p.phase + seconds * 0.12;
+      p.node.position.set(
+        Math.cos(angle) * p.radius,
+        Math.sin(angle) * p.radius * 0.24,
+      );
+    }
+    let active = 0;
+    for (const streak of this.meteors) {
+      streak.clear();
+      const frame = meteorFrame(seconds);
+      streak.visible = !!frame;
+      if (!frame) continue;
+      active++;
+      const length = frame.length * Math.min(this.width, 1800);
+      for (let j = 0; j < 12; j++) {
+        const a = (length * j) / 12,
+          b = (length * (j + 1)) / 12;
+        streak
+          .moveTo(-a, 0)
+          .lineTo(-b, 0)
+          .stroke({
+            color: 0xc0e8ff,
+            width: 1.7 * (1 - j / 15),
+            alpha: frame.alpha * (1 - j / 12) ** 2,
+          });
+      }
+      streak.circle(0, 0, 1.6).fill({ color: 0xf1faff, alpha: frame.alpha });
+      streak.position.set(frame.x * this.width, frame.y * this.height);
+      streak.rotation = frame.angle;
+    }
+    return this.visible && !this.reducedMotion ? active : 0;
+  }
+  dispose() {
+    this.textures.forEach((t) => t.destroy(true));
+  }
+}
