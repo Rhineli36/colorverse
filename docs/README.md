@@ -36,6 +36,7 @@
 | [24-showcase-growth-first-slice.md](24-showcase-growth-first-slice.md) | 自选作品上传、规则成长、事务与ZIP来源验证、约30种/API后续计划 |
 | [25-growth-library-and-experience.md](25-growth-library-and-experience.md) | 8种成长元素登记、造型/预览保存、上传与分页优化、后续体验优先级 |
 | [26-planet-motion-first-slice.md](26-planet-motion-first-slice.md) | 单颗运动入口、四种受控轨迹、布局1.1.0迁移/冲突/备份与测试 |
+| [27-visual-direction-and-student-playtest.md](27-visual-direction-and-student-playtest.md) | 宇宙/星球/工坊视觉参考与提案、学生体验测试、分步美化与验收 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 
