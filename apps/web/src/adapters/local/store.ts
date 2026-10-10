@@ -9,10 +9,11 @@ import {
   validatePlanet,
   DomainError,
   assertPlanetMove,
+  upgradeUniverse,
   type LayoutActor,
 } from "@colorverse/domain";
-import { UniverseSchema } from "@colorverse/contracts";
-import type { PlanetMove } from "@colorverse/application";
+import { UniverseSchema, MotionSchema } from "@colorverse/contracts";
+import type { PlanetMove, PlanetMotionChange } from "@colorverse/application";
 interface WorkspaceDB extends DBSchema {
   planets: { key: string; value: PlanetDocument };
   revisions: { key: string; value: PlanetDocument };
@@ -78,7 +79,7 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
   async getUniverse() {
     const u = (await (await this.db).getAll("universes"))[0];
     if (!u) throw new DomainError("NOT_FOUND", "宇宙尚未初始化");
-    return u;
+    return UniverseSchema.parse(u);
   }
   async saveWithAssets(
     doc: PlanetDocument,
@@ -118,9 +119,50 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
     }
   }
   async saveUniverse(u: UniverseDocument) {
-    await (
-      await this.db
-    ).put("universes", UniverseSchema.parse(u), u.universeId);
+    const valid = UniverseSchema.parse(u),
+      tx = (await this.db).transaction("universes", "readwrite");
+    try {
+      const current = await tx.store.get(u.universeId);
+      if (!current) {
+        await tx.store.put(valid, u.universeId);
+        await tx.done;
+        return;
+      }
+      // Full-layout management must not overwrite a newer motion or drag command.
+      for (const before of current.entries) {
+        const next = valid.entries.find((e) => e.planetId === before.planetId);
+        if (
+          !next ||
+          (before.layoutRevision ?? 0) !== (next.layoutRevision ?? 0) ||
+          JSON.stringify([before.position, before.motion]) !==
+            JSON.stringify([next.position, next.motion])
+        )
+          throw new DomainError(
+            "LAYOUT_CONFLICT",
+            "另一个窗口已修改宇宙，请刷新后重试。",
+          );
+      }
+      const saved = upgradeUniverse(valid);
+      for (const e of saved.entries) {
+        const before = current.entries.find((p) => p.planetId === e.planetId);
+        if (
+          before &&
+          JSON.stringify([before.visible, before.scale, before.order]) !==
+            JSON.stringify([e.visible, e.scale, e.order])
+        )
+          e.layoutRevision++;
+      }
+      await tx.store.put(saved, u.universeId);
+      await tx.done;
+    } catch (error) {
+      try {
+        tx.abort();
+      } catch {
+        /* Already closed. */
+      }
+      await tx.done.catch(() => {});
+      throw error;
+    }
   }
   async getPlanetOwner(id: string) {
     return (await (await this.db).get("ownership", id)) ?? null;
@@ -137,6 +179,20 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
     await tx.done;
   }
   async movePlanet(move: PlanetMove, actor: LayoutActor) {
+    await this.updateLayout(move, actor);
+  }
+  async configurePlanetMotion(change: PlanetMotionChange, actor: LayoutActor) {
+    await this.updateLayout(
+      { ...change, motion: MotionSchema.parse(change.motion) },
+      actor,
+    );
+  }
+  private async updateLayout(
+    move: PlanetMove | PlanetMotionChange,
+    actor: LayoutActor,
+  ) {
+    if (!Number.isFinite(move.position.x) || !Number.isFinite(move.position.y))
+      throw new Error("星球位置必须是有限坐标。");
     const tx = (await this.db).transaction(
       ["ownership", "universes"],
       "readwrite",
@@ -146,19 +202,24 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
         actor,
         (await tx.objectStore("ownership").get(move.planetId)) ?? null,
       );
-      const universe = await tx.objectStore("universes").get(move.universeId);
+      const stored = await tx.objectStore("universes").get(move.universeId);
+      const universe = stored ? upgradeUniverse(stored) : null;
       const entry = universe?.entries.find((e) => e.planetId === move.planetId);
       if (!universe || !entry || !entry.visible)
         throw new DomainError("NOT_FOUND", "星球已隐藏或离开当前宇宙。");
       if (
-        entry.position.x !== move.expectedPosition.x ||
-        entry.position.y !== move.expectedPosition.y
+        entry.layoutRevision !== move.expectedLayoutRevision ||
+        ("expectedPosition" in move &&
+          (entry.position.x !== move.expectedPosition.x ||
+            entry.position.y !== move.expectedPosition.y))
       )
         throw new DomainError(
           "LAYOUT_CONFLICT",
-          "另一个窗口已移动这颗星球，请刷新宇宙后再移动。",
+          "另一个窗口已修改这颗星球的运动或位置，请刷新宇宙后重试。",
         );
       entry.position = { ...move.position };
+      if ("motion" in move) entry.motion = MotionSchema.parse(move.motion);
+      entry.layoutRevision++;
       await tx
         .objectStore("universes")
         .put(UniverseSchema.parse(universe), universe.universeId);
@@ -227,6 +288,7 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
     exportId: string,
   ) {
     documents.forEach(validatePlanet);
+    let validUniverse: UniverseDocument = UniverseSchema.parse(u);
     const tx = (await this.db).transaction(
       ["planets", "revisions", "assets", "universes", "imports"],
       "readwrite",
@@ -234,6 +296,39 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
     if (await tx.objectStore("imports").get(exportId)) {
       await tx.done;
       return false;
+    }
+    const current = await tx.objectStore("universes").get(u.universeId);
+    if (current) {
+      const stored = UniverseSchema.parse(current);
+      const retained = validUniverse.entries.filter((e) =>
+        stored.entries.some((p) => p.planetId === e.planetId),
+      );
+      // Imports can append copies, but cannot restore stale layouts of existing works.
+      if (retained.length !== stored.entries.length) {
+        tx.abort();
+        await tx.done.catch(() => {});
+        throw new DomainError(
+          "LAYOUT_CONFLICT",
+          "宇宙条目已改变，请刷新后重新导入。",
+        );
+      }
+      const added = validUniverse.entries.filter(
+        (e) =>
+          !stored.entries.some((p) => p.planetId === e.planetId) &&
+          documents.some((p) => p.planetId === e.planetId),
+      );
+      if (
+        stored.schemaVersion === "1.1.0" ||
+        validUniverse.schemaVersion === "1.1.0"
+      ) {
+        const merged = upgradeUniverse(stored);
+        merged.entries.push(...added.map((e) => ({ ...e, layoutRevision: 0 })));
+        validUniverse = UniverseSchema.parse(merged);
+      } else
+        validUniverse = UniverseSchema.parse({
+          ...stored,
+          entries: [...stored.entries, ...added],
+        });
     }
     for (const [path, blob] of files)
       await tx.objectStore("assets").put(blob, path);
@@ -243,7 +338,9 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
         .objectStore("revisions")
         .put(doc, `${doc.planetId}:${doc.revision}`);
     }
-    await tx.objectStore("universes").put(u, u.universeId);
+    await tx
+      .objectStore("universes")
+      .put(validUniverse, validUniverse.universeId);
     await tx.objectStore("imports").put(true, exportId);
     await tx.done;
     return true;

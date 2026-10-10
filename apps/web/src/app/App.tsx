@@ -20,6 +20,7 @@ import {
   type Layer,
   type GrowthEvent,
   type Hotspot,
+  type PlanetMotion,
 } from "@colorverse/contracts";
 import {
   createDecoration,
@@ -30,6 +31,7 @@ import {
   DomainError,
   validatePlanet,
   nextPlanetPosition,
+  upgradeUniverse,
   type LayoutActor,
 } from "@colorverse/domain";
 import {
@@ -208,6 +210,7 @@ export function App() {
         position: nextPlanetPosition(u.entries, u.layout.seed),
         scale: 1,
         order: u.entries.length,
+        ...(u.schemaVersion === "1.1.0" ? { layoutRevision: 0 } : {}),
       });
       await workspace.importAtomic([p], u, result.files, crypto.randomUUID());
       await workspace.assignOwner(p.planetId, "demo-student-1");
@@ -359,15 +362,16 @@ export function App() {
     action(async () => {
       if (!report) return;
       await flush();
-      const u = clone(universe!),
-        newFiles = new Map<string, Blob>(),
+      let u = clone(universe!);
+      if (report.universe?.schemaVersion === "1.1.0") u = upgradeUniverse(u);
+      const newFiles = new Map<string, Blob>(),
         copied = report.planets.map((p) => {
           const result = copyImportedPlanet(p, report.files);
           for (const [path, b] of result.files) newFiles.set(path, b);
           const sourceEntry = report.universe?.entries.find(
             (e) => e.planetId === p.planetId,
           );
-          u.entries.push({
+          const importedEntry = {
             planetId: result.planet.planetId,
             visible: sourceEntry?.visible ?? true,
             position:
@@ -375,7 +379,16 @@ export function App() {
               nextPlanetPosition(u.entries, u.layout.seed),
             scale: sourceEntry?.scale ?? 0.65,
             order: u.entries.length,
-          });
+          };
+          if (u.schemaVersion === "1.1.0")
+            u.entries.push({
+              ...importedEntry,
+              layoutRevision: 0,
+              motion: sourceEntry?.motion
+                ? clone(sourceEntry.motion)
+                : undefined,
+            });
+          else u.entries.push(importedEntry);
           return result.planet;
         });
       if (u.entries.length > 300)
@@ -510,6 +523,38 @@ export function App() {
       planets: filtered,
       universe: filteredUniverse,
     };
+  const saveMotion = async (
+    planetId: string,
+    motion: PlanetMotion,
+    expectedLayoutRevision: number,
+    position?: { x: number; y: number },
+  ) => {
+    const entry = universe?.entries.find((e) => e.planetId === planetId);
+    if (!universe || !entry) throw new Error("星球已离开当前宇宙");
+    try {
+      await layoutService.configureMotion(
+        {
+          universeId: universe.universeId,
+          planetId,
+          motion,
+          expectedLayoutRevision,
+          position: position ?? entry.position,
+        },
+        {
+          role: layoutRole,
+          userId: layoutRole === "teacher" ? "demo-teacher" : "demo-student-1",
+        },
+      );
+      setUniverse(await workspace.getUniverse());
+      setNotice("星球运动设置已保存");
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : "运动设置保存失败，请重试",
+      );
+      setUniverse(await workspace.getUniverse());
+      throw error;
+    }
+  };
   if (fatal)
     return (
       <div className="loading" role="alert">
@@ -637,6 +682,7 @@ export function App() {
               layoutRole === "teacher" ? "demo-teacher" : "demo-student-1",
           }}
           ownership={ownership}
+          onSaveMotion={saveMotion}
           setLayoutRole={setLayoutRole}
           onPlanetMove={async (move: Omit<PlanetMove, "universeId">) => {
             try {
@@ -738,6 +784,16 @@ export function App() {
             })
           }
           addEffect={addEffect}
+          universeEntry={universe.entries.find(
+            (e) => e.planetId === doc.planetId,
+          )}
+          canEditMotion={
+            layoutRole === "teacher" ||
+            ownership[doc.planetId] === "demo-student-1"
+          }
+          onSaveMotion={(motion, revision) =>
+            saveMotion(doc.planetId, motion, revision)
+          }
         />
       )}
       {route === "teacher" && (

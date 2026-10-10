@@ -345,7 +345,16 @@ export const PlanetSchema = z.strictObject({
   optionalCapabilities: z.array(z.string().max(80)).max(30),
   extensions: z.record(z.string(), z.json()).optional(),
 });
-export const UniverseSchema = z.strictObject({
+export const MOTION_CAPABILITY = "motion-presets@1";
+export const MotionSchema = z.strictObject({
+  version: z.literal(VERSION),
+  mode: z.enum(["stationary", "slow", "fast"]),
+  trajectory: z.enum(["circle", "ellipse", "figure-eight", "drift"]),
+  range: z.enum(["compact", "regular", "wide"]),
+  direction: z.enum(["forward", "reverse"]),
+});
+export type PlanetMotion = z.infer<typeof MotionSchema>;
+export const LegacyUniverseSchema = z.strictObject({
   schemaVersion: z.literal(VERSION),
   universeId: id,
   name: z.string().min(1).max(120),
@@ -369,10 +378,33 @@ export const UniverseSchema = z.strictObject({
         }),
         scale: finite(0.1, 2),
         order: z.number().int(),
+        motion: z.never().optional(),
+        layoutRevision: z.never().optional(),
       }),
     )
     .max(300),
+  requiredCapabilities: z.never().optional(),
 });
+export const MotionUniverseSchema = LegacyUniverseSchema.extend({
+  schemaVersion: z.literal("1.1.0"),
+  layout: LegacyUniverseSchema.shape.layout.extend({
+    version: z.literal("1.1.0"),
+  }),
+  entries: z
+    .array(
+      LegacyUniverseSchema.shape.entries.element.extend({
+        motion: MotionSchema.optional(),
+        layoutRevision: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+      }),
+    )
+    .max(300),
+  requiredCapabilities: z.array(z.literal(MOTION_CAPABILITY)).length(1),
+});
+export const UniverseSchema = z.discriminatedUnion("schemaVersion", [
+  LegacyUniverseSchema,
+  MotionUniverseSchema,
+]);
+export type MotionUniverseDocument = z.infer<typeof MotionUniverseSchema>;
 export type PlanetDocument = z.infer<typeof PlanetSchema>;
 export type SceneDocument = z.infer<typeof SceneSchema>;
 export type Layer = z.infer<typeof LayerSchema>;
@@ -381,5 +413,12 @@ export type AssetRecord = z.infer<typeof AssetSchema>;
 export type AssetFile = z.infer<typeof AssetFileSchema>;
 export type GrowthEvent = z.infer<typeof GrowthSchema>;
 export type ArchiveEntry = z.infer<typeof ArchiveSchema>;
-export type UniverseDocument = z.infer<typeof UniverseSchema>;
+// The strict reader enforces each version's fields. A common entry array lets
+// layout projections filter legacy and current documents without union-array casts.
+export type UniverseDocument = Omit<
+  z.infer<typeof UniverseSchema>,
+  "entries"
+> & {
+  entries: z.infer<typeof UniverseSchema>["entries"][number][];
+};
 export type EffectParams = z.infer<typeof EffectParamsSchema>;

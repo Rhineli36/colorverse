@@ -13,6 +13,9 @@ import { ShowcaseGallery } from "./ShowcaseGallery";
 import { GrowthProposalPanel } from "./GrowthProposalPanel";
 import { useEffect, useRef, useState } from "react";
 import { PanelTabs } from "./PanelTabs";
+import { MotionControls } from "../universe/MotionControls";
+import type { UniverseEntry } from "@colorverse/domain";
+import type { PlanetMotion } from "@colorverse/contracts";
 import type {
   PlanetDocument,
   SceneDocument,
@@ -68,6 +71,12 @@ interface Props {
   showArchive: (id: string) => void;
   onGrowArchive: (id: string) => void;
   addEffect: (id: (typeof EffectIds)[number]) => void;
+  universeEntry: UniverseEntry | undefined;
+  canEditMotion: boolean;
+  onSaveMotion: (
+    motion: PlanetMotion,
+    expectedLayoutRevision: number,
+  ) => Promise<void>;
 }
 
 export function StudioView({
@@ -100,6 +109,9 @@ export function StudioView({
   showArchive,
   onGrowArchive,
   addEffect,
+  universeEntry,
+  canEditMotion,
+  onSaveMotion,
 }: Props) {
   const [locked, setLocked] = useState(true),
     [cropEditing, setCropEditing] = useState(false);
@@ -418,9 +430,26 @@ export function StudioView({
             tabs={[
               { value: "info", label: "星球信息" },
               { value: "decorations", label: "装饰" },
+              { value: "motion", label: "运动" },
             ]}
           />
           <div className="studio-side-details" ref={leftPanel}>
+            <div
+              role="tabpanel"
+              id="studio-left-motion-panel"
+              aria-labelledby="studio-left-motion-tab"
+              hidden={leftTab !== "motion"}
+            >
+              {universeEntry && (
+                <MotionControls
+                  key={`${doc.planetId}-${universeEntry.layoutRevision ?? 0}`}
+                  entry={universeEntry}
+                  canEdit={canEditMotion}
+                  onSave={onSaveMotion}
+                  active={leftTab === "motion"}
+                />
+              )}
+            </div>
             <div
               role="tabpanel"
               id="studio-left-info-panel"

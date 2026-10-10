@@ -1,121 +1,319 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "schemaVersion": {
-      "type": "string",
-      "const": "1.0.0"
-    },
-    "universeId": {
-      "type": "string",
-      "format": "uuid",
-      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-    },
-    "name": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 120
-    },
-    "layout": {
+  "oneOf": [
+    {
       "type": "object",
       "properties": {
-        "version": {
+        "schemaVersion": {
           "type": "string",
           "const": "1.0.0"
         },
-        "seed": {
-          "type": "integer",
-          "minimum": -9007199254740991,
-          "maximum": 9007199254740991
+        "universeId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
         },
-        "camera": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "layout": {
           "type": "object",
           "properties": {
-            "x": {
-              "type": "number"
+            "version": {
+              "type": "string",
+              "const": "1.0.0"
             },
-            "y": {
-              "type": "number"
+            "seed": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
-            "zoom": {
-              "type": "number",
-              "minimum": 0.04,
-              "maximum": 2.5
+            "camera": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "zoom": {
+                  "type": "number",
+                  "minimum": 0.04,
+                  "maximum": 2.5
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "zoom"
+              ],
+              "additionalProperties": false
             }
           },
           "required": [
-            "x",
-            "y",
-            "zoom"
+            "version",
+            "seed",
+            "camera"
           ],
           "additionalProperties": false
-        }
-      },
-      "required": [
-        "version",
-        "seed",
-        "camera"
-      ],
-      "additionalProperties": false
-    },
-    "entries": {
-      "maxItems": 300,
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "planetId": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "visible": {
-            "type": "boolean"
-          },
-          "position": {
+        },
+        "entries": {
+          "maxItems": 300,
+          "type": "array",
+          "items": {
             "type": "object",
             "properties": {
-              "x": {
-                "type": "number"
+              "planetId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
               },
-              "y": {
-                "type": "number"
+              "visible": {
+                "type": "boolean"
+              },
+              "position": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "scale": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 2
+              },
+              "order": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "motion": {
+                "not": {}
+              },
+              "layoutRevision": {
+                "not": {}
               }
             },
             "required": [
-              "x",
-              "y"
+              "planetId",
+              "visible",
+              "position",
+              "scale",
+              "order"
             ],
             "additionalProperties": false
-          },
-          "scale": {
-            "type": "number",
-            "minimum": 0.1,
-            "maximum": 2
-          },
-          "order": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
           }
         },
-        "required": [
-          "planetId",
-          "visible",
-          "position",
-          "scale",
-          "order"
-        ],
-        "additionalProperties": false
-      }
+        "requiredCapabilities": {
+          "not": {}
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "universeId",
+        "name",
+        "layout",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "1.1.0"
+        },
+        "universeId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "layout": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "string",
+              "const": "1.1.0"
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "camera": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "zoom": {
+                  "type": "number",
+                  "minimum": 0.04,
+                  "maximum": 2.5
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "zoom"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "version",
+            "seed",
+            "camera"
+          ],
+          "additionalProperties": false
+        },
+        "entries": {
+          "maxItems": 300,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "planetId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "position": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "scale": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 2
+              },
+              "order": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "motion": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "const": "1.0.0"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "stationary",
+                      "slow",
+                      "fast"
+                    ]
+                  },
+                  "trajectory": {
+                    "type": "string",
+                    "enum": [
+                      "circle",
+                      "ellipse",
+                      "figure-eight",
+                      "drift"
+                    ]
+                  },
+                  "range": {
+                    "type": "string",
+                    "enum": [
+                      "compact",
+                      "regular",
+                      "wide"
+                    ]
+                  },
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "forward",
+                      "reverse"
+                    ]
+                  }
+                },
+                "required": [
+                  "version",
+                  "mode",
+                  "trajectory",
+                  "range",
+                  "direction"
+                ],
+                "additionalProperties": false
+              },
+              "layoutRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "planetId",
+              "visible",
+              "position",
+              "scale",
+              "order",
+              "layoutRevision"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "requiredCapabilities": {
+          "minItems": 1,
+          "maxItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "const": "motion-presets@1"
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "universeId",
+        "name",
+        "layout",
+        "entries",
+        "requiredCapabilities"
+      ],
+      "additionalProperties": false
     }
-  },
-  "required": [
-    "schemaVersion",
-    "universeId",
-    "name",
-    "layout",
-    "entries"
-  ],
-  "additionalProperties": false
+  ]
 }

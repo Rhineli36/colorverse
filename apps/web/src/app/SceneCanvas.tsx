@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import {
   SceneRenderer,
   type RendererOptions,
@@ -25,6 +25,7 @@ export function SceneCanvas({
   areaSelection = false,
   options,
   layerPreview = null,
+  positionReader,
 }: {
   assets: AssetStore;
   planet?: PlanetDocument;
@@ -39,6 +40,9 @@ export function SceneCanvas({
   areaSelection?: boolean;
   options: RendererOptions;
   layerPreview?: { id: string; transform: Transform } | null;
+  positionReader?: MutableRefObject<
+    ((id: string) => { x: number; y: number } | null) | null
+  >;
 }) {
   const host = useRef<HTMLDivElement>(null),
     renderer = useRef<SceneRenderer | null>(null),
@@ -65,14 +69,16 @@ export function SceneCanvas({
       reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
     });
     renderer.current = r;
+    if (positionReader) positionReader.current = (id) => r.planetPosition(id);
     ready.current = r.mount(host.current!).catch((e) => {
       setError(e instanceof Error ? e.message : "WebGL 不可用");
     });
     return () => {
       renderer.current = null;
+      if (positionReader) positionReader.current = null;
       r.dispose();
     };
-  }, [assets]);
+  }, [assets, positionReader]);
   useEffect(() => {
     let cancelled = false;
     void ready.current?.then(async () => {

@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   VERSION,
   UniverseSchema,
+  MOTION_CAPABILITY,
   type PlanetDocument,
   type UniverseDocument,
 } from "@colorverse/contracts";
@@ -34,7 +35,7 @@ export function safePath(path: string) {
 }
 const ManifestSchema = z.strictObject({
   packageType: z.enum(["planet", "universe"]),
-  packageVersion: z.literal(VERSION),
+  packageVersion: z.enum([VERSION, "1.1.0"]),
   exportMode: z.literal("backup"),
   documentType: z.literal("planet"),
   exportId: z.uuid(),
@@ -252,6 +253,30 @@ export async function inspectPackage(
   const planets = planetPaths.map((path) =>
     validatePlanet(parseJson(raw.get(path))),
   );
+  const capabilities = [
+    ...new Set([
+      ...planets.flatMap((p) => p.requiredCapabilities),
+      ...(universe?.requiredCapabilities ?? []),
+    ]),
+  ];
+  if (
+    manifest.requiredCapabilities.length !== capabilities.length ||
+    capabilities.some((c) => !manifest.requiredCapabilities.includes(c))
+  )
+    throw new DomainError(
+      "UNSUPPORTED_VERSION",
+      "备份能力声明与作品或宇宙不一致",
+    );
+  if (
+    manifest.packageVersion !==
+      (universe?.schemaVersion === "1.1.0" ? "1.1.0" : VERSION) ||
+    (universe?.schemaVersion === "1.1.0" &&
+      !manifest.requiredCapabilities.includes(MOTION_CAPABILITY))
+  )
+    throw new DomainError(
+      "UNSUPPORTED_VERSION",
+      "运动宇宙备份需要1.1.0包版本与运动能力声明",
+    );
   if (new Set(planets.map((p) => p.planetId)).size !== planets.length)
     throw new DomainError("VALIDATION_FAILED", "宇宙星球 ID 重复");
   const blobs = new Map<string, Blob>();
@@ -303,6 +328,7 @@ export async function exportPackage(
   assets: AssetStore,
   universe?: UniverseDocument,
 ) {
+  if (universe) UniverseSchema.parse(universe);
   const zip = new JSZip(),
     data = new Map<string, { bytes: Uint8Array; mimeType: string }>();
   for (const p of planets) {
@@ -339,7 +365,7 @@ export async function exportPackage(
     );
   const manifest = {
     packageType: universe ? "universe" : "planet",
-    packageVersion: VERSION,
+    packageVersion: universe?.schemaVersion === "1.1.0" ? "1.1.0" : VERSION,
     exportMode: "backup",
     documentType: "planet",
     exportId: crypto.randomUUID(),
@@ -355,7 +381,10 @@ export async function exportPackage(
       })),
     ),
     requiredCapabilities: [
-      ...new Set(planets.flatMap((p) => p.requiredCapabilities)),
+      ...new Set([
+        ...planets.flatMap((p) => p.requiredCapabilities),
+        ...(universe?.requiredCapabilities ?? []),
+      ]),
     ],
   };
   for (const [path, f] of data)

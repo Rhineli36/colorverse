@@ -48,7 +48,8 @@ with sync_playwright() as p:
     assert abs(moved['position']['x']-own['position']['x']-delta[0]/base/before['camera']['zoom']) < 2
     assert abs(moved['position']['y']-own['position']['y']-delta[1]/base/before['camera']['zoom']) < 2
     assert after['planets']==before['planets']
-    assert after['universe']['entries'][1:]==before['universe']['entries'][1:]
+    assert after['universe']['entries'][1:]==[dict(e,layoutRevision=0) for e in before['universe']['entries'][1:]]
+    assert moved['layoutRevision']==1 and after['universe']['schemaVersion']=='1.1.0'
     close_notice(page)
     passed('student drag saves only their own layout anchor, preserving artwork and other planets')
     foreign=after['universe']['entries'][1]
@@ -125,7 +126,7 @@ with sync_playwright() as p:
     expect(other.get_by_role('status')).to_contain_text('星球位置已保存')
     latest=state(other)['universe']
     drag(page,point(stale,stale['universe']['entries'][0]),(60,30))
-    expect(page.get_by_role('status')).to_contain_text('另一个窗口已移动')
+    expect(page.get_by_role('status')).to_contain_text('另一个窗口已修改')
     assert state(page)['universe']==latest
     close_notice(page);other.close()
     page.reload();page.wait_for_load_state('networkidle');page.wait_for_timeout(500)

@@ -2,7 +2,11 @@ import { readFile } from "node:fs/promises";
 import { describe, it, expect } from "vitest";
 import JSZip from "jszip";
 import { fixturePlanet, fixtureUniverse } from "@colorverse/fixtures";
-import { createDecoration } from "@colorverse/domain";
+import {
+  createDecoration,
+  upgradeUniverse,
+  DEFAULT_PLANET_MOTION,
+} from "@colorverse/domain";
 import {
   exportPackage,
   inspectPackage,
@@ -137,6 +141,52 @@ describe("media and portable packages", () => {
     const zip = await exportPackage([p], assets, u),
       report = await inspectPackage(new Uint8Array(await zip.arrayBuffer()));
     expect(report.universe).toEqual(u);
+  });
+  it("backs up motion in a versioned universe package while leaving standalone artwork portable", async () => {
+    const { p, assets } = await sample(),
+      u = upgradeUniverse(fixtureUniverse([p]));
+    u.entries[0].motion = {
+      ...DEFAULT_PLANET_MOTION,
+      mode: "fast",
+      trajectory: "figure-eight",
+    };
+    u.entries[0].layoutRevision = 4;
+    const blob = await exportPackage([p], assets, u),
+      bytes = new Uint8Array(await blob.arrayBuffer()),
+      report = await inspectPackage(bytes);
+    expect(report.universe).toEqual(u);
+    expect(report.manifest.packageVersion).toBe("1.1.0");
+    expect(report.manifest.requiredCapabilities).toContain("motion-presets@1");
+    const standalone = await inspectPackage(
+      new Uint8Array(await (await exportPackage([p], assets)).arrayBuffer()),
+    );
+    expect(standalone.universe).toBeNull();
+    expect(standalone.planets[0]).toEqual(p);
+    expect(standalone.manifest.packageVersion).toBe("1.0.0");
+    expect(standalone.manifest.requiredCapabilities).not.toContain(
+      "motion-presets@1",
+    );
+    for (const mutation of [
+      (m: typeof report.manifest) => {
+        m.requiredCapabilities = m.requiredCapabilities.filter(
+          (c) => c !== "motion-presets@1",
+        );
+      },
+      (m: typeof report.manifest) => {
+        m.packageVersion = "1.0.0";
+      },
+      (m: typeof report.manifest) => {
+        m.requiredCapabilities.push("unknown-motion@9");
+      },
+    ]) {
+      const zip = await JSZip.loadAsync(bytes),
+        manifest = JSON.parse(await zip.file("manifest.json")!.async("string"));
+      mutation(manifest);
+      zip.file("manifest.json", JSON.stringify(manifest));
+      await expect(
+        inspectPackage(await zip.generateAsync({ type: "uint8array" })),
+      ).rejects.toMatchObject({ code: "UNSUPPORTED_VERSION" });
+    }
   });
   it("rejects path traversal and case collisions before extraction", async () => {
     expect(() => safePath("../x")).toThrow();

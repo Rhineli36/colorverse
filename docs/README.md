@@ -23,7 +23,7 @@
 | [11-universe-motion-and-camera.md](11-universe-motion-and-camera.md) | 独立轨迹、全景/局部/聚焦镜头、状态边界和24颗验证 |
 | [12-space-exploration-and-layout.md](12-space-exploration-and-layout.md) | 深空主视觉、任意区域探索、学生/教师拖拽权限与数据库升级 |
 | [13-optional-planet-decorations.md](13-optional-planet-decorations.md) | 学生可选粒子/光影/光环/卫星、跟随主体协议、进入内部和测试 |
-| [14-planet-motion-controls-plan.md](14-planet-motion-controls-plan.md) | 后续星球静止/慢速/快速、预设轨迹、本人/教师控制与验收计划 |
+| [14-planet-motion-controls-plan.md](14-planet-motion-controls-plan.md) | 星球静止/慢速/快速、预设轨迹、本人/教师控制的原设计与验收计划 |
 | [15-universe-atmosphere.md](15-universe-atmosphere.md) | 星云/黑洞/低频流星、小星星游移、背景同步相机与资源预算 |
 | [16-image-editing-and-scene-recovery.md](16-image-editing-and-scene-recovery.md) | 图片缩放/拉伸/裁剪、外观蒙版、分区上传、图层删除与独立复位 |
 | [17-studio-tools-and-planet-size.md](17-studio-tools-and-planet-size.md) | 顶部导入/图层、就近操作、重叠选项卡与0.8–1.2倍展示尺寸 |
@@ -35,6 +35,7 @@
 | [23-showcase-upload-and-growth-direction.md](23-showcase-upload-and-growth-direction.md) | 自选展示作品的用途调整、预制/模型方案比较与成长交互建议 |
 | [24-showcase-growth-first-slice.md](24-showcase-growth-first-slice.md) | 自选作品上传、规则成长、事务与ZIP来源验证、约30种/API后续计划 |
 | [25-growth-library-and-experience.md](25-growth-library-and-experience.md) | 8种成长元素登记、造型/预览保存、上传与分页优化、后续体验优先级 |
+| [26-planet-motion-first-slice.md](26-planet-motion-first-slice.md) | 单颗运动入口、四种受控轨迹、布局1.1.0迁移/冲突/备份与测试 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 

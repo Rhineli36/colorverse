@@ -1,4 +1,32 @@
-import type { UniverseDocument } from "@colorverse/contracts";
+import {
+  UniverseSchema,
+  MOTION_CAPABILITY,
+  type UniverseDocument,
+  type MotionUniverseDocument,
+  type PlanetMotion,
+} from "@colorverse/contracts";
+
+export const DEFAULT_PLANET_MOTION: PlanetMotion = {
+  version: "1.0.0",
+  mode: "slow",
+  trajectory: "ellipse",
+  range: "regular",
+  direction: "forward",
+};
+// Explicit migration: preserve every old anchor and legacy path until configured.
+export function upgradeUniverse(
+  input: UniverseDocument,
+): MotionUniverseDocument {
+  const u = UniverseSchema.parse(input);
+  if (u.schemaVersion === "1.1.0") return structuredClone(u);
+  return {
+    ...u,
+    schemaVersion: "1.1.0",
+    layout: { ...u.layout, version: "1.1.0" },
+    requiredCapabilities: [MOTION_CAPABILITY],
+    entries: u.entries.map((e) => ({ ...e, layoutRevision: 0 })),
+  };
+}
 
 export type UniverseEntry = UniverseDocument["entries"][number];
 export interface UniverseCamera {
@@ -14,6 +42,8 @@ export interface Orbit {
   phase: number;
   periodSec: number;
   direction: number;
+  trajectory?: PlanetMotion["trajectory"];
+  stationary?: boolean;
 }
 export const MIN_UNIVERSE_ZOOM = 0.04;
 export const MAX_UNIVERSE_ZOOM = 2.5;
@@ -56,16 +86,37 @@ export function planetOrbit(entry: UniverseEntry, seed: number): Orbit {
     periodSec: 90 + random() * 100,
     direction: random() > 0.5 ? 1 : -1,
   };
+  if (entry.motion) {
+    const m = entry.motion,
+      radius = { compact: 60, regular: 110, wide: 165 }[m.range];
+    orbit.trajectory = m.trajectory;
+    orbit.stationary = m.mode === "stationary";
+    orbit.radiusX = orbit.stationary ? 0 : radius;
+    orbit.radiusY =
+      orbit.stationary || m.trajectory === "drift"
+        ? 0
+        : radius * (m.trajectory === "circle" ? 1 : 0.55);
+    orbit.phase = 0;
+    orbit.periodSec =
+      m.mode === "fast" ? 30 + (orbit.periodSec - 90) * 0.3 : orbit.periodSec;
+    orbit.direction = m.direction === "forward" ? 1 : -1;
+  }
   const initial = orbitPosition(orbit, 0);
   orbit.center.x += entry.position.x - initial.x;
   orbit.center.y += entry.position.y - initial.y;
   return orbit;
 }
 export function orbitPosition(orbit: Orbit, seconds: number) {
+  if (orbit.stationary) return { ...orbit.center };
   const angle =
     orbit.phase + (orbit.direction * seconds * Math.PI * 2) / orbit.periodSec;
-  const x = Math.cos(angle) * orbit.radiusX,
-    y = Math.sin(angle) * orbit.radiusY;
+  const x =
+      (orbit.trajectory === "figure-eight" || orbit.trajectory === "drift"
+        ? Math.sin(angle)
+        : Math.cos(angle)) * orbit.radiusX,
+    y =
+      Math.sin(angle * (orbit.trajectory === "figure-eight" ? 2 : 1)) *
+      orbit.radiusY;
   return {
     x:
       orbit.center.x +
@@ -81,21 +132,32 @@ export function orbitBounds(entry: UniverseEntry, seed: number) {
   const o = planetOrbit(entry, seed),
     radius = 256 * planetDisplayScale(entry.scale) * 0.9;
   const rx =
-    Math.hypot(
-      o.radiusX * Math.cos(o.rotation),
-      o.radiusY * Math.sin(o.rotation),
-    ) + radius;
+    (o.trajectory === "figure-eight"
+      ? Math.abs(o.radiusX * Math.cos(o.rotation)) +
+        Math.abs(o.radiusY * Math.sin(o.rotation))
+      : Math.hypot(
+          o.radiusX * Math.cos(o.rotation),
+          o.radiusY * Math.sin(o.rotation),
+        )) + radius;
   const ry =
-    Math.hypot(
-      o.radiusX * Math.sin(o.rotation),
-      o.radiusY * Math.cos(o.rotation),
-    ) + radius;
+    (o.trajectory === "figure-eight"
+      ? Math.abs(o.radiusX * Math.sin(o.rotation)) +
+        Math.abs(o.radiusY * Math.cos(o.rotation))
+      : Math.hypot(
+          o.radiusX * Math.sin(o.rotation),
+          o.radiusY * Math.cos(o.rotation),
+        )) + radius;
   return {
     left: o.center.x - rx,
     right: o.center.x + rx,
     top: o.center.y - ry,
     bottom: o.center.y + ry,
   };
+}
+export function orbitPath(orbit: Orbit) {
+  return Array.from({ length: 65 }, (_, i) =>
+    orbitPosition(orbit, (orbit.periodSec * i) / 64),
+  );
 }
 export function cameraAt(
   point: { x: number; y: number },

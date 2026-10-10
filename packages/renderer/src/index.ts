@@ -36,6 +36,7 @@ import {
   planetDisplayScale,
   orbitPosition,
   orbitBounds,
+  orbitPath,
   cameraAt,
   PLANET_FOCUS_ZOOM,
   cameraTransitionAmount,
@@ -63,6 +64,7 @@ export interface RendererOptions {
     planetId: string;
     position: { x: number; y: number };
     expectedPosition: { x: number; y: number };
+    expectedLayoutRevision: number;
   }) => Promise<void>;
   onMoveDenied?: () => void;
   onAreaFocus?: (camera: Camera) => void;
@@ -74,6 +76,9 @@ interface OrbitNode {
   orbit: Orbit;
   guide: Graphics;
   entry: UniverseEntry;
+  startedAt: number;
+  saving?: boolean;
+  transition?: { x: number; y: number; startedAt: number };
   artwork?: {
     record: AssetRecord;
     layer: Layer;
@@ -124,6 +129,8 @@ export class SceneRenderer {
   private generation = 0;
   private disposed = false;
   private elapsed = 0;
+  private universeSignature = "";
+  private universeSeed = 42;
   private drag: UniverseDrag | null = null;
   private moved = false;
   private observer: ResizeObserver | null = null;
@@ -194,6 +201,10 @@ export class SceneRenderer {
     if (this.mode !== "universe") return;
     const start = this.worldPoint(e),
       hit = this.planetAt(start);
+    if (hit?.saving) {
+      this.moved = true;
+      return;
+    }
     const origin = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
     if (e.shiftKey || this.areaSelection)
       this.drag = { ...origin, kind: "region", start, end: start };
@@ -315,36 +326,67 @@ export class SceneRenderer {
     if (drag.kind === "planet") {
       const p = drag.planet,
         original = { ...p.entry.position },
-        current = orbitPosition(p.orbit, this.elapsed);
+        current = orbitPosition(p.orbit, this.elapsed - p.startedAt);
       const dx = p.node.x - current.x,
         dy = p.node.y - current.y;
-      const position = { x: original.x + dx, y: original.y + dy };
+      const position = p.entry.motion
+        ? { x: p.node.x, y: p.node.y }
+        : { x: original.x + dx, y: original.y + dy };
+      const originalOrbit = p.orbit,
+        originalStartedAt = p.startedAt;
       p.entry.position = position;
-      p.orbit.center.x += dx;
-      p.orbit.center.y += dy;
-      p.guide.position.set(p.orbit.center.x, p.orbit.center.y);
+      if (p.entry.motion) {
+        p.orbit = planetOrbit(p.entry, this.universeSeed);
+        p.startedAt = this.elapsed;
+      } else {
+        p.orbit = {
+          ...p.orbit,
+          center: { x: p.orbit.center.x + dx, y: p.orbit.center.y + dy },
+        };
+      }
+      p.transition = undefined;
+      this.drawOrbitGuide(p.guide, p.orbit);
       const generation = this.generation;
+      const expectedLayoutRevision = p.entry.layoutRevision ?? 0;
+      p.saving = true;
       void (
         this.options.onPlanetMove?.({
           planetId: p.id,
           position,
           expectedPosition: original,
+          expectedLayoutRevision,
         }) ?? Promise.reject()
-      ).catch(() => {
-        if (generation !== this.generation) return;
-        p.entry.position = original;
-        p.orbit.center.x -= dx;
-        p.orbit.center.y -= dy;
-        const restored = orbitPosition(p.orbit, this.elapsed);
-        p.node.position.set(restored.x, restored.y);
-        p.guide.position.set(p.orbit.center.x, p.orbit.center.y);
-      });
+      )
+        .catch(() => {
+          if (
+            generation !== this.generation ||
+            (p.entry.layoutRevision ?? 0) !== expectedLayoutRevision
+          )
+            return;
+          p.entry.position = original;
+          p.orbit = originalOrbit;
+          p.startedAt = originalStartedAt;
+          const restored = orbitPosition(p.orbit, this.elapsed - p.startedAt);
+          if (this.motionPaused || this.options.reducedMotion) {
+            p.transition = undefined;
+            p.node.position.set(restored.x, restored.y);
+          } else
+            p.transition = {
+              x: p.node.x - restored.x,
+              y: p.node.y - restored.y,
+              startedAt: this.elapsed,
+            };
+          this.drawOrbitGuide(p.guide, p.orbit);
+        })
+        .finally(() => {
+          p.saving = false;
+        });
     }
   };
   private cancelDrag = () => {
     if (this.drag?.kind === "planet") {
       const p = this.drag.planet,
-        position = orbitPosition(p.orbit, this.elapsed);
+        position = orbitPosition(p.orbit, this.elapsed - p.startedAt);
       p.node.position.set(position.x, position.y);
       p.guide.position.set(p.orbit.center.x, p.orbit.center.y);
     }
@@ -452,6 +494,50 @@ export class SceneRenderer {
     this.showOrbitGuides = visible;
     for (const p of this.orbitNodes) p.guide.visible = visible;
     this.app.canvas.dataset.orbitGuides = String(visible);
+  }
+  planetPosition(id: string) {
+    const p = this.orbitNodes.find((n) => n.id === id);
+    return p ? { x: p.node.x, y: p.node.y } : null;
+  }
+  private drawOrbitGuide(guide: Graphics, orbit: Orbit) {
+    guide.clear();
+    guide.rotation = 0;
+    guide.position.set(orbit.center.x, orbit.center.y);
+    if (orbit.stationary) return;
+    const points = orbitPath(orbit);
+    guide.moveTo(points[0].x - orbit.center.x, points[0].y - orbit.center.y);
+    for (const p of points.slice(1))
+      guide.lineTo(p.x - orbit.center.x, p.y - orbit.center.y);
+    guide.stroke({ color: "#8EAABF", alpha: 0.16, width: 1.3 });
+  }
+  private syncUniverse(universe: UniverseDocument) {
+    this.cancelDrag();
+    for (const p of this.orbitNodes) {
+      const entry = universe.entries.find((e) => e.planetId === p.id)!;
+      const changed =
+        JSON.stringify([entry.position, entry.motion]) !==
+        JSON.stringify([p.entry.position, p.entry.motion]);
+      p.entry = structuredClone(entry);
+      if (!changed) continue;
+      const previous = { x: p.node.x, y: p.node.y };
+      p.orbit = planetOrbit(entry, universe.layout.seed);
+      p.startedAt = entry.motion ? this.elapsed : 0;
+      const next = orbitPosition(p.orbit, this.elapsed - p.startedAt);
+      // Only the changed node transitions. Artwork and other paths keep running.
+      p.transition =
+        this.options.reducedMotion || this.motionPaused
+          ? undefined
+          : {
+              x: previous.x - next.x,
+              y: previous.y - next.y,
+              startedAt: this.elapsed,
+            };
+      p.node.position.set(
+        p.transition ? previous.x : next.x,
+        p.transition ? previous.y : next.y,
+      );
+      this.drawOrbitGuide(p.guide, p.orbit);
+    }
   }
   setFocus(id: string | null) {
     this.focusId = id;
@@ -675,7 +761,23 @@ export class SceneRenderer {
     universe: UniverseDocument,
     camera: Camera,
   ) {
+    const signature = JSON.stringify([
+      universe.universeId,
+      universe.layout.seed,
+      planets.map((p) => [p.planetId, p.revision]),
+      universe.entries.map((e) => [e.planetId, e.visible, e.scale, e.order]),
+    ]);
+    if (
+      this.mode === "universe" &&
+      this.universeSignature === signature &&
+      this.app.canvas.dataset.sceneReady === "true"
+    ) {
+      this.syncUniverse(universe);
+      return;
+    }
     this.reset();
+    this.universeSignature = signature;
+    this.universeSeed = universe.layout.seed;
     const version = this.generation;
     this.mode = "universe";
     this.scene = null;
@@ -705,11 +807,8 @@ export class SceneRenderer {
     const guides = new Map<string, Graphics>();
     for (const entry of universe.entries.filter((e) => e.visible)) {
       const orbit = planetOrbit(entry, universe.layout.seed);
-      const guide = new Graphics()
-        .ellipse(0, 0, orbit.radiusX, orbit.radiusY)
-        .stroke({ color: "#8EAABF", alpha: 0.16, width: 1.3 });
-      guide.position.set(orbit.center.x, orbit.center.y);
-      guide.rotation = orbit.rotation;
+      const guide = new Graphics();
+      this.drawOrbitGuide(guide, orbit);
       guide.visible = this.showOrbitGuides;
       this.stage.addChild(guide);
       guides.set(entry.planetId, guide);
@@ -830,7 +929,8 @@ export class SceneRenderer {
       }
       node.scale.set(planetDisplayScale(entry.scale) * 0.9);
       const orbit = planetOrbit(entry, universe.layout.seed);
-      const position = orbitPosition(orbit, this.elapsed);
+      const startedAt = entry.motion ? this.elapsed : 0;
+      const position = orbitPosition(orbit, this.elapsed - startedAt);
       node.position.set(position.x, position.y);
       node.eventMode = "static";
       node.hitArea = new Circle(0, 0, 190);
@@ -846,6 +946,7 @@ export class SceneRenderer {
         id: p.planetId,
         node,
         orbit,
+        startedAt,
         entry: structuredClone(entry),
         artwork,
         guide: guides.get(p.planetId)!,
@@ -1143,9 +1244,23 @@ export class SceneRenderer {
   }
   private animate() {
     for (const update of this.effectUpdates) update(this.elapsed);
-    for (const { node, orbit, id } of this.orbitNodes) {
+    for (const p of this.orbitNodes) {
+      const { node, orbit, id } = p;
       if (this.drag?.kind === "planet" && this.drag.planet.id === id) continue;
-      const position = orbitPosition(orbit, this.elapsed);
+      if (orbit.stationary && !p.transition) continue;
+      const position = orbitPosition(orbit, this.elapsed - p.startedAt);
+      if (p.transition) {
+        const amount = Math.exp(-8 * (this.elapsed - p.transition.startedAt));
+        position.x += p.transition.x * amount;
+        position.y += p.transition.y * amount;
+        if (amount < 0.001) {
+          p.transition = undefined;
+          if (orbit.stationary) {
+            position.x = orbit.center.x;
+            position.y = orbit.center.y;
+          }
+        }
+      }
       node.position.set(position.x, position.y);
     }
     for (const { node, layer } of this.tickNodes) {

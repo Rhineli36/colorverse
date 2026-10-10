@@ -444,6 +444,106 @@ p {
 .motion-toggle:disabled {
   opacity: 0.6;
 }
+.inspector-tabs button[data-tab-color="motion"] {
+  --tab-accent: #efbb85;
+}
+.planet-motion-settings {
+  padding: 14px 0;
+}
+.planet-motion-settings h3 {
+  font-size: 15px;
+  color: #efbb85;
+  margin: 0 0 10px;
+}
+.planet-motion-settings fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.planet-motion-settings legend {
+  font-size: 11px;
+  color: #91a5b5;
+  margin-bottom: 10px;
+}
+.motion-mode-options,
+.motion-selects {
+  display: flex;
+  gap: 6px;
+}
+.motion-mode-options button {
+  flex: 1;
+  border: 1px solid #ffffff20;
+  border-radius: 6px;
+  padding: 10px 4px;
+  font-size: 12px;
+}
+.motion-path-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 12px 0;
+}
+.motion-path-options button {
+  border: 1px solid #ffffff20;
+  border-radius: 6px;
+  padding: 8px;
+  color: #a8bdd1;
+  font-size: 11px;
+}
+.motion-path-options svg {
+  width: 100%;
+  height: 68px;
+  display: block;
+}
+.motion-path-options path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 6;
+  opacity: 0.6;
+}
+.motion-path-options button[aria-pressed="true"],
+.motion-mode-options button[aria-pressed="true"] {
+  border-color: #efbb85;
+  background: #efbb8512;
+  color: #f4cca3;
+}
+.planet-motion-settings button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.motion-selects label {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: #91a5b5;
+}
+.motion-selects select {
+  width: 100%;
+  margin-top: 7px;
+}
+.planet-peek.motion-expanded {
+  top: 150px;
+  bottom: 220px;
+  width: 285px;
+  overflow-y: auto;
+}
+.planet-peek .planet-motion-settings .row-buttons {
+  display: flex;
+  flex-wrap: wrap;
+}
+.planet-peek .planet-motion-settings .outline {
+  width: auto;
+  margin: 0;
+}
+@media (max-width: 650px) {
+  .planet-peek.motion-expanded {
+    top: 130px;
+    bottom: 210px;
+    right: 4%;
+    width: min(285px, 88vw);
+  }
+}
 .planet-directory span {
   width: 5px;
   height: 5px;
@@ -1999,4 +2099,29 @@ p {
 }
 .showcase-dialog textarea {
   min-height: 80px;
+}
+/* Keep both peek actions clear of the camera controls on every viewport. */
+.planet-peek {
+  top: auto;
+  bottom: 220px;
+  max-height: calc(100% - 360px);
+  overflow: auto;
+}
+.planet-peek.motion-expanded {
+  top: 150px;
+  bottom: 220px;
+  max-height: none;
+}
+@media (max-width: 650px) {
+  .planet-peek {
+    top: auto;
+    bottom: 210px;
+    max-height: calc(100% - 340px);
+  }
+  .planet-peek.motion-expanded {
+    top: 130px;
+    bottom: 210px;
+    max-height: none;
+    width: min(285px, 88vw);
+  }
 }

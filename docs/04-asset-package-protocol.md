@@ -125,3 +125,7 @@ v1 预设目录应覆盖 stardust/fireflies/floating-lights/rain/snow/fog/outer-
 ## 2026-10-10 growth-library@1扩展
 
 六种新程序预设及其提案声明growth-library@1；已保存的两种旧预设不重抽，规则v2只负责新建议。登记、几何共用、预览保存与恢复、素材来源和预算见[25](25-growth-library-and-experience.md)。
+
+## 2026-10-10 Universe 1.1.0运动协议
+
+Universe/layout升级为1.1.0，增加motion-presets@1和条目layoutRevision，motion缺省保留旧轨迹；旧1.0.0文档继续读取，首次布局写入显式迁移。新版完整宇宙包版本1.1.0且manifest必须声明运动能力；单星球/PlanetDocument仍1.0.0，不携带宇宙运动或owner。生成Schema、副本合并和revision协同见[26](26-planet-motion-first-slice.md)。这是对早期仅接受v1.0.0说明的增量，不将未知未来版本当成兼容。

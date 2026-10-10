@@ -11,6 +11,8 @@ import {
   type LayoutActor,
 } from "@colorverse/domain";
 import type { PlanetMove } from "@colorverse/application";
+import type { PlanetMotion } from "@colorverse/contracts";
+import { MotionControls } from "./MotionControls";
 export type UniverseViewMode = "overview" | "local" | "focus" | "free";
 interface Props {
   workspace: AssetStore;
@@ -26,6 +28,12 @@ interface Props {
   setLayoutRole: (role: LayoutActor["role"]) => void;
   onPlanetMove: (move: Omit<PlanetMove, "universeId">) => Promise<void>;
   onMoveDenied: () => void;
+  onSaveMotion: (
+    planetId: string,
+    motion: PlanetMotion,
+    revision: number,
+    position: { x: number; y: number },
+  ) => Promise<void>;
   inspection: PlanetDocument | undefined;
   visible: PlanetDocument[];
   filtered: PlanetDocument[];
@@ -56,6 +64,7 @@ export function UniverseView({
   setLayoutRole,
   onPlanetMove,
   onMoveDenied,
+  onSaveMotion,
   inspection,
   visible,
   filtered,
@@ -75,6 +84,10 @@ export function UniverseView({
   const [viewport, setViewport] = useState({ width: 1600, height: 900 });
   const [areaSelection, setAreaSelection] = useState(false);
   const [showOrbitGuides, setShowOrbitGuides] = useState(false);
+  const [motionOpen, setMotionOpen] = useState(false);
+  const positionReader = useRef<
+    ((id: string) => { x: number; y: number } | null) | null
+  >(null);
   useEffect(() => {
     const element = main.current!;
     const observer = new ResizeObserver(() =>
@@ -138,6 +151,7 @@ export function UniverseView({
         camera={camera}
         motionPaused={motionPaused}
         showOrbitGuides={showOrbitGuides}
+        positionReader={positionReader}
         movablePlanetIds={filtered
           .filter((p) => canMovePlanet(actor, ownership[p.planetId] ?? null))
           .map((p) => p.planetId)}
@@ -247,7 +261,7 @@ export function UniverseView({
         </button>
       </div>
       {(viewMode === "focus" || viewMode === "local") && (
-        <aside className="planet-peek">
+        <aside className={`planet-peek ${motionOpen ? "motion-expanded" : ""}`}>
           {spotlight && (
             <>
               <p className="eyebrow">
@@ -266,6 +280,36 @@ export function UniverseView({
                   <span key={t}>{t}</span>
                 ))}
               </div>
+              <button
+                className="outline"
+                aria-expanded={motionOpen}
+                onClick={() => setMotionOpen(!motionOpen)}
+              >
+                {" "}
+                {motionOpen ? "收起运动设置" : "星球运动设置"}{" "}
+              </button>
+              {motionOpen &&
+                entries
+                  ?.filter((e) => e.planetId === spotlight.planetId)
+                  .map((entry) => (
+                    <MotionControls
+                      key={`${entry.planetId}-${entry.layoutRevision ?? 0}`}
+                      entry={entry}
+                      canEdit={canMovePlanet(
+                        actor,
+                        ownership[entry.planetId] ?? null,
+                      )}
+                      onSave={(motion, revision) =>
+                        onSaveMotion(
+                          entry.planetId,
+                          motion,
+                          revision,
+                          positionReader.current?.(entry.planetId) ??
+                            entry.position,
+                        )
+                      }
+                    />
+                  ))}
               <button
                 className="outline"
                 onClick={() =>

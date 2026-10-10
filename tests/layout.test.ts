@@ -31,6 +31,7 @@ describe("universe layout authorization and persistence", () => {
       universeId: universe.universeId,
       planetId: entry.planetId,
       expectedPosition: entry.position,
+      expectedLayoutRevision: 0,
       position: { x: 1500, y: 1600 },
     };
     await expect(service.move(move, student)).rejects.toThrow("学生只能");
@@ -52,6 +53,7 @@ describe("universe layout authorization and persistence", () => {
       universeId: universe.universeId,
       planetId: e.planetId,
       expectedPosition: e.position,
+      expectedLayoutRevision: 0,
       position: { x: -2300, y: 1200 },
     };
     const results = await Promise.allSettled([
@@ -60,7 +62,10 @@ describe("universe layout authorization and persistence", () => {
     ]);
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     expect(results.filter((r) => r.status === "rejected")).toHaveLength(1);
-    expect((await repo.getUniverse()).entries[1]).toEqual(universe.entries[1]);
+    expect((await repo.getUniverse()).entries[1]).toEqual({
+      ...universe.entries[1],
+      layoutRevision: 0,
+    });
     await repo.close();
   });
   it("rejects invalid coordinates and hidden or missing entries without partial writes", async () => {
@@ -70,6 +75,7 @@ describe("universe layout authorization and persistence", () => {
       universeId: universe.universeId,
       planetId: e.planetId,
       expectedPosition: e.position,
+      expectedLayoutRevision: 0,
       position: { x: NaN, y: 1 },
     };
     await expect(service.move(move, student)).rejects.toThrow("有限坐标");
