@@ -9,6 +9,7 @@ export * from "./universe";
 export * from "./decorations";
 export * from "./image-editing";
 export * from "./scene-reset";
+export * from "./course";
 export class DomainError extends Error {
   constructor(
     public code: string,

@@ -43,14 +43,21 @@ export function StudioImageCanvas({
   const [size, setSize] = useState({ width: 1000, height: 560 }),
     [draft, setDraft] = useState<Transform | null>(null);
   useEffect(() => {
+    const element = host.current;
+    if (!element) return;
+    let active = true;
     const obs = new ResizeObserver(() => {
+      if (!active) return;
       setSize({
-        width: host.current!.clientWidth,
-        height: host.current!.clientHeight,
+        width: element.clientWidth,
+        height: element.clientHeight,
       });
     });
-    obs.observe(host.current!);
-    return () => obs.disconnect();
+    obs.observe(element);
+    return () => {
+      active = false;
+      obs.disconnect();
+    };
   }, []);
   useEffect(() => {
     setDraft(null);

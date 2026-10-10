@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "expectedRevision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "graded",
+        "returned"
+      ]
+    },
+    "score": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "comment": {
+      "type": "string",
+      "maxLength": 6000
+    }
+  },
+  "required": [
+    "expectedRevision",
+    "decision",
+    "score",
+    "comment"
+  ],
+  "additionalProperties": false
+}

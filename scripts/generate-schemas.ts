@@ -4,12 +4,18 @@ import {
   PlanetSchema,
   UniverseSchema,
   GrowthSchemaBase,
+  AssignmentInputSchema,
+  SubmissionDraftSchema,
+  ReviewInputSchema,
 } from "@colorverse/contracts";
 mkdirSync("docs/schemas/generated", { recursive: true });
 for (const [name, schema] of Object.entries({
   planet: PlanetSchema,
   universe: UniverseSchema,
   growth: GrowthSchemaBase,
+  "assignment-input": AssignmentInputSchema,
+  "submission-draft": SubmissionDraftSchema,
+  "review-input": ReviewInputSchema,
 })) {
   writeFileSync(
     `docs/schemas/generated/${name}.schema.json`,

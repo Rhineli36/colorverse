@@ -1,4 +1,5 @@
 import { download } from "./download";
+import { CourseView } from "../features/course/CourseView";
 import { TeacherView } from "../features/teacher-demo/TeacherView";
 import { StudioView } from "../features/studio/StudioView";
 import { PlanetRoomView } from "../features/planet-room/PlanetRoomView";
@@ -50,9 +51,9 @@ const workspace = new LocalWorkspace(),
 export function App() {
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
     [universe, setUniverse] = useState<UniverseDocument | null>(null),
-    [route, setRoute] = useState<"universe" | "studio" | "room" | "teacher">(
-      "universe",
-    ),
+    [route, setRoute] = useState<
+      "universe" | "studio" | "room" | "teacher" | "course"
+    >("universe"),
     [activeId, setActiveId] = useState<string | null>(null),
     [hover, setHover] = useState<string | null>(null),
     [query, setQuery] = useState(""),
@@ -61,6 +62,7 @@ export function App() {
     [sceneKind, setSceneKind] = useState<"exterior" | "interior">("exterior"),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
+    [coursePending, setCoursePending] = useState(false),
     [saving, setSaving] = useState(false),
     [modal, setModal] = useState<Hotspot | null>(null),
     [proposal, setProposal] = useState<GrowthEvent | null>(null),
@@ -93,13 +95,13 @@ export function App() {
   }, [refresh]);
   useEffect(() => {
     const listener = (e: BeforeUnloadEvent) => {
-      if (useEditor.getState().dirty) {
+      if (useEditor.getState().dirty || coursePending) {
         e.preventDefault();
       }
     };
     window.addEventListener("beforeunload", listener);
     return () => window.removeEventListener("beforeunload", listener);
-  }, []);
+  }, [coursePending]);
   const flush = useCallback(async () => {
     while (saveLock.current) await saveLock.current;
     if (!useEditor.getState().dirty) return;
@@ -133,6 +135,10 @@ export function App() {
   }, [editor.document, editor.dirty, flush]);
   const action = async (fn: () => Promise<void>) => {
     if (busy) return;
+    if (route === "course" && coursePending) {
+      setNotice("请先保存作业草稿，并等待当前操作完成，再离开课堂。");
+      return;
+    }
     setBusy(true);
     setNotice("");
     try {
@@ -516,6 +522,17 @@ export function App() {
           >
             教师演示
           </button>
+          <button
+            className={route === "course" ? "active" : ""}
+            onClick={() =>
+              void action(async () => {
+                await flush();
+                setRoute("course");
+              })
+            }
+          >
+            课程作业
+          </button>
         </nav>
         <div className="header-right">
           <span className="local-label">
@@ -549,6 +566,7 @@ export function App() {
           e.target.value = "";
         }}
       />
+      {route === "course" && <CourseView onPendingChange={setCoursePending} />}
       {route === "universe" && (
         <UniverseView
           workspace={workspace}
@@ -647,6 +665,12 @@ export function App() {
           layerPatch={layerPatch}
           upload={upload}
           exportCurrent={exportCurrent}
+          onOpenCourse={() =>
+            action(async () => {
+              await flush();
+              setRoute("course");
+            })
+          }
           addEffect={addEffect}
         />
       )}

@@ -1,6 +1,6 @@
 # COLORVERSE（色彩宇宙）设计文档
 
-版本：0.1 设计基线 · 日期：2026-10-09 · 当前状态：P1a 核心功能已实现，P0实样/设备及P1完整验收待完成。
+版本：0.1 设计基线 · 日期：2026-10-09 · 当前状态：P1a核心已实现、P2作业本机闭环已完成；正式在线课堂、P0实样/设备及P1完整验收待完成。
 
 实施更新：2026-10-09 已开始并完成 P1a 核心闭环实现；以下规划记录作为设计历史保留，当前功能与实际测试结果请读 [10-implementation-progress.md](10-implementation-progress.md)。
 
@@ -31,6 +31,7 @@
 | [19-student-edit-entry-and-persistent-layers.md](19-student-edit-entry-and-persistent-layers.md) | 学生欣赏/编辑与演示提交入口、独立常驻图层栏 |
 | [20-gentle-focus-and-artwork-resolution.md](20-gentle-focus-and-artwork-resolution.md) | 38%适度聚焦、平缓过渡与选中主体按需展示图 |
 | [21-github-deployment-and-handoff.md](21-github-deployment-and-handoff.md) | GitHub Pages部署、数据迁移边界和明天接续记录 |
+| [22-course-submission-first-slice.md](22-course-submission-first-slice.md) | 作业草稿/不可变提交、教师评阅、本机API、权限与上线边界 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 

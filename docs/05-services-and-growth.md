@@ -110,3 +110,8 @@ Schema 只验证形状和状态必填关系；引用存在、唯一图层 ID、�
 6. 点击成长元素打开触发的示例档案；撤销只移除对应元素；ZIP 导出到另一浏览器后仍能查看成长历史。
 
 本轮仅交付协议与示例，不把这份脚本描述为已经运行的演示。
+
+
+## 2026-10-10 作业接口具体化
+
+首增量沿用SubmissionService/Repository事务边界，见[22](22-course-submission-first-slice.md)。评阅具体路径为POST /api/v1/submissions/:id/versions/:versionId/reviews，明确绑定不可变版本；开发图片通过受限二进制POST /assets校验入库，正式对象存储上传意向/完成校验仍按本文后续接入。课程提交生成版本与档案，不调用模拟成长或AI。

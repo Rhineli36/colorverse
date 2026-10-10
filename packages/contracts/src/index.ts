@@ -1,4 +1,5 @@
 import { z } from "zod";
+export * from "./course";
 
 export const VERSION = "1.0.0" as const;
 export const id = z.uuid();

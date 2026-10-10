@@ -10,6 +10,7 @@ import {
 } from "@colorverse/contracts";
 import { clone, validatePlanet, DomainError } from "@colorverse/domain";
 export * from "./universe-layout";
+export * from "./course";
 export interface PlanetRepository {
   get(id: string): Promise<PlanetDocument>;
   list(): Promise<PlanetDocument[]>;

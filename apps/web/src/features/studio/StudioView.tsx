@@ -57,6 +57,7 @@ interface Props {
     target: "body" | "background" | "layer",
   ) => Promise<void>;
   exportCurrent: () => Promise<void>;
+  onOpenCourse: () => Promise<void>;
   addEffect: (id: (typeof EffectIds)[number]) => void;
 }
 
@@ -85,6 +86,7 @@ export function StudioView({
   layerPatch,
   upload,
   exportCurrent,
+  onOpenCourse,
   addEffect,
 }: Props) {
   const [locked, setLocked] = useState(true),
@@ -229,9 +231,9 @@ export function StudioView({
           <button
             className="outline small"
             disabled={busy}
-            onClick={() => void submitDemo()}
+            onClick={() => void onOpenCourse()}
           >
-            提交作品（演示）
+            提交课程作业 ↗
           </button>
           <button
             className="primary small"
