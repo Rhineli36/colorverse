@@ -120,3 +120,8 @@ v1 预设目录应覆盖 stardust/fireflies/floating-lights/rain/snow/fog/outer-
 ## 2026-10-10 showcase@1扩展
 
 自选展示档案sourceType=student、archive触发来源及provider.kind=rules声明showcase@1。原图/变体/档案同事务，规则只提供受限预设建议，接受和补偿继续原语义；导入复制保留准确来源，按档案ID去重。新读者兼容旧数据，旧读者可能拒绝此能力，不能直接回滚读取；详细实现及约30种/API后续边界见[24](24-showcase-growth-first-slice.md)。
+
+
+## 2026-10-10 growth-library@1扩展
+
+六种新程序预设及其提案声明growth-library@1；已保存的两种旧预设不重抽，规则v2只负责新建议。登记、几何共用、预览保存与恢复、素材来源和预算见[25](25-growth-library-and-experience.md)。

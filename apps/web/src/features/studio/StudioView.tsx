@@ -10,6 +10,7 @@ import { EffectControls } from "./EffectControls";
 import { ImageControls } from "./ImageControls";
 import { StudioImageCanvas } from "./StudioImageCanvas";
 import { ShowcaseGallery } from "./ShowcaseGallery";
+import { GrowthProposalPanel } from "./GrowthProposalPanel";
 import { useEffect, useRef, useState } from "react";
 import { PanelTabs } from "./PanelTabs";
 import type {
@@ -19,7 +20,11 @@ import type {
   GrowthEvent,
   Hotspot,
 } from "@colorverse/contracts";
-import { defaultAdjustments, EffectIds } from "@colorverse/contracts";
+import {
+  defaultAdjustments,
+  EffectIds,
+  GrowthPresets,
+} from "@colorverse/contracts";
 import type {
   WorkspaceRepository,
   AssetStore,
@@ -192,6 +197,19 @@ export function StudioView({
       editor.select(currentScene.layers.find((l) => l.id !== id)?.id ?? null);
     setNotice("图层已删除，可以撤销恢复。");
   };
+  const savePreview = async () => {
+    await flush();
+    if (proposal?.status === "proposed") {
+      const saved = await growth.updateProposal(
+        proposal,
+        useEditor.getState().revision,
+      );
+      if (saved.revision !== useEditor.getState().revision) editor.load(saved);
+      setProposal(
+        saved.growthEvents.find((e) => e.eventId === proposal.eventId)!,
+      );
+    }
+  };
   return (
     <>
       <div className="studio-bar">
@@ -216,7 +234,7 @@ export function StudioView({
           <button
             onClick={() =>
               void action(async () => {
-                await flush();
+                await savePreview();
                 setNotice("草稿已保存");
               })
             }
@@ -351,8 +369,10 @@ export function StudioView({
                     <span>
                       {l.kind === "effect" && "effectId" in l.source
                         ? effectNames[l.source.effectId]
-                        : l.kind === "preset"
-                          ? "预设元素"
+                        : l.kind === "preset" && "presetId" in l.source
+                          ? l.source.presetId === "sphere"
+                            ? "预设球体"
+                            : GrowthPresets[l.source.presetId].name
                           : `原创图片 ${i + 1}`}
                     </span>
                     <span>{l.visible ? "◉" : "○"}</span>
@@ -616,120 +636,51 @@ export function StudioView({
             onGrow={onGrowArchive}
           />
           {proposal?.status === "proposed" && (
-            <div className="proposal-card">
-              <p>{proposal.summary}</p>
-              <div className="proposal-controls">
-                <Field label="成长颜色">
-                  <input
-                    type="color"
-                    value={proposal.elements[0].params.color}
-                    onChange={(e) =>
-                      setProposal({
-                        ...proposal,
-                        elements: proposal.elements.map((el) => ({
-                          ...el,
-                          params: { ...el.params, color: e.target.value },
-                        })),
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="水平位置">
-                  <input
-                    aria-label="成长水平位置"
-                    type="range"
-                    min="0"
-                    max="1"
-                    step=".01"
-                    value={proposal.elements[0].params.x}
-                    onChange={(e) =>
-                      setProposal({
-                        ...proposal,
-                        elements: proposal.elements.map((el) => ({
-                          ...el,
-                          params: {
-                            ...el.params,
-                            x: Number(e.target.value),
-                          },
-                        })),
-                      })
-                    }
-                  />
-                </Field>
-                {(["y", "scale"] as const).map((key) => (
-                  <Field
-                    key={key}
-                    label={key === "y" ? "成长垂直位置" : "成长大小"}
-                  >
-                    <input
-                      aria-label={key === "y" ? "成长垂直位置" : "成长大小"}
-                      type="range"
-                      min={key === "y" ? 0 : 0.1}
-                      max={key === "y" ? 1 : 2}
-                      step=".01"
-                      value={proposal.elements[0].params[key]}
-                      onChange={(e) =>
-                        setProposal({
-                          ...proposal,
-                          elements: proposal.elements.map((el) => ({
-                            ...el,
-                            params: {
-                              ...el.params,
-                              [key]: Number(e.target.value),
-                            },
-                          })),
-                        })
-                      }
-                    />
-                  </Field>
-                ))}
-                <button
-                  className="primary small"
-                  disabled={busy}
-                  onClick={() =>
-                    void action(async () => {
-                      await flush();
-                      const saved = await growth.accept(
-                        proposal,
-                        useEditor.getState().revision,
-                      );
-                      editor.load(saved);
-                      setProposal(null);
-                      await refresh();
-                    })
-                  }
-                >
-                  接受并保存
-                </button>
-                <button
-                  disabled={busy}
-                  onClick={() =>
-                    void action(async () => {
-                      await flush();
-                      editor.load(
-                        await growth.reject(doc.planetId, proposal.eventId),
-                      );
-                      setProposal(null);
-                      await refresh();
-                    })
-                  }
-                >
-                  {proposal.trigger.kind === "archive"
-                    ? "跳过这次成长"
-                    : "拒绝"}
-                </button>
-              </div>
-            </div>
+            <GrowthProposalPanel
+              event={proposal}
+              stored={doc.growthEvents.find(
+                (e) => e.eventId === proposal.eventId,
+              )}
+              busy={busy}
+              onChange={setProposal}
+              onSave={() =>
+                void action(async () => {
+                  await savePreview();
+                  await refresh();
+                  setNotice("预览调整已保存，接受后才加入场景。");
+                })
+              }
+              onAccept={() =>
+                void action(async () => {
+                  await flush();
+                  editor.load(
+                    await growth.accept(
+                      proposal,
+                      useEditor.getState().revision,
+                    ),
+                  );
+                  setProposal(null);
+                  await refresh();
+                  setNotice("成长已保存，可点击元素查看来源作品。");
+                })
+              }
+              onSkip={() =>
+                void action(async () => {
+                  await flush();
+                  editor.load(
+                    await growth.reject(doc.planetId, proposal.eventId),
+                  );
+                  setProposal(null);
+                  await refresh();
+                })
+              }
+            />
           )}
           <div className="growth-history">
             {doc.growthEvents.map((e) => (
               <div key={e.eventId}>
                 <span>
-                  ✦{" "}
-                  {e.elements[0].presetId === "glow-flower"
-                    ? "发光花朵"
-                    : "晶体"}{" "}
-                  ·{" "}
+                  ✦ {GrowthPresets[e.elements[0].presetId].name} ·{" "}
                   {
                     (
                       {

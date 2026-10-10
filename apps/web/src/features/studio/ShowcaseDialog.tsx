@@ -18,12 +18,30 @@ export function ShowcaseDialog({
     [tags, setTags] = useState(""),
     [file, setFile] = useState<File | null>(null),
     [pending, setPending] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [preview, setPreview] = useState(""),
+    [dimensions, setDimensions] = useState("");
   const dialog = useRef<HTMLFormElement>(null);
   useEffect(() => {
+    if (!file) {
+      setPreview("");
+      setDimensions("");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    setDimensions("");
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     dialog.current?.querySelector<HTMLInputElement>("input")?.focus();
-    return () => previous?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previous?.focus();
+    };
   }, []);
   return (
     <div className="modal-backdrop">
@@ -82,68 +100,105 @@ export function ShowcaseDialog({
           }
         }}
       >
-        <p className="eyebrow">MY SHOWCASE · 自选作品</p>
-        <h2>添加展示作品</h2>
-        <p className="muted">
-          挑选你想展示的色彩作品。保存档案后，可以选择为星球生成成长建议。
-        </p>
-        <fieldset disabled={pending}>
-          <label>
-            作品标题
-            <input
-              required
-              maxLength={120}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
-          <label>
-            作品图片
-            <input
-              required
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
-          </label>
+        <div className="showcase-dialog-content">
+          <p className="eyebrow">MY SHOWCASE · 自选作品</p>
+          <h2>添加展示作品</h2>
           <p className="muted">
-            PNG / JPG / WebP，原图最大 20
-            MiB。原图单独保留，不替换星球外观或内部背景。
+            挑选你想展示的色彩作品。保存档案后，可以选择为星球生成成长建议。
           </p>
-          <label>
-            作品说明
-            <textarea
-              maxLength={4000}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-          <label>
-            色彩与情绪关键词
-            <input
-              maxLength={275}
-              placeholder="例如：温暖 自然 蓝色"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-            />
-          </label>
-        </fieldset>
-        <p className="muted">
-          当前保存在此浏览器中，可随星球 ZIP 导出。不会把图片发送给
-          AI；上传本身不代表公开发布授权。
-        </p>
-        {error && <p role="alert">{error}</p>}
-        <div className="showcase-actions">
-          <button type="button" disabled={pending} onClick={onClose}>
-            取消
-          </button>
-          <button
-            className="primary"
-            disabled={pending || !file || !title.trim()}
-          >
-            {pending ? "正在保存…" : "保存作品档案"}
-          </button>
+          <fieldset disabled={pending}>
+            <label>
+              作品标题
+              <input
+                required
+                maxLength={120}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </label>
+            <label>
+              作品图片
+              <input
+                required
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => {
+                  const selected = e.target.files?.[0] ?? null;
+                  setError("");
+                  if (selected && selected.size > 20 * 1024 * 1024) {
+                    setError("图片超过 20 MiB，请选择更小的图片");
+                    setFile(null);
+                    return;
+                  }
+                  setFile(selected);
+                  if (selected && !title.trim())
+                    setTitle(
+                      selected.name.replace(/\.[^.]+$/, "").slice(0, 120),
+                    );
+                }}
+              />
+            </label>
+            {preview && (
+              <figure className="showcase-upload-preview">
+                <img
+                  src={preview}
+                  alt="待上传作品预览"
+                  onLoad={(e) =>
+                    setDimensions(
+                      `${e.currentTarget.naturalWidth} × ${e.currentTarget.naturalHeight}`,
+                    )
+                  }
+                  onError={() =>
+                    setError("图片无法预览，请更换有效的 PNG、JPG 或 WebP 图片")
+                  }
+                />
+                <figcaption>
+                  {file?.name} · {dimensions} ·{" "}
+                  {((file?.size ?? 0) / 1024 / 1024).toFixed(2)} MiB
+                </figcaption>
+              </figure>
+            )}
+            <p className="muted">
+              PNG / JPG / WebP，原图最大 20
+              MiB。原图单独保留，不替换星球外观或内部背景。
+            </p>
+            <label>
+              作品说明
+              <textarea
+                maxLength={4000}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </label>
+            <label>
+              色彩与情绪关键词
+              <input
+                maxLength={275}
+                placeholder="例如：温暖 自然 蓝色"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+              />
+            </label>
+          </fieldset>
+          <p className="muted">
+            当前保存在此浏览器中，可随星球 ZIP 导出。不会把图片发送给
+            AI；上传本身不代表公开发布授权。
+          </p>
         </div>
+        <footer className="showcase-dialog-footer">
+          {error && <p role="alert">{error}</p>}
+          <div className="showcase-actions">
+            <button type="button" disabled={pending} onClick={onClose}>
+              取消
+            </button>
+            <button
+              className="primary"
+              disabled={pending || !file || !title.trim()}
+            >
+              {pending ? "正在保存…" : "保存作品档案"}
+            </button>
+          </div>
+        </footer>
       </form>
     </div>
   );

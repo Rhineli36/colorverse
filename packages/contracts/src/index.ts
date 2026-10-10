@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { GrowthPresetIds } from "./growth-presets";
+export * from "./growth-presets";
 export * from "./course";
 
 export const VERSION = "1.0.0" as const;
@@ -130,7 +132,7 @@ export const LayerSchema = z.strictObject({
       params: EffectParamsSchema,
     }),
     z.strictObject({
-      presetId: z.enum(["glow-flower", "crystal"]),
+      presetId: z.enum(GrowthPresetIds),
       presetVersion: z.literal(VERSION),
       params: GrowthParamsSchema,
     }),
@@ -248,7 +250,7 @@ export const ArchiveSchema = z.strictObject({
 export const GrowthElementSchema = z.strictObject({
   layerId: id,
   sceneKind: z.enum(["exterior", "interior"]),
-  presetId: z.enum(["glow-flower", "crystal"]),
+  presetId: z.enum(GrowthPresetIds),
   presetVersion: z.literal(VERSION),
   params: GrowthParamsSchema,
 });

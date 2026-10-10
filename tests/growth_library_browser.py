@@ -1,0 +1,97 @@
+"""Eight real rendered growth presets, durable preview and upload ergonomics."""
+import os, sys, json, hashlib
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'work/python-deps'))
+from playwright.sync_api import sync_playwright, expect
+expect.set_options(timeout=15000)
+checks, errors = [], []
+URL = os.environ.get('COLORVERSE_TEST_URL', 'http://127.0.0.1:5174')
+def passed(text): checks.append(text); print('PASS:', text, flush=True)
+def current(page):
+    return page.evaluate("""async()=>{const db=await new Promise(ok=>{const r=indexedDB.open('colorverse-v1');r.onsuccess=()=>ok(r.result)});const docs=await new Promise(ok=>{const r=db.transaction('planets').objectStore('planets').getAll();r.onsuccess=()=>ok(r.result)});db.close();return docs.find(d=>d.metadata.name==='日落收藏家');}""")
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True, channel='chrome' if os.name=='nt' else None, args=['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
+    context = browser.new_context(viewport={'width':1440,'height':1000}, reduced_motion='reduce', accept_downloads=True)
+    page = context.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
+    page.on('console', lambda m: errors.append(m.text) if m.type=='error' else None)
+    page.goto(URL); page.wait_for_load_state('networkidle')
+    expect(page.get_by_role('button',name='编辑你的星球',exact=True)).to_be_visible()
+    page.get_by_role('button',name='编辑你的星球',exact=True).click()
+    page.get_by_role('button',name='添加展示作品 ↗',exact=True).click()
+    dialog = page.get_by_role('dialog',name='添加展示作品',exact=True)
+    dialog.get_by_label('作品图片',exact=True).set_input_files(str(ROOT/'tests/fixtures/media/sample-2.webp'))
+    expect(dialog.get_by_label('作品标题',exact=True)).to_have_value('sample-2')
+    expect(dialog.get_by_role('img',name='待上传作品预览',exact=True)).to_be_visible()
+    expect(dialog.locator('figcaption')).to_contain_text('MiB')
+    passed('file selection offers a real image preview, dimensions, size and editable suggested title')
+    dialog.get_by_role('button',name='保存作品档案',exact=True).click(); expect(dialog).to_have_count(0)
+    page.get_by_role('button',name='生成成长建议',exact=True).click()
+    picker = page.get_by_role('group',name='选择成长造型',exact=True)
+    expect(picker.get_by_role('button')).to_have_count(8)
+    passed('eight labeled silhouettes are available with a selected state and keyboard buttons')
+    signatures = set()
+    names = ['微光花','晶体','发光叶片','月光蘑菇','彩色云朵','漂浮岛','星光种子','轨道石']
+    canvas = page.locator('canvas')
+    for name in names:
+        button = page.get_by_role('button',name='选择'+name,exact=True)
+        old = canvas.get_attribute('data-scene-generation')
+        button.click()
+        expect(button).to_have_attribute('aria-pressed','true')
+        page.wait_for_function('(old)=>{const c=document.querySelector("canvas");return c.dataset.sceneReady==="true" && c.dataset.sceneGeneration!==old}',arg=old)
+        signatures.add(hashlib.sha256(canvas.screenshot()).hexdigest())
+    assert len(signatures)==8, len(signatures)
+    passed('all eight choices render distinct real WebGL silhouettes while the saved scene remains unchanged')
+    page.get_by_role('button',name='选择月光蘑菇',exact=True).click()
+    page.get_by_label('成长大小',exact=True).fill('0.65')
+    page.get_by_label('成长颜色',exact=True).fill('#efb589')
+    page.get_by_role('button',name='保存预览调整',exact=True).click()
+    expect(page.get_by_role('button',name='保存预览调整',exact=True)).to_be_disabled()
+    doc=current(page); assert doc['growthEvents'][0]['elements'][0]['presetId']=='moon-mushroom'
+    assert not doc['interior']['layers']
+    passed('saving a customized preview persists its identity and parameters without applying a scene layer')
+    page.reload(); page.wait_for_load_state('networkidle'); page.get_by_role('button',name='编辑你的星球',exact=True).click()
+    page.get_by_role('button',name='继续预览成长',exact=True).click()
+    expect(page.get_by_role('button',name='选择月光蘑菇',exact=True)).to_have_attribute('aria-pressed','true')
+    expect(page.get_by_label('成长大小',exact=True)).to_have_value('0.65')
+    expect(page.get_by_label('成长颜色',exact=True)).to_have_value('#efb589')
+    page.get_by_label('成长大小',exact=True).fill('0.8'); page.get_by_role('button',name='保存',exact=True).click()
+    assert current(page)['growthEvents'][0]['elements'][0]['params']['scale']==.8
+    passed('refresh recovers saved preview adjustments; the main Save button also saves the preview')
+    page.screenshot(path=str(ROOT/'outputs/COLORVERSE-growth-library-preview.png'),full_page=True)
+    page.get_by_role('button',name='接受并保存',exact=True).click()
+    expect(page.locator('.growth-history')).to_contain_text('月光蘑菇')
+    expect(page.locator('.layer-list')).to_contain_text('月光蘑菇')
+    page.get_by_role('button',name='查看成长来源',exact=True).click()
+    expect(page.get_by_role('dialog')).to_contain_text('sample-2'); page.locator('.modal-close').click()
+    with page.expect_download() as info: page.get_by_role('button',name='导出作品 ZIP ↗',exact=True).click()
+    info.value.save_as(str(ROOT/'work/growth-library-browser.zip'))
+    passed('accepted new shapes retain a meaningful layer name, source artwork and portable ZIP')
+    page.set_viewport_size({'width':390,'height':650})
+    page.get_by_role('button',name='添加展示作品 ↗',exact=True).click()
+    dialog=page.get_by_role('dialog',name='添加展示作品',exact=True)
+    footer=dialog.locator('.showcase-dialog-footer').bounding_box()
+    assert footer and footer['y']>=0 and footer['y']+footer['height']<=650
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+    dialog.get_by_label('作品图片',exact=True).set_input_files(str(ROOT/'tests/fixtures/media/sample-2.webp'))
+    footer=dialog.locator('.showcase-dialog-footer').bounding_box()
+    assert footer['y']+footer['height']<=650
+    page.screenshot(path=str(ROOT/'outputs/COLORVERSE-showcase-sticky-actions.png'),full_page=False)
+    dialog.get_by_role('button',name='取消',exact=True).click()
+    passed('upload actions stay inside a 390×650 viewport even after the image preview appears')
+    # Nine real student archives exercise paged loading without injecting DB fixtures.
+    for i in range(8):
+        page.get_by_role('button',name='添加展示作品 ↗',exact=True).click()
+        dialog=page.get_by_role('dialog',name='添加展示作品',exact=True)
+        dialog.get_by_label('作品标题',exact=True).fill(f'分页作品 {i+1}')
+        dialog.get_by_label('作品图片',exact=True).set_input_files(str(ROOT/'tests/fixtures/media/sample-2.webp'))
+        dialog.get_by_role('button',name='保存作品档案',exact=True).click(); expect(dialog).to_have_count(0)
+    expect(page.locator('.showcase-work')).to_have_count(8)
+    page.get_by_role('button',name='下一页作品',exact=True).click()
+    expect(page.locator('.showcase-work')).to_have_count(1)
+    expect(page.locator('.showcase-work')).to_contain_text('sample-2')
+    passed('gallery loads at most eight archive thumbnails per page and preserves older works')
+    context.close(); browser.close()
+assert not errors, errors
+(ROOT/'outputs/COLORVERSE-growth-library-test-report.json').write_text(json.dumps({'checks':checks,'errors':errors},ensure_ascii=False,indent=2),encoding='utf-8')
+print(f'{len(checks)} growth library browser checks passed.')

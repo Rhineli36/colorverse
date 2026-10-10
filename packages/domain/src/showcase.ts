@@ -1,4 +1,9 @@
-import type { ArchiveEntry, GrowthEvent } from "@colorverse/contracts";
+import {
+  GrowthPresetIds,
+  GrowthPresets,
+  type ArchiveEntry,
+  type GrowthEvent,
+} from "@colorverse/contracts";
 
 /** Versioned, bounded rules; no model call or grading. */
 export function showcaseChoice(archive: ArchiveEntry, previous: GrowthEvent[]) {
@@ -6,17 +11,23 @@ export function showcaseChoice(archive: ArchiveEntry, previous: GrowthEvent[]) {
   for (const c of archive.id + archive.colorTags.join("|"))
     seed = Math.imul(seed ^ c.charCodeAt(0), 16777619) >>> 0;
   const words = `${archive.title} ${archive.description} ${archive.colorTags.join(" ")}`;
-  const last = previous.filter((e) => e.status === "accepted").at(-1)
-    ?.elements[0].presetId;
-  const crystalWeight = /冷|蓝|冰|晶|几何|blue|ice/i.test(words) ? 4 : 1;
-  const flowerWeight = /暖|花|春|自然|温柔|flower|warm/i.test(words) ? 4 : 1;
-  const a = crystalWeight + (last === "glow-flower" ? 1 : 0);
-  const b = flowerWeight + (last === "crystal" ? 1 : 0);
-  return {
-    seed,
-    presetId:
-      seed % (a + b) < a ? ("crystal" as const) : ("glow-flower" as const),
-  };
+  const lower = words.toLowerCase();
+  const weights = GrowthPresetIds.map((id) => {
+    const relevance = GrowthPresets[id].keywords.some((word) =>
+      lower.includes(word),
+    );
+    const repeats = previous.filter(
+      (e) =>
+        e.status === "accepted" && e.elements.some((el) => el.presetId === id),
+    ).length;
+    return Math.max(1, (relevance ? 8 : 2) - repeats * 2);
+  });
+  let draw = seed % weights.reduce((a, b) => a + b, 0);
+  const index = weights.findIndex((weight) => {
+    draw -= weight;
+    return draw < 0;
+  });
+  return { seed, presetId: GrowthPresetIds[index] };
 }
 
 /** At most 32×32 sampled RGBA pixels; ignore transparent pixels. */

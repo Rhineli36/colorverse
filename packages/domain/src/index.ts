@@ -4,6 +4,8 @@ import {
   type PlanetDocument,
   type SceneDocument,
   type Layer,
+  GrowthPresets,
+  GROWTH_LIBRARY_CAPABILITY,
 } from "@colorverse/contracts";
 export * from "./universe";
 export * from "./decorations";
@@ -11,6 +13,7 @@ export * from "./image-editing";
 export * from "./scene-reset";
 export * from "./course";
 export * from "./showcase";
+export * from "./growth-geometry";
 export class DomainError extends Error {
   constructor(
     public code: string,
@@ -31,6 +34,7 @@ export function validatePlanet(input: unknown): PlanetDocument {
     "decorations@1",
     "image-crop@1",
     "showcase@1",
+    GROWTH_LIBRARY_CAPABILITY,
   ];
   if (doc.requiredCapabilities.some((c) => !supported.includes(c)))
     throw new DomainError("UNSUPPORTED_VERSION", "作品需要尚不支持的功能");
@@ -76,6 +80,17 @@ export function validatePlanet(input: unknown): PlanetDocument {
     const layerIds = new Set(scene.layers.map((l) => l.id));
     for (const l of scene.layers) {
       add(l.id);
+      if (
+        "presetId" in l.source &&
+        l.source.presetId !== "sphere" &&
+        GrowthPresets[l.source.presetId].capability ===
+          GROWTH_LIBRARY_CAPABILITY &&
+        !doc.requiredCapabilities.includes(GROWTH_LIBRARY_CAPABILITY)
+      )
+        throw new DomainError(
+          "VALIDATION_FAILED",
+          "新成长元素必须声明 growth-library@1 能力",
+        );
       if ("effectId" in l.source && l.source.anchorLayerId) {
         const anchor = scene.layers.find(
           (a) =>
@@ -186,6 +201,14 @@ export function validatePlanet(input: unknown): PlanetDocument {
     )
       throw new DomainError("VALIDATION_FAILED", "成长来源档案不存在");
     for (const el of e.elements) {
+      if (
+        GrowthPresets[el.presetId].capability === GROWTH_LIBRARY_CAPABILITY &&
+        !doc.requiredCapabilities.includes(GROWTH_LIBRARY_CAPABILITY)
+      )
+        throw new DomainError(
+          "VALIDATION_FAILED",
+          "新成长建议必须声明 growth-library@1 能力",
+        );
       const s = el.sceneKind === "interior" ? doc.interior : doc.exterior.scene;
       if (e.status === "accepted" && !s.layers.some((l) => l.id === el.layerId))
         throw new DomainError("VALIDATION_FAILED", "成长图层丢失");

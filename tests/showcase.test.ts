@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { readFile } from "node:fs/promises";
 import { describe, it, expect } from "vitest";
 import { LocalWorkspace } from "../apps/web/src/adapters/local/store";
-import { fixturePlanet, fixtureUniverse } from "@colorverse/fixtures";
+import { fixturePlanet, fixtureUniverse, uid } from "@colorverse/fixtures";
 import { ShowcaseService, GrowthService } from "@colorverse/application";
 import {
   validatePlanet,
@@ -17,6 +17,8 @@ import {
   copyImportedPlanet,
 } from "@colorverse/package-io";
 import type { ArchiveEntry, AssetRecord } from "@colorverse/contracts";
+import { GrowthPresetIds, GrowthPresets } from "@colorverse/contracts";
+import { growthShapes } from "@colorverse/domain";
 async function setup() {
   const p = fixturePlanet(0),
     repo = new LocalWorkspace(crypto.randomUUID()),
@@ -72,6 +74,84 @@ async function setup() {
   };
 }
 describe("showcase archives and optional rule growth", () => {
+  it("keeps eight registered, bounded and visibly distinct silhouettes", () => {
+    expect(GrowthPresetIds).toHaveLength(8);
+    const signatures = new Set();
+    for (const id of GrowthPresetIds) {
+      expect(GrowthPresets[id].name).toBeTruthy();
+      const shapes = growthShapes(id, 42);
+      expect(shapes.length).toBeLessThanOrEqual(16);
+      signatures.add(JSON.stringify(shapes));
+      for (const shape of shapes) {
+        const values =
+          shape.kind === "poly" || shape.kind === "line"
+            ? shape.points
+            : [
+                shape.x,
+                shape.y,
+                ...("radius" in shape ? [shape.radius] : [shape.rx, shape.ry]),
+              ];
+        expect(
+          values.every((v) => Number.isFinite(v) && Math.abs(v) <= 100),
+        ).toBe(true);
+      }
+    }
+    expect(signatures.size).toBe(8);
+  });
+  it("rule selection reaches all registered presets without changing saved old proposals", () => {
+    const choices = new Set();
+    for (let i = 0; i < 256; i++) {
+      const archive: ArchiveEntry = {
+        ...fixturePlanet(0).archiveEntries[0],
+        id: uid(40000 + i),
+        title: "自由表达",
+        description: "",
+        colorTags: [],
+      };
+      choices.add(showcaseChoice(archive, []).presetId);
+    }
+    expect([...choices].sort()).toEqual([...GrowthPresetIds].sort());
+  });
+  it("persists an adjusted new preset preview without applying it; stale or foreign edits are rejected", async () => {
+    const { p, repo, archive, asset, files, service, growth } = await setup();
+    await service.save(p.planetId, 0, archive, asset, files);
+    const event = await service.propose(p.planetId, archive.id);
+    event.elements[0].presetId = "moon-mushroom";
+    event.elements[0].params.scale = 0.65;
+    const saved = await growth.updateProposal(event, 2);
+    expect(saved.interior).toEqual(p.interior);
+    expect(saved.requiredCapabilities).toContain("growth-library@1");
+    expect(
+      (await service.propose(p.planetId, archive.id)).elements[0].presetId,
+    ).toBe("moon-mushroom");
+    await expect(growth.updateProposal(event, 2)).rejects.toMatchObject({
+      code: "REVISION_CONFLICT",
+    });
+    const foreign = structuredClone(event);
+    foreign.elements[0].sceneKind = "exterior";
+    await expect(
+      growth.updateProposal(foreign, saved.revision),
+    ).rejects.toThrow("所属场景");
+    const accepted = await growth.accept(saved.growthEvents[0], saved.revision);
+    await expect(
+      growth.updateProposal(event, accepted.revision),
+    ).rejects.toThrow("已处理");
+    await repo.close();
+  });
+  it("requires the new capability in previews and keeps old presets compatible", async () => {
+    const { p, repo, archive, asset, files, service } = await setup();
+    await service.save(p.planetId, 0, archive, asset, files);
+    await service.propose(p.planetId, archive.id);
+    const doc = await repo.get(p.planetId);
+    doc.growthEvents[0].elements[0].presetId = "luminous-leaf";
+    doc.requiredCapabilities = doc.requiredCapabilities.filter(
+      (c) => c !== "growth-library@1",
+    );
+    expect(() => validatePlanet(doc)).toThrow("growth-library@1");
+    doc.growthEvents[0].elements[0].presetId = "crystal";
+    expect(() => validatePlanet(doc)).not.toThrow();
+    await repo.close();
+  });
   it("samples opaque dominant colors with a transparent fallback", () => {
     expect(
       dominantColor(
@@ -165,6 +245,7 @@ describe("showcase archives and optional rule growth", () => {
     const { p, repo, archive, asset, files, service, growth } = await setup();
     await service.save(p.planetId, 0, archive, asset, files);
     const event = await service.propose(p.planetId, archive.id);
+    event.elements[0].presetId = "star-seed";
     event.elements[0].params.scale = 0.7;
     event.elements[0].params.y = 0.3;
     const accepted = await growth.accept(event, 2);
@@ -182,6 +263,7 @@ describe("showcase archives and optional rule growth", () => {
     const { p, repo, archive, asset, files, service, growth } = await setup();
     await service.save(p.planetId, 0, archive, asset, files);
     const event = await service.propose(p.planetId, archive.id);
+    event.elements[0].presetId = "floating-island";
     const accepted = await growth.accept(event, 2);
     const report = await inspectPackage(
       new Uint8Array(

@@ -1863,7 +1863,119 @@ p {
 }
 .showcase-dialog {
   max-height: 90dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.showcase-dialog-content {
   overflow-y: auto;
+  min-height: 0;
+  padding: 24px 28px;
+}
+.showcase-dialog-footer {
+  flex-shrink: 0;
+  padding: 14px 28px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+}
+.showcase-dialog-footer [role="alert"] {
+  margin-bottom: 10px;
+  color: #ffbbab;
+  font-size: 13px;
+}
+.showcase-upload-preview {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #0a111c;
+}
+.showcase-upload-preview img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  display: block;
+}
+.showcase-upload-preview figcaption {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  margin-top: 8px;
+}
+.proposal-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.proposal-heading h3 {
+  margin: 0;
+}
+.proposal-heading [role="status"] {
+  color: #b8d2c0;
+  font-size: 12px;
+}
+.growth-picker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0;
+}
+.growth-picker button {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 6px;
+  background: #0b1421;
+}
+.growth-picker button[aria-pressed="true"] {
+  border-color: #cbdcaa;
+  background: #cbdcaa12;
+  box-shadow: inset 0 0 0 1px #cbdcaa55;
+}
+.growth-picker svg {
+  display: block;
+  width: 100%;
+  height: 76px;
+}
+.growth-picker span {
+  font-size: 12px;
+}
+.proposal-controls {
+  border: 0;
+  padding: 0;
+  margin: 12px 0;
+  min-width: 0;
+}
+.proposal-card .showcase-actions button {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.proposal-card .showcase-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.showcase-pagination {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .growth-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .showcase-dialog-content {
+    padding: 20px;
+  }
+  .showcase-dialog-footer {
+    padding: 12px 20px;
+  }
 }
 .showcase-dialog fieldset {
   border: 0;

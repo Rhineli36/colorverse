@@ -1,6 +1,7 @@
 import type { PlanetDocument } from "@colorverse/contracts";
 import type { AssetStore } from "@colorverse/application";
 import { AssetImage } from "../../app/AssetImage";
+import { useEffect, useState } from "react";
 export function ShowcaseGallery({
   doc,
   assets,
@@ -17,6 +18,16 @@ export function ShowcaseGallery({
   onGrow: (id: string) => void;
 }) {
   const works = doc.archiveEntries.filter((a) => a.sourceType === "student");
+  const [page, setPage] = useState(1);
+  const latestId = works.at(-1)?.id;
+  useEffect(() => {
+    setPage(1);
+  }, [doc.planetId, latestId]);
+  const pageCount = Math.max(1, Math.ceil(works.length / 8));
+  const activePage = Math.min(page, pageCount);
+  const visible = [...works]
+    .reverse()
+    .slice((activePage - 1) * 8, activePage * 8);
   return (
     <section className="showcase-gallery" aria-label="我的展示作品">
       <div className="showcase-heading">
@@ -34,7 +45,7 @@ export function ShowcaseGallery({
         </p>
       )}
       <div className="showcase-grid">
-        {[...works].reverse().map((work) => {
+        {visible.map((work) => {
           const event = doc.growthEvents.find(
             (e) =>
               e.trigger.kind === "archive" &&
@@ -74,6 +85,25 @@ export function ShowcaseGallery({
           );
         })}
       </div>
+      {pageCount > 1 && (
+        <nav className="showcase-pagination" aria-label="展示作品分页">
+          <button
+            disabled={activePage === 1 || busy}
+            onClick={() => setPage(activePage - 1)}
+          >
+            上一页作品
+          </button>
+          <span>
+            {activePage} / {pageCount}
+          </span>
+          <button
+            disabled={activePage === pageCount || busy}
+            onClick={() => setPage(activePage + 1)}
+          >
+            下一页作品
+          </button>
+        </nav>
+      )}
     </section>
   );
 }

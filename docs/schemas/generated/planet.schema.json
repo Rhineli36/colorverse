@@ -584,7 +584,13 @@
                             "type": "string",
                             "enum": [
                               "glow-flower",
-                              "crystal"
+                              "crystal",
+                              "luminous-leaf",
+                              "moon-mushroom",
+                              "cloudlet",
+                              "floating-island",
+                              "star-seed",
+                              "orbit-stone"
                             ]
                           },
                           "presetVersion": {
@@ -1429,7 +1435,13 @@
                         "type": "string",
                         "enum": [
                           "glow-flower",
-                          "crystal"
+                          "crystal",
+                          "luminous-leaf",
+                          "moon-mushroom",
+                          "cloudlet",
+                          "floating-island",
+                          "star-seed",
+                          "orbit-stone"
                         ]
                       },
                       "presetVersion": {
@@ -2161,7 +2173,13 @@
                   "type": "string",
                   "enum": [
                     "glow-flower",
-                    "crystal"
+                    "crystal",
+                    "luminous-leaf",
+                    "moon-mushroom",
+                    "cloudlet",
+                    "floating-island",
+                    "star-seed",
+                    "orbit-stone"
                   ]
                 },
                 "presetVersion": {

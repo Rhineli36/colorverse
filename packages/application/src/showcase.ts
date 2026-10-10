@@ -7,6 +7,7 @@ import {
   type AssetRecord,
   type PlanetDocument,
   type GrowthEvent,
+  GrowthPresets,
 } from "@colorverse/contracts";
 import { DomainError, validatePlanet } from "@colorverse/domain";
 import { showcaseChoice } from "@colorverse/domain";
@@ -85,6 +86,9 @@ export class ShowcaseService {
     );
     if (!archive) throw new DomainError("NOT_FOUND", "展示作品不存在");
     const choice = showcaseChoice(archive, doc.growthEvents);
+    const capability = GrowthPresets[choice.presetId].capability;
+    if (!doc.requiredCapabilities.includes(capability))
+      doc.requiredCapabilities.push(capability);
     const extractedColor =
       archive.colorTags.find((tag) => color.safeParse(tag).success) ??
       doc.metadata.palette.primary;
@@ -99,7 +103,7 @@ export class ShowcaseService {
       },
       baseRevision: doc.revision,
       status: "proposed",
-      summary: `根据《${archive.title}》的色彩与关键词，推荐${choice.presetId === "crystal" ? "一枚晶体" : "一朵微光花"}。调整后接受，或跳过；作品档案会保留。`,
+      summary: `根据《${archive.title}》的配色与关键词，推荐「${GrowthPresets[choice.presetId].name}」。你也可以选择其他造型；保存预览或接受成长都不会改变原图。`,
       elements: [
         {
           layerId: this.uuid(),
@@ -126,9 +130,9 @@ export class ShowcaseService {
       revertedRevision: null,
       provider: {
         kind: "rules",
-        adapter: "showcase-rules-v1",
+        adapter: "showcase-rules-v2",
         model: "none",
-        promptVersion: "rules-v1",
+        promptVersion: "rules-v2",
       },
       policyVersion: "growth-policy-v1",
     };

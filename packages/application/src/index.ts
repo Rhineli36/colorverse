@@ -7,6 +7,7 @@ import {
   defaultAdjustments,
   VERSION,
   GrowthSchema,
+  GrowthPresets,
 } from "@colorverse/contracts";
 import { clone, validatePlanet, DomainError } from "@colorverse/domain";
 export * from "./universe-layout";
@@ -115,6 +116,40 @@ export class GrowthService {
     const saved = await this.repository.save(doc, doc.revision);
     return saved.growthEvents.find((e) => e.eventId === event.eventId)!;
   }
+  async updateProposal(event: GrowthEvent, revision: number) {
+    const proposed = GrowthSchema.parse(event);
+    const doc = await this.repository.get(event.planetId);
+    const stored = doc.growthEvents.find((e) => e.eventId === event.eventId);
+    if (!stored || stored.status !== "proposed")
+      throw new DomainError("VALIDATION_FAILED", "此建议已处理，不能修改预览");
+    if (doc.revision !== revision)
+      throw new DomainError("REVISION_CONFLICT", "星球已变化，请重新打开建议");
+    this.checkElements(proposed, stored);
+    if (JSON.stringify(stored.elements) === JSON.stringify(proposed.elements))
+      return doc;
+    stored.elements = clone(proposed.elements);
+    for (const el of stored.elements) {
+      const capability = GrowthPresets[el.presetId].capability;
+      if (!doc.requiredCapabilities.includes(capability))
+        doc.requiredCapabilities.push(capability);
+    }
+    return this.repository.save(doc, revision);
+  }
+  private checkElements(proposed: GrowthEvent, stored: GrowthEvent) {
+    if (
+      proposed.status !== "proposed" ||
+      proposed.elements.length !== stored.elements.length ||
+      proposed.elements.some(
+        (el, i) =>
+          el.layerId !== stored.elements[i]?.layerId ||
+          el.sceneKind !== stored.elements[i]?.sceneKind,
+      )
+    )
+      throw new DomainError(
+        "VALIDATION_FAILED",
+        "不能改变建议的图层身份或所属场景",
+      );
+  }
   async accept(event: GrowthEvent, revision: number) {
     const proposed = GrowthSchema.parse(event),
       doc = await this.repository.get(event.planetId),
@@ -127,13 +162,7 @@ export class GrowthService {
         "REVISION_CONFLICT",
         "星球已变化，请刷新建议后再确认",
       );
-    if (
-      proposed.elements.some(
-        (el, i) => el.layerId !== stored.elements[i]?.layerId,
-      ) ||
-      proposed.elements.length !== stored.elements.length
-    )
-      throw new DomainError("VALIDATION_FAILED", "不能改变建议的图层身份");
+    this.checkElements(proposed, stored);
     if (
       doc.growthEvents.filter(
         (e) => e.status === "accepted" || e.status === "reverted",
@@ -144,6 +173,9 @@ export class GrowthService {
         "本星球已达到本阶段的成长次数上限",
       );
     for (const el of proposed.elements) {
+      const capability = GrowthPresets[el.presetId].capability;
+      if (!doc.requiredCapabilities.includes(capability))
+        doc.requiredCapabilities.push(capability);
       const scene =
         el.sceneKind === "interior" ? doc.interior : doc.exterior.scene;
       scene.layers.push({

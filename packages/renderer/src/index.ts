@@ -1,4 +1,5 @@
 import { renderEffect } from "./effects";
+import { drawGrowth } from "./growth";
 import { UniverseAtmosphere } from "./atmosphere";
 import {
   Application,
@@ -1056,26 +1057,7 @@ export class SceneRenderer {
         }
       } else {
         const p = source.params,
-          g = new Graphics();
-        if (source.presetId === "glow-flower") {
-          g.moveTo(0, 0).lineTo(0, 90).stroke({ color: p.color, width: 3 });
-          for (let k = 0; k < 7; k++) {
-            const r = (k * Math.PI * 2) / 7;
-            g.ellipse(Math.cos(r) * 22, Math.sin(r) * 22, 15, 23).fill({
-              color: p.color,
-              alpha: 0.85,
-            });
-          }
-          g.circle(0, 0, 12).fill("#FFF5C9");
-        } else {
-          g.poly([0, -65, 40, -10, 28, 50, -25, 55, -45, -5])
-            .fill({ color: p.color, alpha: 0.8 })
-            .stroke({ color: "#FFFFFF", alpha: 0.5, width: 2 });
-          g.moveTo(0, -65)
-            .lineTo(5, 25)
-            .lineTo(28, 50)
-            .stroke({ color: "#FFFFFF", alpha: 0.4, width: 1 });
-        }
+          g = drawGrowth(source.presetId, p.color, p.seed);
         node.addChild(g);
         const glow = new Graphics()
           .circle(0, 0, 70)

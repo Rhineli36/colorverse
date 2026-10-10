@@ -1,7 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { GrowthSchema } from "@colorverse/contracts";
+import { GrowthSchema, GrowthPresetIds } from "@colorverse/contracts";
 import example from "../docs/examples/growth-event.accepted.json";
+import draftSchema from "../docs/schemas/growth-event.schema.json";
+import generatedSchema from "../docs/schemas/generated/growth.schema.json";
 describe("growth contract", () => {
+  it("keeps documented and generated preset catalogs aligned with the runtime registry", () => {
+    expect(draftSchema.$defs.element.properties.presetId.enum).toEqual([
+      ...GrowthPresetIds,
+    ]);
+    expect(
+      generatedSchema.properties.elements.items.properties.presetId.enum,
+    ).toEqual([...GrowthPresetIds]);
+  });
   it("reads the architecture example", () =>
     expect(GrowthSchema.parse(example).elements[0].presetId).toBe(
       "glow-flower",
