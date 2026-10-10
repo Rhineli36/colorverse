@@ -33,6 +33,7 @@
 | [21-github-deployment-and-handoff.md](21-github-deployment-and-handoff.md) | GitHub Pages部署、数据迁移边界和明天接续记录 |
 | [22-course-submission-first-slice.md](22-course-submission-first-slice.md) | 作业草稿/不可变提交、教师评阅、本机API、权限与上线边界 |
 | [23-showcase-upload-and-growth-direction.md](23-showcase-upload-and-growth-direction.md) | 自选展示作品的用途调整、预制/模型方案比较与成长交互建议 |
+| [24-showcase-growth-first-slice.md](24-showcase-growth-first-slice.md) | 自选作品上传、规则成长、事务与ZIP来源验证、约30种/API后续计划 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 

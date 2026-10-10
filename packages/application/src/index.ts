@@ -11,6 +11,7 @@ import {
 import { clone, validatePlanet, DomainError } from "@colorverse/domain";
 export * from "./universe-layout";
 export * from "./course";
+export * from "./showcase";
 export interface PlanetRepository {
   get(id: string): Promise<PlanetDocument>;
   list(): Promise<PlanetDocument[]>;

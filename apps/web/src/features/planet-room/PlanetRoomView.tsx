@@ -52,6 +52,26 @@ export function PlanetRoomView({
         )}
       </div>
       <div className="archive-buttons">
+        {doc.archiveEntries
+          .filter((a) => a.sourceType === "student")
+          .map((a) => (
+            <button
+              className="outline small"
+              key={a.id}
+              onClick={() =>
+                setModal({
+                  id: a.id,
+                  sceneId: doc.interior.id,
+                  anchorLayerId: null,
+                  geometry: { type: "circle", x: 0, y: 0, radius: 1 },
+                  accessibleLabel: a.title,
+                  action: { type: "openArchive", archiveEntryId: a.id },
+                })
+              }
+            >
+              {a.title} ↗
+            </button>
+          ))}
         {doc.interior.hotspots.map((h) => (
           <button
             className="outline small"

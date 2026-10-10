@@ -1,5 +1,6 @@
 import { imageInfo, sha256 } from "@colorverse/package-io";
 import type { AssetRecord } from "@colorverse/contracts";
+import { dominantColor } from "@colorverse/domain";
 export async function prepareImage(file: File, creator: string) {
   if (file.size > 20 * 1024 * 1024) throw new Error("每张原图不能超过 20 MiB");
   const bytes = new Uint8Array(await file.arrayBuffer()),
@@ -29,7 +30,16 @@ export async function prepareImage(file: File, creator: string) {
         consentToPublish: false,
       },
     };
+  let sampledColor = "#b9cda0";
   try {
+    const sample = document.createElement("canvas");
+    sample.width = sample.height = 32;
+    const context = sample.getContext("2d")!;
+    context.drawImage(bitmap, 0, 0, 32, 32);
+    sampledColor = dominantColor(
+      context.getImageData(0, 0, 32, 32).data,
+      sampledColor,
+    );
     for (const [kind, max] of [
       ["thumbnail", 256],
       ["display", 2048],
@@ -64,7 +74,7 @@ export async function prepareImage(file: File, creator: string) {
   } finally {
     bitmap.close();
   }
-  return { record, files };
+  return { record, files, sampledColor };
 }
 export function inspectInWorker(file: File) {
   return new Promise<import("@colorverse/package-io").PackageReport>(

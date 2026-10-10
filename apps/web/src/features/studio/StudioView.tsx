@@ -9,6 +9,7 @@ import {
 import { EffectControls } from "./EffectControls";
 import { ImageControls } from "./ImageControls";
 import { StudioImageCanvas } from "./StudioImageCanvas";
+import { ShowcaseGallery } from "./ShowcaseGallery";
 import { useEffect, useRef, useState } from "react";
 import { PanelTabs } from "./PanelTabs";
 import type {
@@ -58,6 +59,9 @@ interface Props {
   ) => Promise<void>;
   exportCurrent: () => Promise<void>;
   onOpenCourse: () => Promise<void>;
+  onOpenShowcase: () => void;
+  showArchive: (id: string) => void;
+  onGrowArchive: (id: string) => void;
   addEffect: (id: (typeof EffectIds)[number]) => void;
 }
 
@@ -87,6 +91,9 @@ export function StudioView({
   upload,
   exportCurrent,
   onOpenCourse,
+  onOpenShowcase,
+  showArchive,
+  onGrowArchive,
   addEffect,
 }: Props) {
   const [locked, setLocked] = useState(true),
@@ -234,6 +241,13 @@ export function StudioView({
             onClick={() => void onOpenCourse()}
           >
             提交课程作业 ↗
+          </button>
+          <button
+            className="primary small"
+            disabled={busy}
+            onClick={onOpenShowcase}
+          >
+            添加展示作品 ↗
           </button>
           <button
             className="primary small"
@@ -579,9 +593,11 @@ export function StudioView({
           </div>
           <section className="growth-panel">
             <div>
-              <p className="eyebrow">PLANET GROWTH · 模拟演示</p>
+              <p className="eyebrow">PLANET GROWTH · 预制元素</p>
               <h3>让每一次练习，成为新的生长。</h3>
-              <p className="muted">使用固定模拟参数，无需 AI API。</p>
+              <p className="muted">
+                展示作品的色彩与关键词生成建议，接受后成为独立图层。下方保留模拟演示。
+              </p>
             </div>
             <button
               className="outline small"
@@ -591,6 +607,14 @@ export function StudioView({
               ✦ 模拟提交作业
             </button>
           </section>
+          <ShowcaseGallery
+            doc={doc}
+            assets={workspace}
+            busy={busy}
+            onAdd={onOpenShowcase}
+            onView={showArchive}
+            onGrow={onGrowArchive}
+          />
           {proposal?.status === "proposed" && (
             <div className="proposal-card">
               <p>{proposal.summary}</p>
@@ -632,8 +656,36 @@ export function StudioView({
                     }
                   />
                 </Field>
+                {(["y", "scale"] as const).map((key) => (
+                  <Field
+                    key={key}
+                    label={key === "y" ? "成长垂直位置" : "成长大小"}
+                  >
+                    <input
+                      aria-label={key === "y" ? "成长垂直位置" : "成长大小"}
+                      type="range"
+                      min={key === "y" ? 0 : 0.1}
+                      max={key === "y" ? 1 : 2}
+                      step=".01"
+                      value={proposal.elements[0].params[key]}
+                      onChange={(e) =>
+                        setProposal({
+                          ...proposal,
+                          elements: proposal.elements.map((el) => ({
+                            ...el,
+                            params: {
+                              ...el.params,
+                              [key]: Number(e.target.value),
+                            },
+                          })),
+                        })
+                      }
+                    />
+                  </Field>
+                ))}
                 <button
                   className="primary small"
+                  disabled={busy}
                   onClick={() =>
                     void action(async () => {
                       await flush();
@@ -650,8 +702,10 @@ export function StudioView({
                   接受并保存
                 </button>
                 <button
+                  disabled={busy}
                   onClick={() =>
                     void action(async () => {
+                      await flush();
                       editor.load(
                         await growth.reject(doc.planetId, proposal.eventId),
                       );
@@ -660,7 +714,9 @@ export function StudioView({
                     })
                   }
                 >
-                  拒绝
+                  {proposal.trigger.kind === "archive"
+                    ? "跳过这次成长"
+                    : "拒绝"}
                 </button>
               </div>
             </div>
@@ -685,6 +741,14 @@ export function StudioView({
                     )[e.status]
                   }
                 </span>
+                {(e.trigger.kind === "archive" ||
+                  e.trigger.kind === "mock") && (
+                  <button
+                    onClick={() => showGrowthSource(e.elements[0].layerId)}
+                  >
+                    查看成长来源
+                  </button>
+                )}
                 {e.status === "accepted" && (
                   <button
                     onClick={() =>
@@ -705,7 +769,14 @@ export function StudioView({
                   </button>
                 )}
                 {e.status === "proposed" && (
-                  <button onClick={() => setProposal(e)}>继续预览</button>
+                  <button
+                    onClick={() => {
+                      setSceneKind("interior");
+                      setProposal(e);
+                    }}
+                  >
+                    继续预览
+                  </button>
                 )}
               </div>
             ))}

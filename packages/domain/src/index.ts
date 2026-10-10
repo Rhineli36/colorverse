@@ -10,6 +10,7 @@ export * from "./decorations";
 export * from "./image-editing";
 export * from "./scene-reset";
 export * from "./course";
+export * from "./showcase";
 export class DomainError extends Error {
   constructor(
     public code: string,
@@ -29,9 +30,21 @@ export function validatePlanet(input: unknown): PlanetDocument {
     "preset-layer@1",
     "decorations@1",
     "image-crop@1",
+    "showcase@1",
   ];
   if (doc.requiredCapabilities.some((c) => !supported.includes(c)))
     throw new DomainError("UNSUPPORTED_VERSION", "作品需要尚不支持的功能");
+  if (
+    (doc.archiveEntries.some((a) => a.sourceType === "student") ||
+      doc.growthEvents.some(
+        (e) => e.trigger.kind === "archive" || e.provider.kind === "rules",
+      )) &&
+    !doc.requiredCapabilities.includes("showcase@1")
+  )
+    throw new DomainError(
+      "VALIDATION_FAILED",
+      "展示作品必须声明 showcase@1 能力",
+    );
   const ids = new Set<string>();
   const add = (id: string) => {
     if (ids.has(id))
@@ -149,6 +162,7 @@ export function validatePlanet(input: unknown): PlanetDocument {
       "原创星球必须保留一个主体图片图层",
     );
   const triggerKeys = new Set<string>();
+  const showcaseSources = new Set<string>();
   for (const e of doc.growthEvents) {
     add(e.eventId);
     if (
@@ -157,7 +171,19 @@ export function validatePlanet(input: unknown): PlanetDocument {
     )
       throw new DomainError("VALIDATION_FAILED", "成长记录归属或触发键重复");
     triggerKeys.add(e.trigger.idempotencyKey);
-    if (e.trigger.kind === "mock" && !archives.has(e.trigger.archiveEntryId))
+    if (e.trigger.kind === "archive") {
+      const archiveId = e.trigger.archiveEntryId;
+      const source = doc.archiveEntries.find((a) => a.id === archiveId);
+      if (source?.sourceType !== "student" || showcaseSources.has(source.id))
+        throw new DomainError("VALIDATION_FAILED", "展示成长来源不正确或重复");
+      showcaseSources.add(source.id);
+    }
+    if (e.provider.kind === "rules" && e.trigger.kind !== "archive")
+      throw new DomainError("VALIDATION_FAILED", "规则成长需要展示作品来源");
+    if (
+      (e.trigger.kind === "mock" || e.trigger.kind === "archive") &&
+      !archives.has(e.trigger.archiveEntryId)
+    )
       throw new DomainError("VALIDATION_FAILED", "成长来源档案不存在");
     for (const el of e.elements) {
       const s = el.sceneKind === "interior" ? doc.interior : doc.exterior.scene;

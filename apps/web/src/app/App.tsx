@@ -2,6 +2,10 @@ import { download } from "./download";
 import { CourseView } from "../features/course/CourseView";
 import { TeacherView } from "../features/teacher-demo/TeacherView";
 import { StudioView } from "../features/studio/StudioView";
+import {
+  ShowcaseDialog,
+  type ShowcaseInput,
+} from "../features/studio/ShowcaseDialog";
 import { PlanetRoomView } from "../features/planet-room/PlanetRoomView";
 import { UniverseView } from "../features/universe/UniverseView";
 import type { UniverseViewMode } from "../features/universe/UniverseView";
@@ -30,6 +34,7 @@ import {
 } from "@colorverse/domain";
 import {
   GrowthService,
+  ShowcaseService,
   growthOverlay,
   UniverseLayoutService,
   type PlanetMove,
@@ -47,6 +52,7 @@ import { AssetImage } from "./AssetImage";
 import { useEditor } from "../features/studio/editor-store";
 const workspace = new LocalWorkspace(),
   growth = new GrowthService(workspace),
+  showcase = new ShowcaseService(workspace, sha256),
   layoutService = new UniverseLayoutService(workspace);
 export function App() {
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
@@ -63,6 +69,7 @@ export function App() {
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [coursePending, setCoursePending] = useState(false),
+    [showcaseOpen, setShowcaseOpen] = useState(false),
     [saving, setSaving] = useState(false),
     [modal, setModal] = useState<Hotspot | null>(null),
     [proposal, setProposal] = useState<GrowthEvent | null>(null),
@@ -95,13 +102,13 @@ export function App() {
   }, [refresh]);
   useEffect(() => {
     const listener = (e: BeforeUnloadEvent) => {
-      if (useEditor.getState().dirty || coursePending) {
+      if (useEditor.getState().dirty || coursePending || busy) {
         e.preventDefault();
       }
     };
     window.addEventListener("beforeunload", listener);
     return () => window.removeEventListener("beforeunload", listener);
-  }, [coursePending]);
+  }, [coursePending, busy]);
   const flush = useCallback(async () => {
     while (saveLock.current) await saveLock.current;
     if (!useEditor.getState().dirty) return;
@@ -400,7 +407,7 @@ export function App() {
     const event = doc.growthEvents.find((e) =>
       e.elements.some((el) => el.layerId === id),
     );
-    if (event?.trigger.kind === "mock")
+    if (event?.trigger.kind === "mock" || event?.trigger.kind === "archive")
       setModal({
         id: crypto.randomUUID(),
         sceneId: doc.interior.id,
@@ -412,6 +419,53 @@ export function App() {
           archiveEntryId: event.trigger.archiveEntryId,
         },
       });
+  };
+  const showArchive = (archiveEntryId: string) => {
+    if (!doc) return;
+    setModal({
+      id: crypto.randomUUID(),
+      sceneId: doc.interior.id,
+      anchorLayerId: null,
+      geometry: { type: "circle", x: 0, y: 0, radius: 1 },
+      accessibleLabel: "展示作品",
+      action: { type: "openArchive", archiveEntryId },
+    });
+  };
+  const saveShowcase = async (input: ShowcaseInput) => {
+    if (!doc || busy) throw new Error("请等待当前操作完成");
+    setBusy(true);
+    try {
+      await flush();
+      const current = useEditor.getState().document!;
+      const prepared = await prepareImage(
+        input.file,
+        current.metadata.authorDisplayName,
+      );
+      const saved = await showcase.save(
+        current.planetId,
+        current.revision,
+        {
+          id: crypto.randomUUID(),
+          sourceType: "student",
+          title: input.title,
+          createdOn: new Date().toLocaleDateString("sv-SE"),
+          courseModule: "自选展示",
+          description: input.description,
+          colorTags: [...input.tags, prepared.sampledColor],
+          imageAssetIds: [prepared.record.assetId],
+        },
+        prepared.record,
+        prepared.files,
+      );
+      editor.load(saved);
+      setNotice("作品档案已保存，可以选择生成成长建议。");
+      // A refresh error after commit must not invite saving a second archive.
+      await refresh().catch(() =>
+        setNotice("作品档案已保存；列表刷新失败，请重新打开页面查看。"),
+      );
+    } finally {
+      setBusy(false);
+    }
   };
   const visible = universe
     ? planets.filter((p) =>
@@ -665,6 +719,18 @@ export function App() {
           layerPatch={layerPatch}
           upload={upload}
           exportCurrent={exportCurrent}
+          onOpenShowcase={() => setShowcaseOpen(true)}
+          showArchive={showArchive}
+          onGrowArchive={(id) =>
+            void action(async () => {
+              await flush();
+              const event = await showcase.propose(doc.planetId, id);
+              editor.load(await workspace.get(doc.planetId));
+              setSceneKind("interior");
+              setProposal(event);
+              await refresh();
+            })
+          }
           onOpenCourse={() =>
             action(async () => {
               await flush();
@@ -684,6 +750,12 @@ export function App() {
           refresh={refresh}
           open={open}
           action={action}
+        />
+      )}
+      {showcaseOpen && route === "studio" && (
+        <ShowcaseDialog
+          onSave={saveShowcase}
+          onClose={() => setShowcaseOpen(false)}
         />
       )}
       {report && (
@@ -749,6 +821,7 @@ export function App() {
                   )}
                   assets={workspace}
                   alt={archive.title}
+                  variant="display"
                 />
                 <p>{archive.description}</p>
                 <div className="tags">

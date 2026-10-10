@@ -237,7 +237,7 @@ export const AssetSchema = z.strictObject({
 });
 export const ArchiveSchema = z.strictObject({
   id,
-  sourceType: z.literal("sample"),
+  sourceType: z.enum(["sample", "student"]),
   title: z.string().min(1).max(120),
   createdOn: z.iso.date(),
   courseModule: z.string().max(120),
@@ -257,6 +257,11 @@ export const GrowthSchemaBase = z.strictObject({
   eventId: id,
   planetId: id,
   trigger: z.discriminatedUnion("kind", [
+    z.strictObject({
+      kind: z.literal("archive"),
+      archiveEntryId: id,
+      idempotencyKey: z.string().min(8).max(160),
+    }),
     z.strictObject({
       kind: z.literal("mock"),
       mockSubmissionId: id,
@@ -279,7 +284,7 @@ export const GrowthSchemaBase = z.strictObject({
   revertedAt: z.iso.datetime().nullable(),
   revertedRevision: z.number().int().positive().nullable(),
   provider: z.strictObject({
-    kind: z.enum(["mock", "model"]),
+    kind: z.enum(["mock", "model", "rules"]),
     adapter: z.string().min(1).max(80),
     model: z.string().min(1).max(120),
     promptVersion: z.string().min(1).max(40),
@@ -373,5 +378,6 @@ export type Hotspot = z.infer<typeof HotspotSchema>;
 export type AssetRecord = z.infer<typeof AssetSchema>;
 export type AssetFile = z.infer<typeof AssetFileSchema>;
 export type GrowthEvent = z.infer<typeof GrowthSchema>;
+export type ArchiveEntry = z.infer<typeof ArchiveSchema>;
 export type UniverseDocument = z.infer<typeof UniverseSchema>;
 export type EffectParams = z.infer<typeof EffectParamsSchema>;

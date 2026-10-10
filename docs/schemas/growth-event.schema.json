@@ -30,6 +30,15 @@
             "submissionVersionId": {"$ref": "#/$defs/uuid"},
             "idempotencyKey": {"$ref": "#/$defs/key"}
           }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "archiveEntryId", "idempotencyKey"],
+          "properties": {
+            "kind": {"const": "archive"},
+            "archiveEntryId": {"$ref": "#/$defs/uuid"},
+            "idempotencyKey": {"$ref": "#/$defs/key"}
+          }
         }
       ]
     },
@@ -46,7 +55,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "adapter", "model", "promptVersion"],
       "properties": {
-        "kind": {"enum": ["mock", "model"]},
+        "kind": {"enum": ["mock", "model", "rules"]},
         "adapter": {"type": "string", "minLength": 1, "maxLength": 80},
         "model": {"type": "string", "minLength": 1, "maxLength": 120},
         "promptVersion": {"type": "string", "minLength": 1, "maxLength": 40}

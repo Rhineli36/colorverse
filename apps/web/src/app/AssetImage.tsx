@@ -6,11 +6,13 @@ export function AssetImage({
   assets,
   alt,
   className = "",
+  variant = "thumbnail",
 }: {
   record?: AssetRecord;
   assets: AssetStore;
   alt: string;
   className?: string;
+  variant?: "thumbnail" | "display";
 }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
@@ -18,18 +20,20 @@ export function AssetImage({
       url = "";
     if (record)
       assets
-        .resolve(record, "thumbnail")
+        .resolve(record, variant)
         .then((blob) => {
           url = URL.createObjectURL(blob);
           if (!cancelled) setSrc(url);
           else URL.revokeObjectURL(url);
         })
-        .catch(() => setSrc(""));
+        .catch(() => {
+          if (!cancelled) setSrc("");
+        });
     return () => {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [record, assets]);
+  }, [record, assets, variant]);
   return src ? (
     <img className={className} src={src} alt={alt} />
   ) : (

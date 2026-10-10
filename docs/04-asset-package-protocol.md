@@ -115,3 +115,8 @@ P1 小宇宙沿用 100/200 MiB 限额；超过上限导出“备份集合”：i
 v1 预设目录应覆盖 stardust/fireflies/floating-lights/rain/snow/fog/outer-glow/soft-glow/light-beam/breathe，以及 ring；AI 元素 glow-flower/crystal 使用同一登记方式。不同视觉种类独立能力，不能让 AI 传任意 shader 或素材 URL。旧预设版本至少保留到所有引用作品迁移完成，导出含素材依赖。
 
 迁移流程 raw→识别版本→逐版纯函数迁移→目标校验→引用校验→保存新副本。major 不兼容拒绝自动编辑；minor 也只接受应用声明支持的迁移范围，不能仅凭同 major 放行。保留原始包与迁移报告；降级为只读预览时禁止回写覆盖。每次 schema 升级必须有旧包 fixture、hash 不变检查和回滚用例。
+
+
+## 2026-10-10 showcase@1扩展
+
+自选展示档案sourceType=student、archive触发来源及provider.kind=rules声明showcase@1。原图/变体/档案同事务，规则只提供受限预设建议，接受和补偿继续原语义；导入复制保留准确来源，按档案ID去重。新读者兼容旧数据，旧读者可能拒绝此能力，不能直接回滚读取；详细实现及约30种/API后续边界见[24](24-showcase-growth-first-slice.md)。

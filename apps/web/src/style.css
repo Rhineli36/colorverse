@@ -1814,3 +1814,77 @@ p {
   margin: 18px 0 9px;
   letter-spacing: 0.08em;
 }
+/* Self-selected showcase uploads and optional growth. */
+.showcase-gallery {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #294450;
+  border-radius: 12px;
+  background: #101c27;
+}
+.showcase-heading,
+.showcase-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+.showcase-work {
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #294450;
+  border-radius: 8px;
+}
+.showcase-work img,
+.showcase-work .image-placeholder {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: #080f1a;
+}
+.showcase-work h4 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.showcase-work button {
+  margin: 3px 5px 3px 0;
+  font-size: 12px;
+}
+.showcase-dialog {
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+.showcase-dialog fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.showcase-dialog label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.showcase-dialog input,
+.showcase-dialog textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.showcase-dialog input[type="file"] {
+  padding: 12px;
+}
+.showcase-dialog textarea {
+  min-height: 80px;
+}

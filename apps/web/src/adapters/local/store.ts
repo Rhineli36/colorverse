@@ -80,6 +80,43 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
     if (!u) throw new DomainError("NOT_FOUND", "宇宙尚未初始化");
     return u;
   }
+  async saveWithAssets(
+    doc: PlanetDocument,
+    expected: number,
+    files: Map<string, Blob>,
+  ) {
+    const valid = validatePlanet(doc),
+      db = await this.db;
+    const tx = db.transaction(["planets", "revisions", "assets"], "readwrite");
+    try {
+      const current = await tx.objectStore("planets").get(doc.planetId);
+      if (!current || current.revision !== expected)
+        throw new DomainError(
+          "REVISION_CONFLICT",
+          "另一个窗口已修改星球，请重新打开后保存作品",
+        );
+      for (const [path, blob] of files) {
+        if (await tx.objectStore("assets").get(path))
+          throw new DomainError("VALIDATION_FAILED", "原始素材不能被覆盖");
+        await tx.objectStore("assets").put(blob, path);
+      }
+      const saved = { ...valid, revision: expected + 1 };
+      await tx.objectStore("planets").put(saved, saved.planetId);
+      await tx
+        .objectStore("revisions")
+        .put(saved, `${saved.planetId}:${saved.revision}`);
+      await tx.done;
+      return saved;
+    } catch (error) {
+      try {
+        tx.abort();
+      } catch {
+        /* Already aborted. */
+      }
+      await tx.done.catch(() => {});
+      throw error;
+    }
+  }
   async saveUniverse(u: UniverseDocument) {
     await (
       await this.db

@@ -115,3 +115,8 @@ Schema 只验证形状和状态必填关系；引用存在、唯一图层 ID、�
 ## 2026-10-10 作业接口具体化
 
 首增量沿用SubmissionService/Repository事务边界，见[22](22-course-submission-first-slice.md)。评阅具体路径为POST /api/v1/submissions/:id/versions/:versionId/reviews，明确绑定不可变版本；开发图片通过受限二进制POST /assets校验入库，正式对象存储上传意向/完成校验仍按本文后续接入。课程提交生成版本与档案，不调用模拟成长或AI。
+
+
+## 2026-10-10 showcase@1扩展
+
+自选展示档案sourceType=student、archive触发来源及provider.kind=rules声明showcase@1。原图/变体/档案同事务，规则只提供受限预设建议，接受和补偿继续原语义；导入复制保留准确来源，按档案ID去重。新读者兼容旧数据，旧读者可能拒绝此能力，不能直接回滚读取；详细实现及约30种/API后续边界见[24](24-showcase-growth-first-slice.md)。
