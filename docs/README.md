@@ -32,6 +32,7 @@
 | [20-gentle-focus-and-artwork-resolution.md](20-gentle-focus-and-artwork-resolution.md) | 38%适度聚焦、平缓过渡与选中主体按需展示图 |
 | [21-github-deployment-and-handoff.md](21-github-deployment-and-handoff.md) | GitHub Pages部署、数据迁移边界和明天接续记录 |
 | [22-course-submission-first-slice.md](22-course-submission-first-slice.md) | 作业草稿/不可变提交、教师评阅、本机API、权限与上线边界 |
+| [23-showcase-upload-and-growth-direction.md](23-showcase-upload-and-growth-direction.md) | 自选展示作品的用途调整、预制/模型方案比较与成长交互建议 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 
