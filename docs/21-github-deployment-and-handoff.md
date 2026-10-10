@@ -33,3 +33,16 @@ GitHub Pages仅提供静态应用；每位访问者仍有独立的浏览器草�
 本地目录为当前项目根目录；继续在现有仓库工作，先 `git status`、检查main远端状态，避免覆盖新改动。常规启动 `pnpm dev`，验证 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`；浏览器脚本及依赖见README。每次推送main会检查并部署，部署失败先读Actions日志。
 
 接续提示：**“请先阅读docs/10、14、20、21，检查GitHub部署状态，再沿用既有架构继续COLORVERSE；每个模块测试并记录进度。”**
+
+
+## 2026-10-10 作业系统首增量发布
+
+提交`8611d8b8c6447496c4744fa4d9144a9a52853e4c`已推送main。新增的本机课程闭环见[22](22-course-submission-first-slice.md)，用户确认先验证完整课堂流程，再接正式账号/云部署；本节取代上文“下一模块先做运动控制”的接续建议，14仍保留待办。
+
+[本增量CI](https://github.com/Rhineli36/colorverse/actions/runs/38024227125)成功：core执行lint、82项模块测试及生产构建，course-postgres在独立PostgreSQL18服务通过20项课程契约/事务/HTTP检查。[Pages构建与部署](https://github.com/Rhineli36/colorverse/actions/runs/38024227108)成功。线上核心14项浏览器复测通过，无运行时或资源错误；课程入口显示未连接服务，不暴露开发账户、不向不存在的API发送请求。
+
+本机5174已刷新并打开“课程作业”，测试API监听3001。数据库/原始图片仍在work/course-server私有目录；E2E使用独立course-browser-isolated数据根。公开链接仍为[COLORVERSE在线演示](https://rhineli36.github.io/colorverse/)，仅前端发布，不能用于真实师生集中交作业。
+
+接续顺序：先阅读10、22；正式身份/班级成员→私有对象存储与HTTPS后端→联合备份恢复及一个班级灰度→本地作品认领与档案场景连接。不要公开部署固定测试账户，不要把提交直接公开或触发AI。下一步再补批量管理/跨页面重试恢复，同时保留P0/P1b未验收门槛。
+
+此后的文档/SQL换行约定记录提交使用[skip ci]，程序部署对应上述代码SHA。SQL固定LF，保证Windows/Linux的迁移hash一致；已应用001禁止修改。

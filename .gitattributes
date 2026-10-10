@@ -1,0 +1,2 @@
+# Keep migration hashes stable across Windows and Linux checkouts.
+*.sql text eol=lf

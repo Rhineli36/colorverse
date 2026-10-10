@@ -93,3 +93,5 @@ pnpm dev:api
 4. 保留P0真实素材/设备、P1b性能/LOD，以及14运动选择的未完成门槛。AI仍须可靠提交/隐私边界完成后单独推进。
 
 实现参考：[node-postgres事务](https://node-postgres.com/features/transactions)、[PostgreSQL显式锁](https://www.postgresql.org/docs/current/explicit-locking.html)、[PGlite开发文档](https://pglite.dev/docs/)。核对2026-10-10。
+
+发布补记：独立PostgreSQL18 CI及Pages部署均成功，线上14项核心回归通过；运行链接与当前接续顺序见[21](21-github-deployment-and-handoff.md)。
