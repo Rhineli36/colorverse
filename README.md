@@ -115,3 +115,5 @@ apps/web 的 features 分为 universe、studio、planet-room、teacher-demo 和 
 [Cloudflare 课堂测试版](https://colorverse-dev.2999346.workers.dev/)已接通真实教师/学生身份、班级统计、私有展示作品上传/原图下载、班级互动和 30 种成长造型。教师进入“班级管理”，学生进入“课堂作品”。原本完整创作工坊和宇宙布局仍保存在本机，尚未自动同步云端课堂。实际验证及限制见[38](docs/38-cloud-teacher-dashboard-and-student-pilot.md)。GitHub Pages保持本地演示。
 
 学生确认进入、首次随机创建和云端星球外貌/背景设置见 [39](docs/39-student-entry-and-cloud-planet-appearance.md)。已有星球再次进入会选中本人星球。
+
+学生进入后的十项功能任务、自动进度、五类设置和实际云端验收见 [40](docs/40-student-guided-tasks.md)。刷新课堂测试版、确认进入自己的星球即可看到；没有其他学生星球时，拜访和互动任务等待同学加入。

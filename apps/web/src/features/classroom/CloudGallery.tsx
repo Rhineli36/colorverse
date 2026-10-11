@@ -4,6 +4,8 @@ import {
   GrowthPresetIds,
   GrowthPresets,
   CloudPlanetDocumentSchema,
+  CloudGuideSchema,
+  type CloudGuideStepId,
   type CloudSession,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./CloudClassroomView";
@@ -15,7 +17,9 @@ import {
   CloudPlanetAppearance,
   CloudPlanetOrb,
   usePlanetImage,
+  type AppearanceSection,
 } from "./CloudPlanetAppearance";
+import { CloudStudentGuide, CloudAtmosphere } from "./CloudStudentGuide";
 const Params = z.object({
   x: z.number().default(0.5),
   y: z.number().default(0.6),
@@ -102,6 +106,11 @@ export function CloudGallery({
     [title, setTitle] = useState(""),
     [description, setDescription] = useState(""),
     [settingsOpen, setSettingsOpen] = useState(false),
+    [settingsSection, setSettingsSection] =
+      useState<AppearanceSection>("exterior"),
+    [guide, setGuide] = useState<z.infer<typeof CloudGuideSchema> | null>(null),
+    [guideError, setGuideError] = useState(false),
+    [guideRevision, setGuideRevision] = useState(0),
     [planetBirth, setPlanetBirth] = useState(""),
     [file, setFile] = useState<File | null>(null),
     [comment, setComment] = useState(""),
@@ -116,7 +125,9 @@ export function CloudGallery({
     >([]);
   const generation = useRef(0),
     requestId = useRef(crypto.randomUUID()),
-    stage = useRef<HTMLDivElement>(null);
+    stage = useRef<HTMLDivElement>(null),
+    settings = useRef<HTMLDivElement>(null),
+    social = useRef<HTMLElement>(null);
   const refresh = async (select?: string) => {
     const result = Gallery.parse(
       await (await classroomRequest(`classes/${classId}/planets`)).json(),
@@ -141,6 +152,8 @@ export function CloudGallery({
     let active = true;
     const current = ++generation.current;
     setData(null);
+    setGuide(null);
+    setGuideError(false);
     setWork(null);
     setSettingsOpen(false);
     setPlanetBirth("");
@@ -183,6 +196,42 @@ export function CloudGallery({
     ),
     student =
       memberships.find((m) => m.classId === classId)?.role === "student";
+  useEffect(() => {
+    let active = true;
+    if (!student || !myPlanet) return;
+    void classroomRequest(`classes/${classId}/guide`)
+      .then((r) => r.json())
+      .then((value) => {
+        if (active) {
+          setGuide(CloudGuideSchema.parse(value));
+          setGuideError(false);
+        }
+      })
+      .catch(() => {
+        if (active) setGuideError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [classId, student, data, guideRevision]);
+  useEffect(() => {
+    let active = true;
+    if (!student || !myPlanet || !selected || owned) return;
+    void classroomRequest(`classes/${classId}/guide`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planetId: selected.id }),
+    })
+      .then(() => {
+        if (active) setGuideRevision((r) => r + 1);
+      })
+      .catch(() => {
+        if (active) setGuideError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [classId, student, myPlanet?.id, selected?.id, owned]);
   const background = usePlanetImage(
     classId,
     selected?.id ?? "",
@@ -256,6 +305,7 @@ export function CloudGallery({
       );
       setInteractions((await response.json()).interactions);
       setComment("");
+      setGuideRevision((r) => r + 1);
       setNotice("互动已记录，教师端刷新后可以查看。");
     });
   const saveElement = async (next: WorkData) => {
@@ -274,6 +324,70 @@ export function CloudGallery({
     setWork(null);
     setDraft(null);
     setNotice("元素已保存到云端");
+  };
+  const guideAction = (id: CloudGuideStepId) => {
+    if (
+      !myPlanet ||
+      busy ||
+      editing ||
+      birth ||
+      planetBirth ||
+      uploadOpen ||
+      work
+    )
+      return;
+    setWork(null);
+    setDraft(null);
+    setSettingsOpen(false);
+    if (["visit", "reaction", "comment"].includes(id)) {
+      const peer =
+        !owned && selected
+          ? selected
+          : data?.planets.find((p) => p.owner_enrollment_id !== data.actorId);
+      if (!peer) return;
+      setPlanetId(peer.id);
+      requestAnimationFrame(() => {
+        (id === "visit" ? stage.current : social.current)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        if (id === "comment")
+          social.current
+            ?.querySelector("input")
+            ?.focus({ preventScroll: true });
+      });
+      return;
+    }
+    setPlanetId(myPlanet.id);
+    if (id === "work") {
+      requestId.current = crypto.randomUUID();
+      setTitle("");
+      setDescription("");
+      setFile(null);
+      setUploadOpen(true);
+    } else if (id === "element") {
+      const first = myPlanet.works[0];
+      if (first) {
+        setWork(first);
+        setDraft(structuredClone(first));
+        setEditing(true);
+        requestAnimationFrame(() =>
+          stage.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          }),
+        );
+      }
+    } else {
+      setSettingsSection(id as AppearanceSection);
+      setSettingsOpen(true);
+      requestAnimationFrame(() =>
+        settings.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        }),
+      );
+    }
   };
   return (
     <main className="classroom-main cloud-gallery">
@@ -357,6 +471,21 @@ export function CloudGallery({
           </button>
         </section>
       )}
+      {student && myPlanet && (guide || guideError) && (
+        <CloudStudentGuide
+          completed={guide?.completed ?? []}
+          hasPeers={guide?.hasPeers ?? false}
+          busy={
+            busy ||
+            editing ||
+            Boolean(birth || planetBirth || work) ||
+            uploadOpen
+          }
+          error={guideError}
+          onRetry={() => setGuideRevision((r) => r + 1)}
+          onAction={guideAction}
+        />
+      )}
       <div className="cloud-planets" aria-label="班级云端星球">
         {data?.planets.map((p) => (
           <button
@@ -386,6 +515,11 @@ export function CloudGallery({
           <div className="cloud-room-heading">
             <div>
               <h2>{selected.document.metadata.name}</h2>
+              {selected.document.metadata.summary && (
+                <p className="cloud-planet-summary">
+                  {selected.document.metadata.summary}
+                </p>
+              )}
               <p className="muted">
                 {editing
                   ? "拖动元素移动，调整细节后点击保存。"
@@ -416,40 +550,20 @@ export function CloudGallery({
               </div>
             )}
           </div>
-          {owned &&
-            (!selected.document.media.exterior ||
-              !selected.document.media.interior) &&
-            !settingsOpen && (
-              <div className="cloud-onboarding-tip">
-                <span>
-                  ✧ 建议尽快上传你设计的
-                  {!selected.document.media.exterior &&
-                  !selected.document.media.interior
-                    ? "星球外貌和内部背景"
-                    : !selected.document.media.exterior
-                      ? "星球外貌"
-                      : "内部背景"}
-                  ，让同学认出你的风格。
-                </span>
-                <button
-                  disabled={busy || Boolean(planetBirth)}
-                  onClick={() => setSettingsOpen(true)}
-                >
-                  开始设计 →
-                </button>
-              </div>
-            )}
           {owned && settingsOpen && (
-            <CloudPlanetAppearance
-              key={selected.id}
-              classId={classId}
-              id={selected.id}
-              document={selected.document}
-              busy={busy}
-              run={perform}
-              onSaved={() => refresh(selected.id)}
-              onClose={() => setSettingsOpen(false)}
-            />
+            <div ref={settings}>
+              <CloudPlanetAppearance
+                key={selected.id}
+                classId={classId}
+                id={selected.id}
+                document={selected.document}
+                initialSection={settingsSection}
+                busy={busy}
+                run={perform}
+                onSaved={() => refresh(selected.id)}
+                onClose={() => setSettingsOpen(false)}
+              />
+            </div>
           )}
           {background.error && (
             <p role="status">内部背景读取失败，请刷新作品重试。</p>
@@ -460,18 +574,30 @@ export function CloudGallery({
             aria-label="云端星球内部"
             style={{ backgroundColor: selected.document.color }}
           >
-            {background.url ? (
-              <img
-                className="cloud-room-background"
-                src={background.url}
-                alt="星球内部背景"
+            <div
+              className="cloud-room-scenery"
+              style={{
+                filter: `brightness(${selected.document.brightness}) saturate(${selected.document.saturation})`,
+              }}
+            >
+              {background.url ? (
+                <img
+                  className="cloud-room-background"
+                  src={background.url}
+                  alt="星球内部背景"
+                />
+              ) : (
+                <>
+                  <div className="cloud-room-moon" />
+                  <div className="cloud-room-land" />
+                </>
+              )}
+              <div
+                className="cloud-room-tint"
+                style={{ backgroundColor: selected.document.color }}
               />
-            ) : (
-              <>
-                <div className="cloud-room-moon" />
-                <div className="cloud-room-land" />
-              </>
-            )}
+            </div>
+            <CloudAtmosphere kind={selected.document.atmosphere} />
             {planetBirth === selected.id && (
               <div className="cloud-planet-birth" role="status">
                 <CloudPlanetOrb
@@ -588,7 +714,7 @@ export function CloudGallery({
             )}
           </div>
           {!owned && !work && (
-            <section className="cloud-social">
+            <section className="cloud-social" ref={social}>
               <strong>为这颗星球留下回应</strong>
               <button disabled={busy} onClick={() => interact("like", "")}>
                 ♡ 点赞星球

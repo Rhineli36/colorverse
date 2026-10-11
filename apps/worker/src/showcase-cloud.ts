@@ -149,6 +149,95 @@ export async function handleShowcaseCloud(
     await client.connect();
     await client.query("BEGIN");
     const actor = await classroomActor(client, identity, classId);
+    if (resource === "guide") {
+      if (actor.role !== "student")
+        throw new ClassroomFailure(
+          403,
+          "STUDENT_REQUIRED",
+          "新手任务仅用于学生账户",
+        );
+      if (request.method === "POST") {
+        const input = z
+          .strictObject({ planetId: z.uuid() })
+          .parse(
+            JSON.parse(
+              new TextDecoder().decode(await readLimited(request, 2048)),
+            ),
+          );
+        const peer = await client.query(
+          "SELECT p.id FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE p.id=$1 AND e.class_id=$2 AND e.role='student' AND e.status='active' AND u.status='active' AND e.id<>$3",
+          [input.planetId, classId, actor.id],
+        );
+        if (!peer.rows.length)
+          throw new ClassroomFailure(
+            404,
+            "PEER_NOT_FOUND",
+            "请选择本班其他同学的星球",
+          );
+        await client.query(
+          "SELECT pg_advisory_xact_lock(hashtextextended($1,7301942))",
+          [actor.id],
+        );
+        const own = await client.query(
+          "SELECT id,document FROM colorverse.planets WHERE owner_enrollment_id=$1",
+          [actor.id],
+        );
+        if (!own.rows.length)
+          throw new ClassroomFailure(
+            409,
+            "PLANET_REQUIRED",
+            "请先创建自己的星球",
+          );
+        const document = own.rows[0].document;
+        await client.query(
+          "UPDATE colorverse.planets SET document=$1 WHERE id=$2",
+          [
+            JSON.stringify({
+              ...document,
+              guide: { ...document.guide, visited: true },
+            }),
+            own.rows[0].id,
+          ],
+        );
+        await client.query("COMMIT");
+        return Response.json({ saved: true });
+      }
+      if (request.method === "GET") {
+        const own = (
+          await client.query(
+            "SELECT id,document FROM colorverse.planets WHERE owner_enrollment_id=$1",
+            [actor.id],
+          )
+        ).rows[0];
+        const facts = (
+          await client.query(
+            `SELECT EXISTS(SELECT 1 FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.id<>$2 AND e.role='student' AND e.status='active' AND u.status='active') peers,
+          EXISTS(SELECT 1 FROM colorverse.showcase_works WHERE planet_id=$3) work,
+          EXISTS(SELECT 1 FROM colorverse.showcase_works WHERE planet_id=$3 AND revision>0) element,
+          EXISTS(SELECT 1 FROM colorverse.classroom_interactions i JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE i.actor_enrollment_id=$2 AND e.class_id=$1 AND e.id<>$2 AND i.kind IN ('like','emoji')) reaction,
+          EXISTS(SELECT 1 FROM colorverse.classroom_interactions i JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE i.actor_enrollment_id=$2 AND e.class_id=$1 AND e.id<>$2 AND i.kind='comment' AND length(trim(i.content))>0) comment`,
+            [classId, actor.id, own?.id ?? null],
+          )
+        ).rows[0];
+        const d = own?.document;
+        const completed = Object.entries({
+          exterior: Boolean(d?.media?.exterior),
+          atmosphere: Boolean(d?.atmosphere && d.atmosphere !== "none"),
+          interior: Boolean(d?.media?.interior),
+          tone: Boolean(d?.guide?.tone),
+          summary: Boolean(d?.metadata?.summary?.trim()),
+          work: facts.work,
+          element: facts.element,
+          visit: Boolean(d?.guide?.visited),
+          reaction: facts.reaction,
+          comment: facts.comment,
+        })
+          .filter(([, done]) => done)
+          .map(([id]) => id);
+        await client.query("COMMIT");
+        return Response.json({ completed, hasPeers: facts.peers });
+      }
+    }
     if (resource === "planets" && request.method === "GET") {
       const rows = await client.query(
         `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' ORDER BY u.display_name`,
@@ -225,7 +314,7 @@ export async function handleShowcaseCloud(
       if (kind === "appearance" && request.method === "PUT") {
         const input = appearanceInput.parse(
           JSON.parse(
-            new TextDecoder().decode(await readLimited(request, 2048)),
+            new TextDecoder().decode(await readLimited(request, 8192)),
           ),
         );
         if (input.revision !== revision)
@@ -239,9 +328,27 @@ export async function handleShowcaseCloud(
           [
             JSON.stringify({
               ...document,
-              metadata: { ...document.metadata, name: input.name },
+              metadata: {
+                ...document.metadata,
+                name: input.name,
+                ...(input.summary !== undefined
+                  ? { summary: input.summary }
+                  : {}),
+              },
               color: input.color,
               skin: input.skin,
+              ...(input.atmosphere !== undefined
+                ? { atmosphere: input.atmosphere }
+                : {}),
+              ...(input.brightness !== undefined
+                ? { brightness: input.brightness }
+                : {}),
+              ...(input.saturation !== undefined
+                ? { saturation: input.saturation }
+                : {}),
+              ...(input.practice === "tone"
+                ? { guide: { ...document.guide, tone: true } }
+                : {}),
               revision: revision + 1,
             }),
             id,

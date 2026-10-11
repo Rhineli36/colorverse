@@ -578,3 +578,221 @@ describe("cloud planet onboarding and personalization", () => {
     }
   });
 });
+
+describe("student guided tasks", () => {
+  const guideRequest = () =>
+    new Request(`https://app.test/classes/${ids[5]}/guide`);
+  const progress = async (user = ids[1]) =>
+    (
+      await handleShowcaseCloud(
+        guideRequest(),
+        env,
+        identity(user),
+        ids[5],
+        "guide",
+        clientFactory,
+      )
+    ).json();
+  it("derives tasks from saved cloud facts, excludes received reactions and preserves private image fields", async () => {
+    const previous = (
+      await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]])
+    ).rows[0].document as Record<string, unknown>;
+    try {
+      const initial = await progress();
+      expect(initial.completed).toContain("work");
+      expect(initial.completed).not.toContain("comment"); // This student has received comments but has sent none.
+      expect(initial.completed).not.toContain("tone");
+      expect(initial.hasPeers).toBe(false); // Another enrolled student has no planet yet.
+      const media = {
+        exterior: {
+          id: randomUUID(),
+          key: "private-original.webp",
+          bytes: 123,
+          requestId: randomUUID(),
+        },
+      };
+      await db.query("UPDATE planets SET document=$1 WHERE id=$2", [
+        JSON.stringify({ ...previous, media, revision: 0 }),
+        ids[11],
+      ]);
+      const resource = `planets/${ids[11]}/appearance`;
+      const update = {
+        name: "探索星",
+        color: "#123456",
+        skin: 1,
+        atmosphere: "fireflies",
+        summary: "我的色彩灵感来自海面。",
+        brightness: 1.2,
+        saturation: 0.8,
+        practice: "tone",
+        revision: 0,
+      };
+      await handleShowcaseCloud(
+        request(resource, update, "PUT"),
+        env,
+        identity(ids[1]),
+        ids[5],
+        resource,
+        clientFactory,
+      );
+      expect((await progress()).completed).toEqual(
+        expect.arrayContaining([
+          "exterior",
+          "atmosphere",
+          "summary",
+          "tone",
+          "work",
+        ]),
+      );
+      const saved = (
+        await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]])
+      ).rows[0].document as Record<string, unknown>;
+      expect(saved.media).toEqual(media);
+      expect(saved).toMatchObject({
+        brightness: 1.2,
+        saturation: 0.8,
+        guide: { tone: true },
+      });
+      for (const invalid of [
+        { brightness: 10 },
+        { saturation: -1 },
+        { atmosphere: "invalid" },
+        { summary: "x".repeat(1001) },
+        { guide: { visited: true } },
+      ]) {
+        await expect(
+          handleShowcaseCloud(
+            request(resource, { ...update, revision: 1, ...invalid }, "PUT"),
+            env,
+            identity(ids[1]),
+            ids[5],
+            resource,
+            clientFactory,
+          ),
+        ).rejects.toMatchObject({ status: 400 });
+      }
+      expect(
+        (await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]]))
+          .rows[0].document,
+      ).toEqual(saved);
+    } finally {
+      await db.query("UPDATE planets SET document=$1 WHERE id=$2", [
+        JSON.stringify(previous),
+        ids[11],
+      ]);
+    }
+  });
+  it("records only a verified peer visit, keeps it across reads and does not bump image revision", async () => {
+    const peerPlanet = randomUUID();
+    const otherPrevious = (
+      await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]])
+    ).rows[0].document as Record<string, unknown>;
+    try {
+      await expect(progress(ids[0])).rejects.toMatchObject({ status: 403 });
+      await expect(
+        handleShowcaseCloud(
+          guideRequest(),
+          env,
+          identity(ids[3]),
+          ids[5],
+          "guide",
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(
+        handleShowcaseCloud(
+          request("guide", { planetId: ids[11] }),
+          env,
+          identity(ids[1]),
+          ids[5],
+          "guide",
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(
+        handleShowcaseCloud(
+          request("guide", { planetId: randomUUID() }),
+          env,
+          identity(ids[1]),
+          ids[5],
+          "guide",
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(
+        handleShowcaseCloud(
+          request("guide", { planetId: ids[11] }),
+          env,
+          identity(ids[2]),
+          ids[5],
+          "guide",
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      await db.query(
+        "INSERT INTO planets(id,owner_enrollment_id,document) VALUES($1,$2,$3)",
+        [
+          peerPlanet,
+          ids[9],
+          JSON.stringify({ metadata: { name: "同学星球" } }),
+        ],
+      );
+      expect((await progress()).hasPeers).toBe(true);
+      for (let i = 0; i < 2; i++)
+        await handleShowcaseCloud(
+          request("guide", { planetId: peerPlanet }),
+          env,
+          identity(ids[1]),
+          ids[5],
+          "guide",
+          clientFactory,
+        );
+      expect((await progress()).completed).toContain("visit");
+      expect(
+        (await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]]))
+          .rows[0].document as Record<string, unknown>,
+      ).toMatchObject({ revision: otherPrevious.revision });
+      const interaction = {
+        planetId: peerPlanet,
+        workId: null,
+        kind: "emoji",
+        content: "✨",
+        requestId: randomUUID(),
+      };
+      await handleShowcaseCloud(
+        request("interactions", interaction),
+        env,
+        identity(ids[1]),
+        ids[5],
+        "interactions",
+        clientFactory,
+      );
+      expect((await progress()).completed).toContain("reaction");
+      await handleShowcaseCloud(
+        request("interactions", {
+          ...interaction,
+          kind: "comment",
+          content: "冷暖对比很有意思！",
+          requestId: randomUUID(),
+        }),
+        env,
+        identity(ids[1]),
+        ids[5],
+        "interactions",
+        clientFactory,
+      );
+      expect((await progress()).completed).toEqual(
+        expect.arrayContaining(["visit", "reaction", "comment"]),
+      );
+    } finally {
+      await db.query("DELETE FROM classroom_interactions WHERE planet_id=$1", [
+        peerPlanet,
+      ]);
+      await db.query("DELETE FROM planets WHERE id=$1", [peerPlanet]);
+      await db.query("UPDATE planets SET document=$1 WHERE id=$2", [
+        JSON.stringify(otherPrevious),
+        ids[11],
+      ]);
+    }
+  });
+});

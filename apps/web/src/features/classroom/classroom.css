@@ -857,3 +857,247 @@
 .cloud-skins button[aria-pressed="true"] {
   color: #e2ece5;
 }
+
+.cloud-student-guide {
+  padding: 24px;
+  border: 1px solid #3a566b;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at top right, #243c5244, transparent 65%), #0c1725;
+  margin: 24px 0;
+}
+.cloud-guide-heading,
+.cloud-guide-next {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+.cloud-guide-heading h2 {
+  margin: 6px 0;
+}
+.cloud-guide-heading > strong {
+  white-space: nowrap;
+  font-size: 24px;
+  color: #c9eddf;
+}
+.cloud-student-guide progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin: 16px 0 22px;
+  accent-color: #a9d9c6;
+  border: 0;
+}
+.cloud-guide-next {
+  padding: 20px;
+  border: 1px solid #355562;
+  border-radius: 14px;
+  background: #182b364d;
+  margin-bottom: 16px;
+}
+.cloud-guide-next h3 {
+  margin: 8px 0;
+}
+.cloud-guide-next p {
+  margin: 0;
+  color: #b4c3d2;
+}
+.cloud-guide-next small,
+.cloud-guide-list small {
+  color: #a5c3c4;
+}
+.cloud-guide-next button {
+  min-height: 48px;
+  flex-shrink: 0;
+}
+.cloud-student-guide > small {
+  display: block;
+  margin-top: 16px;
+  line-height: 1.7;
+}
+.cloud-guide-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.cloud-guide-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #293c4f;
+  border-radius: 12px;
+  min-width: 0;
+}
+.cloud-guide-list li > div {
+  flex: 1;
+  min-width: 0;
+}
+.cloud-guide-list strong {
+  display: block;
+  margin: 4px 0;
+}
+.cloud-guide-list p {
+  color: #91a7bb;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+.cloud-guide-list button {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.cloud-guide-number {
+  color: #8bafc3;
+  font-size: 20px;
+  min-width: 28px;
+}
+.cloud-guide-list .completed {
+  border-color: #3b5b54;
+}
+.completed .cloud-guide-number {
+  color: #bfe2be;
+}
+.cloud-settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 20px;
+}
+.cloud-appearance button[aria-pressed="true"] {
+  background: #244753;
+  border-color: #94c7ca;
+  color: #e4ffff;
+}
+.cloud-appearance > button.primary {
+  margin: 16px 0;
+}
+.cloud-appearance textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 100px;
+  font: inherit;
+}
+.cloud-planet-summary {
+  max-width: 680px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #c5d3df;
+  line-height: 1.8;
+}
+.cloud-room-scenery {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cloud-room-tint {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  mix-blend-mode: color;
+}
+.cloud-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.cloud-atmosphere i {
+  position: absolute;
+  display: block;
+  height: 3px;
+  width: 3px;
+  border-radius: 50%;
+  background: #cfeeff;
+  box-shadow: 0 0 9px #84bdf5;
+  animation: cloud-dust ease-in-out infinite;
+}
+.cloud-atmosphere.fireflies i {
+  width: 5px;
+  height: 5px;
+  background: #e1f9b5;
+  box-shadow: 0 0 16px #c0ec6d;
+}
+@keyframes cloud-dust {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translate(0, 10px);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translate(16px, -18px);
+  }
+}
+@media (max-width: 760px) {
+  .cloud-student-guide {
+    padding: 16px;
+  }
+  .cloud-guide-list {
+    grid-template-columns: 1fr;
+  }
+  .cloud-guide-next {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .cloud-guide-heading {
+    gap: 12px;
+  }
+  .cloud-guide-list li {
+    flex-wrap: wrap;
+  }
+  .cloud-guide-list li > div {
+    min-width: 140px;
+  }
+  .cloud-guide-list button {
+    margin-left: 40px;
+  }
+  .cloud-image-settings {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cloud-atmosphere i {
+    animation: none;
+    opacity: 0.55;
+  }
+}
+
+.cloud-student-guide progress::-webkit-progress-bar {
+  background: #22394a;
+  border-radius: 8px;
+}
+.cloud-student-guide progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #67bcc3, #c6e7b3);
+  border-radius: 8px;
+}
+.cloud-student-guide progress::-moz-progress-bar {
+  background: #a9d9c6;
+  border-radius: 8px;
+}
+.cloud-image-settings {
+  grid-template-columns: minmax(0, 1fr);
+}
+.cloud-appearance label:has(textarea) {
+  display: grid;
+  width: min(100%, 680px);
+}
+.cloud-appearance textarea {
+  box-sizing: border-box;
+  padding: 14px;
+  background: #0e1b28;
+  border: 1px solid #97b4ca40;
+  border-radius: 10px;
+  color: #deece7;
+  line-height: 1.7;
+}
+@media (max-width: 760px) {
+  .cloud-appearance label {
+    flex-wrap: wrap;
+  }
+}
