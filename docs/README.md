@@ -40,6 +40,7 @@
 | [28-element-focused-editor-plan.md](28-element-focused-editor-plan.md) | 提交后出现元素、点选专用编辑、元素库/细节/确认分区与画面拖动 |
 | [29-automatic-growth-and-element-editor.md](29-automatic-growth-and-element-editor.md) | 自动小元素、独立编辑会话、拖拽/撤销、动态粒子、权限和测试 |
 | [30-default-art-and-student-entry.md](30-default-art-and-student-entry.md) | 六颗球面默认素材、单张全景、旧作品安全升级、首次创建和后续编辑 |
+| [31-classroom-space-and-boundaries.md](31-classroom-space-and-boundaries.md) | 满屏班级星域、外围背景、带轨迹余量的部署边界与旧布局兼容 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 

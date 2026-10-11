@@ -186,17 +186,17 @@ describe("versioned default art upgrade", () => {
   });
 });
 describe("single panorama camera", () => {
-  it("expands the nebula two by two around the existing classroom center", () => {
+  it("extends the panorama beyond the fullscreen classroom on every side", () => {
     const f = panoramaFrame(1, 0, 0);
-    expect(f.width).toBe(8000 * 2);
-    expect(f.height).toBe(4500 * 2);
+    expect(f.width).toBe(64000);
+    expect(f.height).toBe(36000);
     expect(f.x + f.width / 2).toBe(800);
     expect(f.y + f.height / 2).toBe(450);
     // Previously outside the nebula; now lies inside the expanded region.
-    expect(f.x).toBeLessThan(-6000);
-    expect(f.x + f.width).toBeGreaterThan(7000);
-    expect(f.y).toBeLessThan(-3500);
-    expect(f.y + f.height).toBeGreaterThan(4000);
+    expect(f.x).toBeLessThan(800 - 40000 / 2);
+    expect(f.x + f.width).toBeGreaterThan(800 + 40000 / 2);
+    expect(f.y).toBeLessThan(450 - 22500 / 2);
+    expect(f.y + f.height).toBeGreaterThan(450 + 22500 / 2);
   });
   it("never pins image size or panning, including the old cover-floor interval", () => {
     for (const zoom of [0.04, 0.1, 0.2, 0.38, 1, 2])

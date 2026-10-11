@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 import { LocalWorkspace } from "../apps/web/src/adapters/local/store";
 import { fixturePlanet, fixtureUniverse } from "@colorverse/fixtures";
 import { UniverseLayoutService } from "@colorverse/application";
-import { canMovePlanet, type LayoutActor } from "@colorverse/domain";
+import {
+  canMovePlanet,
+  CLASSROOM_BOUNDS,
+  clampPlanetPosition,
+  type LayoutActor,
+} from "@colorverse/domain";
 const student: LayoutActor = { role: "student", userId: "student-a" },
   teacher: LayoutActor = { role: "teacher", userId: "teacher-a" };
 async function setup() {
@@ -17,6 +22,140 @@ async function setup() {
   return { repo, docs, universe, service: new UniverseLayoutService(repo) };
 }
 describe("universe layout authorization and persistence", () => {
+  it("atomically rejects out-of-area and orbit-crossing moves, including direct teacher calls", async () => {
+    const { repo, universe, service } = await setup(),
+      entry = universe.entries[0];
+    const move = {
+      universeId: universe.universeId,
+      planetId: entry.planetId,
+      expectedPosition: entry.position,
+      expectedLayoutRevision: 0,
+      position: { x: CLASSROOM_BOUNDS.right, y: 450 },
+    };
+    const original = await repo.getUniverse();
+    await expect(service.move(move, student)).rejects.toMatchObject({
+      code: "LAYOUT_OUT_OF_BOUNDS",
+    });
+    await expect(
+      repo.movePlanet({ ...move, position: { x: 999999, y: 450 } }, teacher),
+    ).rejects.toMatchObject({ code: "LAYOUT_OUT_OF_BOUNDS" });
+    expect(await repo.getUniverse()).toEqual(original);
+    const position = clampPlanetPosition(
+      entry,
+      universe.layout.seed,
+      move.position,
+    );
+    await service.move({ ...move, position }, student);
+    expect((await repo.getUniverse()).entries[0].position).toEqual(position);
+    expect((await repo.getUniverse()).entries[0].layoutRevision).toBe(1);
+    await repo.close();
+  });
+  it("rejects a motion expansion at an edge without losing the previous path", async () => {
+    const { repo, universe } = await setup(),
+      entry = universe.entries[0];
+    const stationary = {
+      version: "1.0.0",
+      mode: "stationary",
+      trajectory: "circle",
+      range: "wide",
+      direction: "forward",
+    } as const;
+    const position = clampPlanetPosition(
+      { ...entry, motion: stationary },
+      universe.layout.seed,
+      { x: CLASSROOM_BOUNDS.right, y: 450 },
+    );
+    await repo.configurePlanetMotion(
+      {
+        universeId: universe.universeId,
+        planetId: entry.planetId,
+        position,
+        motion: stationary,
+        expectedLayoutRevision: 0,
+      },
+      student,
+    );
+    const original = await repo.getUniverse();
+    // The right-edge stationary body fits; a wide circular orbit does not.
+    await expect(
+      repo.configurePlanetMotion(
+        {
+          universeId: universe.universeId,
+          planetId: entry.planetId,
+          position,
+          motion: { ...stationary, mode: "slow", trajectory: "figure-eight" },
+          expectedLayoutRevision: 1,
+        },
+        teacher,
+      ),
+    ).rejects.toMatchObject({ code: "LAYOUT_OUT_OF_BOUNDS" });
+    expect(await repo.getUniverse()).toEqual(original);
+    await repo.close();
+  });
+  it("preserves imported positions outside the new area until explicitly moved inward", async () => {
+    const repo = new LocalWorkspace(crypto.randomUUID()),
+      p = fixturePlanet(0),
+      u = fixtureUniverse([p]);
+    u.entries[0].position = { x: 90000, y: -50000 };
+    await repo.importAtomic([p], u, new Map(), "legacy");
+    await repo.assignOwner(p.planetId, student.userId);
+    expect(await repo.getUniverse()).toEqual(u);
+    await repo.saveUniverse(u);
+    expect((await repo.getUniverse()).entries[0].position).toEqual(
+      u.entries[0].position,
+    );
+    const current = await repo.getUniverse();
+    await repo.movePlanet(
+      {
+        universeId: u.universeId,
+        planetId: p.planetId,
+        expectedPosition: u.entries[0].position,
+        expectedLayoutRevision: current.entries[0].layoutRevision ?? 0,
+        position: { x: 800, y: 450 },
+      },
+      student,
+    );
+    expect((await repo.getUniverse()).entries[0].position).toEqual({
+      x: 800,
+      y: 450,
+    });
+    expect(await repo.get(p.planetId)).toEqual(p);
+    await repo.close();
+  });
+  it("rejects a boundary-crossing display enlargement without partially updating layout", async () => {
+    const { repo, universe } = await setup(),
+      entry = universe.entries[0];
+    const motion = {
+      version: "1.0.0",
+      mode: "stationary",
+      trajectory: "circle",
+      range: "wide",
+      direction: "forward",
+    } as const;
+    const position = clampPlanetPosition(
+      { ...entry, motion },
+      universe.layout.seed,
+      { x: CLASSROOM_BOUNDS.right, y: 450 },
+    );
+    await repo.configurePlanetMotion(
+      {
+        universeId: universe.universeId,
+        planetId: entry.planetId,
+        position,
+        motion,
+        expectedLayoutRevision: 0,
+      },
+      teacher,
+    );
+    const original = await repo.getUniverse(),
+      enlarged = structuredClone(original);
+    enlarged.entries[0].scale = 1.2;
+    await expect(repo.saveUniverse(enlarged)).rejects.toMatchObject({
+      code: "LAYOUT_OUT_OF_BOUNDS",
+    });
+    expect(await repo.getUniverse()).toEqual(original);
+    await repo.close();
+  });
   it("students can move only their own planet; teachers can move all, including unassigned", () => {
     expect(canMovePlanet(student, "student-a")).toBe(true);
     expect(canMovePlanet(student, "student-b")).toBe(false);

@@ -208,6 +208,7 @@ export function UniverseView({
               ? "只可拖拽我的星球"
               : "创建自己的星球后，即可拖拽和编辑"}
         </span>
+        <span>星球布置在班级星域内，拖拽时显示边界</span>
         {actor.role === "student" &&
           visible.some((p) => ownership[p.planetId] === actor.userId) && (
             <button

@@ -36,7 +36,7 @@ with sync_playwright() as p:
     page.goto(URL);page.wait_for_load_state('networkidle');page.wait_for_timeout(800)
     expect(page.get_by_label('宇宙操作身份')).to_have_value('student')
     assert state(page)['camera']['zoom'] < .25
-    expect(page.locator('.cosmic-backdrop')).to_be_visible()
+    expect(page.locator('canvas')).to_have_attribute('data-universe-atmosphere','true')
     page.get_by_role('button',name='暂停运行',exact=True).click();page.wait_for_timeout(100)
     page.screenshot(path=str(ROOT/'outputs/COLORVERSE-space-preview.png'),full_page=True)
     passed('entry opens a broad full-screen space with scattered planets')

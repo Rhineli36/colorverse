@@ -1,3 +1,4 @@
+import { CLASSROOM_SPACE } from "@colorverse/domain";
 // Deterministic visual schedules; these never alter saved planet/layout data.
 export const ATMOSPHERE_BUDGET = {
   normal: {
@@ -16,13 +17,13 @@ export const ATMOSPHERE_BUDGET = {
   },
 } as const;
 
-// Twice the previous width/height: four times the explorable nebula area.
+// Extend scenery beyond the classroom's deployment boundary on every side.
 // These are world units, independent of the decoded image/GPU texture size.
 export const UNIVERSE_PANORAMA = {
-  width: 16000,
-  height: 9000,
-  centerX: 800,
-  centerY: 450,
+  width: 64000,
+  height: 36000,
+  centerX: CLASSROOM_SPACE.centerX,
+  centerY: CLASSROOM_SPACE.centerY,
 } as const;
 
 /** Project one fixed world panorama with exactly the planets' camera transform. */

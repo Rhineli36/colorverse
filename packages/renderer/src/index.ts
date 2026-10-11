@@ -45,6 +45,8 @@ import {
   type UniverseEntry,
   zoomAt,
   regionCamera,
+  CLASSROOM_BOUNDS,
+  clampPlanetPosition,
 } from "@colorverse/domain";
 export interface Camera {
   x: number;
@@ -105,6 +107,7 @@ export class SceneRenderer {
   private starTile: TilingSprite | null = null;
   private atmosphere: UniverseAtmosphere | null = null;
   private selection = new Graphics();
+  private deploymentBoundary = new Graphics();
   private scene: SceneDocument | null = null;
   private exteriorFrame: { bodyId: string; transform: Transform } | null = null;
   private layerPreview: { id: string; transform: Transform } | null = null;
@@ -166,10 +169,12 @@ export class SceneRenderer {
       this.space,
       this.worldStars,
       this.atmosphere.world,
+      this.deploymentBoundary,
       this.stage,
       this.atmosphere.foreground,
       this.selection,
     );
+    this.deploymentBoundary.visible = false;
     this.drawSpace();
     this.observer = new ResizeObserver(() => {
       this.app.renderer.resize(host.clientWidth, host.clientHeight);
@@ -278,14 +283,26 @@ export class SceneRenderer {
       this.layout();
     } else if (this.drag.kind === "planet") {
       const { planet, initial } = this.drag;
-      planet.node.position.set(
-        initial.x + dx / this.camera.zoom,
-        initial.y + dy / this.camera.zoom,
-      );
+      const desired = {
+        x: initial.x + dx / this.camera.zoom,
+        y: initial.y + dy / this.camera.zoom,
+      };
+      const position = this.constrainedDragPosition(planet, desired);
+      planet.node.position.set(position.x, position.y);
       planet.guide.position.set(
-        planet.orbit.center.x + dx / this.camera.zoom,
-        planet.orbit.center.y + dy / this.camera.zoom,
+        planet.orbit.center.x + position.x - initial.x,
+        planet.orbit.center.y + position.y - initial.y,
       );
+      const b = CLASSROOM_BOUNDS;
+      this.deploymentBoundary.visible = true;
+      this.deploymentBoundary
+        .clear()
+        .rect(b.left, b.top, b.right - b.left, b.bottom - b.top)
+        .stroke({
+          color: "#A4CCDB",
+          alpha: 0.45,
+          width: 1 / this.stage.scale.x,
+        });
     } else if (this.drag.kind === "region") {
       this.drag.end = this.worldPoint(e);
       const rect = this.app.canvas.getBoundingClientRect();
@@ -301,11 +318,34 @@ export class SceneRenderer {
         .stroke({ color: "#A4CCDB", alpha: 0.8, width: 1 });
     }
   };
+  private constrainedDragPosition(
+    p: OrbitNode,
+    desired: { x: number; y: number },
+  ) {
+    const current = orbitPosition(p.orbit, this.elapsed - p.startedAt);
+    const anchor = p.entry.motion
+      ? desired
+      : {
+          x: p.entry.position.x + desired.x - current.x,
+          y: p.entry.position.y + desired.y - current.y,
+        };
+    const bounded = clampPlanetPosition(p.entry, this.universeSeed, anchor);
+    this.app.canvas.dataset.deploymentClamped = String(
+      Math.abs(bounded.x - anchor.x) + Math.abs(bounded.y - anchor.y) > 1e-7,
+    );
+    return p.entry.motion
+      ? bounded
+      : {
+          x: current.x + bounded.x - p.entry.position.x,
+          y: current.y + bounded.y - p.entry.position.y,
+        };
+  }
   private pointerUp = () => {
     const drag = this.drag,
       changed = drag && this.moved;
     this.drag = null;
     this.selection.clear();
+    this.deploymentBoundary.visible = false;
     if (!changed) return;
     if (drag.kind === "pan") this.options.onCamera?.({ ...this.camera });
     if (
@@ -329,6 +369,11 @@ export class SceneRenderer {
       const p = drag.planet,
         original = { ...p.entry.position },
         current = orbitPosition(p.orbit, this.elapsed - p.startedAt);
+      const bounded = this.constrainedDragPosition(p, {
+        x: p.node.x,
+        y: p.node.y,
+      });
+      p.node.position.set(bounded.x, bounded.y);
       const dx = p.node.x - current.x,
         dy = p.node.y - current.y;
       const position = p.entry.motion
@@ -395,6 +440,7 @@ export class SceneRenderer {
     this.drag = null;
     this.moved = true;
     this.selection.clear();
+    this.deploymentBoundary.visible = false;
   };
   private keyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -686,6 +732,8 @@ export class SceneRenderer {
     this.worldStars.visible = this.mode === "universe";
     this.worldStars.scale.copyFrom(this.stage.scale);
     this.worldStars.position.copyFrom(this.stage.position);
+    this.deploymentBoundary.scale.copyFrom(this.stage.scale);
+    this.deploymentBoundary.position.copyFrom(this.stage.position);
     this.app.canvas.dataset.universeAtmosphere = String(
       this.mode === "universe",
     );

@@ -29,6 +29,10 @@ export function upgradeUniverse(
 }
 
 export type UniverseEntry = UniverseDocument["entries"][number];
+type PlanetGeometry = Pick<UniverseEntry, "planetId" | "position" | "scale"> &
+  Partial<Pick<UniverseEntry, "layoutRevision" | "visible" | "order">> & {
+    motion?: PlanetMotion;
+  };
 export interface UniverseCamera {
   x: number;
   y: number;
@@ -48,6 +52,20 @@ export interface Orbit {
 export const MIN_UNIVERSE_ZOOM = 0.04;
 export const MAX_UNIVERSE_ZOOM = 2.5;
 export const PLANET_FOCUS_ZOOM = 0.38;
+// The classroom is a bounded deployment area inside the larger visual universe.
+// World units; changing this policy never rescales or rearranges saved works.
+export const CLASSROOM_SPACE = {
+  width: 40000,
+  height: 22500,
+  centerX: 800,
+  centerY: 450,
+} as const;
+export const CLASSROOM_BOUNDS = {
+  left: CLASSROOM_SPACE.centerX - CLASSROOM_SPACE.width / 2,
+  right: CLASSROOM_SPACE.centerX + CLASSROOM_SPACE.width / 2,
+  top: CLASSROOM_SPACE.centerY - CLASSROOM_SPACE.height / 2,
+  bottom: CLASSROOM_SPACE.centerY + CLASSROOM_SPACE.height / 2,
+} as const;
 // Frame-rate independent easing: reach about 95% of a focus move in 1.25s.
 export function cameraTransitionAmount(
   seconds: number,
@@ -69,7 +87,7 @@ export function planetDisplayScale(scale: number) {
 }
 
 // Layout positions remain the persisted anchors. Motion is a deterministic view projection.
-export function planetOrbit(entry: UniverseEntry, seed: number): Orbit {
+export function planetOrbit(entry: PlanetGeometry, seed: number): Orbit {
   let hash = seed >>> 0;
   for (const c of entry.planetId)
     hash = Math.imul(hash ^ c.charCodeAt(0), 16777619) >>> 0;
@@ -128,7 +146,7 @@ export function orbitPosition(orbit: Orbit, seconds: number) {
       y * Math.cos(orbit.rotation),
   };
 }
-export function orbitBounds(entry: UniverseEntry, seed: number) {
+export function orbitBounds(entry: PlanetGeometry, seed: number) {
   const o = planetOrbit(entry, seed),
     radius = 256 * planetDisplayScale(entry.scale) * 0.9;
   const rx =
@@ -157,6 +175,37 @@ export function orbitBounds(entry: UniverseEntry, seed: number) {
 export function orbitPath(orbit: Orbit) {
   return Array.from({ length: 65 }, (_, i) =>
     orbitPosition(orbit, (orbit.periodSec * i) / 64),
+  );
+}
+/** Reserve the complete orbit and body, including asymmetric anchor offsets. */
+export function clampPlanetPosition(
+  entry: PlanetGeometry,
+  seed: number,
+  position: { x: number; y: number },
+) {
+  if (!Number.isFinite(position.x) || !Number.isFinite(position.y))
+    throw new Error("星球位置必须是有限坐标。");
+  const offsets = orbitBounds({ ...entry, position: { x: 0, y: 0 } }, seed);
+  return {
+    x: Math.max(
+      CLASSROOM_BOUNDS.left - offsets.left,
+      Math.min(CLASSROOM_BOUNDS.right - offsets.right, position.x),
+    ),
+    y: Math.max(
+      CLASSROOM_BOUNDS.top - offsets.top,
+      Math.min(CLASSROOM_BOUNDS.bottom - offsets.bottom, position.y),
+    ),
+  };
+}
+export function isPlanetInsideClassroom(entry: PlanetGeometry, seed: number) {
+  const b = orbitBounds(entry, seed),
+    area = CLASSROOM_BOUNDS,
+    epsilon = 1e-7;
+  return (
+    b.left >= area.left - epsilon &&
+    b.right <= area.right + epsilon &&
+    b.top >= area.top - epsilon &&
+    b.bottom <= area.bottom + epsilon
   );
 }
 export function cameraAt(
@@ -257,14 +306,15 @@ export function nextPlanetPosition(entries: UniverseEntry[], seed: number) {
       y: 450 + Math.sin(angle) * radius * 0.78,
     };
     if (
+      point.x >= CLASSROOM_BOUNDS.left + 600 &&
+      point.x <= CLASSROOM_BOUNDS.right - 600 &&
+      point.y >= CLASSROOM_BOUNDS.top + 600 &&
+      point.y <= CLASSROOM_BOUNDS.bottom - 600 &&
       entries.every(
         (e) => Math.hypot(e.position.x - point.x, e.position.y - point.y) > 460,
       )
     )
       return point;
   }
-  return {
-    x: Math.max(800, ...entries.map((e) => e.position.x)) + 600,
-    y: 450,
-  };
+  throw new Error("班级星域暂时没有合适的位置，请老师调整布局后再创建。");
 }

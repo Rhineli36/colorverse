@@ -13,7 +13,89 @@ import {
   regionCamera,
   PLANET_FOCUS_ZOOM,
   cameraTransitionAmount,
+  CLASSROOM_SPACE,
+  CLASSROOM_BOUNDS,
+  clampPlanetPosition,
+  isPlanetInsideClassroom,
 } from "@colorverse/domain";
+import type { PlanetMotion } from "@colorverse/contracts";
+
+describe("bounded classroom deployment", () => {
+  it("fills the 16:9 reference viewport at 4–5%, inside the larger scenery", () => {
+    expect(CLASSROOM_SPACE.width * 0.04).toBe(1600);
+    expect(CLASSROOM_SPACE.height * 0.04).toBe(900);
+    expect(CLASSROOM_SPACE.width * 0.05).toBeGreaterThan(1600);
+    expect(CLASSROOM_SPACE.height * 0.05).toBeGreaterThan(900);
+  });
+  it("keeps every body and complete path inside all four edges without changing source entries", () => {
+    const entry = fixtureUniverse([fixturePlanet(0)]).entries[0];
+    const motions: (PlanetMotion | undefined)[] = [undefined];
+    for (const mode of ["stationary", "slow", "fast"] as const)
+      for (const trajectory of [
+        "circle",
+        "ellipse",
+        "figure-eight",
+        "drift",
+      ] as const)
+        for (const direction of ["forward", "reverse"] as const)
+          motions.push({
+            version: "1.0.0",
+            mode,
+            trajectory,
+            range: "wide",
+            direction,
+          });
+    for (const motion of motions)
+      for (const seed of [0, 42, 117]) {
+        const original = { ...entry, motion, scale: 1.2 },
+          copy = structuredClone(original);
+        expect(clampPlanetPosition(original, seed, { x: 800, y: 450 })).toEqual(
+          { x: 800, y: 450 },
+        );
+        for (const x of [-100000, 100000])
+          for (const y of [-100000, 100000]) {
+            const position = clampPlanetPosition(original, seed, { x, y });
+            const placed = { ...original, position };
+            expect(isPlanetInsideClassroom(placed, seed)).toBe(true);
+            const orbit = planetOrbit(placed, seed),
+              radius = 256 * 1.2 * 0.9;
+            for (let i = 0; i <= 128; i++) {
+              const p = orbitPosition(orbit, (orbit.periodSec * i) / 128);
+              expect(p.x - radius).toBeGreaterThanOrEqual(
+                CLASSROOM_BOUNDS.left - 1e-7,
+              );
+              expect(p.x + radius).toBeLessThanOrEqual(
+                CLASSROOM_BOUNDS.right + 1e-7,
+              );
+              expect(p.y - radius).toBeGreaterThanOrEqual(
+                CLASSROOM_BOUNDS.top - 1e-7,
+              );
+              expect(p.y + radius).toBeLessThanOrEqual(
+                CLASSROOM_BOUNDS.bottom + 1e-7,
+              );
+            }
+          }
+        expect(original).toEqual(copy);
+      }
+  });
+  it("allocates 250 distinct new anchors inside the classroom with orbit margins", () => {
+    const entry = fixtureUniverse([fixturePlanet(0)]).entries[0],
+      entries = [];
+    for (let i = 0; i < 250; i++) {
+      const position = nextPlanetPosition(entries, 42);
+      expect(
+        entries.every(
+          (e) =>
+            Math.hypot(e.position.x - position.x, e.position.y - position.y) >
+            460,
+        ),
+      ).toBe(true);
+      const next = { ...entry, planetId: `new-${i}`, position };
+      expect(isPlanetInsideClassroom(next, 42)).toBe(true);
+      entries.push(next);
+    }
+  });
+});
 
 describe("universe motion and cameras", () => {
   it("focuses at the reference 38% scale with gentler frame-independent easing", () => {

@@ -10,6 +10,7 @@ import {
   validatePlanet,
   DomainError,
   assertPlanetMove,
+  isPlanetInsideClassroom,
   upgradeUniverse,
   updateGrowthElement,
   nextPlanetPosition,
@@ -190,6 +191,14 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
       for (const e of saved.entries) {
         const before = current.entries.find((p) => p.planetId === e.planetId);
         if (
+          (!before || before.scale !== e.scale) &&
+          !isPlanetInsideClassroom(e, saved.layout.seed)
+        )
+          throw new DomainError(
+            "LAYOUT_OUT_OF_BOUNDS",
+            "星球及其运动轨迹需要留在班级星域内，请向内移动后重试。",
+          );
+        if (
           before &&
           JSON.stringify([before.visible, before.scale, before.order]) !==
             JSON.stringify([e.visible, e.scale, e.order])
@@ -339,6 +348,11 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
         );
       entry.position = { ...move.position };
       if ("motion" in move) entry.motion = MotionSchema.parse(move.motion);
+      if (!isPlanetInsideClassroom(entry, universe.layout.seed))
+        throw new DomainError(
+          "LAYOUT_OUT_OF_BOUNDS",
+          "星球及其运动轨迹需要留在班级星域内，请向内移动后重试。",
+        );
       entry.layoutRevision++;
       await tx
         .objectStore("universes")

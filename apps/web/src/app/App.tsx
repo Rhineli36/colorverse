@@ -33,6 +33,7 @@ import {
   validatePlanet,
   nextPlanetPosition,
   upgradeUniverse,
+  clampPlanetPosition,
   type LayoutActor,
 } from "@colorverse/domain";
 import {
@@ -604,6 +605,12 @@ export function App() {
   ) => {
     const entry = universe?.entries.find((e) => e.planetId === planetId);
     if (!universe || !entry) throw new Error("星球已离开当前宇宙");
+    const requested = position ?? entry.position;
+    const bounded = clampPlanetPosition(
+      { ...entry, motion },
+      universe.layout.seed,
+      requested,
+    );
     try {
       await layoutService.configureMotion(
         {
@@ -611,7 +618,7 @@ export function App() {
           planetId,
           motion,
           expectedLayoutRevision,
-          position: position ?? entry.position,
+          position: bounded,
         },
         {
           role: layoutRole,
@@ -619,7 +626,11 @@ export function App() {
         },
       );
       setUniverse(await workspace.getUniverse());
-      setNotice("星球运动设置已保存");
+      setNotice(
+        bounded.x !== requested.x || bounded.y !== requested.y
+          ? "星球运动设置已保存，位置已向星域内调整以留出运动空间"
+          : "星球运动设置已保存",
+      );
     } catch (error) {
       setNotice(
         error instanceof Error ? error.message : "运动设置保存失败，请重试",
