@@ -4,7 +4,10 @@ import { LocalWorkspace } from "../apps/web/src/adapters/local/store";
 import { fixturePlanet, fixtureUniverse } from "@colorverse/fixtures";
 import { demoBodyRecord } from "../apps/web/src/app/bootstrap";
 import manifest from "../apps/web/src/app/demo-assets.json";
-import { panoramaFrame } from "../packages/renderer/src/atmosphere-model";
+import {
+  panoramaFrame,
+  UNIVERSE_PANORAMA,
+} from "../packages/renderer/src/atmosphere-model";
 import { zoomAt } from "@colorverse/domain";
 
 describe("one owned planet entry", () => {
@@ -183,6 +186,18 @@ describe("versioned default art upgrade", () => {
   });
 });
 describe("single panorama camera", () => {
+  it("expands the nebula two by two around the existing classroom center", () => {
+    const f = panoramaFrame(1, 0, 0);
+    expect(f.width).toBe(8000 * 2);
+    expect(f.height).toBe(4500 * 2);
+    expect(f.x + f.width / 2).toBe(800);
+    expect(f.y + f.height / 2).toBe(450);
+    // Previously outside the nebula; now lies inside the expanded region.
+    expect(f.x).toBeLessThan(-6000);
+    expect(f.x + f.width).toBeGreaterThan(7000);
+    expect(f.y).toBeLessThan(-3500);
+    expect(f.y + f.height).toBeGreaterThan(4000);
+  });
   it("never pins image size or panning, including the old cover-floor interval", () => {
     for (const zoom of [0.04, 0.1, 0.2, 0.38, 1, 2])
       for (const x of [-100000, 0, 100000]) {
@@ -208,8 +223,11 @@ describe("single panorama camera", () => {
         );
       const a = frame(camera),
         b = frame(next),
-        u = (point.x + 3200) / 8000,
-        v = (point.y + 1800) / 4500;
+        u =
+          (point.x - UNIVERSE_PANORAMA.centerX) / UNIVERSE_PANORAMA.width + 0.5,
+        v =
+          (point.y - UNIVERSE_PANORAMA.centerY) / UNIVERSE_PANORAMA.height +
+          0.5;
       expect(a.x + a.width * u).toBeCloseTo(b.x + b.width * u);
       expect(a.y + a.height * v).toBeCloseTo(b.y + b.height * v);
     }

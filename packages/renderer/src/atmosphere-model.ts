@@ -16,13 +16,23 @@ export const ATMOSPHERE_BUDGET = {
   },
 } as const;
 
+// Twice the previous width/height: four times the explorable nebula area.
+// These are world units, independent of the decoded image/GPU texture size.
+export const UNIVERSE_PANORAMA = {
+  width: 16000,
+  height: 9000,
+  centerX: 800,
+  centerY: 450,
+} as const;
+
 /** Project one fixed world panorama with exactly the planets' camera transform. */
 export function panoramaFrame(worldScale: number, x: number, y: number) {
+  const p = UNIVERSE_PANORAMA;
   return {
-    width: 8000 * worldScale,
-    height: 4500 * worldScale,
-    x: x - 3200 * worldScale,
-    y: y - 1800 * worldScale,
+    width: p.width * worldScale,
+    height: p.height * worldScale,
+    x: x + (p.centerX - p.width / 2) * worldScale,
+    y: y + (p.centerY - p.height / 2) * worldScale,
   };
 }
 
