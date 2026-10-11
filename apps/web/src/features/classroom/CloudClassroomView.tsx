@@ -28,8 +28,10 @@ export async function classroomRequest(path: string, init: RequestInit = {}) {
 }
 export function CloudClassroomView({
   session,
+  initialClassId,
 }: {
   session: CloudSession | null;
+  initialClassId?: string;
 }) {
   const memberships =
     session?.access === "active"
@@ -49,9 +51,13 @@ export function CloudClassroomView({
     [weekly, setWeekly] = useState(true);
   const signature = memberships.map((m) => m.classId).join();
   useEffect(() => {
-    setClassId(memberships[0]?.classId ?? "");
+    setClassId(
+      memberships.find((m) => m.classId === initialClassId)?.classId ??
+        memberships[0]?.classId ??
+        "",
+    );
     setData(null);
-  }, [signature]); // Revoke cached records when identities or memberships change.
+  }, [signature, initialClassId]); // Revoke cached records when identities or memberships change.
   useEffect(() => {
     let active = true;
     setData(null);
@@ -85,6 +91,7 @@ export function CloudClassroomView({
     return (
       <CloudGallery
         session={session}
+        initialClassId={classId}
         initialPlanetId={viewPlanet}
         onBack={() => {
           setViewPlanet(null);

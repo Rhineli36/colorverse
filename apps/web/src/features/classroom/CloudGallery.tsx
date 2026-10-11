@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   GrowthPresetIds,
   GrowthPresets,
+  CloudPlanetDocumentSchema,
   type CloudSession,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./CloudClassroomView";
@@ -10,6 +11,11 @@ import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
 import { GrowthLibraryChooser } from "../studio/GrowthLibraryChooser";
 import { download } from "../../app/download";
 import "./classroom.css";
+import {
+  CloudPlanetAppearance,
+  CloudPlanetOrb,
+  usePlanetImage,
+} from "./CloudPlanetAppearance";
 const Params = z.object({
   x: z.number().default(0.5),
   y: z.number().default(0.6),
@@ -30,10 +36,7 @@ const Planet = z.object({
   id: z.uuid(),
   owner_enrollment_id: z.uuid(),
   display_name: z.string(),
-  document: z.object({
-    metadata: z.object({ name: z.string() }),
-    color: z.string(),
-  }),
+  document: CloudPlanetDocumentSchema,
   works: z.array(Work),
 });
 const Gallery = z.object({ actorId: z.uuid(), planets: z.array(Planet) });
@@ -73,14 +76,20 @@ function PrivateImage({ classId, id }: { classId: string; id: string }) {
 export function CloudGallery({
   session,
   initialPlanetId,
+  initialClassId,
   onBack,
 }: {
   session: CloudSession;
   initialPlanetId?: string;
+  initialClassId?: string;
   onBack?: () => void;
 }) {
   const memberships = session.access === "active" ? session.memberships : [],
-    [classId, setClassId] = useState(memberships[0]?.classId ?? ""),
+    [classId, setClassId] = useState(
+      memberships.find((m) => m.classId === initialClassId)?.classId ??
+        memberships[0]?.classId ??
+        "",
+    ),
     [data, setData] = useState<z.infer<typeof Gallery> | null>(null),
     [planetId, setPlanetId] = useState(initialPlanetId ?? ""),
     [work, setWork] = useState<WorkData | null>(null),
@@ -92,7 +101,8 @@ export function CloudGallery({
     [uploadOpen, setUploadOpen] = useState(false),
     [title, setTitle] = useState(""),
     [description, setDescription] = useState(""),
-    [name, setName] = useState("我的色彩星球"),
+    [settingsOpen, setSettingsOpen] = useState(false),
+    [planetBirth, setPlanetBirth] = useState(""),
     [file, setFile] = useState<File | null>(null),
     [comment, setComment] = useState(""),
     [interactions, setInteractions] = useState<
@@ -120,7 +130,9 @@ export function CloudGallery({
           : (result.planets.find(
               (p) => p.owner_enrollment_id === result.actorId,
             )?.id ??
-            result.planets[0]?.id ??
+            (memberships.find((m) => m.classId === classId)?.role === "student"
+              ? ""
+              : result.planets[0]?.id) ??
             ""),
       );
     return result;
@@ -130,6 +142,8 @@ export function CloudGallery({
     const current = ++generation.current;
     setData(null);
     setWork(null);
+    setSettingsOpen(false);
+    setPlanetBirth("");
     setNotice("");
     setBusy(true);
     void classroomRequest(`classes/${classId}/planets`)
@@ -143,7 +157,10 @@ export function CloudGallery({
               result.planets.find(
                 (p) => p.owner_enrollment_id === result.actorId,
               )?.id ??
-              result.planets[0]?.id ??
+              (memberships.find((m) => m.classId === classId)?.role ===
+              "student"
+                ? ""
+                : result.planets[0]?.id) ??
               "",
           );
         }
@@ -166,6 +183,18 @@ export function CloudGallery({
     ),
     student =
       memberships.find((m) => m.classId === classId)?.role === "student";
+  const background = usePlanetImage(
+    classId,
+    selected?.id ?? "",
+    "interior",
+    selected?.document.media.interior?.id,
+  );
+  useEffect(() => {
+    if (!planetBirth) return;
+    stage.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const timer = setTimeout(() => setPlanetBirth(""), 4500);
+    return () => clearTimeout(timer);
+  }, [planetBirth]);
   useEffect(() => {
     let active = true;
     setInteractions([]);
@@ -262,6 +291,7 @@ export function CloudGallery({
           {onBack && <button onClick={onBack}>返回班级统计</button>}
           <select
             aria-label="作品班级"
+            disabled={busy}
             value={classId}
             onChange={(e) => {
               setWork(null);
@@ -296,30 +326,34 @@ export function CloudGallery({
         <section className="cloud-create">
           <span>✧</span>
           <div>
-            <h2>第一次来，创建你的云端星球</h2>
-            <p>每个班级一颗星球，之后可以持续添加自己最满意的作品。</p>
+            <p className="eyebrow">YOUR UNIVERSE STARTS HERE</p>
+            <h2>让宇宙为你诞生一颗星球</h2>
+            <p>
+              一键随机生成外观，之后自由改名和设计。每个班级只创建一颗属于你的星球。
+            </p>
+            <p>建议尽快上传自己的星球外貌和内部背景，让它拥有你的风格。</p>
           </div>
-          <input
-            aria-label="云端星球名称"
-            maxLength={60}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
           <button
             className="primary"
-            disabled={busy || !name.trim()}
+            disabled={busy}
             onClick={() =>
               void perform(async () => {
-                await classroomRequest(`classes/${classId}/planets`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ name, color: "#82c9c7" }),
-                });
-                await refresh();
+                const result = await (
+                  await classroomRequest(`classes/${classId}/planets`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ random: true }),
+                  })
+                ).json();
+                await refresh(result.id);
+                if (result.created) {
+                  setPlanetBirth(result.id);
+                  setNotice("你的星球诞生了。欣赏一下，再开始你的设计吧。");
+                }
               })
             }
           >
-            创建我的云端星球
+            {busy ? "正在召唤你的星球…" : "一键随机创建我的星球 ✦"}
           </button>
         </section>
       )}
@@ -327,14 +361,16 @@ export function CloudGallery({
         {data?.planets.map((p) => (
           <button
             key={p.id}
+            disabled={busy}
             aria-pressed={planetId === p.id}
             onClick={() => {
               setPlanetId(p.id);
               setWork(null);
               setEditing(false);
+              setSettingsOpen(false);
             }}
           >
-            <span className="student-orb" />
+            <CloudPlanetOrb classId={classId} id={p.id} document={p.document} />
             <span>
               <strong>{p.document.metadata.name}</strong>
               <small>
@@ -357,24 +393,96 @@ export function CloudGallery({
               </p>
             </div>
             {owned && (
-              <button
-                className="primary"
-                disabled={busy || editing}
-                onClick={() => {
-                  requestId.current = crypto.randomUUID();
-                  setTitle("");
-                  setDescription("");
-                  setFile(null);
-                  setUploadOpen(true);
-                }}
-              >
-                ＋ 上传展示作品
-              </button>
+              <div className="row-buttons">
+                <button
+                  disabled={busy || editing || Boolean(planetBirth)}
+                  onClick={() => setSettingsOpen((v) => !v)}
+                >
+                  编辑星球外貌与背景
+                </button>
+                <button
+                  className="primary"
+                  disabled={busy || editing || Boolean(planetBirth)}
+                  onClick={() => {
+                    requestId.current = crypto.randomUUID();
+                    setTitle("");
+                    setDescription("");
+                    setFile(null);
+                    setUploadOpen(true);
+                  }}
+                >
+                  ＋ 上传展示作品
+                </button>
+              </div>
             )}
           </div>
-          <div className="cloud-room" ref={stage} aria-label="云端星球内部">
-            <div className="cloud-room-moon" />
-            <div className="cloud-room-land" />
+          {owned &&
+            (!selected.document.media.exterior ||
+              !selected.document.media.interior) &&
+            !settingsOpen && (
+              <div className="cloud-onboarding-tip">
+                <span>
+                  ✧ 建议尽快上传你设计的
+                  {!selected.document.media.exterior &&
+                  !selected.document.media.interior
+                    ? "星球外貌和内部背景"
+                    : !selected.document.media.exterior
+                      ? "星球外貌"
+                      : "内部背景"}
+                  ，让同学认出你的风格。
+                </span>
+                <button
+                  disabled={busy || Boolean(planetBirth)}
+                  onClick={() => setSettingsOpen(true)}
+                >
+                  开始设计 →
+                </button>
+              </div>
+            )}
+          {owned && settingsOpen && (
+            <CloudPlanetAppearance
+              key={selected.id}
+              classId={classId}
+              id={selected.id}
+              document={selected.document}
+              busy={busy}
+              run={perform}
+              onSaved={() => refresh(selected.id)}
+              onClose={() => setSettingsOpen(false)}
+            />
+          )}
+          {background.error && (
+            <p role="status">内部背景读取失败，请刷新作品重试。</p>
+          )}
+          <div
+            className={`cloud-room ${planetBirth === selected.id ? "planet-born" : ""}`}
+            ref={stage}
+            aria-label="云端星球内部"
+            style={{ backgroundColor: selected.document.color }}
+          >
+            {background.url ? (
+              <img
+                className="cloud-room-background"
+                src={background.url}
+                alt="星球内部背景"
+              />
+            ) : (
+              <>
+                <div className="cloud-room-moon" />
+                <div className="cloud-room-land" />
+              </>
+            )}
+            {planetBirth === selected.id && (
+              <div className="cloud-planet-birth" role="status">
+                <CloudPlanetOrb
+                  classId={classId}
+                  id={selected.id}
+                  document={selected.document}
+                />
+                <h3>{selected.document.metadata.name} · 为你诞生</h3>
+                <p>从这里开始，留下你的色彩。</p>
+              </div>
+            )}
             {selected.works.map((w, index) => {
               const current = editing && draft?.id === w.id ? draft : w;
               return (

@@ -9,8 +9,10 @@ import "./auth.css";
 
 export function AuthEntry({
   onSession,
+  onEnter,
 }: {
   onSession?: (session: CloudSession | null) => void;
+  onEnter?: (membership: CloudMembership) => Promise<boolean>;
 }) {
   const [client] = useState(getAuthClient);
   const [open, setOpen] = useState(false);
@@ -23,6 +25,8 @@ export function AuthEntry({
   const [checking, setChecking] = useState(true);
   const [memberships, setMemberships] = useState<CloudMembership[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedClass, setSelectedClass] = useState("");
+  const [entering, setEntering] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
@@ -62,13 +66,18 @@ export function AuthEntry({
         if (!active || current !== generation.current) return;
         setIdentity(result.identity.email);
         setMemberships(result.memberships);
+        setSelectedClass((current) =>
+          result.memberships.some((m) => m.classId === current)
+            ? current
+            : (result.memberships[0]?.classId ?? ""),
+        );
         onSession?.(result);
         setMessage(
           result.access === "blocked"
             ? "课堂账户已停用，请联系老师。"
             : result.access === "active"
               ? result.cloudWrites
-                ? "身份与班级已验证。云端作品上传已开放，请进入课堂作品；本地创作仍单独保存在本机。"
+                ? "登录成功。选择班级并确认进入，开始你的色彩宇宙之旅。"
                 : "身份与班级已验证。当前星球和作品仍保存在本机，云端提交尚未开放。"
               : result.database === "connected"
                 ? "身份已验证，待加入班级。请联系老师加入课堂。当前星球和作品仍保存在本机。"
@@ -111,6 +120,21 @@ export function AuthEntry({
     setPassword("");
     setOpen(false);
   };
+  const selectedMembership = memberships.find(
+    (m) => m.classId === selectedClass,
+  );
+  const enter = async () => {
+    if (!selectedMembership || busy || checking || entering || !onEnter) return;
+    setEntering(true);
+    try {
+      if (await onEnter(selectedMembership)) close();
+      else setMessage("请先完成或取消当前编辑，再进入课堂。");
+    } catch {
+      setMessage("暂时无法进入，请稍后重试。");
+    } finally {
+      setEntering(false);
+    }
+  };
   return (
     <>
       <button
@@ -125,13 +149,13 @@ export function AuthEntry({
         aria-labelledby="auth-title"
         onCancel={(event) => {
           event.preventDefault();
-          if (!busy) close();
+          if (!busy && !entering) close();
         }}
       >
         <button
           className="modal-close"
           aria-label="关闭登录"
-          disabled={busy}
+          disabled={busy || entering}
           onClick={close}
         >
           ×
@@ -149,17 +173,39 @@ export function AuthEntry({
               <ul className="auth-memberships" aria-label="我的班级">
                 {memberships.map((membership) => (
                   <li key={membership.enrollmentId}>
-                    <span>{membership.title}</span>
-                    <strong>
-                      {
-                        { student: "学生", teacher: "教师", assistant: "助教" }[
-                          membership.role
-                        ]
-                      }
-                    </strong>
+                    <button
+                      type="button"
+                      aria-pressed={selectedClass === membership.classId}
+                      disabled={busy || checking || entering}
+                      onClick={() => setSelectedClass(membership.classId)}
+                    >
+                      <span>{membership.title}</span>
+                      <strong>
+                        {
+                          {
+                            student: "学生",
+                            teacher: "教师",
+                            assistant: "助教",
+                          }[membership.role]
+                        }
+                      </strong>
+                    </button>
                   </li>
                 ))}
               </ul>
+            )}
+            {selectedMembership && onEnter && (
+              <button
+                className="primary auth-enter"
+                disabled={busy || checking || entering}
+                onClick={() => void enter()}
+              >
+                {entering
+                  ? "正在进入…"
+                  : selectedMembership.role === "student"
+                    ? "进入我的星球 →"
+                    : "进入班级管理 →"}
+              </button>
             )}
             <button
               className="outline"
@@ -250,8 +296,8 @@ export function AuthEntry({
           </form>
         )}
         <p className="auth-pilot-note">云端课堂试用 · 班级身份由服务器核对</p>
-        <button className="outline" disabled={busy} onClick={close}>
-          继续浏览
+        <button className="outline" disabled={busy || entering} onClick={close}>
+          {selectedMembership ? "暂不进入" : "继续浏览"}
         </button>
       </dialog>
     </>

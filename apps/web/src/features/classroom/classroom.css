@@ -658,3 +658,202 @@
     max-width: 100%;
   }
 }
+.cloud-planet-orb {
+  object-fit: cover;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow:
+    inset -10px -5px 14px #0009,
+    0 0 20px #7abfe518;
+  background: #061323;
+}
+.cloud-onboarding-tip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px 20px;
+  border: 1px solid #c4d99a44;
+  border-radius: 12px;
+  background: #aacb9020;
+  font-size: 13px;
+  color: #d3e1ce;
+}
+.cloud-appearance {
+  padding: 24px;
+  margin-top: 20px;
+  border: 1px solid #9acdc03b;
+  border-radius: 18px;
+  background: linear-gradient(125deg, #16333d, #161b2f);
+}
+.cloud-appearance > p {
+  color: #a7bbc4;
+  line-height: 1.8;
+  font-size: 13px;
+}
+.cloud-appearance label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 18px 16px 0;
+  font-size: 13px;
+}
+.cloud-appearance input {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  color: #deece7;
+  background: #0e1b28;
+  border: 1px solid #97b4ca40;
+  padding: 10px;
+  border-radius: 8px;
+}
+.cloud-appearance small {
+  display: block;
+  margin-top: 18px;
+  color: #9bb1be;
+  line-height: 1.7;
+}
+.cloud-skins {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.cloud-skins button {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 14px 6px;
+  background: #0c1a29;
+  border: 1px solid #96b4d130;
+  border-radius: 12px;
+  font-size: 12px;
+}
+.cloud-skins button[aria-pressed="true"] {
+  border-color: #bedbbc;
+  background: #2b4c4555;
+}
+.cloud-skins img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.cloud-image-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 24px;
+}
+.cloud-image-settings > div {
+  min-width: 0;
+  background: #0f1c2b99;
+  padding: 20px;
+  border-radius: 12px;
+}
+.cloud-image-settings h3 {
+  margin-top: 0;
+  font-size: 16px;
+}
+.cloud-image-settings p {
+  font-size: 12px;
+  color: #a0b5c1;
+}
+.cloud-image-settings input {
+  display: block;
+  width: 100%;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+.cloud-room-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cloud-planet-birth {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #132945ef, #081322e8);
+  color: #e5efde;
+  animation: planet-welcome 4.5s ease both;
+}
+.cloud-planet-birth .cloud-planet-orb {
+  width: 150px;
+  height: 150px;
+  margin: 0 0 10px;
+  box-shadow: 0 0 60px #b9ddff44;
+  animation: planet-materialize 4.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.cloud-planet-birth h3 {
+  font-size: 22px;
+  letter-spacing: 2px;
+}
+.cloud-planet-birth p {
+  color: #aac6d4;
+  font-size: 13px;
+}
+@keyframes planet-materialize {
+  0% {
+    opacity: 0;
+    transform: scale(0.15);
+    filter: blur(18px);
+  }
+  35% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  70%,
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes planet-welcome {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cloud-planet-birth,
+  .cloud-planet-birth .cloud-planet-orb {
+    animation: none;
+  }
+}
+@media (max-width: 600px) {
+  .cloud-skins {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cloud-image-settings {
+    grid-template-columns: 1fr;
+  }
+  .cloud-appearance {
+    padding: 18px;
+  }
+  .cloud-appearance label {
+    display: flex;
+  }
+  .cloud-appearance label input {
+    width: 100%;
+  }
+  .cloud-appearance label input[type="color"] {
+    width: 60px;
+  }
+}
+.cloud-skins button[aria-pressed="true"] {
+  color: #e2ece5;
+}

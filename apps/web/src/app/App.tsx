@@ -1,7 +1,7 @@
 import { download } from "./download";
 import { CourseView } from "../features/course/CourseView";
 import { TeacherView } from "../features/teacher-demo/TeacherView";
-import type { CloudSession } from "@colorverse/contracts";
+import type { CloudSession, CloudMembership } from "@colorverse/contracts";
 import { StudioView } from "../features/studio/StudioView";
 import { ElementEditorView } from "../features/studio/ElementEditorView";
 import {
@@ -87,6 +87,7 @@ const CloudGallery = lazy(() =>
 );
 export function App() {
   const [cloudSession, setCloudSession] = useState<CloudSession | null>(null);
+  const [cloudEntry, setCloudEntry] = useState({ classId: "", sequence: 0 });
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
     [universe, setUniverse] = useState<UniverseDocument | null>(null),
     [route, setRoute] = useState<
@@ -788,7 +789,30 @@ export function App() {
         <div className="header-right">
           {cloudAuthEnabled && (
             <Suspense fallback={<span className="muted">连接账户…</span>}>
-              <AuthEntry onSession={setCloudSession} />
+              <AuthEntry
+                onSession={setCloudSession}
+                onEnter={async (membership: CloudMembership) => {
+                  if (
+                    busy ||
+                    route === "element" ||
+                    (route === "course" && coursePending) ||
+                    cloudSession?.access !== "active" ||
+                    !cloudSession.memberships.some(
+                      (m) => m.enrollmentId === membership.enrollmentId,
+                    )
+                  )
+                    return false;
+                  await flush();
+                  setCloudEntry((entry) => ({
+                    classId: membership.classId,
+                    sequence: entry.sequence + 1,
+                  }));
+                  setRoute(
+                    membership.role === "student" ? "cloudworks" : "classroom",
+                  );
+                  return true;
+                }}
+              />
             </Suspense>
           )}
           <span className="local-label">
@@ -829,15 +853,20 @@ export function App() {
       {route === "course" && <CourseView onPendingChange={setCoursePending} />}
       {route === "classroom" && (
         <Suspense fallback={<main className="loading">正在连接班级…</main>}>
-          <CloudClassroomView session={cloudSession} />
+          <CloudClassroomView
+            key={`${cloudSession?.identity.id}-${cloudEntry.sequence}`}
+            session={cloudSession}
+            initialClassId={cloudEntry.classId}
+          />
         </Suspense>
       )}
       {route === "cloudworks" &&
         (cloudSession?.access === "active" ? (
           <Suspense fallback={<main className="loading">正在连接作品…</main>}>
             <CloudGallery
-              key={cloudSession.identity.id}
+              key={`${cloudSession.identity.id}-${cloudEntry.sequence}`}
               session={cloudSession}
+              initialClassId={cloudEntry.classId}
             />
           </Suspense>
         ) : (

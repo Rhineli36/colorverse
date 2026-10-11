@@ -51,7 +51,7 @@
   display: grid;
   gap: 8px;
 }
-.auth-memberships li {
+.auth-memberships li > button {
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -59,6 +59,22 @@
   border: 1px solid #72c7d338;
   border-radius: 10px;
   background: #18344860;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  align-items: center;
+}
+.auth-memberships button[aria-pressed="true"] {
+  border-color: #a9decc;
+  background: #28555280;
+}
+.auth-dialog .auth-enter {
+  width: 100%;
+  min-height: 56px;
+  margin: 16px 0 8px;
+  font-size: 18px;
+  font-weight: 650;
+  box-shadow: 0 0 30px #a5ddbe22;
 }
 .auth-memberships strong {
   color: #b8e5df;

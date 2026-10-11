@@ -1,6 +1,10 @@
 import { Client } from "pg";
 import { z } from "zod";
-import { GrowthPresetIds } from "@colorverse/contracts";
+import {
+  GrowthPresetIds,
+  CloudPlanetAppearanceInput,
+  CloudPlanetPresets,
+} from "@colorverse/contracts";
 import { imageInfo } from "@colorverse/package-io";
 import type { VerifiedIdentity } from "./auth";
 import type { AuthEnvironment } from "./auth";
@@ -19,9 +23,12 @@ export interface ShowcaseCloudEnvironment extends AuthEnvironment {
   SUPABASE_SECRET_KEY?: string;
   IMAGES?: ImagesBinding;
 }
-const planetInput = z.strictObject({
-  name: z.string().trim().min(1).max(60),
-  color: z.string().regex(/^#[a-f0-9]{6}$/i),
+const planetInput = z.union([
+  CloudPlanetAppearanceInput,
+  z.strictObject({ random: z.literal(true) }),
+]);
+const appearanceInput = CloudPlanetAppearanceInput.extend({
+  revision: z.number().int().nonnegative(),
 });
 const elementInput = z.strictObject({
   presetId: z.enum(GrowthPresetIds),
@@ -91,6 +98,31 @@ async function readLimited(request: Request, max: number) {
   }
   return bytes;
 }
+async function removeStoredImages(
+  env: ShowcaseCloudEnvironment,
+  keys: string[],
+) {
+  const response = await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/colorverse-classroom`,
+    {
+      method: "DELETE",
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY!,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY!}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prefixes: keys }),
+      signal: AbortSignal.timeout(10000),
+      redirect: "manual",
+    },
+  );
+  if (!response.ok)
+    throw new ClassroomFailure(
+      503,
+      "STORAGE_UNAVAILABLE",
+      "旧图片清理暂未完成",
+    );
+}
 export async function handleShowcaseCloud(
   request: Request,
   env: ShowcaseCloudEnvironment,
@@ -135,19 +167,210 @@ export async function handleShowcaseCloud(
       const input = planetInput.parse(
         JSON.parse(new TextDecoder().decode(await readLimited(request, 2048))),
       );
+      const skin =
+        "random" in input
+          ? crypto.getRandomValues(new Uint32Array(1))[0] %
+            CloudPlanetPresets.length
+          : input.skin;
+      const appearance = "random" in input ? CloudPlanetPresets[skin] : input;
       const result = await client.query(
         "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,$3) ON CONFLICT(owner_enrollment_id) DO NOTHING RETURNING id",
         [
           crypto.randomUUID(),
           actor.id,
           JSON.stringify({
-            metadata: { name: input.name },
-            color: input.color,
+            metadata: { name: appearance.name },
+            color: appearance.color,
+            skin,
+            revision: 0,
           }),
         ],
       );
+      const id =
+        result.rows[0]?.id ??
+        (
+          await client.query(
+            "SELECT id FROM colorverse.planets WHERE owner_enrollment_id=$1",
+            [actor.id],
+          )
+        ).rows[0]?.id;
       await client.query("COMMIT");
-      return Response.json({ created: result.rows.length > 0 });
+      return Response.json({ created: result.rows.length > 0, id });
+    }
+    const planetMatch =
+      /^planets\/([a-f0-9-]+)\/(appearance|exterior|interior)$/.exec(resource);
+    if (planetMatch) {
+      const id = z.uuid().parse(planetMatch[1]),
+        kind = planetMatch[2];
+      const mutation = request.method === "PUT" || request.method === "POST";
+      if (mutation)
+        await client.query(
+          "SELECT pg_advisory_xact_lock(hashtextextended($1,7301942))",
+          [actor.id],
+        );
+      const row = (
+        await client.query(
+          "SELECT p.owner_enrollment_id,p.document FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE p.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active'",
+          [id, classId],
+        )
+      ).rows[0];
+      if (!row) throw new ClassroomFailure(404, "NOT_FOUND", "星球不存在");
+      if (
+        mutation &&
+        (actor.role !== "student" || row.owner_enrollment_id !== actor.id)
+      )
+        throw new ClassroomFailure(403, "OWNER_REQUIRED", "只能修改自己的星球");
+      const document = row.document,
+        revision = document.revision ?? 0;
+      if (kind === "appearance" && request.method === "PUT") {
+        const input = appearanceInput.parse(
+          JSON.parse(
+            new TextDecoder().decode(await readLimited(request, 2048)),
+          ),
+        );
+        if (input.revision !== revision)
+          throw new ClassroomFailure(
+            409,
+            "PLANET_CONFLICT",
+            "星球已更新，请刷新后再修改",
+          );
+        await client.query(
+          "UPDATE colorverse.planets SET document=$1 WHERE id=$2",
+          [
+            JSON.stringify({
+              ...document,
+              metadata: { ...document.metadata, name: input.name },
+              color: input.color,
+              skin: input.skin,
+              revision: revision + 1,
+            }),
+            id,
+          ],
+        );
+        await client.query("COMMIT");
+        return Response.json({ saved: true });
+      }
+      if (kind !== "appearance" && request.method === "GET") {
+        const media = document.media?.[kind];
+        if (!media)
+          throw new ClassroomFailure(404, "NOT_FOUND", "尚未上传这张图片");
+        await client.query("COMMIT");
+        const image = await storage(env, `colorverse-classroom/${media.key}`);
+        return new Response(image.body, {
+          headers: { "Content-Type": "image/webp" },
+        });
+      }
+      if (kind !== "appearance" && request.method === "POST") {
+        const url = new URL(request.url),
+          requestId = z.uuid().parse(url.searchParams.get("requestId"));
+        const previous = document.media?.[kind];
+        if (previous?.requestId === requestId) {
+          await client.query("COMMIT");
+          return Response.json({ saved: true, id: previous.id });
+        }
+        if (
+          z.coerce
+            .number()
+            .int()
+            .nonnegative()
+            .parse(
+              z.string().regex(/^\d+$/).parse(url.searchParams.get("revision")),
+            ) !== revision
+        )
+          throw new ClassroomFailure(
+            409,
+            "PLANET_CONFLICT",
+            "星球已更新，请刷新后重新上传",
+          );
+        const bytes = await readLimited(request, 8388608);
+        let info;
+        try {
+          info = imageInfo(bytes);
+        } catch {
+          throw new ClassroomFailure(
+            400,
+            "INVALID_IMAGE",
+            "请选择有效的 PNG、JPEG 或 WebP 图片",
+          );
+        }
+        if (info.width * info.height > 16000000)
+          throw new ClassroomFailure(
+            400,
+            "IMAGE_DIMENSIONS",
+            "图片像素过大，请缩小到 1600 万像素以内",
+          );
+        let display: Uint8Array;
+        try {
+          const output = await env
+            .IMAGES!.input(new Blob([bytes as BlobPart]).stream())
+            .transform({
+              width: kind === "exterior" ? 1024 : 2048,
+              height: kind === "exterior" ? 1024 : 2048,
+              fit: "scale-down",
+            })
+            .output({ format: "image/webp", quality: 90, anim: false });
+          display = new Uint8Array(await output.response().arrayBuffer());
+        } catch {
+          throw new ClassroomFailure(
+            400,
+            "IMAGE_DECODE_FAILED",
+            "图片无法完整读取，请换一张有效图片",
+          );
+        }
+        const quota = (
+          await client.query(
+            "SELECT COALESCE(sum(byte_size+original_byte_size),0)::int bytes FROM colorverse.showcase_works WHERE planet_id=$1",
+            [id],
+          )
+        ).rows[0].bytes;
+        const other =
+          document.media?.[kind === "exterior" ? "interior" : "exterior"]
+            ?.bytes ?? 0;
+        if (
+          display.length > 8388608 ||
+          quota + other + display.length > 104857600
+        )
+          throw new ClassroomFailure(
+            409,
+            "QUOTA_EXCEEDED",
+            "图片或星球存储空间超过试用上限",
+          );
+        const mediaId = crypto.randomUUID(),
+          key = `${identity.subject}/${mediaId}-${kind}.webp`;
+        uploadedKeys.push(key);
+        await storage(
+          env,
+          `colorverse-classroom/${key}`,
+          "POST",
+          display,
+          "image/webp",
+        );
+        await client.query(
+          "UPDATE colorverse.planets SET document=$1 WHERE id=$2",
+          [
+            JSON.stringify({
+              ...document,
+              revision: revision + 1,
+              media: {
+                ...document.media,
+                [kind]: { id: mediaId, key, bytes: display.length, requestId },
+              },
+            }),
+            id,
+          ],
+        );
+        commitAttempted = true;
+        await client.query("COMMIT");
+        uploadedKeys.length = 0;
+        if (previous?.key) {
+          try {
+            await removeStoredImages(env, [previous.key]);
+          } catch {
+            console.warn("planet_media_cleanup_pending");
+          }
+        }
+        return Response.json({ saved: true, id: mediaId });
+      }
     }
     const fileMatch = /^works\/([a-f0-9-]+)\/(image|original)$/.exec(resource);
     if (fileMatch && request.method === "GET") {
@@ -193,7 +416,7 @@ export async function handleShowcaseCloud(
       );
       const planet = (
         await client.query(
-          "SELECT id FROM colorverse.planets WHERE owner_enrollment_id=$1",
+          "SELECT id,document FROM colorverse.planets WHERE owner_enrollment_id=$1",
           [actor.id],
         )
       ).rows[0];
@@ -233,6 +456,9 @@ export async function handleShowcaseCloud(
           [planet.id],
         )
       ).rows[0];
+      quota.bytes +=
+        (planet.document?.media?.exterior?.bytes ?? 0) +
+        (planet.document?.media?.interior?.bytes ?? 0);
       if (quota.count >= 100 || quota.bytes >= 104857600)
         throw new ClassroomFailure(
           409,
@@ -447,19 +673,7 @@ export async function handleShowcaseCloud(
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
     if (uploadedKeys.length && !commitAttempted)
-      await fetch(
-        `${env.SUPABASE_URL}/storage/v1/object/colorverse-classroom`,
-        {
-          method: "DELETE",
-          headers: {
-            apikey: env.SUPABASE_SECRET_KEY!,
-            Authorization: `Bearer ${env.SUPABASE_SECRET_KEY!}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ prefixes: uploadedKeys }),
-          signal: AbortSignal.timeout(10000),
-        },
-      ).catch(() => {});
+      await removeStoredImages(env, uploadedKeys).catch(() => {});
     if (error instanceof z.ZodError || error instanceof SyntaxError)
       throw new ClassroomFailure(
         400,

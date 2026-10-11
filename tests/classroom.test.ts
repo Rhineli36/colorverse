@@ -12,7 +12,11 @@ import {
   type CourseDatabase,
 } from "../apps/api/src/database";
 import { classroomOverview } from "../apps/worker/src/classroom";
-import { GrowthPresetIds, GrowthLibrarySpec } from "@colorverse/contracts";
+import {
+  GrowthPresetIds,
+  GrowthLibrarySpec,
+  CloudPlanetDocumentSchema,
+} from "@colorverse/contracts";
 import { growthShapes } from "@colorverse/domain";
 const schema = `test_course_${randomUUID().replaceAll("-", "")}`,
   issuer = "https://test.supabase.co/auth/v1";
@@ -123,7 +127,7 @@ describe("cloud showcase and interaction permissions", () => {
       "planets",
       clientFactory,
     );
-    expect(await response.json()).toEqual({ created: false });
+    expect(await response.json()).toEqual({ created: false, id: ids[11] });
   });
   it("counts one reaction on another work, deduplicates retries and rejects self and foreign work targets", async () => {
     const work = (
@@ -345,5 +349,232 @@ describe("expanded growth library", () => {
       }
     }
     expect(signatures.size).toBe(30);
+  });
+});
+
+describe("cloud planet onboarding and personalization", () => {
+  it("randomly creates one planet and returns that same planet on retries", async () => {
+    try {
+      const created = await handleShowcaseCloud(
+        request("planets", { random: true }),
+        env,
+        identity(ids[2]),
+        ids[5],
+        "planets",
+        clientFactory,
+      );
+      const first = await created.json();
+      expect(first.created).toBe(true);
+      const row = (
+        await db.query("SELECT document FROM planets WHERE id=$1", [first.id])
+      ).rows[0];
+      expect(
+        CloudPlanetDocumentSchema.parse(row.document).skin,
+      ).toBeGreaterThanOrEqual(0);
+      expect(CloudPlanetDocumentSchema.parse(row.document).skin).toBeLessThan(
+        6,
+      );
+      expect(
+        CloudPlanetDocumentSchema.parse(row.document).metadata.name,
+      ).toBeTruthy();
+      const retry = await handleShowcaseCloud(
+        request("planets", { random: true }),
+        env,
+        identity(ids[2]),
+        ids[5],
+        "planets",
+        clientFactory,
+      );
+      expect(await retry.json()).toEqual({ created: false, id: first.id });
+    } finally {
+      await db.query("DELETE FROM planets WHERE owner_enrollment_id=$1", [
+        ids[9],
+      ]);
+    }
+  });
+  it("only lets the owner edit appearance, preserves media and rejects stale edits", async () => {
+    const previous = CloudPlanetDocumentSchema.parse(
+      (await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]]))
+        .rows[0].document,
+    );
+    const media = {
+      exterior: { id: randomUUID(), key: "server-owned.webp", bytes: 120 },
+    };
+    try {
+      await db.query("UPDATE planets SET document=$1 WHERE id=$2", [
+        JSON.stringify({ ...previous, media }),
+        ids[11],
+      ]);
+      const resource = `planets/${ids[11]}/appearance`,
+        input = { name: "我的新星球", color: "#abcdef", skin: 4, revision: 0 };
+      await expect(
+        handleShowcaseCloud(
+          request(resource, input, "PUT"),
+          env,
+          identity(ids[2]),
+          ids[5],
+          resource,
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      await handleShowcaseCloud(
+        request(resource, input, "PUT"),
+        env,
+        identity(ids[1]),
+        ids[5],
+        resource,
+        clientFactory,
+      );
+      await expect(
+        handleShowcaseCloud(
+          request(resource, input, "PUT"),
+          env,
+          identity(ids[1]),
+          ids[5],
+          resource,
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(
+        (await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]]))
+          .rows[0].document,
+      ).toMatchObject({
+        metadata: { name: input.name },
+        skin: 4,
+        revision: 1,
+        media,
+      });
+    } finally {
+      await db.query("UPDATE planets SET document=$1 WHERE id=$2", [
+        JSON.stringify(previous),
+        ids[11],
+      ]);
+    }
+  });
+  it("keeps planet images private, deduplicates uploads, checks ownership and replaces the old object", async () => {
+    const previous = CloudPlanetDocumentSchema.parse(
+      (await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]]))
+        .rows[0].document,
+    );
+    const objects = new Map<string, Uint8Array>();
+    vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+      if (init.method === "POST") {
+        objects.set(url, init.body as Uint8Array);
+        return new Response("{}");
+      }
+      if (init.method === "DELETE") {
+        const { prefixes } = JSON.parse(init.body as string);
+        for (const key of prefixes) objects.delete(`${url}/${key}`);
+        return new Response("{}");
+      }
+      return new Response(objects.get(url) as BodyInit, {
+        headers: { "Content-Type": "image/webp" },
+      });
+    });
+    const imagesEnv = {
+      ...env,
+      IMAGES: {
+        input: () => ({
+          transform: () => ({
+            output: async () => ({
+              response: () => new Response(new Uint8Array([1, 2, 3])),
+            }),
+          }),
+        }),
+      },
+    };
+    const bytes = await readFile("apps/web/public/demo/body-0.png");
+    const resource = `planets/${ids[11]}/exterior`,
+      requestId = randomUUID();
+    const upload = (revision: number, retry = requestId) =>
+      new Request(
+        `https://app.test/${resource}?requestId=${retry}&revision=${revision}`,
+        { method: "POST", body: bytes },
+      );
+    try {
+      await expect(
+        handleShowcaseCloud(
+          upload(0),
+          imagesEnv,
+          identity(ids[2]),
+          ids[5],
+          resource,
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      const saved = await handleShowcaseCloud(
+        upload(0),
+        imagesEnv,
+        identity(ids[1]),
+        ids[5],
+        resource,
+        clientFactory,
+      );
+      const first = await saved.json();
+      const retry = await handleShowcaseCloud(
+        upload(0),
+        imagesEnv,
+        identity(ids[1]),
+        ids[5],
+        resource,
+        clientFactory,
+      );
+      expect(await retry.json()).toEqual(first);
+      expect(objects.size).toBe(1);
+      const peerImage = await handleShowcaseCloud(
+        new Request(`https://app.test/${resource}`),
+        imagesEnv,
+        identity(ids[2]),
+        ids[5],
+        resource,
+        clientFactory,
+      );
+      expect(peerImage.headers.get("Content-Type")).toBe("image/webp");
+      expect(new Uint8Array(await peerImage.arrayBuffer())).toEqual(
+        new Uint8Array([1, 2, 3]),
+      );
+      await expect(
+        handleShowcaseCloud(
+          new Request(`https://app.test/${resource}`),
+          imagesEnv,
+          identity(ids[3]),
+          ids[5],
+          resource,
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(
+        handleShowcaseCloud(
+          upload(0, randomUUID()),
+          imagesEnv,
+          identity(ids[1]),
+          ids[5],
+          resource,
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      await handleShowcaseCloud(
+        upload(1, randomUUID()),
+        imagesEnv,
+        identity(ids[1]),
+        ids[5],
+        resource,
+        clientFactory,
+      );
+      expect(objects.size).toBe(1);
+      const document = CloudPlanetDocumentSchema.parse(
+        (await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]]))
+          .rows[0].document,
+      );
+      expect(document.revision).toBe(2);
+      expect(document.media.exterior?.id).not.toBe(first.id);
+      expect(document.metadata).toEqual(previous.metadata);
+    } finally {
+      vi.unstubAllGlobals();
+      await db.query("UPDATE planets SET document=$1 WHERE id=$2", [
+        JSON.stringify(previous),
+        ids[11],
+      ]);
+    }
   });
 });

@@ -425,3 +425,4 @@ export type UniverseDocument = Omit<
 };
 export type EffectParams = z.infer<typeof EffectParamsSchema>;
 export * from "./classroom";
+export * from "./cloud-planet";
