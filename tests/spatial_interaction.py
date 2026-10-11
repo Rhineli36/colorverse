@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'work/python-deps'))
 from playwright.sync_api import sync_playwright, expect
+from cloud_teacher_fixture import enable_teacher
 expect.set_options(timeout=15000)
 URL=os.environ.get('COLORVERSE_TEST_URL','http://127.0.0.1:5173')
 checks, errors=[],[]
@@ -34,7 +35,7 @@ with sync_playwright() as p:
     page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
     page.on('console',lambda m:errors.append(m.text) if m.type=='error'else None)
     page.goto(URL);page.wait_for_load_state('networkidle');page.wait_for_timeout(800)
-    expect(page.get_by_label('宇宙操作身份')).to_have_value('student')
+    expect(page.get_by_role('button',name='教师演示',exact=True)).to_have_count(0);expect(page.get_by_label('宇宙操作身份')).to_have_count(0)
     assert state(page)['camera']['zoom'] < .25
     expect(page.locator('canvas')).to_have_attribute('data-universe-atmosphere','true')
     page.get_by_role('button',name='暂停运行',exact=True).click();page.wait_for_timeout(100)
@@ -58,7 +59,7 @@ with sync_playwright() as p:
     assert state(page)['universe']==after['universe']
     close_notice(page)
     passed('student cannot drag a classmate planet')
-    page.get_by_label('宇宙操作身份').select_option('teacher');page.wait_for_timeout(100)
+    enable_teacher(page);page.get_by_label('宇宙操作身份').select_option('teacher');page.wait_for_timeout(100)
     before=state(page);foreign=before['universe']['entries'][1]
     drag(page,point(before,foreign),(70,60))
     expect(page.get_by_role('status')).to_contain_text('星球位置已保存')
@@ -113,7 +114,7 @@ with sync_playwright() as p:
     assert state(page)['universe']==before['universe']
     passed('locating my planet works and cancelling a drag does not save a move')
     page.get_by_role('button',name='薄荷来信',exact=True).click();page.wait_for_timeout(1600)
-    page.get_by_label('宇宙操作身份').select_option('teacher');page.wait_for_timeout(100)
+    enable_teacher(page);page.get_by_label('宇宙操作身份').select_option('teacher');page.wait_for_timeout(100)
     before=state(page);start=point(before,before['universe']['entries'][1]);page.mouse.move(*start);page.mouse.down();page.mouse.move(start[0]+60,start[1]+20,steps=5)
     page.get_by_label('宇宙操作身份').select_option('student');page.mouse.up();page.wait_for_timeout(300)
     assert state(page)['universe']==before['universe']

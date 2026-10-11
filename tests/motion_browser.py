@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'work/python-deps'))
 from playwright.sync_api import sync_playwright, expect
+from cloud_teacher_fixture import enable_teacher
 from PIL import Image, ImageChops, ImageStat
 expect.set_options(timeout=15000)
 URL=os.environ.get('COLORVERSE_TEST_URL','http://127.0.0.1:5173/')
@@ -80,7 +81,7 @@ with sync_playwright() as p:
     assert canvas.get_attribute('data-scene-generation')==generation
     passed('global pause changes no saved configuration; dragging keeps motion and resumes from the new anchor')
     focus(page,'薄荷来信');expect(controls(page).get_by_role('button',name='快速',exact=True)).to_be_disabled();assert controls(page).get_by_role('button',name='保存运动设置',exact=True).count()==0
-    page.get_by_label('宇宙操作身份').select_option('teacher');expect(controls(page).get_by_role('button',name='快速',exact=True)).to_be_enabled()
+    enable_teacher(page);page.get_by_label('宇宙操作身份').select_option('teacher');expect(controls(page).get_by_role('button',name='快速',exact=True)).to_be_enabled()
     controls(page).get_by_role('button',name='快速',exact=True).click();controls(page).get_by_role('button',name='轻柔往返',exact=True).click();controls(page).get_by_role('button',name='保存运动设置',exact=True).click()
     expect(controls(page).get_by_role('button',name='保存运动设置',exact=True)).to_be_disabled();assert state(page)['u']['entries'][1]['motion']['trajectory']=='drift'
     page.get_by_label('宇宙操作身份').select_option('student');expect(controls(page).get_by_role('button',name='快速',exact=True)).to_be_disabled()
@@ -107,7 +108,7 @@ with sync_playwright() as p:
     assert mean_diff<.5,mean_diff
     page.evaluate('()=>{IDBObjectStore.prototype.put=window.motionOriginalPut;delete window.motionOriginalPut;}');focus(page);controls(page).get_by_role('button',name='快速',exact=True).click();save(page)
     passed('storage failure preserves saved layout and visual state; an explicit retry succeeds')
-    page.get_by_role('button',name='教师演示',exact=True).click()
+    enable_teacher(page);page.get_by_role('button',name='教师演示',exact=True).click()
     with page.expect_download() as task:page.get_by_role('button',name='导出完整宇宙备份 ↗',exact=True).click()
     backup=ROOT/'outputs/COLORVERSE-motion-universe-backup.zip';task.value.save_as(str(backup))
     with zipfile.ZipFile(backup) as z:

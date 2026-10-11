@@ -87,6 +87,9 @@ const CloudGallery = lazy(() =>
 );
 export function App() {
   const [cloudSession, setCloudSession] = useState<CloudSession | null>(null);
+  const canUseTeacherTools =
+    cloudSession?.access === "active" &&
+    cloudSession.memberships.some((m) => m.role === "teacher");
   const [cloudEntry, setCloudEntry] = useState({ classId: "", sequence: 0 });
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
     [universe, setUniverse] = useState<UniverseDocument | null>(null),
@@ -137,6 +140,12 @@ export function App() {
   );
   const myPlanet =
     ownedPlanets.find((p) => p.planetId === activeId) ?? ownedPlanets[0];
+  useEffect(() => {
+    if (!canUseTeacherTools) {
+      setLayoutRole("student");
+      setRoute((current) => (current === "teacher" ? "universe" : current));
+    }
+  }, [canUseTeacherTools]);
   useEffect(() => {
     if (route !== "room") setBirthLayerId(null);
   }, [route]);
@@ -763,17 +772,19 @@ export function App() {
               编辑你的星球
             </button>
           )}
-          <button
-            className={route === "teacher" ? "active" : ""}
-            onClick={() =>
-              void action(async () => {
-                await flush();
-                setRoute("teacher");
-              })
-            }
-          >
-            教师演示
-          </button>
+          {canUseTeacherTools && (
+            <button
+              className={route === "teacher" ? "active" : ""}
+              onClick={() =>
+                void action(async () => {
+                  await flush();
+                  setRoute("teacher");
+                })
+              }
+            >
+              教师演示
+            </button>
+          )}
           <button
             className={route === "course" ? "active" : ""}
             onClick={() =>
@@ -876,6 +887,7 @@ export function App() {
         ))}
       {route === "universe" && (
         <UniverseView
+          canUseTeacherTools={canUseTeacherTools}
           workspace={workspace}
           view={universeViewRef.current}
           camera={cameraRef.current}
@@ -1067,7 +1079,7 @@ export function App() {
           }
         />
       )}
-      {route === "teacher" && (
+      {route === "teacher" && canUseTeacherTools && (
         <TeacherView
           workspace={workspace}
           planets={planets}

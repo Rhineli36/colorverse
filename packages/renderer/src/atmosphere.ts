@@ -249,7 +249,7 @@ export class UniverseAtmosphere {
           nebulaNoise(u * 72 + z * 6, v * 72) * 0.55 +
           nebulaNoise(u * 160, v * 160 + z * 12) * 0.25 +
           nebulaNoise(u * 14, v * 14) * 0.2;
-        const brightness = (0.58 + z * 0.42) * (0.72 + grain * 0.42);
+        const brightness = (0.72 + z * 0.28) * (0.86 + grain * 0.16);
         const i = (y * size + x) * 4;
         pixels.data[i] = 255 * brightness;
         pixels.data[i + 1] = 246 * brightness;
@@ -277,17 +277,20 @@ export class UniverseAtmosphere {
     rim.anchor.set(0.5);
     rim.width = rim.height = radius * 3.6;
     rim.tint = color;
-    rim.alpha = 0.85;
+    rim.alpha = 0.72;
     rim.blendMode = "add";
     const body = new Sprite(surface);
     body.anchor.set(0.5);
     body.width = body.height = radius * 2;
     body.tint = color;
+    // Emissive scenery stays translucent, unlike an opaque student artwork.
+    body.alpha = 0.66;
+    body.blendMode = "add";
     const light = new Sprite(glow);
     light.anchor.set(0.5);
     light.width = light.height = radius * 2.4;
     light.tint = 0xfff5e5;
-    light.alpha = 0.55;
+    light.alpha = 0.88;
     light.blendMode = "add";
     node.addChild(corona, rim, body, light);
     // Static curved prominences remain attached to the same world anchor.
@@ -421,7 +424,7 @@ export class UniverseAtmosphere {
   update(seconds: number): number {
     this.seconds = seconds;
     for (const sun of this.suns)
-      sun.corona.alpha = 0.48 + Math.sin(seconds * 0.28 + sun.phase) * 0.06;
+      sun.corona.alpha = 0.62 + Math.sin(seconds * 0.28 + sun.phase) * 0.05;
     for (const star of this.glints)
       star.node.alpha = 0.6 + Math.sin(seconds * 0.55 + star.phase) * 0.22;
     for (const star of this.wanderers) {

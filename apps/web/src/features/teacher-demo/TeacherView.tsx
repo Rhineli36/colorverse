@@ -31,7 +31,7 @@ export function TeacherView({
       <p className="eyebrow">TEACHER DEMO · 本地演示管理</p>
       <h1>汇集每一颗独特的星球。</h1>
       <p className="muted">
-        本页管理当前浏览器的作品宇宙。正式账号与班级权限将在第二阶段接入。
+        本页管理当前浏览器导入的演示作品。云端学生提交与课堂统计，请进入「班级管理」。
       </p>
       <div className="teacher-actions">
         <button

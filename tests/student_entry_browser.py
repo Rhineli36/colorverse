@@ -3,6 +3,7 @@ import json,os,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'work/python-deps'))
 from playwright.sync_api import sync_playwright,expect
+from cloud_teacher_fixture import enable_teacher
 expect.set_options(timeout=15000)
 checks,errors=[],[]
 def passed(text):checks.append(text);print('PASS:',text,flush=True)
@@ -28,7 +29,7 @@ with sync_playwright()as p:
     expect(page.get_by_role('button',name='内部空间',exact=True)).to_have_class('selected')
     page.get_by_role('button',name='拒绝',exact=True).click();expect(page.get_by_role('button',name='接受并保存',exact=True)).to_have_count(0)
     passed('course submission opens a separate classroom; the explicit simulated growth action remains independent')
-    page.get_by_label('返回宇宙总览',exact=True).click();page.get_by_label('宇宙操作身份',exact=True).select_option('teacher')
+    page.get_by_label('返回宇宙总览',exact=True).click();enable_teacher(page);page.get_by_label('宇宙操作身份',exact=True).select_option('teacher')
     page.get_by_role('button',name='薄荷来信',exact=True).click();page.get_by_role('button',name='进入星球内部 ↗',exact=True).click()
     expect(page.get_by_role('button',name='编辑这颗星球 ↗',exact=True)).to_be_visible();page.get_by_role('button',name='编辑这颗星球 ↗',exact=True).click();expect(page.locator('.studio-bar strong')).to_have_text('薄荷来信')
     passed('teacher role retains the explicit edit action on every viewed planet')

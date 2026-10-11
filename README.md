@@ -117,3 +117,5 @@ apps/web 的 features 分为 universe、studio、planet-room、teacher-demo 和 
 学生确认进入、首次随机创建和云端星球外貌/背景设置见 [39](docs/39-student-entry-and-cloud-planet-appearance.md)。已有星球再次进入会选中本人星球。
 
 学生进入后的十项功能任务、自动进度、五类设置和实际云端验收见 [40](docs/40-student-guided-tasks.md)。刷新课堂测试版、确认进入自己的星球即可看到；没有其他学生星球时，拜访和互动任务等待同学加入。
+
+教师演示入口现在仅对服务端验证的教师账户显示；恒星已放大并调整为更透亮的发光外观。说明及验证见 [41](docs/41-teacher-navigation-and-emissive-stars.md)。包含本地教师操作的浏览器脚本需启用云端登录构建，使用隔离教师身份 fixture。

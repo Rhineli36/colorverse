@@ -71,3 +71,5 @@
 39. [学生入口与云端星球外观](39-student-entry-and-cloud-planet-appearance.md)
 
 40. [学生新手任务与设置分类](40-student-guided-tasks.md)
+
+41. [教师入口与恒星视觉区分](41-teacher-navigation-and-emissive-stars.md)

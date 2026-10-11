@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'work/python-deps'))
 from playwright.sync_api import sync_playwright, expect
+from cloud_teacher_fixture import enable_teacher
 expect.set_options(timeout=15000)
 from PIL import Image, ImageChops
 URL = os.environ.get('COLORVERSE_TEST_URL', 'http://127.0.0.1:5173')
@@ -97,7 +98,7 @@ with sync_playwright() as p:
     context.close()
     second=browser.new_context(viewport={'width':1280,'height':900}, reduced_motion='reduce')
     other=second.new_page(); observe(other); other.goto(URL); other.wait_for_load_state('networkidle')
-    other.get_by_role('button',name='教师演示',exact=True).click()
+    enable_teacher(other);other.get_by_role('button',name='教师演示',exact=True).click()
     other.locator('input[type=file][accept=".zip,.json"]').set_input_files(str(package))
     expect(other.get_by_role('dialog',name='作品包校验报告')).to_be_visible(timeout=20000)
     other.get_by_role('button',name='确认导入宇宙').click()

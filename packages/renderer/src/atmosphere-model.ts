@@ -24,7 +24,7 @@ export const UNIVERSE_LANDMARKS = [
     kind: "star",
     x: -2100,
     y: 400,
-    radius: 400,
+    radius: 700,
     color: 0xffbd68,
   },
   {
@@ -32,7 +32,7 @@ export const UNIVERSE_LANDMARKS = [
     kind: "star",
     x: 11500,
     y: -6500,
-    radius: 780,
+    radius: 1250,
     color: 0x9edaff,
   },
   {
@@ -40,7 +40,7 @@ export const UNIVERSE_LANDMARKS = [
     kind: "star",
     x: -12800,
     y: 7100,
-    radius: 950,
+    radius: 1450,
     color: 0xff8060,
   },
   {
@@ -48,7 +48,7 @@ export const UNIVERSE_LANDMARKS = [
     kind: "star",
     x: 12800,
     y: 7600,
-    radius: 620,
+    radius: 1000,
     color: 0xffe6bb,
   },
   {

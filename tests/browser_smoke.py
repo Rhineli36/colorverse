@@ -3,6 +3,7 @@ import sys, os, json
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'work/python-deps'))
 from playwright.sync_api import sync_playwright, expect
+from cloud_teacher_fixture import enable_teacher
 expect.set_options(timeout=15000)
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -98,7 +99,7 @@ with sync_playwright()as p:
     expect(page.locator('.growth-history')).to_contain_text('已生长')
     page.screenshot(path=str(ROOT/'outputs/COLORVERSE-studio-preview.png'),full_page=True)
     passed('refresh restores document and accepted growth')
-    page.get_by_role('button',name='教师演示',exact=True).click()
+    enable_teacher(page);page.get_by_role('button',name='教师演示',exact=True).click()
     card=page.locator('.teacher-cards article').filter(has_text='浏览器验收星球')
     card.get_by_role('button',name='隐藏',exact=True).click()
     expect(card).to_contain_text('已隐藏')
@@ -110,7 +111,7 @@ with sync_playwright()as p:
 
     second=browser.new_context(viewport={'width':1280,'height':900})
     other=second.new_page();observe(other);other.goto(URL);other.wait_for_load_state('networkidle')
-    other.get_by_role('button',name='教师演示',exact=True).click()
+    enable_teacher(other);other.get_by_role('button',name='教师演示',exact=True).click()
     other.locator('input[type=file][accept=".zip,.json"]').set_input_files(str(package))
     expect(other.get_by_role('dialog',name='作品包校验报告')).to_be_visible(timeout=20000)
     other.get_by_role('button',name='确认导入宇宙').click()

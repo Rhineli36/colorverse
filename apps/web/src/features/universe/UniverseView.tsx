@@ -15,6 +15,7 @@ import type { PlanetMotion } from "@colorverse/contracts";
 import { MotionControls } from "./MotionControls";
 export type UniverseViewMode = "overview" | "local" | "focus" | "free";
 interface Props {
+  canUseTeacherTools: boolean;
   workspace: AssetStore;
   view: { planets: PlanetDocument[]; universe: UniverseDocument | null };
   camera: { x: number; y: number; zoom: number };
@@ -51,6 +52,7 @@ interface Props {
 }
 
 export function UniverseView({
+  canUseTeacherTools,
   workspace,
   view,
   camera,
@@ -193,14 +195,20 @@ export function UniverseView({
         </div>
       </div>
       <div className="universe-identity">
-        <select
-          aria-label="宇宙操作身份"
-          value={actor.role}
-          onChange={(e) => setLayoutRole(e.target.value as LayoutActor["role"])}
-        >
-          <option value="student">学生 · 本地演示</option>
-          <option value="teacher">教师 · 本地演示</option>
-        </select>
+        {canUseTeacherTools ? (
+          <select
+            aria-label="宇宙操作身份"
+            value={actor.role}
+            onChange={(e) =>
+              setLayoutRole(e.target.value as LayoutActor["role"])
+            }
+          >
+            <option value="student">学生 · 本地演示</option>
+            <option value="teacher">教师 · 本地演示</option>
+          </select>
+        ) : (
+          <span>本地创作空间</span>
+        )}
         <span>
           {actor.role === "teacher"
             ? "可以拖拽全部星球"
