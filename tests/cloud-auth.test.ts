@@ -55,6 +55,8 @@ describe("cloud auth boundary", () => {
     expect(await result.json()).toEqual({
       identity: { id, email: user.email },
       access: "pending-enrollment",
+      database: "not-configured",
+      memberships: [],
       cloudWrites: false,
     });
     expect(transport.mock.calls[0][0]).toBe(
@@ -180,6 +182,7 @@ describe("cloud auth boundary", () => {
       development: false,
       stage: "auth-pilot",
       cloudWrites: false,
+      enrollmentDatabaseConfigured: false,
     });
   });
 });

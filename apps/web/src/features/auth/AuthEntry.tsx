@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { getAuthClient, loginError } from "./auth-client";
+import {
+  CloudSessionSchema,
+  type CloudMembership,
+} from "@colorverse/contracts";
 import "./auth.css";
 
 export function AuthEntry() {
@@ -12,6 +16,8 @@ export function AuthEntry() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [memberships, setMemberships] = useState<CloudMembership[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
@@ -20,6 +26,9 @@ export function AuthEntry() {
     let active = true;
     const refresh = async () => {
       const current = ++generation.current;
+      setChecking(true);
+      setIdentity(null);
+      setMemberships([]);
       try {
         const {
           data: { session },
@@ -34,7 +43,7 @@ export function AuthEntry() {
         const response = await fetch("/api/v1/cloud/session", {
           headers: { Authorization: `Bearer ${session.access_token}` },
           cache: "no-store",
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(18000),
         });
         if (!active || current !== generation.current) return;
         if (response.status === 401) {
@@ -43,15 +52,19 @@ export function AuthEntry() {
           return;
         }
         if (!response.ok) throw new Error("unavailable");
-        const result = await response.json();
+        const result = CloudSessionSchema.parse(await response.json());
         if (!active || current !== generation.current) return;
-        if (
-          typeof result.identity?.email !== "string" ||
-          result.access !== "pending-enrollment"
-        )
-          throw new Error("invalid response");
         setIdentity(result.identity.email);
-        setMessage("身份已验证，待加入班级。当前星球和作品仍保存在本机。");
+        setMemberships(result.memberships);
+        setMessage(
+          result.access === "blocked"
+            ? "课堂账户已停用，请联系老师。"
+            : result.access === "active"
+              ? "身份与班级已验证。当前星球和作品仍保存在本机，云端提交尚未开放。"
+              : result.database === "connected"
+                ? "身份已验证，待加入班级。请联系老师加入课堂。当前星球和作品仍保存在本机。"
+                : "身份已验证，待加入班级。班级连接正在准备，当前星球和作品仍保存在本机。",
+        );
       } catch {
         if (active && current === generation.current) {
           setIdentity(null);
@@ -77,7 +90,7 @@ export function AuthEntry() {
       generation.current++;
       subscription.unsubscribe();
     };
-  }, [client]);
+  }, [client, refreshKey]);
   useEffect(() => {
     if (open) {
       dialog.current?.showModal();
@@ -123,6 +136,29 @@ export function AuthEntry() {
           <>
             <p className="auth-identity">{identity ?? "身份等待验证"}</p>
             <p role="status">{message}</p>
+            {memberships.length > 0 && (
+              <ul className="auth-memberships" aria-label="我的班级">
+                {memberships.map((membership) => (
+                  <li key={membership.enrollmentId}>
+                    <span>{membership.title}</span>
+                    <strong>
+                      {
+                        { student: "学生", teacher: "教师", assistant: "助教" }[
+                          membership.role
+                        ]
+                      }
+                    </strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button
+              className="outline"
+              disabled={busy || checking}
+              onClick={() => setRefreshKey((value) => value + 1)}
+            >
+              {checking ? "正在核对…" : "重新核对班级"}
+            </button>
             <button
               className="outline"
               disabled={busy}
@@ -135,6 +171,7 @@ export function AuthEntry() {
                   if (error) setMessage("退出失败，请稍后重试");
                   else {
                     setIdentity(null);
+                    setMemberships([]);
                     setHasSession(false);
                     setPassword("");
                     setMessage("已退出云端账户");

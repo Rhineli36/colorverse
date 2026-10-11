@@ -89,6 +89,44 @@ try {
     config.main = "../apps/worker/src/index.ts";
     config.assets.directory = "../apps/web/dist";
     config.vars = { SUPABASE_URL: url, SUPABASE_PUBLISHABLE_KEY: key };
+    let hyperdrive;
+    try {
+      hyperdrive = parseEnv(
+        await readFile(resolve(root, ".env.hyperdrive.local"), "utf8"),
+      );
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+    if (hyperdrive) {
+      const id = hyperdrive.CLOUDFLARE_HYPERDRIVE_ID;
+      if (!/^[a-f0-9]{32}$/i.test(id ?? ""))
+        throw new Error("Invalid Hyperdrive binding configuration");
+      if (command === "deploy") {
+        const response = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${credentials.CLOUDFLARE_ACCOUNT_ID}/hyperdrive/configs/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${credentials.CLOUDFLARE_API_TOKEN}`,
+            },
+            signal: AbortSignal.timeout(15000),
+            redirect: "error",
+          },
+        );
+        const binding = await response.json();
+        if (
+          !response.ok ||
+          !binding.success ||
+          binding.result.origin?.user !== "colorverse_identity_reader" ||
+          binding.result.origin?.host !== `db.${new URL(url).hostname}` ||
+          binding.result.caching?.disabled !== true ||
+          binding.result.mtls?.sslmode !== "verify-full"
+        )
+          throw new Error(
+            "Hyperdrive must use the restricted reader, disabled query cache and verified TLS",
+          );
+      }
+      config.hyperdrive = [{ binding: "HYPERDRIVE", id }];
+    }
     await mkdir(resolve(root, "work"), { recursive: true });
     const configPath = resolve(root, "work/wrangler.cloudflare.json");
     await writeFile(configPath, JSON.stringify(config, null, 2));
@@ -115,6 +153,8 @@ try {
     "Cloudflare account access check failed",
     "Cloudflare command failed",
     "Missing Supabase public configuration",
+    "Invalid Hyperdrive binding configuration",
+    "Hyperdrive must use",
   ];
   console.error(
     error instanceof Error &&

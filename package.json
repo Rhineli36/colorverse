@@ -21,7 +21,9 @@
     "cloud:check": "node scripts/cloudflare.mjs check",
     "cloud:dry-run": "node scripts/cloudflare.mjs dry-run",
     "cloud:deploy": "node scripts/cloudflare.mjs deploy",
-    "cloud:verify": "node scripts/verify-cloudflare.mjs"
+    "cloud:verify": "node scripts/verify-cloudflare.mjs",
+    "cloud:database": "tsx scripts/cloud-database.mjs",
+    "cloud:hyperdrive": "node scripts/cloud-hyperdrive.mjs"
   },
   "dependencies": {
     "@colorverse/application": "workspace:*",

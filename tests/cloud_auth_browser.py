@@ -35,7 +35,7 @@ with sync_playwright() as playwright:
     context = browser.new_context(viewport={'width': 1440, 'height': 960}, reduced_motion='reduce')
     page = context.new_page()
     page.on('pageerror', lambda error: errors.append(str(error)))
-    state = {'valid': False, 'available': True, 'login_calls': 0, 'session_calls': 0}
+    state = {'valid': False, 'available': True, 'access': 'pending-enrollment', 'login_calls': 0, 'session_calls': 0}
 
     def auth(route):
         path = route.request.url
@@ -56,7 +56,12 @@ with sync_playwright() as playwright:
         state['session_calls'] += 1
         assert route.request.headers.get('authorization') == f'Bearer {token}'
         if state['available']:
-            route.fulfill(json={'identity': {'id': subject, 'email': email}, 'access': 'pending-enrollment', 'cloudWrites': False})
+            route.fulfill(json={'identity': {'id': subject, 'email': email}, 'access': state['access'],
+                'database': 'connected', 'cloudWrites': False, 'memberships': [
+                    {'enrollmentId': '7d050bbd-2ea7-416c-b70b-748594dc9a06',
+                     'classId': '7d050bbd-2ea7-416c-b70b-748594dc9a07',
+                     'title': '色彩设计 · 测试班', 'timezone': 'Asia/Shanghai', 'role': 'teacher'}
+                ] if state['access'] == 'active' else []})
         else:
             route.fulfill(status=503, json={'error': {'message': 'unavailable'}})
 
@@ -95,6 +100,22 @@ with sync_playwright() as playwright:
     page.reload()
     expect(page.get_by_role('button', name='我的云端账户', exact=True)).to_be_visible()
     passed('signed-in identity is server-verified and rechecked after reload; no cloud-write grant')
+
+    page.get_by_role('button', name='我的云端账户', exact=True).click()
+    state['access'] = 'active'
+    page.get_by_role('button', name='重新核对班级', exact=True).click()
+    expect(page.get_by_role('dialog')).to_contain_text('身份与班级已验证')
+    expect(page.get_by_label('我的班级')).to_contain_text('色彩设计 · 测试班')
+    expect(page.get_by_label('我的班级')).to_contain_text('教师')
+    expect(page.get_by_role('dialog')).to_contain_text('云端提交尚未开放')
+    passed('class refresh shows server-approved membership without enabling cloud writes')
+
+    state['access'] = 'blocked'
+    page.get_by_role('button', name='重新核对班级', exact=True).click()
+    expect(page.get_by_role('dialog')).to_contain_text('课堂账户已停用')
+    expect(page.get_by_label('我的班级')).to_have_count(0)
+    page.get_by_role('button', name='继续浏览', exact=True).click()
+    passed('revoked membership clears cached class and role without a full reload')
 
     state['available'] = False
     page.reload()

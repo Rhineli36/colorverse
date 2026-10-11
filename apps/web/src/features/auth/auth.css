@@ -45,6 +45,25 @@
   font-size: 12px;
   color: #8295ab;
 }
+.auth-memberships {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.auth-memberships li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #72c7d338;
+  border-radius: 10px;
+  background: #18344860;
+}
+.auth-memberships strong {
+  color: #b8e5df;
+  flex-shrink: 0;
+}
 @media (max-width: 600px) {
   .app .topbar:has(button.cloud-login-entry) {
     height: auto;

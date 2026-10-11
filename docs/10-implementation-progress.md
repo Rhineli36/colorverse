@@ -339,3 +339,13 @@ TypeScript、ESLint与生产构建通过；159处文档相对链接、27项协�
 Cloudflare实际发布为[登录测试版](https://colorverse-dev.2999346.workers.dev)，最终Worker版本778ed169-4886-4a56-95df-8b188504dbeb。7项实际线上页面/API验证通过，5项浏览器模拟流程线上复测通过但不重复累加。首轮实际运行发现边缘Fetch不接受redirect=error，Node模拟与官方文档未反映此差异；脱敏测试日志定位后改用manual并拒绝3xx，真实无效令牌从503修正为401。临时详细日志已移除，正式日志仅异常名称/上游状态，不输出JWT/密码/密钥。仍需建立应用测试账户验证成功登录与退出、私有成员表/运行角色和跨账户授权；本机代理下连通不等于校园网可用。
 
 实现提交add7d7a已推送main。[核心/真实PostgreSQL检查](https://github.com/Rhineli36/colorverse/actions/runs/38121761939)和[Pages构建部署](https://github.com/Rhineli36/colorverse/actions/runs/38121762026)成功；Pages桌面/手机只读复查没有登录按钮、Supabase请求或运行时异常。162处文档相对链接、27项协议/算术检查通过；源码包231文件，已排除所有真实环境配置和临时日志，包含通用示例与Worker配置。Cloudflare控制台账号不会自动成为应用账户，下一步先建立应用教师/学生测试身份再验证正式授权。没有开通付费计划、创建课堂用户、执行云数据库迁移或上传用户作品。
+
+## 2026-10-11 云端班级身份与真实教师登录
+
+完成[37](37-cloud-classroom-identity.md)：Worker在Supabase远端验证后，以issuer/subject查询私有colorverse用户和有效未归档成员关系；账户页显示班级及学生/教师/助教身份，可重新核对，停用/撤销及服务异常清除旧身份，不自动创建用户或读取前端教师字段。共享严格session协议，所有云端写接口继续关闭。
+
+已在实际Supabase以事务/迁移hash建立私有业务schema，无演示初始化。anon/authenticated/PUBLIC不能访问；单独运行角色仅SELECT身份三表，不读assets或写成员。在READ WRITE事务实际尝试UPDATE仍被42501拒绝，重复迁移/教师初始化不重复建班。用户明确提供教师邮箱并自行在Authentication创建已确认账户，绑定实际Auth UUID与测试班；用户真实网页登录和截图确认显示“设计色彩 · 测试班/教师”，未向代理提供密码。
+
+用户增加Hyperdrive和SSL/证书编辑权限后，上传官方Supabase根CA，建立verify-full、关闭查询缓存、源连接上限5的受限Hyperdrive；创建一次500/10000后重试成功，无重复配置。Worker每请求pg客户端并finally关闭、实际配置不进入Git，读角色密码只在私密文件和配置HTTPS请求使用，不进入Vite或CLI参数。Cloudflare发布版本654a6813-5c00-4af8-a11b-112ca681ce33，线上7项页面/API与额外绑定健康检查通过；没有购买付费方案。
+
+新增10项模块检查，全套21文件172项、TypeScript/ESLint/生产构建与打包通过；CI真实PostgreSQL18检查增加班级身份测试。7项隔离浏览器本机/线上通过，包含新班级卡片、刷新撤权、手机、登录错误、断网退出，线上复测不累加。实际成功教师登录由用户确认，模拟浏览器检查不能替代真实学生A/B端到端验收。当前星球/作品仍本机，下一步受控学生加入班级、私有R2/文件处理和云端作业写入。校园网直连/正式SMTP/密码重置/备份恢复仍待验证。
