@@ -43,3 +43,5 @@
 ## 发布验证
 
 应用提交2ca3ea8已推送main；GitHub[核心/真实PostgreSQL检查](https://github.com/Rhineli36/colorverse/actions/runs/38103713599)和[Pages构建部署](https://github.com/Rhineli36/colorverse/actions/runs/38103713559)均成功。[在线演示](https://rhineli36.github.io/colorverse/)7项新版美术/入口浏览器检查通过，无运行时或资源错误，包含仓库子路径素材加载、4%远景/真实边缘点击、38%聚焦、旧数据升级、学生图片保留、ZIP素材hash和手机首次创建。线上复测不增加独立测试数量。本机已刷新到同版并停留在宇宙全景；没有导入测试作品或触碰用户草稿。
+
+背景完全同步修正随后以a76770c发布；[核心/真实PostgreSQL检查](https://github.com/Rhineli36/colorverse/actions/runs/38104965427)与[Pages部署](https://github.com/Rhineli36/colorverse/actions/runs/38104965383)成功。完整126项模块测试、本机6项背景像素检查及15项空间交互回归通过；线上同6项背景检查通过，无运行时/资源错误。重点检查原cover区间12%→约16%的非中央鼠标缩放、超过原边界的拖拽及4%最低视角，确认背景只请求一次、镜头不改存储或重建renderer。测试与GPU性能验收的边界同上，本机已刷新。
