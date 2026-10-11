@@ -1,10 +1,11 @@
-import { Container, Graphics, Sprite, Texture, TilingSprite } from "pixi.js";
+import { Container, Graphics, Sprite, Texture } from "pixi.js";
 import { seededRandom } from "@colorverse/domain";
 import {
   ATMOSPHERE_BUDGET,
   meteorFrame,
   nebulaNoise,
   ambientStarPosition,
+  panoramaFrame,
 } from "./atmosphere-model";
 
 /** Universe scenery has its own layers and lifetime, outside editable scenes. */
@@ -13,7 +14,9 @@ export class UniverseAtmosphere {
   readonly world = new Container();
   readonly foreground = new Container();
   private textures: Texture[] = [];
-  private nebula: TilingSprite;
+  private nebula: Sprite;
+  private panorama = new Container();
+  private disposed = false;
   private glints: { node: Container; x: number; y: number; phase: number }[] =
     [];
   private hole = new Container();
@@ -35,16 +38,36 @@ export class UniverseAtmosphere {
     private reducedMotion = false,
   ) {
     this.budget = ATMOSPHERE_BUDGET[lowQuality ? "low" : "normal"];
-    for (const root of [this.background, this.world, this.foreground]) {
+    for (const root of [
+      this.background,
+      this.world,
+      this.foreground,
+      this.panorama,
+    ]) {
       root.eventMode = "none";
       root.interactiveChildren = false;
     }
-    this.nebula = new TilingSprite({ texture: this.nebulaTexture() });
-    this.nebula.tileScale.set(
-      6400 / this.budget.textureWidth,
-      4000 / this.budget.textureHeight,
-    );
-    this.background.addChild(this.nebula);
+    this.nebula = new Sprite(this.nebulaTexture());
+    this.panorama.addChild(this.nebula);
+    this.background.addChild(this.panorama);
+    const image = new Image();
+    image.onload = () => {
+      if (this.disposed) return;
+      const texture = Texture.from(image);
+      this.textures.push(texture);
+      const width = this.nebula.width,
+        height = this.nebula.height,
+        previous = this.nebula.texture;
+      this.nebula.texture = texture;
+      this.nebula.width = width;
+      this.nebula.height = height;
+      this.textures = this.textures.filter((t) => t !== previous);
+      previous.destroy(true);
+    };
+    // A failed/offline load keeps a single procedural fallback, never a tiling grid.
+    image.src = lowQuality
+      ? new URL("./assets/universe-v2-low.webp", import.meta.url).href
+      : new URL("./assets/universe-v2.webp", import.meta.url).href;
     const glow = this.glowTexture();
     const random = seededRandom(38171);
     for (let i = 0; i < this.budget.glints; i++) {
@@ -250,12 +273,14 @@ export class UniverseAtmosphere {
       root.visible = visible;
     this.background.scale.set(worldScale);
     this.background.position.set(x, y);
-    const left = -x / worldScale,
-      top = -y / worldScale;
-    this.nebula.width = width / worldScale;
-    this.nebula.height = height / worldScale;
-    this.nebula.position.set(left, top);
-    this.nebula.tilePosition.set(-2400 - left, -1550 - top);
+    // Counteract the parent only for the distant backdrop. World stars, black
+    // hole and planets retain the same camera and coordinates.
+    this.panorama.scale.set(1 / worldScale);
+    this.panorama.position.set(-x / worldScale, -y / worldScale);
+    const frame = panoramaFrame(width, height, worldScale, x, y);
+    this.nebula.position.set(frame.x, frame.y);
+    this.nebula.width = frame.width;
+    this.nebula.height = frame.height;
     for (const star of this.glints) star.node.position.set(star.x, star.y);
     this.world.scale.set(worldScale);
     this.world.position.set(x, y);
@@ -303,6 +328,7 @@ export class UniverseAtmosphere {
     return this.visible && !this.reducedMotion ? active : 0;
   }
   dispose() {
+    this.disposed = true;
     this.textures.forEach((t) => t.destroy(true));
   }
 }

@@ -121,10 +121,8 @@ with sync_playwright() as p:
     solo=ROOT/'outputs/COLORVERSE-motion-standalone-test.zip';task.value.save_as(str(solo))
     with zipfile.ZipFile(solo) as z:
         assert 'universe.json' not in z.namelist();assert 'motion-presets@1' not in json.loads(z.read('manifest.json'))['requiredCapabilities']
-    page.get_by_role('button',name='＋ 创建星球',exact=True).click()
-    expect(page.locator('.studio-bar strong')).to_have_text('我的新星球')
-    latest=state(page);new=latest['u']['entries'][-1];assert new['layoutRevision']==0 and 'motion' not in new
-    passed('standalone ZIP carries no universe motion or owner; newly added planets retain the legacy default')
+    assert page.get_by_role('button',name='＋ 创建我的星球',exact=True).count()==0
+    passed('standalone ZIP carries no universe motion or owner; an existing student cannot duplicate their planet')
     reduced=browser.new_context(viewport={'width':390,'height':650},reduced_motion='reduce')
     small=reduced.new_page();observe(small);small.goto(URL);small.wait_for_load_state('networkidle');editor(small)
     assert controls(small).locator('animateMotion').count()==0

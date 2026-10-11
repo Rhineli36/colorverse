@@ -1,0 +1,67 @@
+{
+  "version": "demo-v2",
+  "bodies": [
+    {
+      "sha256": "2338d456f77f7087bf41c01ecc1d1484c0f8b61df920296d43bcccbdf2b06004",
+      "byteSize": 92082,
+      "thumbnail": {
+        "sha256": "09e5ecd63129550b1c00420d2d74396ce35b351da72289c3643288e6adc099de",
+        "byteSize": 24386
+      },
+      "previousSha256": "062805a31862fe03c406515466d81e9b1f4d5eb231e865bb22fdc1c30aab9f57"
+    },
+    {
+      "sha256": "09522c3445ffc85314de7f5501da76ef4b7f57777726ca0a4c18f182ead0a757",
+      "byteSize": 130334,
+      "thumbnail": {
+        "sha256": "92d5f6dbf0273450ba5aef33f84afef0db3886a417319ebb6424ea872c59ade4",
+        "byteSize": 31626
+      },
+      "previousSha256": "a7bf765f1c2c6237f130bcf985824170ffd9e550ec0c91f3f0a72ae53802da16"
+    },
+    {
+      "sha256": "af6d335283418e3695c2a85b3c08053661234d0498ad6ae1b4667be494d86065",
+      "byteSize": 97014,
+      "thumbnail": {
+        "sha256": "ce1e13efa587ec97a9a40cee9b50c1328696af57274d1f2f27bfc9f64d30bc11",
+        "byteSize": 26014
+      },
+      "previousSha256": "d7fd33f400247af126b17713dc38b62e234137694d276cd205aeb99657a67fb2"
+    },
+    {
+      "sha256": "23874ecde5af414ac26c9d28919d79cf001b74e2a311940f09160d5915edbf9a",
+      "byteSize": 122206,
+      "thumbnail": {
+        "sha256": "5d6bee7aecd2f9b79b4b9497a170c0cb794431c7ea184c78a3c4df5917186685",
+        "byteSize": 30534
+      },
+      "previousSha256": "d0a46e2f2bd3047033d9ac4912a24333e788b6a0910f3eddf54338cdf595559d"
+    },
+    {
+      "sha256": "94717ad0669fcd6c26889b351ca9bc6cabea1de0d2954963cbd34371e4308222",
+      "byteSize": 145670,
+      "thumbnail": {
+        "sha256": "b188cb2c6652116119647256eff09f1bf892eda9cfb8d06841e4e6bf5d834718",
+        "byteSize": 34576
+      },
+      "previousSha256": "faa7ab24e10c7f144adbe7a98335f99347acd88e4904e63a781ba99ded4606d8"
+    },
+    {
+      "sha256": "91e83c492159b8637b9a22cbe4fcd8d6849ba28a46eec553586cfed254bdfd00",
+      "byteSize": 114880,
+      "thumbnail": {
+        "sha256": "5910d40872ac2923dfc00f4a54337ce3da569cbaa093d32875a8dc2a6f0d1bd9",
+        "byteSize": 27038
+      },
+      "previousSha256": "2391c583270b31a7453de95e24941e7434406b843d1df6c41a89a5384c2533ce"
+    }
+  ],
+  "panorama": {
+    "sha256": "2df2bf9bd85052f35029617b8686c8f3ea902583f7ab92d8a37a16ef5d8b0551",
+    "byteSize": 178816
+  },
+  "lowPanorama": {
+    "sha256": "5a05b58a0a98d82335254cde45a4458752bcde7cee501223ec0c2c17984d8252",
+    "byteSize": 49166
+  }
+}

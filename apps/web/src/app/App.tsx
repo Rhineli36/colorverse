@@ -51,7 +51,7 @@ import {
 } from "@colorverse/package-io";
 import { LocalWorkspace } from "../adapters/local/store";
 import { prepareImage, inspectInWorker } from "../adapters/local/images";
-import { bootstrap } from "./bootstrap";
+import { bootstrap, loadDemoPlanet } from "./bootstrap";
 import { AssetImage } from "./AssetImage";
 import { useEditor } from "../features/studio/editor-store";
 const workspace = new LocalWorkspace(),
@@ -97,6 +97,11 @@ export function App() {
     saveLock = useRef<Promise<void> | null>(null),
     importInput = useRef<HTMLInputElement>(null);
   const doc = editor.document;
+  const ownedPlanets = planets.filter(
+    (p) => ownership[p.planetId] === "demo-student-1",
+  );
+  const myPlanet =
+    ownedPlanets.find((p) => p.planetId === activeId) ?? ownedPlanets[0];
   useEffect(() => {
     if (route !== "room") setBirthLayerId(null);
   }, [route]);
@@ -209,11 +214,11 @@ export function App() {
   const createPlanet = () =>
     action(async () => {
       await flush();
-      const source = planets[0],
-        files = new Map<string, Blob>();
-      for (const a of source.assetRefs)
-        for (const f of [a.original, ...a.variants])
-          files.set(f.path, await workspace.read(f.path));
+      if (myPlanet) {
+        await open(myPlanet.planetId, "studio");
+        return;
+      }
+      const { planet: source, files } = await loadDemoPlanet(0);
       const result = copyImportedPlanet(source, files),
         p = result.planet;
       p.metadata.name = "我的新星球";
@@ -221,19 +226,22 @@ export function App() {
       p.growthEvents = [];
       p.interior.layers = [];
       p.interior.tombstones = [];
-      const u = clone(universe!);
-      u.entries.push({
-        planetId: p.planetId,
-        visible: true,
-        position: nextPlanetPosition(u.entries, u.layout.seed),
-        scale: 1,
-        order: u.entries.length,
-        ...(u.schemaVersion === "1.1.0" ? { layoutRevision: 0 } : {}),
-      });
-      await workspace.importAtomic([p], u, result.files, crypto.randomUUID());
-      await workspace.assignOwner(p.planetId, "demo-student-1");
+      p.archiveEntries = [];
+      p.interior.hotspots = [];
+      p.extensions = {};
+      const created = await workspace.createOwnedPlanet(
+        p,
+        result.files,
+        "demo-student-1",
+      );
       await refresh();
-      await open(p.planetId, "studio");
+      setSceneKind("exterior");
+      await open(created.planetId, "studio");
+      setNotice(
+        created.created
+          ? "你的星球已创建。以后从“编辑你的星球”继续创作。"
+          : "你已拥有星球，已打开编辑页面。",
+      );
     });
   const upload = (file: File, target: "body" | "background" | "layer") =>
     action(async () => {
@@ -635,7 +643,7 @@ export function App() {
       </div>
     );
   return (
-    <div className={`app ${route}`}>
+    <div className={`app ${route}${myPlanet ? "" : " needs-planet"}`}>
       <header className="topbar">
         <button
           className="brand"
@@ -654,27 +662,20 @@ export function App() {
           >
             宇宙展览
           </button>
-          <button
-            className={route === "studio" ? "active" : ""}
-            disabled={busy}
-            onClick={() =>
-              void action(async () => {
-                const owned = planets.filter(
-                  (p) => ownership[p.planetId] === "demo-student-1",
-                );
-                const mine =
-                  owned.find((p) => p.planetId === activeId) ?? owned[0];
-                if (!mine) {
-                  setNotice("你还没有自己的星球，点击“创建星球”开始创作。");
-                  return;
-                }
-                setSceneKind("exterior");
-                await open(mine.planetId, "studio");
-              })
-            }
-          >
-            编辑你的星球
-          </button>
+          {myPlanet && (
+            <button
+              className={route === "studio" ? "active" : ""}
+              disabled={busy}
+              onClick={() =>
+                void action(async () => {
+                  setSceneKind("exterior");
+                  await open(myPlanet.planetId, "studio");
+                })
+              }
+            >
+              编辑你的星球
+            </button>
+          )}
           <button
             className={route === "teacher" ? "active" : ""}
             onClick={() =>
@@ -703,13 +704,15 @@ export function App() {
             <i />
             本地创作空间
           </span>
-          <button
-            className="primary small"
-            onClick={() => void createPlanet()}
-            disabled={busy}
-          >
-            ＋ 创建星球
-          </button>
+          {universe && !myPlanet && (
+            <button
+              className="primary small"
+              onClick={() => void createPlanet()}
+              disabled={busy}
+            >
+              ＋ 创建我的星球
+            </button>
+          )}
         </div>
       </header>
       {notice && (

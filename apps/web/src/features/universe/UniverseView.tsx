@@ -205,27 +205,32 @@ export function UniverseView({
           <option value="teacher">教师 · 本地演示</option>
         </select>
         <span>
-          {actor.role === "teacher" ? "可以拖拽全部星球" : "只可拖拽我的星球"}
+          {actor.role === "teacher"
+            ? "可以拖拽全部星球"
+            : view.planets.some((p) => ownership[p.planetId] === actor.userId)
+              ? "只可拖拽我的星球"
+              : "创建自己的星球后，即可拖拽和编辑"}
         </span>
-        {actor.role === "student" && (
-          <button
-            className="my-planet"
-            onClick={() => {
-              const own = visible.find(
-                (p) => ownership[p.planetId] === actor.userId,
-              );
-              if (own) {
-                setQuery("");
-                setFamily("all");
-                setEmotion("");
-                setActiveId(own.planetId);
-                setViewMode("focus");
-              }
-            }}
-          >
-            定位我的星球 ↗
-          </button>
-        )}
+        {actor.role === "student" &&
+          visible.some((p) => ownership[p.planetId] === actor.userId) && (
+            <button
+              className="my-planet"
+              onClick={() => {
+                const own = visible.find(
+                  (p) => ownership[p.planetId] === actor.userId,
+                );
+                if (own) {
+                  setQuery("");
+                  setFamily("all");
+                  setEmotion("");
+                  setActiveId(own.planetId);
+                  setViewMode("focus");
+                }
+              }}
+            >
+              定位我的星球 ↗
+            </button>
+          )}
       </div>
       <div className="universe-view-controls" aria-label="宇宙视角">
         <button

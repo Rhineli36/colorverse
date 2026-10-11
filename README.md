@@ -43,7 +43,9 @@ pnpm dev
 
 编辑侧栏「运动」及宇宙聚焦卡「星球运动设置」可选择静止/慢速/快速、圆形/椭圆/八字/往返、三档范围和方向。预览可取消，保存后应用；学生只控制自己的星球，教师控制当前宇宙所有可见星球。原有轨迹在未配置时保持不变；布局首次写入升级为1.1.0，运动/拖拽共享revision防止覆盖。单星球ZIP不含运动布局，完整宇宙备份声明新版本和能力。详见[运动设置](docs/26-planet-motion-first-slice.md)。
 
-宇宙背景现包含纹理星云、吸积盘黑洞、24颗缓慢游移的小星星和低频流星（随机90–120秒一颗）。背景与星球同步平移和缩放，暂停/减少动态效果覆盖宇宙动态。渲染边界与资源预算见 [宇宙氛围](docs/15-universe-atmosphere.md)。
+默认六颗星球已升级为统一球面光影的系统素材；学生上传图像保留自己的颜色和取景。尚未拥有星球时只显示“创建我的星球”，创建后改为“编辑你的星球”，不再提供重复创建入口；本地演示初始已有本人星球。详见[默认美术与首次入口](docs/30-default-art-and-student-entry.md)。
+
+宇宙背景采用单张完整全景图（约175 KiB），包含吸积盘黑洞、24颗缓慢游移的小星星和低频流星（随机90–120秒一颗）。正常距离背景随相机平移和缩放，极远处保底铺满视口，星云不再重复平铺；暂停/减少动态效果覆盖宇宙动态。基础预算见[宇宙氛围](docs/15-universe-atmosphere.md)，新版图像和缩放边界以[30](docs/30-default-art-and-student-entry.md)为准。
 
 星球在宇宙中的展示尺寸统一限制为标准大小的0.8–1.2倍。旧布局只在展示时限制，不覆盖原有保存数据；图片局部取景和相机缩放独立。固定蒙版/适应见[18](docs/18-fixed-planet-frame-and-image-fit.md)，学生入口/常驻图层见[19](docs/19-student-edit-entry-and-persistent-layers.md)。尺寸规则见 [17-studio-tools-and-planet-size.md](docs/17-studio-tools-and-planet-size.md)。
 
@@ -84,11 +86,12 @@ python tests/image_tools_browser.py
 python tests/studio_layout_browser.py
 python tests/focus_framing_browser.py
 python tests/element_editor_browser.py
+python tests/default_art_browser.py
 ```
 
 脚本默认在 Windows 使用本机 Chrome，无头运行。Linux/无 Chrome 环境请执行 `python -m playwright install chromium`，Windows 可将 COLORVERSE_BROWSER_CHANNEL 设为空字符串改用已安装的 Playwright Chromium。本次记录使用 Windows Chrome/SwiftShader，不能视为普通机房集成显卡性能基准。`COLORVERSE_TEST_URL` 可指定生产预览地址。测试使用独立浏览器上下文，不改用户日常 Chrome 配置；结果和截图写入 outputs/，下载包写入 work/。
 
-CI执行lint、118项模块测试和生产构建，另在PostgreSQL18服务运行20项课程契约/事务/HTTP测试；浏览器及机房验收暂由上述独立脚本执行。
+CI执行lint、126项模块测试和生产构建，另在PostgreSQL18服务运行20项课程契约/事务/HTTP测试；浏览器及机房验收暂由上述独立脚本执行。
 
 代码仓库：[Rhineli36/colorverse](https://github.com/Rhineli36/colorverse)。main推送通过检查后部署GitHub Pages，实际状态见[Actions](https://github.com/Rhineli36/colorverse/actions)。本机草稿不会自动同步到在线演示，需导出/导入ZIP；部署与明天接续记录见[21](docs/21-github-deployment-and-handoff.md)。
 
@@ -96,6 +99,6 @@ CI执行lint、118项模块测试和生产构建，另在PostgreSQL18服务运�
 
 apps/web 的 features 分为 universe、studio、planet-room、teacher-demo 和 course；apps/api实现本机课程HTTP/PostgreSQL/私有图片适配器；packages 分为 contracts、domain、application、renderer、package-io、fixtures。Zod 是运行时契约来源；docs/schemas/generated 是结构 Schema，跨引用/权限/成长状态仍由领域服务验证。
 
-请先读 [设计索引](docs/README.md)、[实现进度](docs/10-implementation-progress.md)、[宇宙轨迹和镜头约定](docs/11-universe-motion-and-camera.md) 与 [空间探索和布局权限](docs/12-space-exploration-and-layout.md)。可选装饰与跟随协议见 [13-optional-planet-decorations.md](docs/13-optional-planet-decorations.md)。演示图片由 scripts/generate-demo-assets.py 生成，标记为系统合成素材，不代表学生作品或完整艺术素材交付。
+请先读 [设计索引](docs/README.md)、[实现进度](docs/10-implementation-progress.md)、[宇宙轨迹和镜头约定](docs/11-universe-motion-and-camera.md) 与 [空间探索和布局权限](docs/12-space-exploration-and-layout.md)。可选装饰与跟随协议见 [13-optional-planet-decorations.md](docs/13-optional-planet-decorations.md)。旧演示图和内部背景由 scripts/generate-demo-assets.py 生成；新版默认星球和宇宙背景由内置imagegen生成后压缩，素材/提示词登记见[30](docs/30-default-art-and-student-entry.md)。均标记为系统演示素材，不代表学生作品或完整艺术素材交付。
 
 已完成本机课程闭环（见22），尚未完成正式账号/云端课程系统、真实 AI、音频播放与全格式校验、300颗LOD/缓存上限实机验收、完整GPU失效只读模式、展览发布/脱敏和大包分批恢复。预设球体仅有契约与基础渲染支持，Studio 操作入口待补齐。生产构建可能打印第三方 Zod 注释的 Rollup 警告，构建已验证可完成。

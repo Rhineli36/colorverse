@@ -859,7 +859,7 @@ export class SceneRenderer {
       const planetMask = new Graphics().circle(0, 0, 256).fill(0xffffff);
       // A quiet base surface keeps the planet visible when artwork is moved or
       // shrunk inside its fixed frame, including transparent PNGs.
-      images.addChild(new Graphics().circle(0, 0, 256).fill("#26334a"));
+      images.addChild(new Graphics().circle(0, 0, 256).fill("#101724"));
       node.addChild(art);
       art.addChild(images, planetMask);
       images.mask = planetMask;
@@ -949,7 +949,7 @@ export class SceneRenderer {
       const position = orbitPosition(orbit, this.elapsed - startedAt);
       node.position.set(position.x, position.y);
       node.eventMode = "static";
-      node.hitArea = new Circle(0, 0, 190);
+      node.hitArea = new Circle(0, 0, 256);
       node.cursor = this.movable.has(p.planetId) ? "grab" : "pointer";
       node.on("pointerover", () => this.options.onHover?.(p.planetId));
       node.on("pointerout", () => this.options.onHover?.(null));
@@ -1122,7 +1122,7 @@ export class SceneRenderer {
       this.stage.addChild(
         new Graphics()
           .circle(frame.x, frame.y, frame.diameter / 2)
-          .fill("#26334a"),
+          .fill("#101724"),
         planetMask,
       );
     }

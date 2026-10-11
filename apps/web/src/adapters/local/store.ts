@@ -12,6 +12,7 @@ import {
   assertPlanetMove,
   upgradeUniverse,
   updateGrowthElement,
+  nextPlanetPosition,
   type LayoutActor,
 } from "@colorverse/domain";
 import { UniverseSchema, MotionSchema } from "@colorverse/contracts";
@@ -221,6 +222,82 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
     if (!(await tx.store.get(planetId))) await tx.store.put(userId, planetId);
     await tx.done;
   }
+  async initializeDemoOwnership(ids: string[]) {
+    const tx = (await this.db).transaction(
+      ["settings", "ownership", "planets"],
+      "readwrite",
+    );
+    if (!(await tx.objectStore("settings").get("demo-ownership-v1"))) {
+      for (const [i, id] of ids.entries())
+        if (
+          (await tx.objectStore("planets").get(id)) &&
+          !(await tx.objectStore("ownership").get(id))
+        )
+          await tx.objectStore("ownership").put(`demo-student-${i + 1}`, id);
+      await tx.objectStore("settings").put(true, "demo-ownership-v1");
+    }
+    await tx.done;
+  }
+  /** The one-time entry is also enforced across concurrent browser windows. */
+  async createOwnedPlanet(
+    doc: PlanetDocument,
+    files: Map<string, Blob>,
+    userId: string,
+  ) {
+    const valid = validatePlanet(doc),
+      tx = (await this.db).transaction(
+        ["planets", "revisions", "assets", "universes", "ownership"],
+        "readwrite",
+      );
+    try {
+      const planets = await tx.objectStore("planets").getAll();
+      for (const p of planets)
+        if ((await tx.objectStore("ownership").get(p.planetId)) === userId) {
+          await tx.done;
+          return { planetId: p.planetId, created: false };
+        }
+      const u = (await tx.objectStore("universes").getAll())[0];
+      if (!u) throw new DomainError("NOT_FOUND", "宇宙尚未初始化");
+      if (u.entries.length >= 300)
+        throw new DomainError(
+          "VALIDATION_FAILED",
+          "当前宇宙最多支持 300 颗星球",
+        );
+      if (await tx.objectStore("planets").get(doc.planetId))
+        throw new DomainError("VALIDATION_FAILED", "星球标识已存在");
+      for (const [path, blob] of files) {
+        if (await tx.objectStore("assets").get(path))
+          throw new DomainError("VALIDATION_FAILED", "原始素材不能被覆盖");
+        await tx.objectStore("assets").put(blob, path);
+      }
+      u.entries.push({
+        planetId: valid.planetId,
+        visible: true,
+        position: nextPlanetPosition(u.entries, u.layout.seed),
+        scale: 1,
+        order: Math.max(-1, ...u.entries.map((e) => e.order)) + 1,
+        ...(u.schemaVersion === "1.1.0" ? { layoutRevision: 0 } : {}),
+      });
+      await tx.objectStore("planets").put(valid, valid.planetId);
+      await tx
+        .objectStore("revisions")
+        .put(valid, `${valid.planetId}:${valid.revision}`);
+      await tx.objectStore("ownership").put(userId, valid.planetId);
+      await tx
+        .objectStore("universes")
+        .put(UniverseSchema.parse(u), u.universeId);
+      await tx.done;
+      return { planetId: valid.planetId, created: true };
+    } catch (error) {
+      try {
+        tx.abort();
+      } catch {
+        /* Already closed. */
+      }
+      await tx.done.catch(() => {});
+      throw error;
+    }
+  }
   async movePlanet(move: PlanetMove, actor: LayoutActor) {
     await this.updateLayout(move, actor);
   }
@@ -305,6 +382,67 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
       await tx.objectStore("settings").put(true, "spatial-demo-v2");
     }
     await tx.done;
+  }
+  async upgradeDemoBody(
+    planetId: string,
+    oldAssetId: string,
+    oldHash: string,
+    replacement: AssetRecord,
+    files: Map<string, Blob>,
+  ) {
+    const tx = (await this.db).transaction(
+      ["planets", "revisions", "assets", "settings"],
+      "readwrite",
+    );
+    try {
+      const marker = `demo-body-v2:${planetId}`;
+      if (await tx.objectStore("settings").get(marker)) {
+        await tx.done;
+        return false;
+      }
+      const current = await tx.objectStore("planets").get(planetId),
+        body = current?.exterior.scene.layers.find((l) => l.kind === "image"),
+        original = current?.assetRefs.find((a) => a.assetId === oldAssetId);
+      if (
+        !current ||
+        !body ||
+        !("assetId" in body.source) ||
+        body.source.assetId !== oldAssetId ||
+        original?.rights.license !== "system-demo" ||
+        original.original.sha256 !== oldHash
+      ) {
+        await tx.done;
+        return false;
+      }
+      for (const [path, blob] of files) {
+        if (await tx.objectStore("assets").get(path))
+          throw new DomainError("VALIDATION_FAILED", "原始素材不能被覆盖");
+        await tx.objectStore("assets").put(blob, path);
+      }
+      // Preserve the previous asset and immutable revisions, including archives
+      // referring to it. Only the built-in body's asset reference is replaced.
+      body.source.assetId = replacement.assetId;
+      current.assetRefs.push(replacement);
+      const saved = validatePlanet({
+        ...current,
+        revision: current.revision + 1,
+      });
+      await tx.objectStore("planets").put(saved, planetId);
+      await tx
+        .objectStore("revisions")
+        .put(saved, `${planetId}:${saved.revision}`);
+      await tx.objectStore("settings").put(true, marker);
+      await tx.done;
+      return true;
+    } catch (error) {
+      try {
+        tx.abort();
+      } catch {
+        /* Already closed. */
+      }
+      await tx.done.catch(() => {});
+      throw error;
+    }
   }
   async read(path: string) {
     const b = await (await this.db).get("assets", path);

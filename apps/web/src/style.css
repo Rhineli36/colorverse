@@ -1724,6 +1724,23 @@ p {
   .header-right {
     display: none;
   }
+  .app.universe.needs-planet .topbar {
+    height: auto;
+    min-height: 112px;
+    flex-wrap: wrap;
+    padding-block: 12px;
+  }
+  .needs-planet .header-right {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .needs-planet .local-label {
+    display: none;
+  }
+  .app.universe.needs-planet .universe-main {
+    height: calc(100dvh - 112px);
+  }
   .universe-main {
     height: calc(100vh - 116px);
   }
