@@ -45,6 +45,7 @@
 | [33-upload-login-and-file-readiness.md](33-upload-login-and-file-readiness.md) | 文件生命周期、登录/密码现状、正式上线阻塞项与下一轮验证 |
 | [34-universe-landmarks.md](34-universe-landmarks.md) | 分散恒星/黑洞、同步世界相机、共享纹理/粒子预算与验证 |
 | [35-classroom-interaction-and-daily-stars.md](35-classroom-interaction-and-daily-stars.md) | 每周展示/全班浏览/互动任务、每日精选、关注与去重统计的待实施建议 |
+| [36-cloud-auth-and-cloudflare-pilot.md](36-cloud-auth-and-cloudflare-pilot.md) | 邮箱登录/退出、Workers服务端验证、部署配置与正式班级接入边界 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 

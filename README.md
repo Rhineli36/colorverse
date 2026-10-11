@@ -21,6 +21,14 @@ pnpm dev
 
 最终元素库目标约30种，先逐批校准；学生API定制留到下一步，尚未接入。当前作品仍存此浏览器，跨设备需主动导出/导入ZIP。基础流程见[24](docs/24-showcase-growth-first-slice.md)，本轮登记与体验改进见[25](docs/25-growth-library-and-experience.md)。
 
+## Supabase / Cloudflare 登录测试版
+
+前端workspace已安装`@supabase/supabase-js`，公开配置模板位于[apps/web/.env.example](apps/web/.env.example)，复制为同目录`.env.local`后填写项目URL与Publishable key。模板不包含真实项目配置，`.env.local`由Git忽略。`VITE_*`只用于可公开的前端值，数据库密码、连接字符串与高权限Secret key须另存于后端私密配置。
+
+新增邮箱密码登录、退出和服务端身份验证，配置 `VITE_ENABLE_CLOUD_AUTH=true` 后显示登录入口。当前为登录测试阶段，验证后显示待加入班级；星球/作品仍保存在本机，不授予云端教师权限或自动上传。GitHub Pages 默认保留本机演示、关闭云端登录模块。
+
+Cloudflare 使用独立 Fetch Worker 与 Static Assets，`pnpm cloud:check` 验证本机帐户配置，`pnpm cloud:dry-run` 构建预检，`pnpm cloud:deploy` 发布测试版。令牌与 Account ID 保存在根目录 Git 忽略的 `.env.cloudflare.local`，不放入 `VITE_*`。真实班级授权、私有 R2、Hyperdrive 与云星球仍待接入。配置、验证范围与上线门槛见[36](docs/36-cloud-auth-and-cloudflare-pilot.md)。
+
 ## 作业提交系统：本机测试（扩建暂缓）
 
 先另开终端运行`pnpm dev:api`，保留`pnpm dev`，访问5173→“课程作业”。使用明确标注的合成学生/教师账户，可上传作品和过程图、保存私人草稿、提交固定版本；教师布置、评分或退回，学生重交并保留历史。退出课堂后切换身份，或使用独立浏览器上下文同时对照。
@@ -91,7 +99,7 @@ python tests/default_art_browser.py
 
 脚本默认在 Windows 使用本机 Chrome，无头运行。Linux/无 Chrome 环境请执行 `python -m playwright install chromium`，Windows 可将 COLORVERSE_BROWSER_CHANNEL 设为空字符串改用已安装的 Playwright Chromium。本次记录使用 Windows Chrome/SwiftShader，不能视为普通机房集成显卡性能基准。`COLORVERSE_TEST_URL` 可指定生产预览地址。测试使用独立浏览器上下文，不改用户日常 Chrome 配置；结果和截图写入 outputs/，下载包写入 work/。
 
-CI执行lint、126项模块测试和生产构建，另在PostgreSQL18服务运行20项课程契约/事务/HTTP测试；浏览器及机房验收暂由上述独立脚本执行。
+CI执行lint、162项模块测试和生产构建，另在PostgreSQL18服务运行课程契约/事务/HTTP测试；浏览器及机房验收暂由上述独立脚本执行。启用云端登录的隔离浏览器检查见 `python tests/cloud_auth_browser.py`，所有 Auth 请求均使用模拟响应。
 
 代码仓库：[Rhineli36/colorverse](https://github.com/Rhineli36/colorverse)。main推送通过检查后部署GitHub Pages，实际状态见[Actions](https://github.com/Rhineli36/colorverse/actions)。本机草稿不会自动同步到在线演示，需导出/导入ZIP；部署与明天接续记录见[21](docs/21-github-deployment-and-handoff.md)。
 

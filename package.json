@@ -17,7 +17,11 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint apps packages tests scripts",
     "format": "prettier --write apps packages tests scripts *.json *.ts *.js",
-    "schemas": "tsx scripts/generate-schemas.ts"
+    "schemas": "tsx scripts/generate-schemas.ts",
+    "cloud:check": "node scripts/cloudflare.mjs check",
+    "cloud:dry-run": "node scripts/cloudflare.mjs dry-run",
+    "cloud:deploy": "node scripts/cloudflare.mjs deploy",
+    "cloud:verify": "node scripts/verify-cloudflare.mjs"
   },
   "dependencies": {
     "@colorverse/application": "workspace:*",
@@ -50,6 +54,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.1",
     "vite": "^7.3.7",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "wrangler": "^4.149.0"
   }
 }

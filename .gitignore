@@ -8,3 +8,5 @@ outputs/
 !.env.example
 __pycache__/
 *.pyc
+.wrangler/
+.dev.vars*

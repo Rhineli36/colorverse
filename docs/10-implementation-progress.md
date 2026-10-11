@@ -315,3 +315,25 @@ Universe在首次布局写入显式升级1.1.0，未配置条目保留旧轨迹�
 用户提出首页突出受关注/点赞/互动较多的星球与作品，以及每周展示1–2幅、浏览所有同学星球、至少5次同伴互动的课堂方式。完成[35](35-classroom-interaction-and-daily-stars.md)，并更新索引与阶段计划：首页近期热门/每日轮换精选/老师推荐及新作发现，个人周进度、未浏览名单、教师完成矩阵；明确关注订阅、星球/原作稳定来源、去重、班级可见与公网发布的边界。5位不同同学、访问停留和排名权重等属于待确认建议，不改写用户原要求，不以人气当成绩。
 
 查阅Moodle与Canvas官方互评流程，参考任务目标与教师分配；没有据此宣称上述激励规则具有已验证的教学效果。真实身份、班级成员和共享云星球仍按33先完成，当前Pages不能统计其他浏览器的学生互动。本轮仅记录后续设计，没有新增互动、登录、排行、数据库迁移或运行界面；应用仍为f05ef9f，142项模块/本轮22项浏览器结果不增加。157处文档相对链接与27项协议/算术检查通过，218文件源码包与进度副本同步；文档提交跳过CI，不重新部署应用。
+
+## 2026-10-11 Supabase项目与前端配置准备
+
+用户已创建Supabase项目并提供项目URL与Publishable key。沿用pnpm workspace，在apps/web安装`@supabase/supabase-js` 2.117.3并锁定依赖；实际公开配置写入Git忽略的`apps/web/.env.local`，通用占位模板见[apps/web/.env.example](../apps/web/.env.example)。项目配置不写进跟踪文件，未取得数据库密码或高权限Secret key。
+
+以用户提供的公开配置只读请求`/auth/v1/settings`，通过本机HTTP代理返回200，邮箱登录已启用、自助注册未关闭。直连首次验证出现ECONNRESET，故不能把代理下连通视为校园网可用。未注册用户、登录任何学生账户、发送邮件、查询业务表或执行数据库迁移；上线前仍须落实教师邀请、班级归属与授权策略。
+
+TypeScript、ESLint与生产构建通过；159处文档相对链接、27项协议/算术检查及Git diff格式检查通过。当前界面尚未导入SDK或读取上述配置，运行包未增加Supabase登录逻辑，也不自动同步/上传本地作品；142项旧模块与浏览器验收结果不算本轮新增。下一步由用户取得Direct数据库连接信息并保存在私密配置，验证数据库后再实施正式身份与Workers/R2适配；遵循[33](33-upload-login-and-file-readiness.md)的上线门槛。
+
+已根据用户Direct连接截图创建Git忽略的根目录`.env.supabase.local`，预填主机、5432端口、数据库和用户名，密码留空待用户在本机填写；不输出或提交密码。文件不会被现有API自动读取，不触发迁移或测试身份初始化。此步骤仅准备私密配置，尚未验证数据库连通、建立表或接入真实登录。
+
+用户告知已保存密码后，以隔离只读探针验证：Direct主机没有A记录、有一个AAAA记录；系统lookup返回ENOTFOUND，按IPv6地址连接5432返回ENETUNREACH。本机代理HTTP CONNECT返回200，后续PostgreSQL TLS握手因SELF_SIGNED_CERT_IN_CHAIN中止，尚未验证凭据或执行SQL。探针保留证书链/主机校验，没有改为不验证TLS；支持加载用户从官方控制台下载的根证书，连接后仅BEGIN READ ONLY、SELECT元信息、ROLLBACK。脚本留在Git忽略的work目录，未启动会自动迁移/初始化测试身份的课程API，也未改写Supabase数据。下一步下载Database Settings的SSL Configuration根证书后重试；当前不要求购买IPv4或更改数据库密码。依据[官方SSL说明](https://supabase.com/docs/guides/platform/ssl-enforcement)。
+
+用户下载官方根证书后，使用该证书和现有代理重试成功：数据库postgres、数据库角色postgres、transaction_read_only=on、TLS=true，public基础表数量为0。连接时仍开启证书链和主机校验；仅执行BEGIN READ ONLY、SELECT元信息及ROLLBACK，没有查询学生内容、迁移、建表、初始化演示账户或发送邮件。证书副本保存在Git忽略的work目录，根目录私密配置登记相对证书路径，未记录密码或完整连接URI。本机代理连通与密码验证已通过，原直连IPv6不可达和校园网验收仍待处理；正式运行须配置范围受限的后端数据库角色，不能把此次postgres检查账户视为最终应用权限。真实登录界面、班级授权、Workers/R2部署与云端同步仍未实现。
+
+## 2026-10-11 Cloudflare登录测试版
+
+用户授权继续接入并在本机保存指定帐户的Cloudflare令牌。完成[36](36-cloud-auth-and-cloudflare-pilot.md)：游客先浏览、可选邮箱登录、退出、SDK会话恢复和固定Supabase项目的服务端身份验证。登录身份不继承本地教师角色，不认领演示星球、不自动上传；当前统一待加入班级。独立Fetch Worker只开放健康和身份检查，拒绝开发账户/API写入，Static Assets与API路径区分。Cloudflare配置脚本通过环境向Wrangler传令牌，数据库密码不进入部署；GitHub Pages关闭登录初始化，登录模块延迟加载。
+
+20项新模块检查、全套20文件162项检查、5项隔离浏览器流程、TypeScript、ESLint与生产构建/Worker dry-run通过。修复手机原样式隐藏登录入口、弹窗padding宽度及身份服务断网仍须允许退出的问题。浏览器Auth请求均拦截，没有创建学生、发邮件、实际登录真实账户或改写Supabase数据库。用户提供凭据后的真实Cloudflare帐户读取权限验证成功；班级授权/私有R2/Hyperdrive/云保存仍待接入。
+
+Cloudflare实际发布为[登录测试版](https://colorverse-dev.2999346.workers.dev)，最终Worker版本778ed169-4886-4a56-95df-8b188504dbeb。7项实际线上页面/API验证通过，5项浏览器模拟流程线上复测通过但不重复累加。首轮实际运行发现边缘Fetch不接受redirect=error，Node模拟与官方文档未反映此差异；脱敏测试日志定位后改用manual并拒绝3xx，真实无效令牌从503修正为401。临时详细日志已移除，正式日志仅异常名称/上游状态，不输出JWT/密码/密钥。仍需建立应用测试账户验证成功登录与退出、私有成员表/运行角色和跨账户授权；本机代理下连通不等于校园网可用。

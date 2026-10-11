@@ -10,7 +10,14 @@ import {
 import { PlanetRoomView } from "../features/planet-room/PlanetRoomView";
 import { UniverseView } from "../features/universe/UniverseView";
 import type { UniverseViewMode } from "../features/universe/UniverseView";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   VERSION,
   EffectIds,
@@ -61,6 +68,12 @@ const workspace = new LocalWorkspace(),
   showcase = new ShowcaseService(workspace, sha256),
   elementService = new GrowthElementService(workspace),
   layoutService = new UniverseLayoutService(workspace);
+const AuthEntry = lazy(() =>
+  import("../features/auth/AuthEntry").then((module) => ({
+    default: module.AuthEntry,
+  })),
+);
+const cloudAuthEnabled = import.meta.env.VITE_ENABLE_CLOUD_AUTH === "true";
 export function App() {
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
     [universe, setUniverse] = useState<UniverseDocument | null>(null),
@@ -725,6 +738,11 @@ export function App() {
           </button>
         </nav>
         <div className="header-right">
+          {cloudAuthEnabled && (
+            <Suspense fallback={<span className="muted">连接账户…</span>}>
+              <AuthEntry />
+            </Suspense>
+          )}
           <span className="local-label">
             <i />
             本地创作空间

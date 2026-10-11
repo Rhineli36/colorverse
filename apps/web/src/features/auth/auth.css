@@ -1,0 +1,64 @@
+.auth-dialog {
+  box-sizing: border-box;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  width: min(460px, calc(100vw - 32px));
+  padding: 36px;
+  border: 1px solid #6ebbbd60;
+  border-radius: 20px;
+  color: #e6edf2;
+  background:
+    radial-gradient(ellipse at 100% 0, #16334d, transparent 65%), #0c1422;
+  box-shadow:
+    0 24px 100px #0009,
+    0 0 40px #72c7d314;
+}
+.auth-dialog::backdrop {
+  background: #050b16b8;
+  backdrop-filter: blur(8px);
+}
+.auth-dialog h2 {
+  margin: 16px 0;
+}
+.auth-dialog form {
+  display: grid;
+  gap: 18px;
+  margin: 24px 0;
+}
+.auth-dialog label {
+  display: grid;
+  gap: 8px;
+}
+.auth-dialog input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.auth-dialog > .outline {
+  margin-top: 16px;
+}
+.auth-identity {
+  overflow-wrap: anywhere;
+  color: #b8e5df;
+}
+.auth-pilot-note {
+  margin-top: 24px;
+  font-size: 12px;
+  color: #8295ab;
+}
+@media (max-width: 600px) {
+  .app .topbar:has(button.cloud-login-entry) {
+    height: auto;
+    min-height: 100px;
+    flex-wrap: wrap;
+    padding-block: 12px;
+  }
+  .app .topbar .header-right:has(button.cloud-login-entry) {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  .auth-dialog {
+    padding: 24px;
+  }
+}
