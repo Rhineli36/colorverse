@@ -141,9 +141,6 @@ export function UniverseView({
       data-view-mode={viewMode}
       data-motion={motionPaused || reducedMotion ? "paused" : "running"}
     >
-      <div className="cosmic-backdrop" aria-hidden="true">
-        <div className="cosmic-vignette" />
-      </div>
       <SceneCanvas
         assets={workspace}
         planets={view.planets}

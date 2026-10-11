@@ -53,7 +53,7 @@ export class UniverseAtmosphere {
     const image = new Image();
     image.onload = () => {
       if (this.disposed) return;
-      const texture = Texture.from(image);
+      const texture = this.panoramaTexture(image);
       this.textures.push(texture);
       const width = this.nebula.width,
         height = this.nebula.height,
@@ -63,6 +63,7 @@ export class UniverseAtmosphere {
       this.nebula.height = height;
       this.textures = this.textures.filter((t) => t !== previous);
       previous.destroy(true);
+      image.onload = null;
     };
     // A failed/offline load keeps a single procedural fallback, never a tiling grid.
     image.src = lowQuality
@@ -123,6 +124,32 @@ export class UniverseAtmosphere {
         this.meteors.push(streak);
       }
     this.update(0);
+  }
+  /** Bake a soft world-space edge once; no live mask/filter or per-frame upload. */
+  private panoramaTexture(image: HTMLImageElement) {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(image, 0, 0);
+    ctx.globalCompositeOperation = "destination-in";
+    for (const horizontal of [true, false]) {
+      const gradient = ctx.createLinearGradient(
+        0,
+        0,
+        horizontal ? canvas.width : 0,
+        horizontal ? 0 : canvas.height,
+      );
+      gradient.addColorStop(0, "#ffffff00");
+      gradient.addColorStop(0.04, "#ffffff30");
+      gradient.addColorStop(0.12, "#ffffffff");
+      gradient.addColorStop(0.88, "#ffffffff");
+      gradient.addColorStop(0.96, "#ffffff30");
+      gradient.addColorStop(1, "#ffffff00");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    return Texture.from(canvas);
   }
   private nebulaTexture() {
     const canvas = document.createElement("canvas");
@@ -273,11 +300,11 @@ export class UniverseAtmosphere {
       root.visible = visible;
     this.background.scale.set(worldScale);
     this.background.position.set(x, y);
-    // Counteract the parent only for the distant backdrop. World stars, black
-    // hole and planets retain the same camera and coordinates.
+    // Express the world projection in screen coordinates. There is no cover
+    // floor or edge clamp: every image point follows the same mouse anchor.
     this.panorama.scale.set(1 / worldScale);
     this.panorama.position.set(-x / worldScale, -y / worldScale);
-    const frame = panoramaFrame(width, height, worldScale, x, y);
+    const frame = panoramaFrame(worldScale, x, y);
     this.nebula.position.set(frame.x, frame.y);
     this.nebula.width = frame.width;
     this.nebula.height = frame.height;

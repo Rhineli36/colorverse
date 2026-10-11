@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright,expect
 from PIL import Image,ImageStat
 expect.set_options(timeout=15000)
 URL=os.environ.get('COLORVERSE_TEST_URL','http://127.0.0.1:5173')
-checks,errors=[],[]
+checks,errors,backgrounds=[],[],[]
 def passed(message): checks.append(message);print('PASS:',message,flush=True)
 def snapshot(page):
     c=page.locator('canvas')
@@ -16,15 +16,15 @@ def mean(image,x,y): return ImageStat.Stat(image.crop((round(x)-3,round(y)-3,rou
 def compare(before,after):
     a,c0=before;b,c1=after;base=min(a.width/1600,a.height/900)
     projected,stationary=[],[]
-    for y in range(280,660,30):
-        for x in range(240,1300,35):
+    for y in range(30,a.height-30,20):
+        for x in range(30,a.width-30,20):
             wx=(x-a.width/2-c0['x']*base)/(base*c0['zoom'])+800
             wy=(y-a.height/2-c0['y']*base)/(base*c0['zoom'])+450
             px=b.width/2+(wx-800)*base*c1['zoom']+c1['x']*base
             py=b.height/2+(wy-450)*base*c1['zoom']+c1['y']*base
-            if not(220<px<1350 and 230<py<740):continue
+            if not(20<px<b.width-20 and 20<py<b.height-20):continue
             old=mean(a,x,y)
-            if sum(old)<60 or max(old)>110:continue
+            if sum(old)<25 or max(old)>190:continue
             projected.append(sum(abs(v-w) for v,w in zip(old,mean(b,px,py)))/3)
             stationary.append(sum(abs(v-w) for v,w in zip(old,mean(b,x,y)))/3)
     assert len(projected)>20,len(projected)
@@ -35,10 +35,13 @@ with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,channel='chrome' if os.name=='nt' else None,args=['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
     page=browser.new_page(viewport={'width':1650,'height':1000},reduced_motion='reduce')
     page.on('pageerror',lambda e:errors.append(str(e)))
+    page.on('console',lambda m:errors.append(m.text) if m.type=='error' else None)
+    page.on('response',lambda r:backgrounds.append(r.url) if 'universe-v2-' in r.url and r.url.endswith('.webp') else None)
     page.goto(URL);page.wait_for_load_state('networkidle')
     expect(page.locator('canvas')).to_have_attribute('data-scene-ready','true')
     initial=snapshot(page);box=page.locator('canvas').bounding_box()
     generation=page.locator('canvas').get_attribute('data-scene-generation')
+    saved=page.evaluate("""async()=>{const db=await new Promise(ok=>{const r=indexedDB.open('colorverse-v1');r.onsuccess=()=>ok(r.result)});const out={};for(const s of ['planets','universes','revisions','assets','ownership'])out[s]=await new Promise(ok=>{const r=db.transaction(s).objectStore(s).getAllKeys();r.onsuccess=()=>ok(r.result)});for(const s of ['planets','universes'])out[s]=await new Promise(ok=>{const r=db.transaction(s).objectStore(s).getAll();r.onsuccess=()=>ok(r.result)});db.close();return out;}""")
     page.mouse.move(box['x']+825,box['y']+460);page.mouse.wheel(0,-230);page.wait_for_timeout(250)
     zoomed=snapshot(page);zoom_pixels=compare(initial,zoomed)
     passed('cloud pixels enlarge with the same world transform as planets')
@@ -51,10 +54,38 @@ with sync_playwright() as p:
     base=min(box['width']/1600,box['height']/900)
     assert abs(float(page.locator('canvas').get_attribute('data-background-scale'))-base*snapshot(page)[1]['zoom'])<1e-8
     passed('camera navigation keeps the renderer and textures intact')
-    page.mouse.wheel(0,1800);page.wait_for_timeout(250)
-    assert json.loads(page.locator('canvas').get_attribute('data-camera'))['zoom']>=.04
+    # Both views are below the former cover floor (~20% at this viewport).
+    page.get_by_role('button',name='宇宙全景',exact=True).click()
+    camera=snapshot(page)[1]
+    page.mouse.move(box['x']+box['width']*.67,box['y']+box['height']*.53)
+    import math
+    page.mouse.wheel(0,math.log(camera['zoom']/.12)*1000);page.wait_for_timeout(250)
+    distant=snapshot(page)
+    assert abs(distant[1]['zoom']-.12)<1e-6
+    page.screenshot(path=str(ROOT/'outputs/COLORVERSE-background-sync-before.png'),full_page=True)
+    anchor=(box['width']*.67,box['height']*.53)
+    anchor_before=mean(distant[0],*anchor)
+    page.mouse.wheel(0,-300);page.wait_for_timeout(250)
+    distant_zoom=snapshot(page)
+    distant_pixels=compare(distant,distant_zoom)
+    assert distant_zoom[1]['zoom']<.2
+    assert max(abs(a-b) for a,b in zip(anchor_before,mean(distant_zoom[0],*anchor)))<5
+    passed('below the former cover floor, cloud pixels zoom around an off-center mouse anchor')
+    page.screenshot(path=str(ROOT/'outputs/COLORVERSE-background-sync-after.png'),full_page=True)
+    page.mouse.move(box['x']+70,box['y']+box['height']*.8);page.mouse.down()
+    page.mouse.move(box['x']+450,box['y']+box['height']*.8+70,steps=10);page.mouse.up();page.wait_for_timeout(250)
+    edge_pixels=compare(distant_zoom,snapshot(page))
+    passed('dragging beyond the former background clamp still translates the same cloud pixels')
+    page.mouse.move(box['x']+70,box['y']+box['height']*.6)
+    page.mouse.wheel(0,3000);page.wait_for_timeout(250)
+    assert json.loads(page.locator('canvas').get_attribute('data-camera'))['zoom']==.04
     assert page.locator('canvas').get_attribute('data-universe-atmosphere')=='true'
     assert not errors,errors
-    passed('very distant view remains covered by reusable tiled textures without errors')
+    assert len(backgrounds)==1,backgrounds
+    current=page.evaluate("""async()=>{const db=await new Promise(ok=>{const r=indexedDB.open('colorverse-v1');r.onsuccess=()=>ok(r.result)});const out={};for(const s of ['planets','universes','revisions','assets','ownership'])out[s]=await new Promise(ok=>{const r=db.transaction(s).objectStore(s).getAllKeys();r.onsuccess=()=>ok(r.result)});for(const s of ['planets','universes'])out[s]=await new Promise(ok=>{const r=db.transaction(s).objectStore(s).getAll();r.onsuccess=()=>ok(r.result)});db.close();return out;}""")
+    assert current==saved
+    assert page.locator('canvas').get_attribute('data-scene-generation')==generation
+    page.screenshot(path=str(ROOT/'outputs/COLORVERSE-background-sync-distant.png'),full_page=True)
+    passed('minimum zoom uses one feathered panorama, without reloads, renderer recreation or saved-data changes')
     browser.close()
-(ROOT/'outputs/COLORVERSE-background-camera-test-report.json').write_text(json.dumps({'checks':checks,'errors':errors,'zoom_pixels':zoom_pixels,'pan_pixels':pan_pixels},ensure_ascii=False,indent=2),encoding='utf-8')
+(ROOT/'outputs/COLORVERSE-background-camera-test-report.json').write_text(json.dumps({'checks':checks,'errors':errors,'zoom_pixels':zoom_pixels,'pan_pixels':pan_pixels,'distant_pixels':distant_pixels,'edge_pixels':edge_pixels,'background_requests':len(backgrounds),'rendering':'headless Chrome / SwiftShader; not target hardware performance acceptance'},ensure_ascii=False,indent=2),encoding='utf-8')

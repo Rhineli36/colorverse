@@ -16,24 +16,13 @@ export const ATMOSPHERE_BUDGET = {
   },
 } as const;
 
-/** One panorama, with a distant-view floor. Never tile or expose an empty edge. */
-export function panoramaFrame(
-  width: number,
-  height: number,
-  worldScale: number,
-  x: number,
-  y: number,
-) {
-  const scale = Math.max(worldScale, width / 8000, height / 4500),
-    w = 8000 * scale,
-    h = 4500 * scale;
-  const clamp = (value: number, low: number) =>
-    Math.min(0, Math.max(low, value));
+/** Project one fixed world panorama with exactly the planets' camera transform. */
+export function panoramaFrame(worldScale: number, x: number, y: number) {
   return {
-    width: w,
-    height: h,
-    x: clamp(x + 800 * worldScale - w / 2, width - w),
-    y: clamp(y + 450 * worldScale - h / 2, height - h),
+    width: 8000 * worldScale,
+    height: 4500 * worldScale,
+    x: x - 3200 * worldScale,
+    y: y - 1800 * worldScale,
   };
 }
 

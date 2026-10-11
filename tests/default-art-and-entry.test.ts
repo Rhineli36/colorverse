@@ -5,6 +5,7 @@ import { fixturePlanet, fixtureUniverse } from "@colorverse/fixtures";
 import { demoBodyRecord } from "../apps/web/src/app/bootstrap";
 import manifest from "../apps/web/src/app/demo-assets.json";
 import { panoramaFrame } from "../packages/renderer/src/atmosphere-model";
+import { zoomAt } from "@colorverse/domain";
 
 describe("one owned planet entry", () => {
   it("creates once across two concurrent windows and retains other planets/layout", async () => {
@@ -182,29 +183,35 @@ describe("versioned default art upgrade", () => {
   });
 });
 describe("single panorama camera", () => {
-  it("covers wide, tall and minimum zoom views even after extreme panning", () => {
-    for (const [width, height] of [
-      [1920, 1080],
-      [390, 844],
-      [3440, 1440],
-    ])
-      for (const zoom of [0.01, 0.04, 0.1, 0.38, 1, 2])
-        for (const x of [-100000, 0, 100000]) {
-          const f = panoramaFrame(width, height, zoom, x, -x);
-          expect(f.x).toBeLessThanOrEqual(0);
-          expect(f.y).toBeLessThanOrEqual(0);
-          expect(f.x + f.width).toBeGreaterThanOrEqual(width - 1e-8);
-          expect(f.y + f.height).toBeGreaterThanOrEqual(height - 1e-8);
-          expect(f.width / f.height).toBeCloseTo(16 / 9);
-        }
+  it("never pins image size or panning, including the old cover-floor interval", () => {
+    for (const zoom of [0.04, 0.1, 0.2, 0.38, 1, 2])
+      for (const x of [-100000, 0, 100000]) {
+        const a = panoramaFrame(zoom, x, -x),
+          b = panoramaFrame(zoom * 2, x, -x),
+          c = panoramaFrame(zoom, x + 50, -x + 30);
+        expect(b.width / a.width).toBe(2);
+        expect(b.height / a.height).toBe(2);
+        expect(c.x - a.x).toBe(50);
+        expect(c.y - a.y).toBe(30);
+      }
   });
-  it("follows camera panning and zoom above the distant-view floor", () => {
-    const a = panoramaFrame(1600, 900, 0.5, 0, 0),
-      b = panoramaFrame(1600, 900, 0.5, 50, 30),
-      c = panoramaFrame(1600, 900, 1, 0, 0);
-    expect(b.x - a.x).toBe(50);
-    expect(b.y - a.y).toBe(30);
-    expect(c.width / a.width).toBe(2);
-    expect(c.height / a.height).toBe(2);
+  it("keeps the same off-center image landmark under the mouse when zooming", () => {
+    const point = { x: 1800, y: -400 },
+      camera = { x: 350, y: -90, zoom: 0.1 },
+      next = zoomAt(camera, point, 0.18);
+    for (const base of [0.24, 1, 2.15]) {
+      const frame = (c: typeof camera) =>
+        panoramaFrame(
+          base * c.zoom,
+          base * (800 * (1 - c.zoom) + c.x),
+          base * (450 * (1 - c.zoom) + c.y),
+        );
+      const a = frame(camera),
+        b = frame(next),
+        u = (point.x + 3200) / 8000,
+        v = (point.y + 1800) / 4500;
+      expect(a.x + a.width * u).toBeCloseTo(b.x + b.width * u);
+      expect(a.y + a.height * v).toBeCloseTo(b.y + b.height * v);
+    }
   });
 });

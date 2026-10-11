@@ -428,7 +428,7 @@ p {
   height: calc(100vh - 132px);
   min-height: 650px;
   overflow: hidden;
-  background: radial-gradient(ellipse at 63% 53%, #182735 0, #090e19 62%);
+  background: #040b14;
 }
 .universe-main > .canvas-host {
   position: absolute;
@@ -1973,22 +1973,7 @@ p {
 .app.universe .universe-main {
   height: calc(100dvh - 76px);
   min-height: 600px;
-  background: #050912;
-}
-.cosmic-backdrop {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.cosmic-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 20%,
-    #02050c95 100%
-  );
+  background: #040b14;
 }
 .app.universe .canvas-host {
   user-select: none;
