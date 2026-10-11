@@ -349,3 +349,5 @@ Cloudflare实际发布为[登录测试版](https://colorverse-dev.2999346.worker
 用户增加Hyperdrive和SSL/证书编辑权限后，上传官方Supabase根CA，建立verify-full、关闭查询缓存、源连接上限5的受限Hyperdrive；创建一次500/10000后重试成功，无重复配置。Worker每请求pg客户端并finally关闭、实际配置不进入Git，读角色密码只在私密文件和配置HTTPS请求使用，不进入Vite或CLI参数。Cloudflare发布版本654a6813-5c00-4af8-a11b-112ca681ce33，线上7项页面/API与额外绑定健康检查通过；没有购买付费方案。
 
 新增10项模块检查，全套21文件172项、TypeScript/ESLint/生产构建与打包通过；CI真实PostgreSQL18检查增加班级身份测试。7项隔离浏览器本机/线上通过，包含新班级卡片、刷新撤权、手机、登录错误、断网退出，线上复测不累加。实际成功教师登录由用户确认，模拟浏览器检查不能替代真实学生A/B端到端验收。当前星球/作品仍本机，下一步受控学生加入班级、私有R2/文件处理和云端作业写入。校园网直连/正式SMTP/密码重置/备份恢复仍待验证。
+
+实现2764f9a已推送main，[核心/真实PostgreSQL18检查](https://github.com/Rhineli36/colorverse/actions/runs/38130595520)和[Pages部署](https://github.com/Rhineli36/colorverse/actions/runs/38130595500)成功。Pages桌面/手机只读复查无Auth按钮、Supabase请求或运行时异常，云端测试保留在Cloudflare链接。168处文档相对链接/27项协议检查通过，源码备份239文件，不含所有真实环境凭据；后续仅记录验证结果，不重复部署应用。

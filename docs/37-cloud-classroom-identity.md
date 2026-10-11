@@ -48,3 +48,5 @@ pnpm cloud:deploy
 已部署[Cloudflare测试版](https://colorverse-dev.2999346.workers.dev/)，Worker版本 `654a6813-5c00-4af8-a11b-112ca681ce33`。7项线上页面/API检查通过，额外健康检查确认Hyperdrive绑定存在；未登录/无效token仍401，开发登录与文件接口404，session写入405。GitHub Pages继续本机演示，不启用云端Auth。
 
 下一步建立受控学生加入班级流程，然后实施私有R2/媒体解码、上传配额、失败清理与联合恢复，接入云星球所有权与作业提交。写操作使用单独明确授权角色，不能给当前只读角色直接放开所有表；仍按[33](33-upload-login-and-file-readiness.md)验收后开放。密码重置/邀请回调、正式SMTP、限制注册、校园网直连及备份恢复尚待验证。
+
+实现提交 `2764f9a` 已推送main。[GitHub核心与真实PostgreSQL18检查](https://github.com/Rhineli36/colorverse/actions/runs/38130595520)和[Pages发布](https://github.com/Rhineli36/colorverse/actions/runs/38130595500)全部成功；Pages桌面/手机只读复验没有Auth按钮、Supabase请求或运行时异常。168处文档相对链接/27项协议检查通过，239文件源码备份排除全部真实私密配置。后续仅验证记录变更跳过CI，不重复部署应用。
