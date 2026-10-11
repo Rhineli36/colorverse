@@ -6,6 +6,8 @@ import {
   nebulaNoise,
   ambientStarPosition,
   panoramaFrame,
+  UNIVERSE_LANDMARKS,
+  landmarkDustCount,
 } from "./atmosphere-model";
 
 /** Universe scenery has its own layers and lifetime, outside editable scenes. */
@@ -19,7 +21,7 @@ export class UniverseAtmosphere {
   private disposed = false;
   private glints: { node: Container; x: number; y: number; phase: number }[] =
     [];
-  private hole = new Container();
+  private suns: { corona: Sprite; phase: number }[] = [];
   private wanderers: {
     node: Container;
     x: number;
@@ -116,7 +118,31 @@ export class UniverseAtmosphere {
         phase: random() * Math.PI * 2,
       });
     }
-    this.drawBlackHole(glow);
+    const surface = this.starTexture(lowQuality ? 256 : 512);
+    const holes = UNIVERSE_LANDMARKS.filter(
+      (item) => item.kind === "black-hole",
+    );
+    for (const item of UNIVERSE_LANDMARKS) {
+      const node = new Container();
+      node.position.set(item.x, item.y);
+      this.world.addChild(node);
+      if (item.kind === "star")
+        this.drawStar(node, glow, surface, item.radius, item.color);
+      else {
+        node.rotation = item.rotation;
+        node.scale.set(item.radius / 103);
+        this.drawBlackHole(
+          node,
+          glow,
+          landmarkDustCount(
+            this.budget.dust,
+            holes.indexOf(item),
+            holes.length,
+          ),
+          holes.indexOf(item),
+        );
+      }
+    }
     if (!reducedMotion)
       for (let i = 0; i < 1; i++) {
         const streak = new Graphics();
@@ -206,24 +232,103 @@ export class UniverseAtmosphere {
     this.textures.push(texture);
     return texture;
   }
-  private drawBlackHole(glow: Texture) {
-    this.hole.position.set(1750, 820);
-    this.hole.rotation = -0.2;
-    this.world.addChild(this.hole);
+  /** One shared granular photosphere, baked once rather than animated noise. */
+  private starTexture(size: number) {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+    const pixels = ctx.createImageData(size, size);
+    for (let y = 0; y < size; y++)
+      for (let x = 0; x < size; x++) {
+        const u = ((x + 0.5) / size) * 2 - 1,
+          v = ((y + 0.5) / size) * 2 - 1;
+        const distance = Math.hypot(u, v);
+        if (distance > 1) continue;
+        const z = Math.sqrt(1 - distance * distance);
+        const grain =
+          nebulaNoise(u * 72 + z * 6, v * 72) * 0.55 +
+          nebulaNoise(u * 160, v * 160 + z * 12) * 0.25 +
+          nebulaNoise(u * 14, v * 14) * 0.2;
+        const brightness = (0.58 + z * 0.42) * (0.72 + grain * 0.42);
+        const i = (y * size + x) * 4;
+        pixels.data[i] = 255 * brightness;
+        pixels.data[i + 1] = 246 * brightness;
+        pixels.data[i + 2] = 227 * brightness;
+        pixels.data[i + 3] = Math.min(1, ((1 - distance) * size) / 2) * 255;
+      }
+    ctx.putImageData(pixels, 0, 0);
+    const texture = Texture.from(canvas);
+    this.textures.push(texture);
+    return texture;
+  }
+  private drawStar(
+    node: Container,
+    glow: Texture,
+    surface: Texture,
+    radius: number,
+    color: number,
+  ) {
+    const corona = new Sprite(glow);
+    corona.anchor.set(0.5);
+    corona.width = corona.height = radius * 8;
+    corona.tint = color;
+    corona.blendMode = "add";
+    const rim = new Sprite(glow);
+    rim.anchor.set(0.5);
+    rim.width = rim.height = radius * 3.6;
+    rim.tint = color;
+    rim.alpha = 0.85;
+    rim.blendMode = "add";
+    const body = new Sprite(surface);
+    body.anchor.set(0.5);
+    body.width = body.height = radius * 2;
+    body.tint = color;
+    const light = new Sprite(glow);
+    light.anchor.set(0.5);
+    light.width = light.height = radius * 2.4;
+    light.tint = 0xfff5e5;
+    light.alpha = 0.55;
+    light.blendMode = "add";
+    node.addChild(corona, rim, body, light);
+    // Static curved prominences remain attached to the same world anchor.
+    const flames = new Graphics();
+    for (let i = 0; i < 3; i++) {
+      const angle = i * 2.1 + radius * 0.001;
+      const x = Math.cos(angle),
+        y = Math.sin(angle);
+      flames
+        .moveTo(x * radius * 0.94, y * radius * 0.94)
+        .quadraticCurveTo(
+          x * radius * 1.35 - y * radius * 0.2,
+          y * radius * 1.35 + x * radius * 0.2,
+          x * radius * 0.89 - y * radius * 0.32,
+          y * radius * 0.89 + x * radius * 0.32,
+        )
+        .stroke({ color, alpha: 0.36, width: radius * 0.012 });
+    }
+    node.addChild(flames);
+    this.suns.push({ corona, phase: radius * 0.01 });
+  }
+  private drawBlackHole(
+    hole: Container,
+    glow: Texture,
+    dustCount: number,
+    seed: number,
+  ) {
     const haze = new Sprite(glow);
     haze.anchor.set(0.5);
     haze.width = 1400;
     haze.height = 900;
     haze.tint = 0xdf8152;
     haze.alpha = 0.65;
-    this.hole.addChild(haze);
+    hole.addChild(haze);
     const diskGlow = new Sprite(glow);
     diskGlow.anchor.set(0.5);
     diskGlow.width = 790;
     diskGlow.height = 165;
     diskGlow.tint = 0xf5b778;
     diskGlow.alpha = 0.9;
-    this.hole.addChild(diskGlow);
+    hole.addChild(diskGlow);
     const rear = new Graphics();
     for (let i = 0; i < 14; i++) {
       const radius = 170 + i * 11;
@@ -244,7 +349,7 @@ export class UniverseAtmosphere {
       }
       rear.stroke({ color: 0xf4c99a, alpha: 0.24 - r * 0.026, width: 5 });
     }
-    this.hole.addChild(rear);
+    hole.addChild(rear);
     const shadow = new Graphics().circle(0, 0, 103).fill(0x03060c);
     for (let i = 0; i < 5; i++)
       shadow.circle(0, 0, 104 + i * 2).stroke({
@@ -252,7 +357,7 @@ export class UniverseAtmosphere {
         alpha: 0.6 / (i + 1),
         width: 2,
       });
-    this.hole.addChild(shadow);
+    hole.addChild(shadow);
     const front = new Graphics();
     for (let r = 0; r < 10; r++) {
       for (let i = 0; i <= 60; i++) {
@@ -269,14 +374,14 @@ export class UniverseAtmosphere {
         width: r < 3 ? 3 : 2,
       });
     }
-    this.hole.addChild(front);
-    const random = seededRandom(922);
-    for (let i = 0; i < this.budget.dust; i++) {
+    hole.addChild(front);
+    const random = seededRandom(922 + seed * 731);
+    for (let i = 0; i < dustCount; i++) {
       const node = new Graphics().circle(0, 0, 1.5 + random() * 2).fill({
         color: i % 2 ? 0xf5c899 : 0xb49dd4,
         alpha: 0.24 + random() * 0.35,
       });
-      this.hole.addChild(node);
+      hole.addChild(node);
       this.dust.push({
         node,
         phase: random() * Math.PI * 2,
@@ -315,6 +420,8 @@ export class UniverseAtmosphere {
   }
   update(seconds: number): number {
     this.seconds = seconds;
+    for (const sun of this.suns)
+      sun.corona.alpha = 0.48 + Math.sin(seconds * 0.28 + sun.phase) * 0.06;
     for (const star of this.glints)
       star.node.alpha = 0.6 + Math.sin(seconds * 0.55 + star.phase) * 0.22;
     for (const star of this.wanderers) {

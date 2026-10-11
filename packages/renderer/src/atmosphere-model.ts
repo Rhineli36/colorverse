@@ -17,6 +17,71 @@ export const ATMOSPHERE_BUDGET = {
   },
 } as const;
 
+/** Scenery only: fixed world anchors, never part of a student's saved layers. */
+export const UNIVERSE_LANDMARKS = [
+  {
+    id: "amber-sun",
+    kind: "star",
+    x: -2100,
+    y: 400,
+    radius: 400,
+    color: 0xffbd68,
+  },
+  {
+    id: "blue-giant",
+    kind: "star",
+    x: 11500,
+    y: -6500,
+    radius: 780,
+    color: 0x9edaff,
+  },
+  {
+    id: "red-giant",
+    kind: "star",
+    x: -12800,
+    y: 7100,
+    radius: 950,
+    color: 0xff8060,
+  },
+  {
+    id: "ivory-sun",
+    kind: "star",
+    x: 12800,
+    y: 7600,
+    radius: 620,
+    color: 0xffe6bb,
+  },
+  {
+    id: "near-black-hole",
+    kind: "black-hole",
+    x: 1750,
+    y: 820,
+    radius: 103,
+    rotation: -0.2,
+  },
+  {
+    id: "western-black-hole",
+    kind: "black-hole",
+    x: -9600,
+    y: -5200,
+    radius: 515,
+    rotation: 0.24,
+  },
+  {
+    id: "eastern-black-hole",
+    kind: "black-hole",
+    x: 6800,
+    y: 3800,
+    radius: 370.8,
+    rotation: -0.42,
+  },
+] as const;
+
+/** Divide the existing total dust budget; more landmarks do not multiply it. */
+export function landmarkDustCount(total: number, index: number, count: number) {
+  return Math.floor(total / count) + (index < total % count ? 1 : 0);
+}
+
 // Extend scenery beyond the classroom's deployment boundary on every side.
 // These are world units, independent of the decoded image/GPU texture size.
 export const UNIVERSE_PANORAMA = {

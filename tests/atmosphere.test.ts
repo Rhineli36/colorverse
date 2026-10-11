@@ -5,9 +5,49 @@ import {
   meteorStart,
   ambientStarPosition,
   nebulaNoise,
+  UNIVERSE_LANDMARKS,
+  UNIVERSE_PANORAMA,
+  landmarkDustCount,
 } from "../packages/renderer/src/atmosphere-model";
 
 describe("universe atmosphere budgets and scheduling", () => {
+  it("spreads large landmarks inside the panorama without overlapping bodies", () => {
+    expect(new Set(UNIVERSE_LANDMARKS.map((item) => item.id)).size).toBe(
+      UNIVERSE_LANDMARKS.length,
+    );
+    for (const item of UNIVERSE_LANDMARKS) {
+      expect(
+        Math.abs(item.x - UNIVERSE_PANORAMA.centerX) + item.radius * 4,
+      ).toBeLessThan(UNIVERSE_PANORAMA.width / 2);
+      expect(
+        Math.abs(item.y - UNIVERSE_PANORAMA.centerY) + item.radius * 4,
+      ).toBeLessThan(UNIVERSE_PANORAMA.height / 2);
+      if (item.kind === "star") expect(item.radius).toBeGreaterThanOrEqual(400);
+      for (const other of UNIVERSE_LANDMARKS) {
+        if (other.id === item.id) continue;
+        expect(Math.hypot(item.x - other.x, item.y - other.y)).toBeGreaterThan(
+          (item.radius + other.radius) * 2,
+        );
+      }
+    }
+    expect(UNIVERSE_LANDMARKS.some((item) => item.x < -10000)).toBe(true);
+    expect(UNIVERSE_LANDMARKS.some((item) => item.x > 10000)).toBe(true);
+  });
+  it("shares the original total dust budget across every black hole", () => {
+    const count = UNIVERSE_LANDMARKS.filter(
+      (item) => item.kind === "black-hole",
+    ).length;
+    for (const { dust } of Object.values(ATMOSPHERE_BUDGET)) {
+      const allocations = Array.from({ length: count }, (_, i) =>
+        landmarkDustCount(dust, i, count),
+      );
+      expect(allocations.reduce((sum, n) => sum + n, 0)).toBe(dust);
+      expect(Math.min(...allocations)).toBeGreaterThan(0);
+      expect(
+        Math.max(...allocations) - Math.min(...allocations),
+      ).toBeLessThanOrEqual(1);
+    }
+  });
   it("produces repeatable continuous bounded cloud noise", () => {
     for (let x = -3; x < 10; x += 0.23) {
       const value = nebulaNoise(x, x * 0.7);
