@@ -424,3 +424,4 @@ export type UniverseDocument = Omit<
   entries: z.infer<typeof UniverseSchema>["entries"][number][];
 };
 export type EffectParams = z.infer<typeof EffectParamsSchema>;
+export * from "./classroom";

@@ -41,6 +41,6 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec vitest run tests/course-domain.test.ts tests/course-service.test.ts tests/course-http.test.ts tests/cloud-enrollment.test.ts
+      - run: pnpm exec vitest run tests/course-domain.test.ts tests/course-service.test.ts tests/course-http.test.ts tests/cloud-enrollment.test.ts tests/classroom.test.ts
         env:
           COURSE_TEST_DATABASE_URL: postgres://colorverse_test:local_ci_only@127.0.0.1:5432/colorverse_test

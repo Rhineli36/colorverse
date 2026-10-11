@@ -1,0 +1,660 @@
+.classroom-main {
+  max-width: 1440px;
+  margin: auto;
+  padding: 46px 40px 80px;
+  background: radial-gradient(ellipse at 85% 0%, #25496b22, transparent 50%);
+}
+.classroom-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.classroom-heading h1 {
+  font-size: clamp(26px, 3vw, 40px);
+  margin: 12px 0;
+  color: #e4f0eb;
+  letter-spacing: -0.03em;
+}
+.classroom-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.classroom-metrics article {
+  padding: 24px;
+  border: 1px solid #abcbd32a;
+  border-radius: 18px;
+  background: linear-gradient(125deg, #203846cc, #101923);
+  position: relative;
+  overflow: hidden;
+}
+.classroom-metrics article:after {
+  content: "✦";
+  font-size: 100px;
+  color: #c6eedb0b;
+  position: absolute;
+  right: -5px;
+  top: -24px;
+}
+.classroom-metrics article:nth-child(2) {
+  background: linear-gradient(125deg, #334c41bb, #101923);
+}
+.classroom-metrics article:nth-child(3) {
+  background: linear-gradient(125deg, #463457bb, #101923);
+}
+.classroom-metrics article:nth-child(4) {
+  background: linear-gradient(125deg, #514332bb, #101923);
+}
+.classroom-metrics span {
+  display: block;
+  color: #a5bbc6;
+  font-size: 13px;
+}
+.classroom-metrics strong {
+  font-size: 42px;
+  display: block;
+  margin-top: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #dfeddf;
+}
+.classroom-tools {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 24px 0 18px;
+  align-items: center;
+}
+.classroom-tools input {
+  flex: 1;
+  min-width: 180px;
+}
+.classroom-tools input,
+.classroom-main select {
+  background: #101c29;
+  border: 1px solid #afc8de33;
+  color: #c9dbe5;
+  padding: 12px 16px;
+  border-radius: 9px;
+  font: inherit;
+}
+.classroom-main button[aria-pressed="true"] {
+  background: #cde2d4;
+  color: #102831;
+}
+.classroom-roster {
+  border: 1px solid #8bbbd329;
+  border-radius: 16px;
+  background: #0e1722cc;
+  overflow: hidden;
+}
+.classroom-table-wrap {
+  overflow: auto;
+}
+.classroom-roster table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+}
+.classroom-roster th {
+  font-size: 12px;
+  color: #91b2c2;
+  padding: 18px 22px;
+  background: #172430;
+  letter-spacing: 0.04em;
+}
+.classroom-roster td {
+  padding: 22px;
+  border-top: 1px solid #859bb31c;
+  font-size: 13px;
+}
+.classroom-roster td:first-child {
+  min-width: 220px;
+}
+.classroom-roster td small {
+  display: block;
+  color: #8a9dac;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.classroom-roster td b {
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+  color: #cce6dd;
+}
+.student-orb {
+  float: left;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  margin-right: 14px;
+  background: radial-gradient(
+    circle at 30% 25%,
+    #b7e9e0,
+    #4b869b 45%,
+    #152c47 80%
+  );
+  box-shadow: 0 0 18px #88c6cf22;
+}
+.student-orb.empty {
+  background: #20303d;
+  border: 1px dashed #74889b;
+}
+.classroom-status {
+  padding: 6px 9px;
+  border-radius: 20px;
+  background: #b4dab512;
+  color: #bcdbba;
+  font-size: 11px;
+}
+.classroom-empty {
+  text-align: center;
+  padding: 65px 24px;
+  color: #8eaaba;
+}
+.classroom-empty span {
+  font-size: 42px;
+  color: #b6dccc;
+}
+.classroom-empty h2 {
+  color: #d8e3de;
+  font-size: 19px;
+}
+.classroom-footnote {
+  font-size: 12px;
+  line-height: 1.9;
+  color: #7e98ab;
+  margin-top: 20px;
+}
+.classroom-error {
+  padding: 16px;
+  border: 1px solid #eaa59455;
+  border-radius: 10px;
+  color: #edb8a9;
+}
+@media (max-width: 700px) {
+  .classroom-main {
+    padding: 24px 16px 60px;
+  }
+  .classroom-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .classroom-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .classroom-metrics article {
+    padding: 17px;
+  }
+  .classroom-metrics strong {
+    font-size: 32px;
+  }
+  .classroom-tools {
+    gap: 8px;
+  }
+  .classroom-tools select {
+    max-width: 100%;
+  }
+}
+.classroom-view-planet {
+  font-size: 11px;
+  margin-top: 10px;
+  padding: 5px 9px !important;
+  color: #aedace;
+  border: 1px solid #78b5a844 !important;
+  border-radius: 8px;
+}
+.cloud-create {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: linear-gradient(120deg, #1c414c, #212038);
+  padding: 26px;
+  border-radius: 18px;
+  margin: 24px 0;
+  border: 1px solid #96d0c63b;
+}
+.cloud-create > span {
+  font-size: 46px;
+  color: #c6e5cc;
+}
+.cloud-create h2 {
+  font-size: 18px;
+}
+.cloud-create p {
+  font-size: 12px;
+  color: #9eafbb;
+}
+.cloud-create input {
+  background: #111d2a;
+  padding: 12px;
+  border: 1px solid #aac8de33;
+  border-radius: 8px;
+  color: #e0e8e9;
+}
+.cloud-planets {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 0;
+  margin-bottom: 20px;
+}
+.cloud-planets button {
+  padding: 16px 20px;
+  text-align: left;
+  display: flex;
+  min-width: 230px;
+  border: 1px solid #9cbbd32b;
+  border-radius: 14px;
+  background: #152331;
+}
+.cloud-planets button[aria-pressed="true"] {
+  border-color: #92cebd;
+  background: #22423e55;
+  color: #dcebe5;
+}
+.cloud-planets strong,
+.cloud-planets small {
+  display: block;
+}
+.cloud-planets small {
+  color: #8ca9b8;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.cloud-room-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.cloud-room-heading h2 {
+  font-size: 23px;
+}
+.cloud-room-heading p {
+  font-size: 12px;
+}
+.cloud-room {
+  position: relative;
+  height: clamp(350px, 50vh, 620px);
+  border-radius: 20px;
+  border: 1px solid #96b4d133;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 75% 5%, #3f5673, transparent 45%),
+    radial-gradient(ellipse at 18% 45%, #51446a55, transparent 60%),
+    radial-gradient(circle at 20px 20px, #c5f2ec8a 1px, transparent 1.5px) 0
+      0/83px 77px,
+    #101e30;
+  margin: 20px 0;
+}
+.cloud-room-land {
+  position: absolute;
+  inset: 55% -20% -60%;
+  border-radius: 50%;
+  background: linear-gradient(10deg, #111822, #33544a);
+  transform: rotate(-7deg);
+  box-shadow:
+    0 -38px 0 #4e655229,
+    0 -86px 0 #49656822;
+}
+.cloud-room-moon {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  right: 9%;
+  top: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 20%, #ebdfb9, #c6bc9b 50%, #5e6b78);
+  box-shadow: 0 0 80px #f0da9c18;
+}
+.cloud-growth {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  display: grid;
+  justify-items: center;
+  z-index: 2;
+  cursor: pointer;
+  overflow: visible;
+  touch-action: none;
+}
+.cloud-growth svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 7px #d8eed544);
+}
+.cloud-growth span {
+  font-size: 10px;
+  color: #bfd6d0;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.cloud-growth:hover span,
+.cloud-growth:focus span {
+  opacity: 1;
+}
+.cloud-growth.editing {
+  outline: 1px dashed #d9efd4;
+  outline-offset: 7px;
+  animation: none !important;
+  cursor: grab;
+}
+.cloud-room-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  font-size: 34px;
+  color: #d1ded08a;
+}
+.cloud-room-empty p {
+  font-size: 14px;
+}
+.cloud-birth-caption {
+  position: absolute;
+  bottom: 30px;
+  width: 100%;
+  text-align: center;
+  color: #d7e6c8;
+  animation: cloud-caption 4.5s both;
+  z-index: 3;
+  pointer-events: none;
+}
+.cloud-growth.born {
+  animation: cloud-born 4.5s both !important;
+}
+.cloud-growth.born:before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  border: 1px solid #d1eecb;
+  border-radius: 50%;
+  animation: cloud-ripple 4.5s both;
+  pointer-events: none;
+}
+.motion-float {
+  animation: cloud-float 8s ease-in-out infinite;
+}
+.motion-breathe svg {
+  animation: cloud-breathe 5s ease-in-out infinite;
+}
+.motion-rotate svg {
+  animation: cloud-rotate 36s linear infinite;
+}
+.cloud-work-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+.cloud-work-list button {
+  text-align: left;
+  border: 1px solid #9db5cc28;
+  border-radius: 12px;
+  background: #111e2c;
+  padding: 15px;
+  display: grid;
+  grid-template-columns: 45px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.cloud-work-list svg {
+  width: 45px;
+  height: 45px;
+  grid-row: span 2;
+}
+.cloud-work-list small {
+  color: #8ca8b6;
+  font-size: 11px;
+}
+.cloud-social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 20px 0;
+}
+.cloud-social input {
+  flex: 1;
+  min-width: 180px;
+  padding: 11px;
+  border-radius: 8px;
+  color: #dbe8e3;
+  border: 1px solid #bdd7e333;
+  background: #0a1825;
+}
+.cloud-social strong {
+  font-size: 12px;
+  color: #bdd9d1;
+  margin-right: 16px;
+}
+.cloud-messages p {
+  padding: 14px;
+  border-bottom: 1px solid #adc5d11a;
+  font-size: 12px;
+  color: #a9bdc7;
+}
+.cloud-messages strong {
+  color: #c6e0d3;
+  margin-right: 8px;
+}
+.cloud-notice {
+  padding: 14px 18px;
+  background: #27443c55;
+  border: 1px solid #a3d0a83b;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.cloud-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #040b16c9;
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.cloud-modal {
+  position: relative;
+  background: linear-gradient(135deg, #1b3143, #111925);
+  border: 1px solid #94c8d556;
+  border-radius: 22px;
+  width: 650px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 34px;
+  box-sizing: border-box;
+  box-shadow: 0 20px 90px #0009;
+}
+.cloud-modal form label {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+  color: #adc9d5;
+  font-size: 13px;
+}
+.cloud-modal input,
+.cloud-modal textarea {
+  background: #0c1925;
+  border: 1px solid #a9c6d43a;
+  color: #e8efeb;
+  padding: 13px;
+  border-radius: 9px;
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.cloud-modal textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.cloud-modal .muted {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.cloud-artwork > img {
+  width: 100%;
+  max-height: 48vh;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #071320;
+}
+.cloud-image-loading {
+  text-align: center;
+  padding: 70px 10px;
+  color: #9fb9c8;
+}
+.cloud-element-controls {
+  margin: 24px 0;
+  background: #142535;
+  border: 1px solid #b1cadd33;
+  border-radius: 18px;
+  padding: 24px;
+}
+.cloud-element-controls h2 {
+  font-size: 22px;
+}
+.cloud-element-settings {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 22px;
+}
+.cloud-element-settings label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: #b5c8cf;
+}
+.cloud-element-settings input[type="color"] {
+  height: 36px;
+}
+.cloud-element-settings button {
+  font-size: 12px;
+}
+@keyframes cloud-born {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.08);
+    filter: blur(7px);
+  }
+  25% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.3);
+    filter: blur(4px);
+  }
+  65% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.12);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes cloud-ripple {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  20% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+@keyframes cloud-caption {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  20%,
+  80% {
+    opacity: 1;
+  }
+}
+@keyframes cloud-float {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(-5px);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(7px);
+  }
+}
+@keyframes cloud-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+    filter: drop-shadow(0 0 5px #d8eed544);
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 14px #d8eed577);
+  }
+}
+@keyframes cloud-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cloud-growth,
+  .cloud-growth svg,
+  .cloud-growth:before,
+  .cloud-birth-caption {
+    animation: none !important;
+  }
+  .cloud-growth.born {
+    animation: none !important;
+    opacity: 1;
+  }
+}
+@media (max-width: 700px) {
+  .cloud-room-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cloud-room {
+    height: 380px;
+  }
+  .cloud-room-moon {
+    width: 85px;
+    height: 85px;
+  }
+  .cloud-modal {
+    padding: 25px 20px;
+  }
+  .cloud-create {
+    padding: 20px;
+  }
+  .cloud-planets button {
+    min-width: 205px;
+  }
+  .cloud-element-controls {
+    padding: 16px;
+  }
+  .growth-library-tools {
+    flex-wrap: wrap;
+  }
+  .growth-library-tools input {
+    max-width: 100%;
+  }
+}

@@ -1,9 +1,5 @@
-import {
-  GrowthPresetIds,
-  GrowthPresets,
-  type GrowthEvent,
-} from "@colorverse/contracts";
-import { GrowthPresetPreview } from "./GrowthPresetPreview";
+import { GrowthPresets, type GrowthEvent } from "@colorverse/contracts";
+import { GrowthLibraryChooser } from "./GrowthLibraryChooser";
 import { Field } from "./controls";
 export function GrowthProposalPanel({
   event,
@@ -45,29 +41,20 @@ export function GrowthProposalPanel({
       <p className="muted">{event.summary}</p>
       {event.trigger.kind === "archive" && (
         <div className="growth-picker" role="group" aria-label="选择成长造型">
-          {GrowthPresetIds.map((id) => (
-            <button
-              key={id}
-              disabled={busy}
-              aria-label={`选择${GrowthPresets[id].name}`}
-              aria-pressed={el.presetId === id}
-              onClick={() =>
-                onChange({
-                  ...event,
-                  elements: event.elements.map((e, i) =>
-                    i ? e : { ...e, presetId: id },
-                  ),
-                })
-              }
-            >
-              <GrowthPresetPreview
-                id={id}
-                color={el.params.color}
-                seed={el.params.seed}
-              />
-              <span>{GrowthPresets[id].name}</span>
-            </button>
-          ))}
+          <GrowthLibraryChooser
+            selected={el.presetId}
+            color={el.params.color}
+            seed={el.params.seed}
+            disabled={busy}
+            onSelect={(id) =>
+              onChange({
+                ...event,
+                elements: event.elements.map((e, i) =>
+                  i ? e : { ...e, presetId: id },
+                ),
+              })
+            }
+          />
         </div>
       )}
       <fieldset disabled={busy} className="proposal-controls">

@@ -3,10 +3,15 @@ import { getAuthClient, loginError } from "./auth-client";
 import {
   CloudSessionSchema,
   type CloudMembership,
+  type CloudSession,
 } from "@colorverse/contracts";
 import "./auth.css";
 
-export function AuthEntry() {
+export function AuthEntry({
+  onSession,
+}: {
+  onSession?: (session: CloudSession | null) => void;
+}) {
   const [client] = useState(getAuthClient);
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -29,6 +34,7 @@ export function AuthEntry() {
       setChecking(true);
       setIdentity(null);
       setMemberships([]);
+      onSession?.(null);
       try {
         const {
           data: { session },
@@ -56,11 +62,14 @@ export function AuthEntry() {
         if (!active || current !== generation.current) return;
         setIdentity(result.identity.email);
         setMemberships(result.memberships);
+        onSession?.(result);
         setMessage(
           result.access === "blocked"
             ? "课堂账户已停用，请联系老师。"
             : result.access === "active"
-              ? "身份与班级已验证。当前星球和作品仍保存在本机，云端提交尚未开放。"
+              ? result.cloudWrites
+                ? "身份与班级已验证。云端作品上传已开放，请进入课堂作品；本地创作仍单独保存在本机。"
+                : "身份与班级已验证。当前星球和作品仍保存在本机，云端提交尚未开放。"
               : result.database === "connected"
                 ? "身份已验证，待加入班级。请联系老师加入课堂。当前星球和作品仍保存在本机。"
                 : "身份已验证，待加入班级。班级连接正在准备，当前星球和作品仍保存在本机。",
@@ -90,7 +99,7 @@ export function AuthEntry() {
       generation.current++;
       subscription.unsubscribe();
     };
-  }, [client, refreshKey]);
+  }, [client, refreshKey, onSession]);
   useEffect(() => {
     if (open) {
       dialog.current?.showModal();
@@ -172,6 +181,7 @@ export function AuthEntry() {
                   else {
                     setIdentity(null);
                     setMemberships([]);
+                    onSession?.(null);
                     setHasSession(false);
                     setPassword("");
                     setMessage("已退出云端账户");
@@ -239,9 +249,7 @@ export function AuthEntry() {
             </button>
           </form>
         )}
-        <p className="auth-pilot-note">
-          云端登录测试阶段 · 班级权限与云端保存正在接入
-        </p>
+        <p className="auth-pilot-note">云端课堂试用 · 班级身份由服务器核对</p>
         <button className="outline" disabled={busy} onClick={close}>
           继续浏览
         </button>

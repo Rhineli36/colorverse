@@ -47,6 +47,7 @@
 | [35-classroom-interaction-and-daily-stars.md](35-classroom-interaction-and-daily-stars.md) | 每周展示/全班浏览/互动任务、每日精选、关注与去重统计的待实施建议 |
 | [36-cloud-auth-and-cloudflare-pilot.md](36-cloud-auth-and-cloudflare-pilot.md) | 邮箱登录/退出、Workers服务端验证、部署配置与正式班级接入边界 |
 | [37-cloud-classroom-identity.md](37-cloud-classroom-identity.md) | 私有班级成员表、受限读取角色、Hyperdrive证书连接与真实教师登录 |
+| [38-cloud-teacher-dashboard-and-student-pilot.md](38-cloud-teacher-dashboard-and-student-pilot.md) | 云端教师统计、学生私有上传/原图、班级互动与30种成长造型 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 

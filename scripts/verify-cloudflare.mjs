@@ -39,7 +39,8 @@ for (const [path, method, token, status] of [
     const passed =
       response.status === status &&
       (path !== "/api/v1/health" ||
-        (body.stage === "auth-pilot" && body.cloudWrites === false)) &&
+        (["auth-pilot", "classroom-pilot"].includes(body.stage) &&
+          typeof body.cloudWrites === "boolean")) &&
       (path !== "/" || body.includes('<div id="root">')) &&
       (path !== "/api/v1/cloud/session" ||
         method !== "GET" ||

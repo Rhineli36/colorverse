@@ -4,6 +4,10 @@ import { X509Certificate } from "node:crypto";
 import { readDatabaseConfig } from "./supabase-database.mjs";
 
 const command = process.argv[2];
+const classroom = process.argv.includes("--classroom");
+const role = classroom
+  ? "colorverse_classroom_writer"
+  : "colorverse_identity_reader";
 if (!["check", "create"].includes(command)) {
   console.error("Usage: pnpm cloud:hyperdrive check|create");
   process.exit(1);
@@ -56,10 +60,13 @@ try {
   } else {
     const db = await readDatabaseConfig();
     const reader = parseEnv(
-      await readFile(".env.cloud-database.local", "utf8"),
+      await readFile(
+        classroom ? ".env.classroom-writer.local" : ".env.cloud-database.local",
+        "utf8",
+      ),
     );
     if (
-      reader.CLOUD_DATABASE_USER !== "colorverse_identity_reader" ||
+      reader.CLOUD_DATABASE_USER !== role ||
       !/^[a-f0-9]{64}$/.test(reader.CLOUD_DATABASE_PASSWORD ?? "")
     )
       throw new Error("RESTRICTED_READER_REQUIRED");
@@ -82,7 +89,9 @@ try {
     }
     if (!certificate?.id) throw new Error("ROOT_CERTIFICATE_ID_REQUIRED");
     const existing = configs.filter(
-      (item) => item.name === "colorverse-enrollment-dev",
+      (item) =>
+        item.name ===
+        (classroom ? "colorverse-classroom-dev" : "colorverse-enrollment-dev"),
     );
     if (existing.length > 1)
       throw new Error("MULTIPLE_HYPERDRIVE_CONFIGURATIONS");
@@ -90,7 +99,9 @@ try {
     if (!configuration) {
       stage = "create_restricted_hyperdrive";
       configuration = await api("/hyperdrive/configs", {
-        name: "colorverse-enrollment-dev",
+        name: classroom
+          ? "colorverse-classroom-dev"
+          : "colorverse-enrollment-dev",
         origin: {
           host: db.SUPABASE_DB_HOST,
           port: 5432,
@@ -115,7 +126,7 @@ try {
     )
       throw new Error("HYPERDRIVE_CONFIGURATION_REQUIRES_REVIEW");
     await writeFile(
-      ".env.hyperdrive.local",
+      classroom ? ".env.classroom-hyperdrive.local" : ".env.hyperdrive.local",
       `# Non-secret binding ID; database credentials stay in Hyperdrive.\nCLOUDFLARE_HYPERDRIVE_ID=${configuration.id}\n`,
     );
     console.log(

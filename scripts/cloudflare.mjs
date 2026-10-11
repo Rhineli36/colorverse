@@ -128,6 +128,51 @@ try {
       config.hyperdrive = [{ binding: "HYPERDRIVE", id }];
     }
     await mkdir(resolve(root, "work"), { recursive: true });
+    let writerBinding;
+    try {
+      writerBinding = parseEnv(
+        await readFile(
+          resolve(root, ".env.classroom-hyperdrive.local"),
+          "utf8",
+        ),
+      );
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+    if (writerBinding) {
+      const id = writerBinding.CLOUDFLARE_HYPERDRIVE_ID;
+      if (!/^[a-f0-9]{32}$/i.test(id ?? ""))
+        throw new Error("Invalid Hyperdrive binding configuration");
+      if (command === "deploy") {
+        const response = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${credentials.CLOUDFLARE_ACCOUNT_ID}/hyperdrive/configs/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${credentials.CLOUDFLARE_API_TOKEN}`,
+            },
+            signal: AbortSignal.timeout(15000),
+            redirect: "error",
+          },
+        );
+        const binding = await response.json();
+        if (
+          !response.ok ||
+          !binding.success ||
+          binding.result.origin?.user !== "colorverse_classroom_writer" ||
+          binding.result.origin?.host !== `db.${new URL(url).hostname}` ||
+          binding.result.caching?.disabled !== true ||
+          binding.result.mtls?.sslmode !== "verify-full"
+        )
+          throw new Error(
+            "Hyperdrive must use the restricted classroom writer and verified TLS",
+          );
+      }
+      config.hyperdrive = [
+        ...(config.hyperdrive ?? []),
+        { binding: "HYPERDRIVE_WRITER", id },
+      ];
+      config.images = { binding: "IMAGES" };
+    }
     const configPath = resolve(root, "work/wrangler.cloudflare.json");
     await writeFile(configPath, JSON.stringify(config, null, 2));
     await run(

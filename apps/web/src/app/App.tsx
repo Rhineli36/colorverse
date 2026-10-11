@@ -1,6 +1,7 @@
 import { download } from "./download";
 import { CourseView } from "../features/course/CourseView";
 import { TeacherView } from "../features/teacher-demo/TeacherView";
+import type { CloudSession } from "@colorverse/contracts";
 import { StudioView } from "../features/studio/StudioView";
 import { ElementEditorView } from "../features/studio/ElementEditorView";
 import {
@@ -74,11 +75,29 @@ const AuthEntry = lazy(() =>
   })),
 );
 const cloudAuthEnabled = import.meta.env.VITE_ENABLE_CLOUD_AUTH === "true";
+const CloudClassroomView = lazy(() =>
+  import("../features/classroom/CloudClassroomView").then((m) => ({
+    default: m.CloudClassroomView,
+  })),
+);
+const CloudGallery = lazy(() =>
+  import("../features/classroom/CloudGallery").then((m) => ({
+    default: m.CloudGallery,
+  })),
+);
 export function App() {
+  const [cloudSession, setCloudSession] = useState<CloudSession | null>(null);
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
     [universe, setUniverse] = useState<UniverseDocument | null>(null),
     [route, setRoute] = useState<
-      "universe" | "studio" | "room" | "teacher" | "course" | "element"
+      | "universe"
+      | "studio"
+      | "room"
+      | "teacher"
+      | "course"
+      | "element"
+      | "classroom"
+      | "cloudworks"
     >("universe"),
     [activeId, setActiveId] = useState<string | null>(null),
     [hover, setHover] = useState<string | null>(null),
@@ -694,6 +713,35 @@ export function App() {
           </span>
         </button>
         <nav aria-label="主导航">
+          {cloudSession?.access === "active" && (
+            <button
+              className={route === "cloudworks" ? "active" : ""}
+              onClick={() =>
+                void action(async () => {
+                  await flush();
+                  setRoute("cloudworks");
+                })
+              }
+            >
+              课堂作品
+            </button>
+          )}
+          {cloudSession?.access === "active" &&
+            cloudSession.memberships.some(
+              (m) => m.role === "teacher" || m.role === "assistant",
+            ) && (
+              <button
+                className={route === "classroom" ? "active" : ""}
+                onClick={() =>
+                  void action(async () => {
+                    await flush();
+                    setRoute("classroom");
+                  })
+                }
+              >
+                班级管理
+              </button>
+            )}
           <button
             className={route === "universe" ? "active" : ""}
             onClick={() => void back()}
@@ -740,12 +788,14 @@ export function App() {
         <div className="header-right">
           {cloudAuthEnabled && (
             <Suspense fallback={<span className="muted">连接账户…</span>}>
-              <AuthEntry />
+              <AuthEntry onSession={setCloudSession} />
             </Suspense>
           )}
           <span className="local-label">
             <i />
-            本地创作空间
+            {route === "classroom" || route === "cloudworks"
+              ? "云端课堂空间"
+              : "本地创作空间"}
           </span>
           {universe && !myPlanet && (
             <button
@@ -777,6 +827,24 @@ export function App() {
         }}
       />
       {route === "course" && <CourseView onPendingChange={setCoursePending} />}
+      {route === "classroom" && (
+        <Suspense fallback={<main className="loading">正在连接班级…</main>}>
+          <CloudClassroomView session={cloudSession} />
+        </Suspense>
+      )}
+      {route === "cloudworks" &&
+        (cloudSession?.access === "active" ? (
+          <Suspense fallback={<main className="loading">正在连接作品…</main>}>
+            <CloudGallery
+              key={cloudSession.identity.id}
+              session={cloudSession}
+            />
+          </Suspense>
+        ) : (
+          <main className="classroom-main">
+            <h1>请先登录课堂账户</h1>
+          </main>
+        ))}
       {route === "universe" && (
         <UniverseView
           workspace={workspace}

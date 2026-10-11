@@ -74,8 +74,8 @@ async function setup() {
   };
 }
 describe("showcase archives and optional rule growth", () => {
-  it("keeps eight registered, bounded and visibly distinct silhouettes", () => {
-    expect(GrowthPresetIds).toHaveLength(8);
+  it("keeps thirty registered, bounded and visibly distinct silhouettes", () => {
+    expect(GrowthPresetIds).toHaveLength(30);
     const signatures = new Set();
     for (const id of GrowthPresetIds) {
       expect(GrowthPresets[id].name).toBeTruthy();
@@ -96,7 +96,7 @@ describe("showcase archives and optional rule growth", () => {
         ).toBe(true);
       }
     }
-    expect(signatures.size).toBe(8);
+    expect(signatures.size).toBe(30);
   });
   it("rule selection reaches all registered presets without changing saved old proposals", () => {
     const choices = new Set();

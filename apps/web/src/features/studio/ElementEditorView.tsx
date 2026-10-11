@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  GrowthPresetIds,
   GrowthPresets,
   type Layer,
   type PlanetDocument,
@@ -8,7 +7,7 @@ import {
 } from "@colorverse/contracts";
 import { updateGrowthElement } from "@colorverse/domain";
 import type { AssetStore } from "@colorverse/application";
-import { GrowthPresetPreview } from "./GrowthPresetPreview";
+import { GrowthLibraryChooser } from "./GrowthLibraryChooser";
 import { ElementCanvas } from "./ElementCanvas";
 import { Field, Range } from "./controls";
 export function ElementEditorView({
@@ -97,31 +96,20 @@ export function ElementEditorView({
       <section className="element-library" aria-label="元素造型库">
         <div className="element-library-heading">
           <strong>选择造型</strong>
-          <span>8种预制原型 · 持续扩充</span>
+          <span>让作品长成你喜欢的样子</span>
         </div>
-        <div className="element-library-cards">
-          {GrowthPresetIds.map((id) => (
-            <button
-              key={id}
-              disabled={pending}
-              aria-label={`选择${GrowthPresets[id].name}`}
-              aria-pressed={source.presetId === id}
-              onClick={() =>
-                patch((l) => {
-                  if ("presetId" in l.source && l.source.presetId !== "sphere")
-                    l.source.presetId = id;
-                })
-              }
-            >
-              <GrowthPresetPreview
-                id={id}
-                color={source.params.color}
-                seed={source.params.seed}
-              />
-              <span>{GrowthPresets[id].name}</span>
-            </button>
-          ))}
-        </div>
+        <GrowthLibraryChooser
+          selected={source.presetId}
+          color={source.params.color}
+          seed={source.params.seed}
+          disabled={pending}
+          onSelect={(id) =>
+            patch((l) => {
+              if ("presetId" in l.source && l.source.presetId !== "sphere")
+                l.source.presetId = id;
+            })
+          }
+        />
       </section>
       <div className="element-workspace">
         <section className="element-stage" aria-label="元素画面">

@@ -1,4 +1,4 @@
-"""Eight real rendered growth presets, durable preview and upload ergonomics."""
+"""Thirty registered choices, legacy rendered presets and durable preview."""
 import os, sys, json, hashlib
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +32,7 @@ with sync_playwright() as p:
     page.get_by_role('button',name='编辑你的星球',exact=True).click()
     page.get_by_role('button',name='继续预览成长',exact=True).click()
     picker=page.get_by_role('group',name='选择成长造型',exact=True)
-    expect(picker.get_by_role('button')).to_have_count(8)
+    expect(picker.get_by_role('button',name='选择',exact=False)).to_have_count(30)
     signatures=set(); canvas=page.locator('canvas')
     for name in ['微光花','晶体','发光叶片','月光蘑菇','彩色云朵','漂浮岛','星光种子','轨道石']:
         old=canvas.get_attribute('data-scene-generation')

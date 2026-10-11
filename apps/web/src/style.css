@@ -51,10 +51,77 @@
   color: var(--muted);
 }
 .element-library-cards {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 10px;
-  overflow-x: auto;
+  max-height: 270px;
+  overflow-y: auto;
   padding: 4px;
+}
+.growth-library-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 0;
+  color: #9dafbe;
+  font-size: 12px;
+}
+.growth-library-tools input {
+  background: #0b1420;
+  color: #d8e8eb;
+  border: 1px solid #a4cbde33;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: inherit;
+  min-width: 160px;
+  max-width: 60%;
+}
+.growth-library-categories {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.growth-library-categories button {
+  padding: 7px 13px;
+  font-size: 12px;
+  border-radius: 18px;
+  border: 1px solid #a5c1d32a;
+}
+.growth-library-categories button[aria-pressed="true"] {
+  background: #bde0d0;
+  color: #10252b;
+}
+.element-library-cards button {
+  background:
+    radial-gradient(circle at 50% 38%, #6c8bb51b, transparent 70%), #101a27;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.element-library-cards button:hover {
+  border-color: #acdacb77;
+  background-color: #1a2938;
+}
+.element-library-cards button small {
+  font-size: 10px;
+  color: #829da9;
+}
+.element-library-cards svg {
+  filter: drop-shadow(0 0 5px #c9dcce22);
+}
+.growth-picker {
+  display: block !important;
+}
+.growth-picker .element-library-cards {
+  display: grid;
+}
+.growth-picker .growth-library-categories button {
+  width: auto;
+}
+.growth-picker .element-library-cards button {
+  width: auto;
 }
 .element-library-cards button {
   flex: 1 0 100px;

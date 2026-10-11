@@ -9,7 +9,7 @@ export const CloudMembershipSchema = z.strictObject({
 });
 const common = {
   identity: z.strictObject({ id: z.uuid(), email: z.string().min(1) }),
-  cloudWrites: z.literal(false),
+  cloudWrites: z.boolean(),
 };
 export const CloudSessionSchema = z.discriminatedUnion("access", [
   z.strictObject({

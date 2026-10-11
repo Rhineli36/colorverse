@@ -110,3 +110,7 @@ apps/web 的 features 分为 universe、studio、planet-room、teacher-demo 和 
 请先读 [设计索引](docs/README.md)、[实现进度](docs/10-implementation-progress.md)、[宇宙轨迹和镜头约定](docs/11-universe-motion-and-camera.md) 与 [空间探索和布局权限](docs/12-space-exploration-and-layout.md)。可选装饰与跟随协议见 [13-optional-planet-decorations.md](docs/13-optional-planet-decorations.md)。旧演示图和内部背景由 scripts/generate-demo-assets.py 生成；新版默认星球和宇宙背景由内置imagegen生成后压缩，素材/提示词登记见[30](docs/30-default-art-and-student-entry.md)。均标记为系统演示素材，不代表学生作品或完整艺术素材交付。
 
 已完成本机课程闭环（见22），尚未完成正式账号/云端课程系统、真实 AI、音频播放与全格式校验、300颗LOD/缓存上限实机验收、完整GPU失效只读模式、展览发布/脱敏和大包分批恢复。预设球体仅有契约与基础渲染支持，Studio 操作入口待补齐。生产构建可能打印第三方 Zod 注释的 Rollup 警告，构建已验证可完成。
+# 当前云端试用入口
+
+[Cloudflare 课堂测试版](https://colorverse-dev.2999346.workers.dev/)已接通真实教师/学生身份、班级统计、私有展示作品上传/原图下载、班级互动和 30 种成长造型。教师进入“班级管理”，学生进入“课堂作品”。原本完整创作工坊和宇宙布局仍保存在本机，尚未自动同步云端课堂。实际验证及限制见[38](docs/38-cloud-teacher-dashboard-and-student-pilot.md)。GitHub Pages保持本地演示。
+
