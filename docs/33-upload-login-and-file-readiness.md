@@ -26,6 +26,8 @@ GitHub Pages已经发布最新的约4秒新生动效与作业展示流程。它�
 
 在线实际检查返回HTTP200，课程页显示未开放，无课程API请求、无测试账户入口、无浏览器运行时错误。部署的应用提交48198e5已通过GitHub核心与真实PostgreSQL检查，具体记录见[10](10-implementation-progress.md)。
 
+核对文档与补充测试提交aef94be也已通过[核心及真实PostgreSQL检查](https://github.com/Rhineli36/colorverse/actions/runs/38114548625)和[Pages部署](https://github.com/Rhineli36/colorverse/actions/runs/38114548611)，发布后在线同样核对通过。
+
 这不等于已验收真实账号、密码管理、跨设备同步、云对象存储、容量耗尽或数据库与图片联合恢复；这些不能用本机测试身份代替。
 
 ## 代码检查发现的待复现问题
