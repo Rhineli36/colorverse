@@ -44,6 +44,7 @@
 | [32-artwork-first-and-growth-birth.md](32-artwork-first-and-growth-birth.md) | 点击元素先欣赏原作、明确编辑入口、约4秒新生动效与验证 |
 | [33-upload-login-and-file-readiness.md](33-upload-login-and-file-readiness.md) | 文件生命周期、登录/密码现状、正式上线阻塞项与下一轮验证 |
 | [34-universe-landmarks.md](34-universe-landmarks.md) | 分散恒星/黑洞、同步世界相机、共享纹理/粒子预算与验证 |
+| [35-classroom-interaction-and-daily-stars.md](35-classroom-interaction-and-daily-stars.md) | 每周展示/全班浏览/互动任务、每日精选、关注与去重统计的待实施建议 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 
