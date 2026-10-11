@@ -21,3 +21,5 @@
 独立浏览器验证通过：真实学生登录、先欣赏后编辑、30 造型、单元素运动保存、原图下载、刷新恢复、手机无横向溢出。教师界面采用隔离模拟会话展示真实 SQL 验证获得的统计行，完成搜索、本周/累计和手机布局检查；没有使用教师密码或冒充教师调用真实 API。此前教师登录由用户本人验证，教师端真实页面仍需用户用自己的账户核对。校园网络、正式学生批量登录、SMTP/找回密码和每日精选尚未验收。
 
 官方接口依据：[Supabase 创建用户](https://supabase.com/docs/reference/javascript/auth-admin-createuser)、[私有存储权限](https://supabase.com/docs/guides/storage/security/access-control)、[Cloudflare Images binding](https://developers.cloudflare.com/images/optimization/binding/)。当前 [Images Free](https://developers.cloudflare.com/images/pricing/) 每月 5000 个唯一转换，超过后新转换失败而不自动收费；没有购买付费计划。
+
+实现提交 `3b126f8` 已推送 main。[核心及真实 PostgreSQL 18](https://github.com/Rhineli36/colorverse/actions/runs/38136159925)和 [GitHub Pages 部署](https://github.com/Rhineli36/colorverse/actions/runs/38136159958)成功。Cloudflare 最终运行版本 `1c2c8c1e-d870-412b-8ea2-1780c4fe3303`。本地旧预览/手动接受兼容性与上传/分页的 7 项浏览器检查通过；造型选择列表现为 30 项。当前日期的跨设备与校园机房实测仍留给用户验收。
