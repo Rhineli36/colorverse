@@ -42,6 +42,7 @@
 | [30-default-art-and-student-entry.md](30-default-art-and-student-entry.md) | 六颗球面默认素材、单张全景、旧作品安全升级、首次创建和后续编辑 |
 | [31-classroom-space-and-boundaries.md](31-classroom-space-and-boundaries.md) | 满屏班级星域、外围背景、带轨迹余量的部署边界与旧布局兼容 |
 | [32-artwork-first-and-growth-birth.md](32-artwork-first-and-growth-birth.md) | 点击元素先欣赏原作、明确编辑入口、约4秒新生动效与验证 |
+| [33-upload-login-and-file-readiness.md](33-upload-login-and-file-readiness.md) | 文件生命周期、登录/密码现状、正式上线阻塞项与下一轮验证 |
 | [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
 | [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
 

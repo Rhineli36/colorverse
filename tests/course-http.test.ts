@@ -152,6 +152,60 @@ describe("course HTTP and private media", () => {
       (await request("/me", "GET", undefined, session)).response.status,
     ).toBe(401);
   });
+  it("expires server sessions even when the browser still sends the old cookie", async () => {
+    const session = await login(demo.student);
+    const token = session.cookie.slice("colorverse_session=".length);
+    await db.query("UPDATE sessions SET expires_at=$2 WHERE token_hash=$1", [
+      createHash("sha256").update(token).digest("hex"),
+      new Date(Date.now() - 60000).toISOString(),
+    ]);
+    expect(
+      (await request("/me", "GET", undefined, session)).response.status,
+    ).toBe(401);
+    expect(
+      (
+        await request(
+          `/assignments/${demo.assignmentId}/submissions`,
+          "POST",
+          {},
+          session,
+        )
+      ).response.status,
+    ).toBe(401);
+  });
+  it("rejects an existing session and a new login after an account is disabled", async () => {
+    const session = await login(demo.student);
+    await db.query("UPDATE users SET status='inactive' WHERE id=$1", [
+      demo.student,
+    ]);
+    try {
+      expect(
+        (await request("/classes", "GET", undefined, session)).response.status,
+      ).toBe(401);
+      expect(
+        (await request("/dev/login", "POST", { userId: demo.student })).response
+          .status,
+      ).toBe(403);
+    } finally {
+      await db.query("UPDATE users SET status='active' WHERE id=$1", [
+        demo.student,
+      ]);
+    }
+  });
+  it("does not accept an injected teacher role or an unknown development account", async () => {
+    expect(
+      (
+        await request("/dev/login", "POST", {
+          userId: demo.student,
+          role: "teacher",
+        })
+      ).response.status,
+    ).toBe(422);
+    expect(
+      (await request("/dev/login", "POST", { userId: randomUUID() })).response
+        .status,
+    ).toBe(403);
+  });
   it("checks actual image bytes, hash and decode before ready, and keeps originals immutable/private", async () => {
     const session = await login(demo.student),
       bytes = await readFile(
