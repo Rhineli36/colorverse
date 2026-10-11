@@ -337,3 +337,5 @@ TypeScript、ESLint与生产构建通过；159处文档相对链接、27项协�
 20项新模块检查、全套20文件162项检查、5项隔离浏览器流程、TypeScript、ESLint与生产构建/Worker dry-run通过。修复手机原样式隐藏登录入口、弹窗padding宽度及身份服务断网仍须允许退出的问题。浏览器Auth请求均拦截，没有创建学生、发邮件、实际登录真实账户或改写Supabase数据库。用户提供凭据后的真实Cloudflare帐户读取权限验证成功；班级授权/私有R2/Hyperdrive/云保存仍待接入。
 
 Cloudflare实际发布为[登录测试版](https://colorverse-dev.2999346.workers.dev)，最终Worker版本778ed169-4886-4a56-95df-8b188504dbeb。7项实际线上页面/API验证通过，5项浏览器模拟流程线上复测通过但不重复累加。首轮实际运行发现边缘Fetch不接受redirect=error，Node模拟与官方文档未反映此差异；脱敏测试日志定位后改用manual并拒绝3xx，真实无效令牌从503修正为401。临时详细日志已移除，正式日志仅异常名称/上游状态，不输出JWT/密码/密钥。仍需建立应用测试账户验证成功登录与退出、私有成员表/运行角色和跨账户授权；本机代理下连通不等于校园网可用。
+
+实现提交add7d7a已推送main。[核心/真实PostgreSQL检查](https://github.com/Rhineli36/colorverse/actions/runs/38121761939)和[Pages构建部署](https://github.com/Rhineli36/colorverse/actions/runs/38121762026)成功；Pages桌面/手机只读复查没有登录按钮、Supabase请求或运行时异常。162处文档相对链接、27项协议/算术检查通过；源码包231文件，已排除所有真实环境配置和临时日志，包含通用示例与Worker配置。Cloudflare控制台账号不会自动成为应用账户，下一步先建立应用教师/学生测试身份再验证正式授权。没有开通付费计划、创建课堂用户、执行云数据库迁移或上传用户作品。

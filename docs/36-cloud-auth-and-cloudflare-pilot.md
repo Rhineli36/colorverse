@@ -46,3 +46,5 @@ pnpm cloud:verify https://<worker>.<account>.workers.dev
 首轮实际边缘运行发现 `redirect="error"` 产生 TypeError，虽然Node模拟检查与当日官方文档接受此值。查看仅使用无效测试令牌的脱敏诊断后，改用实际运行支持的 `manual` 并拒绝全部3xx，避免把Bearer/apikey转发到其他地址；删除临时详细诊断，仅记录异常名称/上游状态。修复已在真实Worker→Supabase链路验证，不能只依赖打包dry-run。测试/部署经本机代理，校园网直连仍未验收。
 
 官方身份验证依据：[Supabase getUser](https://supabase.com/docs/reference/javascript/auth-getuser)，不能把 getSession 返回的缓存用户当作服务器授权依据。
+
+代码提交 `add7d7a` 已同步 GitHub。[核心/真实PostgreSQL检查](https://github.com/Rhineli36/colorverse/actions/runs/38121761939)与[Pages构建部署](https://github.com/Rhineli36/colorverse/actions/runs/38121762026)成功。Pages桌面/手机只读复查确认无云端登录按钮、无Supabase请求、无运行时异常；Cloudflare与Pages按配置分开。源码备份为231文件，排除真实`.env*`、`.dev.vars*`和临时Cloudflare配置/日志；包含通用`.env.example`与Wrangler配置。
