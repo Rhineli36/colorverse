@@ -828,6 +828,27 @@ p {
   position: absolute;
   inset: 0;
 }
+.room-birth-notice {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 36px);
+  padding: 14px 20px;
+  border: 1px solid #dccb8655;
+  border-radius: 14px;
+  background: #13202bec;
+  box-shadow: 0 0 24px #dcca8618;
+  pointer-events: none;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #b8cbd6;
+}
+.room-birth-notice strong {
+  color: #efdea8;
+}
 .room-title {
   position: absolute;
   left: 5%;
@@ -1542,11 +1563,19 @@ p {
   color: #9cb0c0;
 }
 .artwork-modal img {
-  height: 230px;
+  height: clamp(180px, 40vh, 480px);
   width: 100%;
   object-fit: contain;
   background: #ffffff03;
   border-radius: 8px;
+}
+.artwork-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
 }
 .image-placeholder {
   display: flex;

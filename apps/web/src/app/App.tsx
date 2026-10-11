@@ -34,6 +34,7 @@ import {
   nextPlanetPosition,
   upgradeUniverse,
   clampPlanetPosition,
+  findArchiveGrowthElement,
   type LayoutActor,
 } from "@colorverse/domain";
 import {
@@ -451,9 +452,9 @@ export function App() {
       setModal({
         id: crypto.randomUUID(),
         sceneId: doc.interior.id,
-        anchorLayerId: null,
+        anchorLayerId: id,
         geometry: { type: "circle", x: 0, y: 0, radius: 1 },
-        accessibleLabel: "成长来源作品",
+        accessibleLabel: "作业展示",
         action: {
           type: "openArchive",
           archiveEntryId: event.trigger.archiveEntryId,
@@ -539,9 +540,15 @@ export function App() {
           result.created ? result.event.elements[0].layerId : null,
         );
         setRoute("room");
-        setNotice("作品已提交，小元素已经长出来了。点击它可以修改造型和细节。");
+        setNotice(
+          result.created
+            ? ""
+            : "作品已提交。点击对应元素查看作业，再选择编辑元素。",
+        );
       } catch (e) {
         editor.load(await workspace.get(saved.planetId));
+        setSceneKind("interior");
+        setRoute("room");
         setNotice(
           `作品已保存；生长暂未完成：${e instanceof Error ? e.message : "请重试"}。可在展示作品列表重试生长。`,
         );
@@ -580,6 +587,13 @@ export function App() {
       : null;
   const preview =
     doc && proposal?.status === "proposed" ? growthOverlay(doc, proposal) : doc;
+  const archiveElement =
+    doc && archive
+      ? findArchiveGrowthElement(doc, archive.id, modal?.anchorLayerId)
+      : undefined;
+  const canEditCurrentPlanet =
+    !!doc &&
+    (layoutRole === "teacher" || ownership[doc.planetId] === "demo-student-1");
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
   const filteredMemoKey = filtered
@@ -816,7 +830,6 @@ export function App() {
           setRoute={setRoute}
           setModal={setModal}
           showGrowthSource={showGrowthSource}
-          onEditElement={openElement}
           birthLayerId={birthLayerId}
         />
       )}
@@ -1004,7 +1017,11 @@ export function App() {
             aria-label={modal.accessibleLabel}
             onClick={(e) => e.stopPropagation()}
           >
-            <button className="modal-close" onClick={() => setModal(null)}>
+            <button
+              className="modal-close"
+              aria-label="关闭展示"
+              onClick={() => setModal(null)}
+            >
               ×
             </button>
             <p className="eyebrow">PLANET ARCHIVE</p>
@@ -1028,6 +1045,20 @@ export function App() {
                     <span key={t}>{t}</span>
                   ))}
                 </div>
+                <footer className="artwork-actions">
+                  <button className="outline" onClick={() => setModal(null)}>
+                    返回星球
+                  </button>
+                  {canEditCurrentPlanet && archiveElement && (
+                    <button
+                      className="primary"
+                      disabled={busy}
+                      onClick={() => openElement(archiveElement.id)}
+                    >
+                      编辑元素
+                    </button>
+                  )}
+                </footer>
               </>
             ) : modal.action.type === "showText" ? (
               <p>{modal.action.text}</p>

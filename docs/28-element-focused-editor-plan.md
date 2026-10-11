@@ -1,5 +1,7 @@
 # 28 · 生长元素专用编辑流程
 
+2026-10-11后续修订：用户明确欣赏模式点击元素应先展示对应作业，由展示下方按钮进入编辑；新生动效放慢至约4秒。以下保留初始讨论，当前实现见[32](32-artwork-first-and-growth-birth.md)。
+
 更新：2026-10-11已按下述反馈完成首版，实际行为与测试见[29](29-automatic-growth-and-element-editor.md)。以下保留2026-10-10的设计过程记录；关于“待实施”的表述仅说明当时状态。
 
 日期：2026-10-10。记录用户截图及补充反馈，待明天体验测试后实施；本轮只更新设计。延续[24](24-showcase-growth-first-slice.md)的作品来源与成长事件、[25](25-growth-library-and-experience.md)的预制库，以及[27](27-visual-direction-and-student-playtest.md)的三屏视觉提案。

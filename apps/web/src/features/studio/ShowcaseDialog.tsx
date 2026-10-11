@@ -104,7 +104,7 @@ export function ShowcaseDialog({
           <p className="eyebrow">MY SHOWCASE · 自选作品</p>
           <h2>添加展示作品</h2>
           <p className="muted">
-            挑选你想展示的色彩作品。提交后，星球会自动长出一个小元素；点击它可以编辑，不影响原作。
+            挑选你想展示的色彩作品。提交后会返回星球内部，长出一个小元素；点击它欣赏作业，再选择编辑元素，不影响原作。
           </p>
           <fieldset disabled={pending}>
             <label>

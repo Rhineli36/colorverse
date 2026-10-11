@@ -119,7 +119,12 @@ export class SceneRenderer {
   private pointer = { x: 0, y: 0 };
   private urls: string[] = [];
   private tickNodes: { node: Container; layer: Layer }[] = [];
-  private birth: { id: string; startedAt: number } | null = null;
+  private birth: {
+    id: string;
+    startedAt: number;
+    halo: Graphics;
+    color: string;
+  } | null = null;
   private playedBirths = new Set<string>();
   private orbitNodes: OrbitNode[] = [];
   private effectUpdates: ((seconds: number) => void)[] = [];
@@ -506,9 +511,24 @@ export class SceneRenderer {
       this.motionPaused
     )
       return;
-    if (!this.tickNodes.some((n) => n.layer.id === id)) return;
+    const target = this.tickNodes.find((n) => n.layer.id === id);
+    if (!target) return;
+    this.birth?.halo.destroy();
+    const halo = new Graphics();
+    halo.eventMode = "none";
+    target.node.addChildAt(halo, 0);
+    const color =
+      "presetId" in target.layer.source &&
+      target.layer.source.presetId !== "sphere"
+        ? target.layer.source.params.color
+        : "#F8E7B4";
     this.playedBirths.add(id);
-    this.birth = { id, startedAt: this.elapsed };
+    this.birth = { id, startedAt: this.elapsed, halo, color };
+    target.node.alpha = 0;
+    target.node.scale.set(
+      target.layer.transform.scaleX * 0.25,
+      target.layer.transform.scaleY * 0.25,
+    );
     this.app.canvas.dataset.birthLayer = id;
     this.app.canvas.dataset.birthActive = "true";
   }
@@ -761,6 +781,10 @@ export class SceneRenderer {
     }
   }
   private reset() {
+    // The halo belongs to a scene node and is destroyed with that scene.
+    this.birth = null;
+    delete this.app.canvas.dataset.birthLayer;
+    delete this.app.canvas.dataset.birthActive;
     delete this.app.canvas.dataset.focusedArtworkWidth;
     delete this.app.canvas.dataset.focusedArtworkVariant;
     this.exteriorFrame = null;
@@ -1401,14 +1425,35 @@ export class SceneRenderer {
         !!this.exteriorFrame && layer.kind === "image",
       );
       if (this.birth?.id === layer.id) {
-        const progress = Math.min(
-          1,
-          (this.elapsed - this.birth.startedAt) / 0.85,
-        );
-        node.alpha *= progress;
-        const amount = 0.65 + 0.35 * (1 - Math.pow(1 - progress, 3));
+        const progress = Math.min(1, (this.elapsed - this.birth.startedAt) / 4);
+        node.alpha *= Math.min(1, progress * 2);
+        const amount =
+          0.25 +
+          0.75 * (progress * progress * (3 - 2 * progress)) +
+          Math.sin(Math.PI * progress) * 0.08;
         node.scale.set(t.scaleX * amount, t.scaleY * amount);
+        const halo = this.birth.halo;
+        halo
+          .clear()
+          .circle(0, 0, 75 + progress * 135)
+          .stroke({
+            color: this.birth.color,
+            width: 3,
+            alpha: Math.sin(Math.PI * progress) * 0.8,
+          });
+        for (let i = 0; i < 4; i++) {
+          const angle = (i * Math.PI) / 2 + progress * 0.4,
+            radius = 80 + progress * 115;
+          halo
+            .circle(
+              Math.cos(angle) * radius,
+              Math.sin(angle) * radius,
+              4 * (1 - progress),
+            )
+            .fill({ color: "#F8E7B4", alpha: Math.sin(Math.PI * progress) });
+        }
         if (progress >= 1) {
+          halo.destroy();
           this.birth = null;
           this.app.canvas.dataset.birthActive = "false";
         }

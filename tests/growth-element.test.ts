@@ -7,7 +7,11 @@ import {
   GrowthElementService,
   ShowcaseService,
 } from "@colorverse/application";
-import { updateGrowthElement, validatePlanet } from "@colorverse/domain";
+import {
+  updateGrowthElement,
+  validatePlanet,
+  findArchiveGrowthElement,
+} from "@colorverse/domain";
 import { LocalWorkspace } from "../apps/web/src/adapters/local/store";
 import { GrowthParamsSchema, type Layer } from "@colorverse/contracts";
 const student = { role: "student" as const, userId: "owner" };
@@ -42,6 +46,51 @@ async function setup() {
     service: new GrowthElementService(repo),
   };
 }
+describe("artwork-first element navigation", () => {
+  it("resolves the same artwork element after its shape is edited, without changing source history", async () => {
+    const { repo, document, archive, layer } = await setup();
+    const edited = updateGrowthElement(document, change(layer));
+    expect(
+      findArchiveGrowthElement(edited, archive.id, layer.id)?.source,
+    ).toMatchObject({
+      presetId: "moon-mushroom",
+      params: { color: "#abcdef", scale: 0.7 },
+    });
+    expect(findArchiveGrowthElement(edited, archive.id)?.id).toBe(layer.id);
+    expect(edited.growthEvents).toEqual(document.growthEvents);
+    await repo.close();
+  });
+  it("never falls back to another work when a requested element is missing or belongs elsewhere", async () => {
+    const { repo, document, archive, layer } = await setup();
+    expect(
+      findArchiveGrowthElement(
+        document,
+        document.archiveEntries[0].id,
+        layer.id,
+      ),
+    ).toBeUndefined();
+    expect(
+      findArchiveGrowthElement(document, archive.id, "missing-layer"),
+    ).toBeUndefined();
+    expect(
+      findArchiveGrowthElement(document, "missing-archive", layer.id),
+    ).toBeUndefined();
+    await repo.close();
+  });
+  it("hides editing for reverted growth or removed layers while retaining the artwork", async () => {
+    const { repo, document, archive, layer } = await setup();
+    const missing = structuredClone(document);
+    missing.interior.layers = missing.interior.layers.filter(
+      (l) => l.id !== layer.id,
+    );
+    expect(findArchiveGrowthElement(missing, archive.id)).toBeUndefined();
+    const reverted = structuredClone(document);
+    reverted.growthEvents[0].status = "reverted";
+    expect(findArchiveGrowthElement(reverted, archive.id)).toBeUndefined();
+    expect(reverted.archiveEntries).toEqual(document.archiveEntries);
+    await repo.close();
+  });
+});
 function change(layer: Layer) {
   const draft = structuredClone(layer);
   draft.transform.x = 600;

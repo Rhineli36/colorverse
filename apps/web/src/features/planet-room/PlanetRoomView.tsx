@@ -2,6 +2,7 @@ import type { PlanetDocument, Hotspot } from "@colorverse/contracts";
 import type { AssetStore } from "@colorverse/application";
 import { SceneCanvas } from "../../app/SceneCanvas";
 import { GrowthPresets } from "@colorverse/contracts";
+import { useEffect, useState } from "react";
 interface Props {
   workspace: AssetStore;
   doc: PlanetDocument;
@@ -11,7 +12,6 @@ interface Props {
   setModal: (h: Hotspot) => void;
   showGrowthSource: (id: string) => void;
   canEdit: boolean;
-  onEditElement: (id: string) => void;
   birthLayerId: string | null;
 }
 
@@ -24,9 +24,15 @@ export function PlanetRoomView({
   setModal,
   showGrowthSource,
   canEdit,
-  onEditElement,
   birthLayerId,
 }: Props) {
+  const [showBirthNotice, setShowBirthNotice] = useState(false);
+  useEffect(() => {
+    setShowBirthNotice(Boolean(birthLayerId));
+    if (!birthLayerId) return;
+    const timer = setTimeout(() => setShowBirthNotice(false), 6000);
+    return () => clearTimeout(timer);
+  }, [birthLayerId]);
   return (
     <main className="room-main">
       <SceneCanvas
@@ -36,9 +42,15 @@ export function PlanetRoomView({
         birthLayerId={birthLayerId}
         options={{
           onHotspot: setModal,
-          onGrowth: canEdit ? onEditElement : showGrowthSource,
+          onGrowth: showGrowthSource,
         }}
       />
+      {showBirthNotice && (
+        <div className="room-birth-notice" role="status">
+          <strong>✦ 作品已提交，新元素正在生长</strong>
+          <span>点击它查看这次作业，在展示窗口中可以编辑元素。</span>
+        </div>
+      )}
       <div className="room-title">
         <button className="outline small" onClick={() => void back()}>
           ← 返回宇宙
@@ -76,14 +88,9 @@ export function PlanetRoomView({
               <button
                 className="outline small"
                 key={el.layerId}
-                onClick={() =>
-                  canEdit
-                    ? onEditElement(el.layerId)
-                    : showGrowthSource(el.layerId)
-                }
+                onClick={() => showGrowthSource(el.layerId)}
               >
-                {canEdit ? "编辑元素" : "查看元素来源"} ·{" "}
-                {GrowthPresets[presetId].name}
+                查看作业 · {GrowthPresets[presetId].name}
               </button>
             );
           })}

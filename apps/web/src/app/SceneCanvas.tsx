@@ -85,16 +85,18 @@ export function SceneCanvas({
     let cancelled = false;
     void ready.current?.then(async () => {
       if (cancelled || !renderer.current) return;
+      const activeRenderer = renderer.current;
       try {
         if (scene && planet) {
-          await renderer.current.load(
+          await activeRenderer.load(
             scene,
             planet.assetRefs,
             scene.id === planet.exterior.scene.id
               ? scene.layers.find((l) => l.kind === "image")?.id
               : undefined,
           );
-          if (birthLayerId) renderer.current?.setBirthLayer(birthLayerId);
+          if (!cancelled && renderer.current === activeRenderer && birthLayerId)
+            activeRenderer.setBirthLayer(birthLayerId);
         } else if (universe && planets)
           await renderer.current.loadUniverse(
             planets,

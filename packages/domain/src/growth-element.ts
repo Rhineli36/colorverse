@@ -6,6 +6,36 @@ import {
 } from "@colorverse/contracts";
 import { clone, DomainError, validatePlanet } from "./index";
 
+/** Resolve a live element through its immutable artwork link, not its new shape. */
+export function findArchiveGrowthElement(
+  doc: PlanetDocument,
+  archiveId: string,
+  preferredLayerId?: string | null,
+) {
+  if (!doc.archiveEntries.some((a) => a.id === archiveId)) return undefined;
+  for (const event of doc.growthEvents) {
+    if (
+      event.status !== "accepted" ||
+      (event.trigger.kind !== "archive" && event.trigger.kind !== "mock") ||
+      event.trigger.archiveEntryId !== archiveId
+    )
+      continue;
+    for (const element of event.elements) {
+      if (preferredLayerId && element.layerId !== preferredLayerId) continue;
+      const scene =
+        element.sceneKind === "interior" ? doc.interior : doc.exterior.scene;
+      const layer = scene.layers.find((l) => l.id === element.layerId);
+      if (
+        layer &&
+        "presetId" in layer.source &&
+        layer.source.presetId !== "sphere"
+      )
+        return layer;
+    }
+  }
+  return undefined;
+}
+
 /** Edit a single accepted element, retaining its immutable birth/source history. */
 export function updateGrowthElement(input: PlanetDocument, candidate: Layer) {
   const doc = clone(input),
