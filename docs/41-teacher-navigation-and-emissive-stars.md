@@ -11,3 +11,8 @@
 验证：TypeScript、ESLint、生产构建通过，22文件186项模块测试通过。恒星原有边界/互相距离、低画质预算测试保持通过。一次GPU浏览器与并行数据库测试同时运行时，已有磁盘重开测试超过5秒；停止GPU竞争后以单worker完整重跑186项通过，未修改超时时限。
 
 新增 `tests/teacher_visibility_browser.py` 使用隔离 Auth/API 验证游客没有教师UI、学生即使客户端元数据为teacher也不能开启、服务端教师身份自动出现、教师角色撤销后离开演示并收回他人编辑、退出登录隐藏，以及手机无横向溢出和恒星实际绘制。旧本地教师工具浏览器脚本通过 `tests/cloud_teacher_fixture.py` 建立隔离的服务端教师身份后再操作，需启用云端登录的构建；不使用真实教师密码，也不向真实Auth创建或提升账号。
+
+
+隔离教师UI浏览器6组检查和宇宙拖拽/缩放15组回归通过，实际截图见本机 outputs/COLORVERSE-emissive-stars.png。真实学生线上5组只读检查通过：游客/真实学生无教师入口或教师身份选择，原有星球、1件作业及7/10任务进度保留，手机布局与退出正常；7项线上入口边界探针通过。
+
+实现提交 `23c6206` 已推送 main，Cloudflare版本 `0718500b-0f17-4849-aa8d-e0e30b190029`。[GitHub核心与PostgreSQL18检查](https://github.com/Rhineli36/colorverse/actions/runs/38142228504)及[Pages发布](https://github.com/Rhineli36/colorverse/actions/runs/38142228513)均成功。
