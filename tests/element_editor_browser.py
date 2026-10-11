@@ -1,0 +1,146 @@
+"""Automatic growth and isolated editing against real WebGL and IndexedDB."""
+import os, sys, json, hashlib, zipfile
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'work/python-deps'))
+from playwright.sync_api import sync_playwright, expect
+expect.set_options(timeout=15000)
+URL = os.environ.get('COLORVERSE_TEST_URL', 'http://127.0.0.1:5174')
+checks, errors, external = [], [], []
+def passed(text): checks.append(text); print('PASS:', text, flush=True)
+def current(page):
+    return page.evaluate("""async()=>{const db=await new Promise(ok=>{const r=indexedDB.open('colorverse-v1');r.onsuccess=()=>ok(r.result)});const docs=await new Promise(ok=>{const r=db.transaction('planets').objectStore('planets').getAll();r.onsuccess=()=>ok(r.result)});db.close();return docs.find(d=>d.metadata.name==='日落收藏家');}""")
+def edit(page):
+    page.get_by_role('button', name='编辑元素', exact=False).first.click()
+    expect(page.get_by_role('main', name='元素专用编辑器')).to_be_visible()
+    page.wait_for_function('document.querySelector("canvas")?.dataset.sceneReady === "true"')
+def layer(doc): return doc['interior']['layers'][-1]
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True, channel='chrome' if os.name=='nt' else None, args=['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
+    context = browser.new_context(viewport={'width':1440,'height':1050}, accept_downloads=True)
+    page = context.new_page()
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.on('console', lambda m: errors.append(m.text) if m.type=='error' else None)
+    page.on('request', lambda r: external.append(r.url) if '/api/' in r.url or 'openai' in r.url else None)
+    page.goto(URL); page.wait_for_load_state('networkidle')
+    page.get_by_role('button',name='编辑你的星球',exact=True).click()
+    before=current(page)
+    page.get_by_role('button',name='添加展示作品 ↗',exact=True).click()
+    dialog=page.get_by_role('dialog',name='添加展示作品',exact=True)
+    expect(dialog).to_contain_text('自动长出一个小元素')
+    dialog.get_by_label('作品图片',exact=True).set_input_files(str(ROOT/'tests/fixtures/media/sample-2.webp'))
+    expect(dialog.get_by_label('作品标题',exact=True)).to_have_value('sample-2')
+    expect(dialog.get_by_role('img',name='待上传作品预览')).to_be_visible()
+    dialog.get_by_role('button',name='提交展示作品',exact=True).click()
+    expect(page.get_by_role('button',name='编辑这颗星球 ↗',exact=True)).to_be_visible()
+    saved=current(page); event=saved['growthEvents'][0]; born=layer(saved)
+    assert event['status']=='accepted' and born['transform']['scaleX']==.45
+    assert len(saved['interior']['layers'])==len(before['interior']['layers'])+1
+    assert saved['exterior']==before['exterior'] and saved['interior']['background']==before['interior']['background']
+    expect(page.get_by_role('main',name='元素专用编辑器')).to_have_count(0)
+    passed('real upload ends in viewing mode with one automatically saved small element and intact environment')
+    canvas=page.locator('canvas')
+    expect(canvas).to_have_attribute('data-birth-layer',born['id'])
+    expect(canvas).to_have_attribute('data-birth-active','false')
+    passed('new element completes one brief birth animation without forcing editing')
+    box=canvas.bounding_box(); scale=min(box['width']/1600,box['height']/900)
+    page.mouse.click(box['x']+(box['width']-1600*scale)/2+born['transform']['x']*scale,box['y']+(box['height']-900*scale)/2+born['transform']['y']*scale)
+    expect(page.get_by_role('main',name='元素专用编辑器')).to_be_visible()
+    page.wait_for_function('document.querySelector("canvas")?.dataset.sceneReady === "true"')
+    expect(page.get_by_label('上传内部空间')).to_have_count(0)
+    expect(page.get_by_label('成长水平位置',exact=True)).to_have_count(0)
+    expect(page.get_by_label('成长垂直位置',exact=True)).to_have_count(0)
+    expect(page.get_by_role('button',name='拖动当前元素')).to_be_visible()
+    passed('clicking the actual rendered element opens a dedicated editor without environment or position sliders')
+    picker=page.get_by_role('region',name='元素造型库'); expect(picker.get_by_role('button')).to_have_count(8)
+    signatures=set()
+    for name in ['微光花','晶体','发光叶片','月光蘑菇','彩色云朵','漂浮岛','星光种子','轨道石']:
+        old=canvas.get_attribute('data-scene-generation')
+        button=page.get_by_role('button',name='选择'+name,exact=True); button.click()
+        expect(button).to_have_attribute('aria-pressed','true')
+        page.wait_for_function('(old)=>{const c=document.querySelector("canvas");return c.dataset.sceneReady==="true"&&c.dataset.sceneGeneration!==old}',arg=old)
+        signatures.add(hashlib.sha256(canvas.screenshot()).hexdigest())
+    assert len(signatures)==8 and current(page)==saved
+    passed('eight distinct WebGL shapes preview on the same identity while the saved planet stays unchanged')
+    page.get_by_role('button',name='重置当前元素',exact=True).click()
+    expect(page.get_by_role('button',name='重置当前元素',exact=True)).to_be_disabled()
+    handle=page.get_by_role('button',name='拖动当前元素'); box=handle.bounding_box()
+    page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2); page.mouse.down(); page.mouse.move(box['x']+box['width']/2+55,box['y']+box['height']/2+25,steps=8); page.mouse.up()
+    expect(page.get_by_role('button',name='撤销一步',exact=True)).to_be_enabled()
+    page.get_by_role('button',name='撤销一步',exact=True).click()
+    expect(page.get_by_role('button',name='重置当前元素',exact=True)).to_be_disabled()
+    page.get_by_role('button',name='重做',exact=True).click()
+    expect(page.get_by_role('button',name='重置当前元素',exact=True)).to_be_enabled()
+    page.get_by_role('button',name='取消修改并返回',exact=True).click()
+    assert current(page)==saved
+    passed('one drag produces one undo step; redo works and cancel preserves the submitted work and default element')
+    expect(page.locator('canvas')).not_to_have_attribute('data-birth-layer',born['id'])
+    passed('returning from editing does not replay the birth animation')
+    edit(page)
+    page.get_by_role('button',name='选择月光蘑菇',exact=True).click()
+    page.get_by_label('元素颜色',exact=True).fill('#eeb980')
+    page.get_by_label('元素饱和度',exact=True).fill('0.65')
+    page.get_by_label('元素自身动态',exact=True).select_option('float')
+    page.get_by_label('元素动态速度',exact=True).fill('0.1')
+    page.get_by_label('元素粒子效果',exact=True).select_option('stardust')
+    expect(canvas).to_have_attribute('data-particle-count','12')
+    handle=page.get_by_role('button',name='拖动当前元素'); handle.focus(); page.keyboard.press('Shift+ArrowRight')
+    page.get_by_role('button',name='缩放当前元素').focus()
+    box=page.get_by_role('button',name='缩放当前元素').bounding_box()
+    page.mouse.move(box['x']+7,box['y']+7); page.mouse.down(); page.mouse.move(box['x']+28,box['y']+28,steps=4);page.mouse.up()
+    assert float(page.get_by_label('元素大小',exact=True).input_value())>.45
+    page.screenshot(path=str(ROOT/'outputs/COLORVERSE-element-editor-desktop.png'),full_page=True)
+    page.get_by_role('button',name='确定并返回',exact=True).click()
+    expect(page.get_by_role('main',name='元素专用编辑器')).to_have_count(0)
+    edited=current(page); target=layer(edited)
+    assert target['id']==born['id'] and target['source']['params']['seed']==born['source']['params']['seed']
+    assert target['source']['presetId']=='moon-mushroom' and target['adjustments']['saturation']==.65
+    assert target['animation'][0]['type']=='float' and target['animation'][0]['periodSec']==60
+    assert target['source']['params']['particleStyle']=='stardust' and 'growth-particles@1' in edited['requiredCapabilities']
+    assert edited['growthEvents']==saved['growthEvents'] and edited['exterior']==saved['exterior']
+    assert edited['archiveEntries']==saved['archiveEntries'] and len(edited['interior']['layers'])==len(saved['interior']['layers'])
+    passed('confirm saves shape, color, saturation, drag, size, bounded animation and particles on the original element only')
+    edit(page)
+    page.get_by_label('元素颜色',exact=True).fill('#55aadd')
+    page.evaluate("""async()=>{const db=await new Promise(ok=>{const r=indexedDB.open('colorverse-v1');r.onsuccess=()=>ok(r.result)});const tx=db.transaction('planets','readwrite');const store=tx.objectStore('planets');const docs=await new Promise(ok=>{const r=store.getAll();r.onsuccess=()=>ok(r.result)});const d=docs.find(d=>d.metadata.name==='日落收藏家');d.revision++;d.metadata.theme='另一个窗口的修改';store.put(d,d.planetId);await new Promise(ok=>tx.oncomplete=ok);db.close();}""")
+    page.get_by_role('button',name='确定并返回',exact=True).click()
+    expect(page.get_by_role('alert')).to_contain_text('另一个窗口')
+    expect(page.get_by_label('元素颜色',exact=True)).to_have_value('#55aadd')
+    assert layer(current(page))['source']['params']['color']=='#eeb980'
+    page.get_by_role('button',name='取消修改并返回',exact=True).click()
+    passed('revision conflict retains the local draft and never overwrites another window')
+    edit(page)
+    page.get_by_label('元素自身动态',exact=True).select_option('none')
+    page.get_by_label('元素粒子效果',exact=True).select_option('none')
+    page.get_by_role('button',name='确定并返回',exact=True).click()
+    assert not layer(current(page))['animation'] and 'particleStyle' not in layer(current(page))['source']['params']
+    passed('element stationary state clears its own animation; particle choice is independently removable')
+    page.reload(); page.wait_for_load_state('networkidle'); page.get_by_role('button',name='编辑你的星球',exact=True).click()
+    page.get_by_role('button',name='编辑生长元素',exact=True).click()
+    expect(page.get_by_label('元素颜色',exact=True)).to_have_value('#eeb980')
+    expect(page.get_by_label('元素自身动态',exact=True)).to_have_value('none')
+    page.get_by_role('button',name='确定并返回',exact=True).click()
+    page.get_by_role('button',name='查看成长来源',exact=True).click()
+    expect(page.get_by_role('dialog')).to_contain_text('sample-2'); page.locator('.modal-close').click()
+    passed('reload and gallery entry recover edited details; original submitted artwork remains accessible')
+    with page.expect_download() as info: page.get_by_role('button',name='导出作品 ZIP ↗',exact=True).click()
+    path=ROOT/'work/element-editor-browser.zip';info.value.save_as(str(path))
+    with zipfile.ZipFile(path) as z:
+        planet=json.loads(z.read('planet.json'))
+        assert layer(planet)['source']['presetId']=='moon-mushroom' and planet['growthEvents']==saved['growthEvents']
+    passed('portable ZIP preserves the edited layer and immutable birth/source record')
+    page.get_by_role('button',name='编辑生长元素',exact=True).click()
+    page.set_viewport_size({'width':390,'height':844})
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+    page.get_by_label('元素颜色',exact=True).fill('#8899aa')
+    page.get_by_role('button',name='重置当前元素',exact=True).click()
+    expect(page.get_by_label('元素颜色',exact=True)).to_have_value('#eeb980')
+    page.screenshot(path=str(ROOT/'outputs/COLORVERSE-element-editor-mobile.png'),full_page=True)
+    page.get_by_role('button',name='确定并返回',exact=True).click()
+    passed('mobile layout has no horizontal overflow; reset restores the session baseline and confirm remains reachable')
+    assert not external, external
+    passed('automatic growth and editing make no model or course API requests')
+    context.close(); browser.close()
+assert not errors, errors
+(ROOT/'outputs/COLORVERSE-element-editor-test-report.json').write_text(json.dumps({'checks':checks,'errors':errors},ensure_ascii=False,indent=2),encoding='utf-8')
+print(f'{len(checks)} element editor browser checks passed.')

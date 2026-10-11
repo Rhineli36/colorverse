@@ -17,7 +17,7 @@ pnpm dev
 
 ## 自选作品与星球成长
 
-进入“编辑你的星球”→“添加展示作品”，上传图片并填写标题/说明/关键词。原图与档案本地保存，不替换外观或内景背景；在“我的展示作品”查看作品，或选择生成成长建议。当前用本地规则推荐8种预制元素（花、晶体、叶片、蘑菇、云朵、浮岛、星种、轨道石），学生可选造型、调颜色/位置/大小，保存预览再接受。接受/跳过/撤销保留作品来源，刷新及ZIP备份可恢复。上传有原图预览和固定保存栏，作品分页显示。无需课程服务器或AI API。
+进入“编辑你的星球”→“添加展示作品”，上传图片并填写标题/说明/关键词。作品独立保存后，星球自动长出一个小元素，播放一次显现动效，并进入欣赏模式。点击元素进入专用编辑器：上方选8种造型，画面直接拖动/角点缩放，右侧改颜色、饱和度、自身动态和粒子，底部确定/撤销/重置。取消编辑保留已提交作品和默认元素；编辑不改变环境、原图或出生来源。刷新及ZIP保留最新图层与成长记录，成长失败可在作品列表重试。旧待确认建议仍可继续预览。无需课程服务器或AI API。具体行为见[29](docs/29-automatic-growth-and-element-editor.md)。
 
 最终元素库目标约30种，先逐批校准；学生API定制留到下一步，尚未接入。当前作品仍存此浏览器，跨设备需主动导出/导入ZIP。基础流程见[24](docs/24-showcase-growth-first-slice.md)，本轮登记与体验改进见[25](docs/25-growth-library-and-experience.md)。
 
@@ -83,11 +83,12 @@ python tests/background_camera_browser.py
 python tests/image_tools_browser.py
 python tests/studio_layout_browser.py
 python tests/focus_framing_browser.py
+python tests/element_editor_browser.py
 ```
 
 脚本默认在 Windows 使用本机 Chrome，无头运行。Linux/无 Chrome 环境请执行 `python -m playwright install chromium`，Windows 可将 COLORVERSE_BROWSER_CHANNEL 设为空字符串改用已安装的 Playwright Chromium。本次记录使用 Windows Chrome/SwiftShader，不能视为普通机房集成显卡性能基准。`COLORVERSE_TEST_URL` 可指定生产预览地址。测试使用独立浏览器上下文，不改用户日常 Chrome 配置；结果和截图写入 outputs/，下载包写入 work/。
 
-CI执行lint、82项模块测试和生产构建，另在PostgreSQL18服务运行20项课程契约/事务/HTTP测试；浏览器及机房验收暂由上述独立脚本执行。
+CI执行lint、118项模块测试和生产构建，另在PostgreSQL18服务运行20项课程契约/事务/HTTP测试；浏览器及机房验收暂由上述独立脚本执行。
 
 代码仓库：[Rhineli36/colorverse](https://github.com/Rhineli36/colorverse)。main推送通过检查后部署GitHub Pages，实际状态见[Actions](https://github.com/Rhineli36/colorverse/actions)。本机草稿不会自动同步到在线演示，需导出/导入ZIP；部署与明天接续记录见[21](docs/21-github-deployment-and-handoff.md)。
 

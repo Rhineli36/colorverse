@@ -101,6 +101,7 @@
             "opacity": {"type": "number", "minimum": 0, "maximum": 1},
             "glowIntensity": {"type": "number", "minimum": 0, "maximum": 1},
             "motionSpeed": {"type": "number", "minimum": 0, "maximum": 2},
+            "particleStyle": {"enum": ["stardust", "fireflies"]},
             "seed": {"type": "integer", "minimum": 0, "maximum": 4294967295}
           }
         }

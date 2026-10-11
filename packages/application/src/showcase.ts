@@ -11,7 +11,7 @@ import {
 } from "@colorverse/contracts";
 import { DomainError, validatePlanet } from "@colorverse/domain";
 import { showcaseChoice } from "@colorverse/domain";
-import type { PlanetRepository } from "./index";
+import { GrowthService, type PlanetRepository } from "./index";
 
 export interface ShowcaseRepository extends PlanetRepository {
   saveWithAssets(
@@ -73,7 +73,37 @@ export class ShowcaseService {
     return this.repository.saveWithAssets(validatePlanet(doc), revision, files);
   }
 
-  async propose(planetId: string, archiveId: string): Promise<GrowthEvent> {
+  async grow(planetId: string, archiveId: string) {
+    const before = await this.repository.get(planetId);
+    const previous = before.growthEvents.find(
+      (e) =>
+        e.trigger.kind === "archive" && e.trigger.archiveEntryId === archiveId,
+    );
+    const event = await this.propose(planetId, archiveId, true);
+    if (event.status !== "proposed")
+      return {
+        document: await this.repository.get(planetId),
+        event,
+        created: false,
+      };
+    const current = await this.repository.get(planetId);
+    const saved = await new GrowthService(
+      this.repository,
+      this.now,
+      this.uuid,
+    ).accept(event, current.revision);
+    return {
+      document: saved,
+      event: saved.growthEvents.find((e) => e.eventId === event.eventId)!,
+      created: previous?.status !== "accepted",
+    };
+  }
+
+  async propose(
+    planetId: string,
+    archiveId: string,
+    automatic = false,
+  ): Promise<GrowthEvent> {
     const doc = await this.repository.get(planetId);
     // Compare the source ID as well as the key: ZIP imports remap keys and IDs.
     const existing = doc.growthEvents.find(
@@ -103,7 +133,9 @@ export class ShowcaseService {
       },
       baseRevision: doc.revision,
       status: "proposed",
-      summary: `根据《${archive.title}》的配色与关键词，推荐「${GrowthPresets[choice.presetId].name}」。你也可以选择其他造型；保存预览或接受成长都不会改变原图。`,
+      summary: automatic
+        ? `《${archive.title}》让星球长出了一个小小的「${GrowthPresets[choice.presetId].name}」。点击元素可以换造型、调整颜色和动态；原始作品保持完整。`
+        : `根据《${archive.title}》的配色与关键词，推荐「${GrowthPresets[choice.presetId].name}」。你也可以选择其他造型；保存预览或接受成长都不会改变原图。`,
       elements: [
         {
           layerId: this.uuid(),
@@ -112,8 +144,8 @@ export class ShowcaseService {
           presetVersion: VERSION,
           params: {
             x: 0.25 + (choice.seed % 50) / 100,
-            y: 0.4 + ((choice.seed >>> 8) % 40) / 100,
-            scale: 1,
+            y: (automatic ? 0.3 : 0.4) + ((choice.seed >>> 8) % 40) / 100,
+            scale: automatic ? 0.45 : 1,
             rotationDeg: 0,
             color: extractedColor,
             opacity: 0.95,
@@ -130,9 +162,9 @@ export class ShowcaseService {
       revertedRevision: null,
       provider: {
         kind: "rules",
-        adapter: "showcase-rules-v2",
+        adapter: automatic ? "showcase-auto-v3" : "showcase-rules-v2",
         model: "none",
-        promptVersion: "rules-v2",
+        promptVersion: automatic ? "rules-v3" : "rules-v2",
       },
       policyVersion: "growth-policy-v1",
     };

@@ -56,10 +56,10 @@ export function MotionControls({
   };
   return (
     <section className="planet-motion-settings" aria-label="星球运动设置">
-      <h3>星球运动</h3>
+      <h3>整颗星球在宇宙中的运动</h3>
       <p className="hint">
         {canEdit
-          ? "先看轨迹示意，保存后应用到宇宙。"
+          ? "控制整颗星球，不控制内部元素。保存后回到宇宙观察轨迹。"
           : "可以欣赏运行方式；学生只能设置自己的星球。"}
       </p>
       {!entry.motion && <p className="hint">当前沿用默认慢速轨迹。</p>}

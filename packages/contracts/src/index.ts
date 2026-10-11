@@ -85,6 +85,7 @@ export const GrowthParamsSchema = z.strictObject({
   opacity: finite(0, 1),
   glowIntensity: finite(0, 1),
   motionSpeed: finite(0, 2),
+  particleStyle: z.enum(["stardust", "fireflies"]).optional(),
   seed: z.number().int().min(0).max(4294967295),
 });
 const SphereParamsSchema = z.strictObject({

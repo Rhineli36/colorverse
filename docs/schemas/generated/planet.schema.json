@@ -639,6 +639,13 @@
                                 "minimum": 0,
                                 "maximum": 2
                               },
+                              "particleStyle": {
+                                "type": "string",
+                                "enum": [
+                                  "stardust",
+                                  "fireflies"
+                                ]
+                              },
                               "seed": {
                                 "type": "integer",
                                 "minimum": 0,
@@ -1490,6 +1497,13 @@
                             "minimum": 0,
                             "maximum": 2
                           },
+                          "particleStyle": {
+                            "type": "string",
+                            "enum": [
+                              "stardust",
+                              "fireflies"
+                            ]
+                          },
                           "seed": {
                             "type": "integer",
                             "minimum": 0,
@@ -2227,6 +2241,13 @@
                       "type": "number",
                       "minimum": 0,
                       "maximum": 2
+                    },
+                    "particleStyle": {
+                      "type": "string",
+                      "enum": [
+                        "stardust",
+                        "fireflies"
+                      ]
                     },
                     "seed": {
                       "type": "integer",

@@ -198,6 +198,13 @@
                 "minimum": 0,
                 "maximum": 2
               },
+              "particleStyle": {
+                "type": "string",
+                "enum": [
+                  "stardust",
+                  "fireflies"
+                ]
+              },
               "seed": {
                 "type": "integer",
                 "minimum": 0,

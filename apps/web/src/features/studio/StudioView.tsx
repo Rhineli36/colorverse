@@ -56,6 +56,7 @@ interface Props {
   setModal: (v: Hotspot) => void;
   setProposal: (v: GrowthEvent | null) => void;
   showGrowthSource: (id: string) => void;
+  onEditElement: (id: string) => void;
   action: (fn: () => Promise<void>) => Promise<void>;
   flush: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -97,6 +98,7 @@ export function StudioView({
   setModal,
   setProposal,
   showGrowthSource,
+  onEditElement,
   action,
   flush,
   refresh,
@@ -633,7 +635,7 @@ export function StudioView({
             options={{
               onHotspot: setModal,
               onLayerSelect: editor.select,
-              onGrowth: showGrowthSource,
+              onGrowth: onEditElement,
             }}
           />
           <div className="canvas-caption">
@@ -645,7 +647,7 @@ export function StudioView({
               <p className="eyebrow">PLANET GROWTH · 预制元素</p>
               <h3>让每一次练习，成为新的生长。</h3>
               <p className="muted">
-                展示作品的色彩与关键词生成建议，接受后成为独立图层。下方保留模拟演示。
+                提交展示作品后自动长出一个小元素，点击它可以编辑。下方保留模拟演示。
               </p>
             </div>
             <button

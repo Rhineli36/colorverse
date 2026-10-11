@@ -26,6 +26,7 @@ export function SceneCanvas({
   options,
   layerPreview = null,
   positionReader,
+  birthLayerId = null,
 }: {
   assets: AssetStore;
   planet?: PlanetDocument;
@@ -39,6 +40,7 @@ export function SceneCanvas({
   movablePlanetIds?: string[];
   areaSelection?: boolean;
   options: RendererOptions;
+  birthLayerId?: string | null;
   layerPreview?: { id: string; transform: Transform } | null;
   positionReader?: MutableRefObject<
     ((id: string) => { x: number; y: number } | null) | null
@@ -84,7 +86,7 @@ export function SceneCanvas({
     void ready.current?.then(async () => {
       if (cancelled || !renderer.current) return;
       try {
-        if (scene && planet)
+        if (scene && planet) {
           await renderer.current.load(
             scene,
             planet.assetRefs,
@@ -92,7 +94,8 @@ export function SceneCanvas({
               ? scene.layers.find((l) => l.kind === "image")?.id
               : undefined,
           );
-        else if (universe && planets)
+          if (birthLayerId) renderer.current?.setBirthLayer(birthLayerId);
+        } else if (universe && planets)
           await renderer.current.loadUniverse(
             planets,
             universe,
@@ -106,7 +109,7 @@ export function SceneCanvas({
     return () => {
       cancelled = true;
     };
-  }, [scene, planet, planets, universe]);
+  }, [scene, planet, planets, universe, birthLayerId]);
   useEffect(() => {
     let cancelled = false;
     void ready.current?.then(() => {

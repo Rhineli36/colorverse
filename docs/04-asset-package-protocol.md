@@ -129,3 +129,7 @@ v1 预设目录应覆盖 stardust/fireflies/floating-lights/rain/snow/fog/outer-
 ## 2026-10-10 Universe 1.1.0运动协议
 
 Universe/layout升级为1.1.0，增加motion-presets@1和条目layoutRevision，motion缺省保留旧轨迹；旧1.0.0文档继续读取，首次布局写入显式迁移。新版完整宇宙包版本1.1.0且manifest必须声明运动能力；单星球/PlanetDocument仍1.0.0，不携带宇宙运动或owner。生成Schema、副本合并和revision协同见[26](26-planet-motion-first-slice.md)。这是对早期仅接受v1.0.0说明的增量，不将未知未来版本当成兼容。
+
+## 2026-10-11 growth-particles@1与当前元素编辑
+
+成长参数增加可选particleStyle，限stardust/fireflies，只有实际使用时声明growth-particles@1；省略兼容旧作品，使用时旧读者需拒绝不支持能力，不能静默回写丢参数。新自动生长由showcase-auto-v3登记，既有记录不重抽。编辑当前Layer保留出生事件、seed和来源，latest Layer与出生参数可以不同；ZIP同时保留二者，补偿仍按layerId。原图/hash、Planet 1.0.0和Universe 1.1.0不变，细节见[29](29-automatic-growth-and-element-editor.md)。

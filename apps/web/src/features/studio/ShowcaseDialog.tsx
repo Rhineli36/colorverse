@@ -104,7 +104,7 @@ export function ShowcaseDialog({
           <p className="eyebrow">MY SHOWCASE · 自选作品</p>
           <h2>添加展示作品</h2>
           <p className="muted">
-            挑选你想展示的色彩作品。保存档案后，可以选择为星球生成成长建议。
+            挑选你想展示的色彩作品。提交后，星球会自动长出一个小元素；点击它可以编辑，不影响原作。
           </p>
           <fieldset disabled={pending}>
             <label>
@@ -195,7 +195,7 @@ export function ShowcaseDialog({
               className="primary"
               disabled={pending || !file || !title.trim()}
             >
-              {pending ? "正在保存…" : "保存作品档案"}
+              {pending ? "正在提交…" : "提交展示作品"}
             </button>
           </div>
         </footer>

@@ -116,6 +116,8 @@ export class SceneRenderer {
   private pointer = { x: 0, y: 0 };
   private urls: string[] = [];
   private tickNodes: { node: Container; layer: Layer }[] = [];
+  private birth: { id: string; startedAt: number } | null = null;
+  private playedBirths = new Set<string>();
   private orbitNodes: OrbitNode[] = [];
   private effectUpdates: ((seconds: number) => void)[] = [];
   private effectCount = 0;
@@ -449,6 +451,20 @@ export class SceneRenderer {
       node.rotation = (t.rotationDeg * Math.PI) / 180;
     }
     this.applyAttachments();
+  }
+  setBirthLayer(id: string | null) {
+    if (
+      !id ||
+      this.playedBirths.has(id) ||
+      this.options.reducedMotion ||
+      this.motionPaused
+    )
+      return;
+    if (!this.tickNodes.some((n) => n.layer.id === id)) return;
+    this.playedBirths.add(id);
+    this.birth = { id, startedAt: this.elapsed };
+    this.app.canvas.dataset.birthLayer = id;
+    this.app.canvas.dataset.birthActive = "true";
   }
   private imageSprite(
     texture: Texture,
@@ -1068,9 +1084,17 @@ export class SceneRenderer {
       this.transientTextures.push(texture);
       this.stage.addChild(new Sprite(texture));
     }
+    const growthParticleCount =
+      scene.layers.filter(
+        (l) =>
+          l.visible &&
+          "presetId" in l.source &&
+          l.source.presetId !== "sphere" &&
+          l.source.params.particleStyle,
+      ).length * (this.options.lowQuality ? 6 : 12);
     const counts = particleCounts(
       scene.layers,
-      this.options.lowQuality ? 300 : 1000,
+      Math.max(0, (this.options.lowQuality ? 300 : 1000) - growthParticleCount),
       this.options.lowQuality ? 50 : 180,
     );
     const body = scene.layers.find((l) => l.id === planetBodyId);
@@ -1165,6 +1189,36 @@ export class SceneRenderer {
           .fill({ color: p.color, alpha: p.glowIntensity * 0.25 });
         glow.filters = [new BlurFilter({ strength: 18, quality: 2 })];
         node.addChildAt(glow, 0);
+        if (p.particleStyle) {
+          const dust = new Container();
+          dust.eventMode = "none";
+          const count = this.options.lowQuality ? 6 : 12;
+          for (let i = 0; i < count; i++) {
+            const angle =
+              (i * Math.PI * 2) / count + ((p.seed % 360) * Math.PI) / 180;
+            const dot = new Graphics()
+              .circle(0, 0, p.particleStyle === "stardust" ? 1.4 : 2.5)
+              .fill({ color: p.color, alpha: 0.65 });
+            dot.position.set(Math.cos(angle) * 100, Math.sin(angle) * 85);
+            dust.addChild(dot);
+          }
+          node.addChild(dust);
+          this.effectUpdates.push((seconds) => {
+            dust.children.forEach((dot, i) => {
+              const angle =
+                (i * Math.PI * 2) / count +
+                ((p.seed % 360) * Math.PI) / 180 +
+                seconds * p.motionSpeed * 0.2;
+              dot.position.set(
+                Math.cos(angle) * (100 + Math.sin(seconds + i) * 8),
+                Math.sin(angle) * 85,
+              );
+              dot.alpha = 0.55 + 0.35 * Math.sin(seconds * p.motionSpeed + i);
+            });
+          });
+          this.particleCount += count;
+          this.app.canvas.dataset.particleCount = String(this.particleCount);
+        }
         node.eventMode = "static";
         node.cursor = "pointer";
         node.on("pointertap", () => this.options.onGrowth?.(layer.id));
@@ -1298,6 +1352,19 @@ export class SceneRenderer {
         node.alpha,
         !!this.exteriorFrame && layer.kind === "image",
       );
+      if (this.birth?.id === layer.id) {
+        const progress = Math.min(
+          1,
+          (this.elapsed - this.birth.startedAt) / 0.85,
+        );
+        node.alpha *= progress;
+        const amount = 0.65 + 0.35 * (1 - Math.pow(1 - progress, 3));
+        node.scale.set(t.scaleX * amount, t.scaleY * amount);
+        if (progress >= 1) {
+          this.birth = null;
+          this.app.canvas.dataset.birthActive = "false";
+        }
+      }
     }
     this.applyAttachments();
   }

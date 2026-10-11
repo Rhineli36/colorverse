@@ -18,8 +18,9 @@ def add(page, title, path):
     dialog.get_by_label('作品标题', exact=True).fill(title)
     dialog.get_by_label('作品图片', exact=True).set_input_files(str(path))
     dialog.get_by_label('色彩与情绪关键词', exact=True).fill('温暖 自然')
-    dialog.get_by_role('button', name='保存作品档案', exact=True).click()
+    dialog.get_by_role('button', name='提交展示作品', exact=True).click()
     expect(dialog).to_have_count(0)
+    page.get_by_role('button', name='编辑这颗星球 ↗', exact=True).click()
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, channel='chrome' if os.name == 'nt' else None, args=['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width':1440,'height':1000}, reduced_motion='reduce', accept_downloads=True)
@@ -36,7 +37,7 @@ with sync_playwright() as p:
     page.get_by_role('button', name='添加展示作品 ↗', exact=True).click()
     dialog = page.get_by_role('dialog', name='添加展示作品', exact=True)
     expect(dialog.get_by_label('作品标题', exact=True)).to_be_focused()
-    expect(dialog.get_by_role('button', name='保存作品档案', exact=True)).to_be_disabled()
+    expect(dialog.get_by_role('button', name='提交展示作品', exact=True)).to_be_disabled()
     dialog.get_by_role('button', name='取消', exact=True).click()
     assert current(page)['archiveEntries'] == before['archiveEntries']
     passed('cancel and empty form leave existing archives and scenes untouched')
@@ -44,7 +45,7 @@ with sync_playwright() as p:
     dialog = page.get_by_role('dialog', name='添加展示作品', exact=True)
     dialog.get_by_label('作品标题', exact=True).fill('无效图片')
     dialog.get_by_label('作品图片', exact=True).set_input_files({'name':'bad.webp','mimeType':'image/webp','buffer':b'not an image'})
-    dialog.get_by_role('button', name='保存作品档案', exact=True).click()
+    dialog.get_by_role('button', name='提交展示作品', exact=True).click()
     expect(dialog.get_by_role('alert')).to_be_visible()
     assert current(page)['archiveEntries'] == before['archiveEntries']
     dialog.get_by_role('button', name='取消', exact=True).click()
@@ -53,33 +54,26 @@ with sync_playwright() as p:
     add(page, '浏览器展示作品', path)
     saved = current(page)
     archive = next(a for a in saved['archiveEntries'] if a['sourceType'] == 'student')
-    assert saved['exterior'] == before['exterior'] and saved['interior'] == before['interior'] and not saved['growthEvents']
+    assert saved['exterior'] == before['exterior'] and saved['interior']['background'] == before['interior']['background'] and saved['growthEvents'][0]['status'] == 'accepted'
     record = next(a for a in saved['assetRefs'] if a['assetId'] == archive['imageAssetIds'][0])
     assert record['original']['sha256'] == hashlib.sha256(path.read_bytes()).hexdigest()
     assert not record['rights']['consentToPublish'] and len(record['variants']) == 2
-    passed('real upload saves an independent archive, immutable original and two bounded variants without growth or publication consent')
+    passed('real upload saves an independent archive, immutable original and two bounded variants with one automatic growth and without publication consent')
     card = page.locator('.showcase-work').filter(has_text='浏览器展示作品')
     card.get_by_role('button', name='查看作品', exact=True).click()
     expect(page.get_by_role('dialog')).to_contain_text('浏览器展示作品')
     expect(page.get_by_role('dialog').get_by_role('img', name='浏览器展示作品', exact=True)).to_be_visible()
     page.locator('.modal-close').click()
     passed('archive artwork is immediately viewable')
-    card.get_by_role('button', name='生成成长建议', exact=True).click()
-    expect(page.get_by_role('button', name='接受并保存', exact=True)).to_be_visible()
-    proposed = current(page)
-    assert len(proposed['growthEvents']) == 1 and proposed['growthEvents'][0]['provider']['kind'] == 'rules'
-    assert proposed['interior']['layers'] == before['interior']['layers']
-    page.get_by_label('成长颜色', exact=True).fill('#d87040')
-    page.get_by_label('成长水平位置', exact=True).fill('0.6')
-    page.get_by_label('成长垂直位置', exact=True).fill('0.4')
-    page.get_by_label('成长大小', exact=True).fill('0.7')
-    page.get_by_role('button', name='接受并保存', exact=True).click()
-    expect(card.get_by_role('button', name='已接受成长', exact=True)).to_be_disabled()
+    card.get_by_role('button', name='编辑生长元素', exact=True).click()
+    page.get_by_label('元素颜色', exact=True).fill('#d87040')
+    page.get_by_label('元素大小', exact=True).fill('0.7')
+    page.get_by_role('button', name='确定并返回', exact=True).click()
     accepted = current(page)
     assert accepted['interior']['layers'][-1]['transform']['scaleX'] == 0.7
-    assert accepted['growthEvents'][0]['elements'][0]['params']['color'] == '#d87040'
+    assert accepted['interior']['layers'][-1]['source']['params']['color'] == '#d87040'
     assert accepted['growthEvents'][0]['trigger']['archiveEntryId'] == archive['id']
-    passed('rule preview stays outside saved scene until accepting adjusted color/position/size as an independent layer')
+    passed('optional dedicated edit saves adjusted color and size without changing source identity')
     page.get_by_role('button', name='查看成长来源', exact=True).click()
     expect(page.get_by_role('dialog')).to_contain_text('浏览器展示作品'); page.locator('.modal-close').click()
     passed('growth source opens the uploaded work instead of the sample archive')
@@ -93,11 +87,12 @@ with sync_playwright() as p:
     passed('refresh retains growth; compensation removes only its layer and preserves the work')
     add(page, '跳过成长的作品', path)
     second = page.locator('.showcase-work').filter(has_text='跳过成长的作品')
-    second.get_by_role('button', name='生成成长建议', exact=True).click()
-    page.get_by_role('button', name='跳过这次成长', exact=True).click()
-    expect(second.get_by_role('button', name='已跳过成长', exact=True)).to_be_disabled()
+    second.get_by_role('button', name='编辑生长元素', exact=True).click()
+    page.get_by_label('元素颜色', exact=True).fill('#555555')
+    page.get_by_role('button', name='取消修改并返回', exact=True).click()
     assert len([a for a in current(page)['archiveEntries'] if a['sourceType'] == 'student']) == 2
-    passed('skipping growth retains the second work and prevents duplicate growth')
+    assert current(page)['growthEvents'][-1]['status'] == 'accepted'
+    passed('canceling optional edits keeps the second work and its automatic element')
     with page.expect_download() as info:
         page.get_by_role('button', name='导出作品 ZIP ↗', exact=True).click()
     info.value.save_as(str(ROOT / 'work/showcase-browser.zip'))
@@ -106,7 +101,7 @@ with sync_playwright() as p:
     page.get_by_role('button', name='进入星球预览 ↗', exact=True).click()
     page.get_by_role('button', name='跳过成长的作品 ↗', exact=True).click()
     expect(page.get_by_role('dialog')).to_contain_text('跳过成长的作品'); page.locator('.modal-close').click()
-    passed('viewing mode exposes saved artwork even when its growth was skipped')
+    passed('viewing mode exposes saved artwork with its automatically generated element')
     page.get_by_role('button', name='编辑这颗星球 ↗', exact=True).click()
     page.set_viewport_size({'width':390,'height':844})
     page.get_by_role('button', name='添加展示作品 ↗', exact=True).click()

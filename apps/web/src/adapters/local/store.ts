@@ -3,6 +3,7 @@ import type {
   PlanetDocument,
   UniverseDocument,
   AssetRecord,
+  Layer,
 } from "@colorverse/contracts";
 import type { WorkspaceRepository, AssetStore } from "@colorverse/application";
 import {
@@ -10,6 +11,7 @@ import {
   DomainError,
   assertPlanetMove,
   upgradeUniverse,
+  updateGrowthElement,
   type LayoutActor,
 } from "@colorverse/domain";
 import { UniverseSchema, MotionSchema } from "@colorverse/contracts";
@@ -80,6 +82,47 @@ export class LocalWorkspace implements WorkspaceRepository, AssetStore {
     const u = (await (await this.db).getAll("universes"))[0];
     if (!u) throw new DomainError("NOT_FOUND", "宇宙尚未初始化");
     return UniverseSchema.parse(u);
+  }
+  async updateElement(
+    planetId: string,
+    layer: Layer,
+    revision: number,
+    actor: LayoutActor,
+  ) {
+    const tx = (await this.db).transaction(
+      ["ownership", "planets", "revisions"],
+      "readwrite",
+    );
+    try {
+      assertPlanetMove(
+        actor,
+        (await tx.objectStore("ownership").get(planetId)) ?? null,
+      );
+      const current = await tx.objectStore("planets").get(planetId);
+      if (!current || current.revision !== revision)
+        throw new DomainError(
+          "REVISION_CONFLICT",
+          "另一个窗口已修改星球，请保留调整并重新打开元素",
+        );
+      const saved = {
+        ...updateGrowthElement(current, layer),
+        revision: revision + 1,
+      };
+      await tx.objectStore("planets").put(saved, planetId);
+      await tx
+        .objectStore("revisions")
+        .put(saved, `${planetId}:${saved.revision}`);
+      await tx.done;
+      return saved;
+    } catch (error) {
+      try {
+        tx.abort();
+      } catch {
+        /* already closed */
+      }
+      await tx.done.catch(() => {});
+      throw error;
+    }
   }
   async saveWithAssets(
     doc: PlanetDocument,

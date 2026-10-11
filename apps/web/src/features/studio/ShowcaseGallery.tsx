@@ -67,15 +67,22 @@ export function ShowcaseGallery({
                   查看作品
                 </button>
                 <button
-                  disabled={busy || (!!event && event.status !== "proposed")}
+                  disabled={
+                    busy ||
+                    (!!event &&
+                      event.status !== "proposed" &&
+                      event.status !== "accepted")
+                  }
                   onClick={() => onGrow(work.id)}
                 >
                   {!event
-                    ? "生成成长建议"
+                    ? "生成生长元素"
                     : event.status === "proposed"
-                      ? "继续预览成长"
+                      ? event.provider.adapter === "showcase-auto-v3"
+                        ? "重试生长"
+                        : "继续预览成长"
                       : event.status === "accepted"
-                        ? "已接受成长"
+                        ? "编辑生长元素"
                         : event.status === "rejected"
                           ? "已跳过成长"
                           : "成长已撤销"}

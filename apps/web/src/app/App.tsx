@@ -2,6 +2,7 @@ import { download } from "./download";
 import { CourseView } from "../features/course/CourseView";
 import { TeacherView } from "../features/teacher-demo/TeacherView";
 import { StudioView } from "../features/studio/StudioView";
+import { ElementEditorView } from "../features/studio/ElementEditorView";
 import {
   ShowcaseDialog,
   type ShowcaseInput,
@@ -36,6 +37,7 @@ import {
 } from "@colorverse/domain";
 import {
   GrowthService,
+  GrowthElementService,
   ShowcaseService,
   growthOverlay,
   UniverseLayoutService,
@@ -55,12 +57,13 @@ import { useEditor } from "../features/studio/editor-store";
 const workspace = new LocalWorkspace(),
   growth = new GrowthService(workspace),
   showcase = new ShowcaseService(workspace, sha256),
+  elementService = new GrowthElementService(workspace),
   layoutService = new UniverseLayoutService(workspace);
 export function App() {
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
     [universe, setUniverse] = useState<UniverseDocument | null>(null),
     [route, setRoute] = useState<
-      "universe" | "studio" | "room" | "teacher" | "course"
+      "universe" | "studio" | "room" | "teacher" | "course" | "element"
     >("universe"),
     [activeId, setActiveId] = useState<string | null>(null),
     [hover, setHover] = useState<string | null>(null),
@@ -75,6 +78,13 @@ export function App() {
     [saving, setSaving] = useState(false),
     [modal, setModal] = useState<Hotspot | null>(null),
     [proposal, setProposal] = useState<GrowthEvent | null>(null),
+    [elementSession, setElementSession] = useState<{
+      document: PlanetDocument;
+      initial: Layer;
+      returnRoute: "studio" | "room";
+    } | null>(null),
+    [elementDirty, setElementDirty] = useState(false),
+    [birthLayerId, setBirthLayerId] = useState<string | null>(null),
     [report, setReport] = useState<PackageReport | null>(null),
     [camera, setCamera] = useState({ x: 0, y: 0, zoom: 1 }),
     [universeViewMode, setUniverseViewMode] =
@@ -87,6 +97,9 @@ export function App() {
     saveLock = useRef<Promise<void> | null>(null),
     importInput = useRef<HTMLInputElement>(null);
   const doc = editor.document;
+  useEffect(() => {
+    if (route !== "room") setBirthLayerId(null);
+  }, [route]);
   const refresh = useCallback(async () => {
     const [p, u, owners] = await Promise.all([
       workspace.list(),
@@ -104,13 +117,13 @@ export function App() {
   }, [refresh]);
   useEffect(() => {
     const listener = (e: BeforeUnloadEvent) => {
-      if (useEditor.getState().dirty || coursePending || busy) {
+      if (useEditor.getState().dirty || elementDirty || coursePending || busy) {
         e.preventDefault();
       }
     };
     window.addEventListener("beforeunload", listener);
     return () => window.removeEventListener("beforeunload", listener);
-  }, [coursePending, busy]);
+  }, [coursePending, busy, elementDirty]);
   const flush = useCallback(async () => {
     while (saveLock.current) await saveLock.current;
     if (!useEditor.getState().dirty) return;
@@ -144,6 +157,10 @@ export function App() {
   }, [editor.document, editor.dirty, flush]);
   const action = async (fn: () => Promise<void>) => {
     if (busy) return;
+    if (route === "element") {
+      setNotice("请先确定或取消元素修改，再离开元素编辑器。");
+      return;
+    }
     if (route === "course" && coursePending) {
       setNotice("请先保存作业草稿，并等待当前操作完成，再离开课堂。");
       return;
@@ -165,6 +182,7 @@ export function App() {
     setActiveId(id);
     setProposal(null);
     setModal(null);
+    setBirthLayerId(null);
     setRoute(to);
   };
   const back = () =>
@@ -444,6 +462,34 @@ export function App() {
       action: { type: "openArchive", archiveEntryId },
     });
   };
+  const openElement = (id: string) => {
+    if (!doc) return;
+    if (
+      layoutRole !== "teacher" &&
+      ownership[doc.planetId] !== "demo-student-1"
+    ) {
+      showGrowthSource(id);
+      return;
+    }
+    void action(async () => {
+      await flush();
+      const document = await workspace.get(doc.planetId);
+      const initial = [
+        ...document.interior.layers,
+        ...document.exterior.scene.layers,
+      ].find((l) => l.id === id);
+      if (!initial) throw new Error("元素已移除，请重新打开星球");
+      editor.load(document);
+      setElementSession({
+        document,
+        initial,
+        returnRoute: route === "room" ? "room" : "studio",
+      });
+      setBirthLayerId(null);
+      setModal(null);
+      setRoute("element");
+    });
+  };
   const saveShowcase = async (input: ShowcaseInput) => {
     if (!doc || busy) throw new Error("请等待当前操作完成");
     setBusy(true);
@@ -471,10 +517,29 @@ export function App() {
         prepared.files,
       );
       editor.load(saved);
-      setNotice("作品档案已保存，可以选择生成成长建议。");
+      setShowcaseOpen(false);
+      try {
+        const result = await showcase.grow(
+          saved.planetId,
+          saved.archiveEntries.at(-1)!.id,
+        );
+        editor.load(result.document);
+        setProposal(null);
+        setSceneKind("interior");
+        setBirthLayerId(
+          result.created ? result.event.elements[0].layerId : null,
+        );
+        setRoute("room");
+        setNotice("作品已提交，小元素已经长出来了。点击它可以修改造型和细节。");
+      } catch (e) {
+        editor.load(await workspace.get(saved.planetId));
+        setNotice(
+          `作品已保存；生长暂未完成：${e instanceof Error ? e.message : "请重试"}。可在展示作品列表重试生长。`,
+        );
+      }
       // A refresh error after commit must not invite saving a second archive.
       await refresh().catch(() =>
-        setNotice("作品档案已保存；列表刷新失败，请重新打开页面查看。"),
+        setNotice("作品已保存；列表刷新失败，请重新打开页面查看。"),
       );
     } finally {
       setBusy(false);
@@ -737,6 +802,35 @@ export function App() {
           setRoute={setRoute}
           setModal={setModal}
           showGrowthSource={showGrowthSource}
+          onEditElement={openElement}
+          birthLayerId={birthLayerId}
+        />
+      )}
+      {route === "element" && elementSession && (
+        <ElementEditorView
+          key={elementSession.initial.id}
+          assets={workspace}
+          doc={elementSession.document}
+          initial={elementSession.initial}
+          onDirty={setElementDirty}
+          onSave={async (layer, revision) => {
+            const saved = await elementService.save(
+              elementSession.document.planetId,
+              layer,
+              revision,
+              { role: layoutRole, userId: "demo-student-1" },
+            );
+            editor.load(saved);
+            setNotice("元素修改已保存。");
+            await refresh().catch(() =>
+              setNotice("元素已保存；列表刷新失败，请重新打开页面查看。"),
+            );
+          }}
+          onClose={() => {
+            setElementDirty(false);
+            setRoute(elementSession.returnRoute);
+            setElementSession(null);
+          }}
         />
       )}
       {route === "studio" && doc && currentScene && preview && (
@@ -758,6 +852,7 @@ export function App() {
           setModal={setModal}
           setProposal={setProposal}
           showGrowthSource={showGrowthSource}
+          onEditElement={openElement}
           action={action}
           flush={flush}
           refresh={refresh}
@@ -770,10 +865,44 @@ export function App() {
           onGrowArchive={(id) =>
             void action(async () => {
               await flush();
-              const event = await showcase.propose(doc.planetId, id);
-              editor.load(await workspace.get(doc.planetId));
-              setSceneKind("interior");
-              setProposal(event);
+              const existing = doc.growthEvents.find(
+                (e) =>
+                  e.trigger.kind === "archive" &&
+                  e.trigger.archiveEntryId === id,
+              );
+              if (existing?.status === "accepted") {
+                if (
+                  layoutRole !== "teacher" &&
+                  ownership[doc.planetId] !== "demo-student-1"
+                ) {
+                  showGrowthSource(existing.elements[0].layerId);
+                  return;
+                }
+                const document = await workspace.get(doc.planetId);
+                const initial = document.interior.layers.find(
+                  (l) => l.id === existing.elements[0].layerId,
+                );
+                if (!initial) throw new Error("元素已移除");
+                setElementSession({ document, initial, returnRoute: "studio" });
+                editor.load(document);
+                setRoute("element");
+              } else if (
+                existing?.status === "proposed" &&
+                existing.provider.adapter !== "showcase-auto-v3"
+              ) {
+                editor.load(await workspace.get(doc.planetId));
+                setSceneKind("interior");
+                setProposal(existing);
+              } else {
+                const result = await showcase.grow(doc.planetId, id);
+                editor.load(result.document);
+                setProposal(null);
+                setSceneKind("interior");
+                setBirthLayerId(
+                  result.created ? result.event.elements[0].layerId : null,
+                );
+                setRoute("room");
+              }
               await refresh();
             })
           }

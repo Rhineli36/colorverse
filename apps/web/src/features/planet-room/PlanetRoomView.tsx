@@ -1,6 +1,7 @@
 import type { PlanetDocument, Hotspot } from "@colorverse/contracts";
 import type { AssetStore } from "@colorverse/application";
 import { SceneCanvas } from "../../app/SceneCanvas";
+import { GrowthPresets } from "@colorverse/contracts";
 interface Props {
   workspace: AssetStore;
   doc: PlanetDocument;
@@ -10,6 +11,8 @@ interface Props {
   setModal: (h: Hotspot) => void;
   showGrowthSource: (id: string) => void;
   canEdit: boolean;
+  onEditElement: (id: string) => void;
+  birthLayerId: string | null;
 }
 
 export function PlanetRoomView({
@@ -21,6 +24,8 @@ export function PlanetRoomView({
   setModal,
   showGrowthSource,
   canEdit,
+  onEditElement,
+  birthLayerId,
 }: Props) {
   return (
     <main className="room-main">
@@ -28,7 +33,11 @@ export function PlanetRoomView({
         assets={workspace}
         planet={preview}
         scene={preview.interior}
-        options={{ onHotspot: setModal, onGrowth: showGrowthSource }}
+        birthLayerId={birthLayerId}
+        options={{
+          onHotspot: setModal,
+          onGrowth: canEdit ? onEditElement : showGrowthSource,
+        }}
       />
       <div className="room-title">
         <button className="outline small" onClick={() => void back()}>
@@ -52,6 +61,32 @@ export function PlanetRoomView({
         )}
       </div>
       <div className="archive-buttons">
+        {doc.growthEvents
+          .filter((e) => e.status === "accepted")
+          .flatMap((e) => e.elements)
+          .map((el) => {
+            const source = doc.interior.layers.find(
+              (l) => l.id === el.layerId,
+            )?.source;
+            const presetId =
+              source && "presetId" in source && source.presetId !== "sphere"
+                ? source.presetId
+                : el.presetId;
+            return (
+              <button
+                className="outline small"
+                key={el.layerId}
+                onClick={() =>
+                  canEdit
+                    ? onEditElement(el.layerId)
+                    : showGrowthSource(el.layerId)
+                }
+              >
+                {canEdit ? "编辑元素" : "查看元素来源"} ·{" "}
+                {GrowthPresets[presetId].name}
+              </button>
+            );
+          })}
         {doc.archiveEntries
           .filter((a) => a.sourceType === "student")
           .map((a) => (

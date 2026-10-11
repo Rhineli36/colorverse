@@ -14,6 +14,7 @@ export * from "./scene-reset";
 export * from "./course";
 export * from "./showcase";
 export * from "./growth-geometry";
+export * from "./growth-element";
 export class DomainError extends Error {
   constructor(
     public code: string,
@@ -35,6 +36,7 @@ export function validatePlanet(input: unknown): PlanetDocument {
     "image-crop@1",
     "showcase@1",
     GROWTH_LIBRARY_CAPABILITY,
+    "growth-particles@1",
   ];
   if (doc.requiredCapabilities.some((c) => !supported.includes(c)))
     throw new DomainError("UNSUPPORTED_VERSION", "作品需要尚不支持的功能");
@@ -80,6 +82,16 @@ export function validatePlanet(input: unknown): PlanetDocument {
     const layerIds = new Set(scene.layers.map((l) => l.id));
     for (const l of scene.layers) {
       add(l.id);
+      if (
+        "presetId" in l.source &&
+        l.source.presetId !== "sphere" &&
+        l.source.params.particleStyle &&
+        !doc.requiredCapabilities.includes("growth-particles@1")
+      )
+        throw new DomainError(
+          "VALIDATION_FAILED",
+          "元素粒子需要声明 growth-particles@1 能力",
+        );
       if (
         "presetId" in l.source &&
         l.source.presetId !== "sphere" &&
@@ -201,6 +213,14 @@ export function validatePlanet(input: unknown): PlanetDocument {
     )
       throw new DomainError("VALIDATION_FAILED", "成长来源档案不存在");
     for (const el of e.elements) {
+      if (
+        el.params.particleStyle &&
+        !doc.requiredCapabilities.includes("growth-particles@1")
+      )
+        throw new DomainError(
+          "VALIDATION_FAILED",
+          "元素粒子需要声明 growth-particles@1 能力",
+        );
       if (
         GrowthPresets[el.presetId].capability === GROWTH_LIBRARY_CAPABILITY &&
         !doc.requiredCapabilities.includes(GROWTH_LIBRARY_CAPABILITY)
