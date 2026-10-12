@@ -29,9 +29,11 @@ export async function classroomRequest(path: string, init: RequestInit = {}) {
 export function CloudClassroomView({
   session,
   initialClassId,
+  onPendingChange,
 }: {
   session: CloudSession | null;
   initialClassId?: string;
+  onPendingChange?: (pending: boolean) => void;
 }) {
   const memberships =
     session?.access === "active"
@@ -93,6 +95,7 @@ export function CloudClassroomView({
         session={session}
         initialClassId={classId}
         initialPlanetId={viewPlanet}
+        onPendingChange={onPendingChange}
         onBack={() => {
           setViewPlanet(null);
           setRefresh((n) => n + 1);

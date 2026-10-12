@@ -10,9 +10,11 @@ import "./auth.css";
 export function AuthEntry({
   onSession,
   onEnter,
+  hasPendingChanges = false,
 }: {
   onSession?: (session: CloudSession | null) => void;
   onEnter?: (membership: CloudMembership) => Promise<boolean>;
+  hasPendingChanges?: boolean;
 }) {
   const [client] = useState(getAuthClient);
   const [open, setOpen] = useState(false);
@@ -30,15 +32,19 @@ export function AuthEntry({
   const dialog = useRef<HTMLDialogElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
+  const verifiedSubject = useRef<string | null>(null);
   useEffect(() => {
     if (!client) return;
     let active = true;
-    const refresh = async () => {
-      const current = ++generation.current;
-      setChecking(true);
+    const invalidate = () => {
+      verifiedSubject.current = null;
       setIdentity(null);
       setMemberships([]);
       onSession?.(null);
+    };
+    const refresh = async () => {
+      const current = ++generation.current;
+      setChecking(true);
       try {
         const {
           data: { session },
@@ -46,10 +52,13 @@ export function AuthEntry({
         if (!active || current !== generation.current) return;
         setHasSession(Boolean(session));
         if (!session) {
-          setIdentity(null);
+          invalidate();
           setMessage("");
           return;
         }
+        // A renewal of the same identity keeps the editor mounted during verification.
+        // Sign-out, account changes and failed verification must still revoke cached access.
+        if (verifiedSubject.current !== session.user.id) invalidate();
         const response = await fetch("/api/v1/cloud/session", {
           headers: { Authorization: `Bearer ${session.access_token}` },
           cache: "no-store",
@@ -57,13 +66,16 @@ export function AuthEntry({
         });
         if (!active || current !== generation.current) return;
         if (response.status === 401) {
-          setIdentity(null);
+          invalidate();
           setMessage("登录已失效，请重新登录");
           return;
         }
         if (!response.ok) throw new Error("unavailable");
         const result = CloudSessionSchema.parse(await response.json());
         if (!active || current !== generation.current) return;
+        if (result.identity.id !== session.user.id)
+          throw new Error("identity-mismatch");
+        verifiedSubject.current = result.identity.id;
         setIdentity(result.identity.email);
         setMemberships(result.memberships);
         setSelectedClass((current) =>
@@ -85,7 +97,7 @@ export function AuthEntry({
         );
       } catch {
         if (active && current === generation.current) {
-          setIdentity(null);
+          invalidate();
           setMessage(
             "暂时无法验证云端身份，请稍后重试。当前仍可浏览本机演示。",
           );
@@ -97,7 +109,15 @@ export function AuthEntry({
     // Do not call asynchronous auth methods inside the SDK's locked callback.
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange(() => {
+    } = client.auth.onAuthStateChange((_event, session) => {
+      if (
+        !session ||
+        (verifiedSubject.current && verifiedSubject.current !== session.user.id)
+      ) {
+        generation.current++;
+        invalidate();
+        setHasSession(Boolean(session));
+      }
       queueMicrotask(() => {
         if (active) void refresh();
       });
@@ -216,7 +236,7 @@ export function AuthEntry({
             </button>
             <button
               className="outline"
-              disabled={busy}
+              disabled={busy || hasPendingChanges}
               onClick={async () => {
                 setBusy(true);
                 try {
@@ -225,6 +245,7 @@ export function AuthEntry({
                   });
                   if (error) setMessage("退出失败，请稍后重试");
                   else {
+                    verifiedSubject.current = null;
                     setIdentity(null);
                     setMemberships([]);
                     onSession?.(null);
@@ -241,6 +262,11 @@ export function AuthEntry({
             >
               {busy ? "正在退出…" : "退出登录"}
             </button>
+            {hasPendingChanges && (
+              <p className="muted">
+                请先保存或取消当前修改，再切换课堂或退出登录。
+              </p>
+            )}
           </>
         ) : (
           <form

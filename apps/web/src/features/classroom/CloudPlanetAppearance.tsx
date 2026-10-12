@@ -80,6 +80,7 @@ export function CloudPlanetAppearance({
   run,
   onSaved,
   onClose,
+  onDirtyChange,
   initialSection = "exterior",
 }: {
   classId: string;
@@ -89,6 +90,7 @@ export function CloudPlanetAppearance({
   run: (fn: () => Promise<void>) => Promise<void>;
   onSaved: () => Promise<unknown>;
   onClose: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
   initialSection?: AppearanceSection;
 }) {
   const [section, setSection] = useState(initialSection);
@@ -103,6 +105,19 @@ export function CloudPlanetAppearance({
     Partial<Record<"exterior" | "interior", File>>
   >({});
   const [status, setStatus] = useState("");
+  const dirty =
+    name !== document.metadata.name ||
+    summary !== document.metadata.summary ||
+    skin !== document.skin ||
+    color !== document.color ||
+    atmosphere !== document.atmosphere ||
+    brightness !== document.brightness ||
+    saturation !== document.saturation ||
+    Boolean(files.exterior || files.interior);
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const [requests, setRequests] = useState({
     exterior: crypto.randomUUID(),
     interior: crypto.randomUUID(),
@@ -175,10 +190,27 @@ export function CloudPlanetAppearance({
           <p className="eyebrow">MAKE IT YOURS</p>
           <h2>让这颗星球成为你的作品</h2>
         </div>
-        <button disabled={busy} onClick={onClose}>
+        <button
+          disabled={busy}
+          onClick={() => {
+            if (dirty)
+              setStatus(
+                "还有未保存的修改。请逐项保存，或点击「放弃未保存修改」。",
+              );
+            else onClose();
+          }}
+        >
           完成设置
         </button>
       </div>
+      {dirty && (
+        <div className="row-buttons">
+          <p className="muted">当前有未保存的修改，切换分类会保留这些内容。</p>
+          <button disabled={busy} className="outline" onClick={onClose}>
+            放弃未保存修改
+          </button>
+        </div>
+      )}
       <div className="cloud-settings-tabs" aria-label="星球设置分类">
         {sections.map((s) => (
           <button

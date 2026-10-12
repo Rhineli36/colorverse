@@ -82,11 +82,13 @@ export function CloudGallery({
   initialPlanetId,
   initialClassId,
   onBack,
+  onPendingChange,
 }: {
   session: CloudSession;
   initialPlanetId?: string;
   initialClassId?: string;
   onBack?: () => void;
+  onPendingChange?: (pending: boolean) => void;
 }) {
   const memberships = session.access === "active" ? session.memberships : [],
     [classId, setClassId] = useState(
@@ -106,6 +108,7 @@ export function CloudGallery({
     [title, setTitle] = useState(""),
     [description, setDescription] = useState(""),
     [settingsOpen, setSettingsOpen] = useState(false),
+    [appearanceDirty, setAppearanceDirty] = useState(false),
     [settingsSection, setSettingsSection] =
       useState<AppearanceSection>("exterior"),
     [guide, setGuide] = useState<z.infer<typeof CloudGuideSchema> | null>(null),
@@ -128,6 +131,12 @@ export function CloudGallery({
     stage = useRef<HTMLDivElement>(null),
     settings = useRef<HTMLDivElement>(null),
     social = useRef<HTMLElement>(null);
+  const pending =
+    busy || editing || uploadOpen || appearanceDirty || Boolean(comment.trim());
+  useEffect(() => {
+    onPendingChange?.(pending);
+  }, [pending, onPendingChange]);
+  useEffect(() => () => onPendingChange?.(false), [onPendingChange]);
   const refresh = async (select?: string) => {
     const result = Gallery.parse(
       await (await classroomRequest(`classes/${classId}/planets`)).json(),
@@ -333,6 +342,7 @@ export function CloudGallery({
       birth ||
       planetBirth ||
       uploadOpen ||
+      appearanceDirty ||
       work
     )
       return;
@@ -402,10 +412,14 @@ export function CloudGallery({
           </p>
         </div>
         <div className="row-buttons">
-          {onBack && <button onClick={onBack}>返回班级统计</button>}
+          {onBack && (
+            <button disabled={pending} onClick={onBack}>
+              返回班级统计
+            </button>
+          )}
           <select
             aria-label="作品班级"
-            disabled={busy}
+            disabled={pending}
             value={classId}
             onChange={(e) => {
               setWork(null);
@@ -420,7 +434,7 @@ export function CloudGallery({
             ))}
           </select>
           <button
-            disabled={busy}
+            disabled={pending}
             onClick={() =>
               void perform(async () => {
                 await refresh();
@@ -479,7 +493,9 @@ export function CloudGallery({
             busy ||
             editing ||
             Boolean(birth || planetBirth || work) ||
-            uploadOpen
+            uploadOpen ||
+            appearanceDirty ||
+            Boolean(comment.trim())
           }
           error={guideError}
           onRetry={() => setGuideRevision((r) => r + 1)}
@@ -490,7 +506,7 @@ export function CloudGallery({
         {data?.planets.map((p) => (
           <button
             key={p.id}
-            disabled={busy}
+            disabled={pending}
             aria-pressed={planetId === p.id}
             onClick={() => {
               setPlanetId(p.id);
@@ -529,14 +545,18 @@ export function CloudGallery({
             {owned && (
               <div className="row-buttons">
                 <button
-                  disabled={busy || editing || Boolean(planetBirth)}
+                  disabled={
+                    busy || editing || appearanceDirty || Boolean(planetBirth)
+                  }
                   onClick={() => setSettingsOpen((v) => !v)}
                 >
                   编辑星球外貌与背景
                 </button>
                 <button
                   className="primary"
-                  disabled={busy || editing || Boolean(planetBirth)}
+                  disabled={
+                    busy || editing || appearanceDirty || Boolean(planetBirth)
+                  }
                   onClick={() => {
                     requestId.current = crypto.randomUUID();
                     setTitle("");
@@ -562,6 +582,7 @@ export function CloudGallery({
                 run={perform}
                 onSaved={() => refresh(selected.id)}
                 onClose={() => setSettingsOpen(false)}
+                onDirtyChange={setAppearanceDirty}
               />
             </div>
           )}

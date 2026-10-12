@@ -73,3 +73,5 @@
 40. [学生新手任务与设置分类](40-student-guided-tasks.md)
 
 41. [教师入口与恒星视觉区分](41-teacher-navigation-and-emissive-stars.md)
+
+42. [登录续期、未提交内容与云端入口](42-pilot-session-continuity.md)

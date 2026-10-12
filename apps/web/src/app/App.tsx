@@ -91,6 +91,12 @@ export function App() {
     cloudSession?.access === "active" &&
     cloudSession.memberships.some((m) => m.role === "teacher");
   const [cloudEntry, setCloudEntry] = useState({ classId: "", sequence: 0 });
+  const [cloudPending, setCloudPending] = useState(false);
+  const cloudStudent =
+    cloudSession?.access === "active" &&
+    cloudSession.cloudWrites &&
+    cloudSession.memberships.length > 0 &&
+    cloudSession.memberships.every((m) => m.role === "student");
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
     [universe, setUniverse] = useState<UniverseDocument | null>(null),
     [route, setRoute] = useState<
@@ -166,13 +172,19 @@ export function App() {
   }, [refresh]);
   useEffect(() => {
     const listener = (e: BeforeUnloadEvent) => {
-      if (useEditor.getState().dirty || elementDirty || coursePending || busy) {
+      if (
+        useEditor.getState().dirty ||
+        elementDirty ||
+        coursePending ||
+        cloudPending ||
+        busy
+      ) {
         e.preventDefault();
       }
     };
     window.addEventListener("beforeunload", listener);
     return () => window.removeEventListener("beforeunload", listener);
-  }, [coursePending, busy, elementDirty]);
+  }, [coursePending, cloudPending, busy, elementDirty]);
   const flush = useCallback(async () => {
     while (saveLock.current) await saveLock.current;
     if (!useEditor.getState().dirty) return;
@@ -206,6 +218,10 @@ export function App() {
   }, [editor.document, editor.dirty, flush]);
   const action = async (fn: () => Promise<void>) => {
     if (busy) return;
+    if (cloudPending) {
+      setNotice("请先保存或取消云端课堂中的修改，再离开当前页面。");
+      return;
+    }
     if (route === "element") {
       setNotice("请先确定或取消元素修改，再离开元素编辑器。");
       return;
@@ -635,6 +651,7 @@ export function App() {
       : undefined;
   const canEditCurrentPlanet =
     !!doc &&
+    !cloudStudent &&
     (layoutRole === "teacher" || ownership[doc.planetId] === "demo-student-1");
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
@@ -733,7 +750,7 @@ export function App() {
                 })
               }
             >
-              课堂作品
+              {cloudStudent ? "我的星球与作品" : "课堂作品"}
             </button>
           )}
           {cloudSession?.access === "active" &&
@@ -756,9 +773,9 @@ export function App() {
             className={route === "universe" ? "active" : ""}
             onClick={() => void back()}
           >
-            宇宙展览
+            {cloudStudent ? "宇宙演示" : "宇宙展览"}
           </button>
-          {myPlanet && (
+          {myPlanet && !cloudStudent && (
             <button
               className={route === "studio" ? "active" : ""}
               disabled={busy}
@@ -785,26 +802,30 @@ export function App() {
               教师演示
             </button>
           )}
-          <button
-            className={route === "course" ? "active" : ""}
-            onClick={() =>
-              void action(async () => {
-                await flush();
-                setRoute("course");
-              })
-            }
-          >
-            课程作业
-          </button>
+          {!cloudStudent && (
+            <button
+              className={route === "course" ? "active" : ""}
+              onClick={() =>
+                void action(async () => {
+                  await flush();
+                  setRoute("course");
+                })
+              }
+            >
+              课程作业
+            </button>
+          )}
         </nav>
         <div className="header-right">
           {cloudAuthEnabled && (
             <Suspense fallback={<span className="muted">连接账户…</span>}>
               <AuthEntry
                 onSession={setCloudSession}
+                hasPendingChanges={cloudPending}
                 onEnter={async (membership: CloudMembership) => {
                   if (
                     busy ||
+                    cloudPending ||
                     route === "element" ||
                     (route === "course" && coursePending) ||
                     cloudSession?.access !== "active" ||
@@ -832,7 +853,7 @@ export function App() {
               ? "云端课堂空间"
               : "本地创作空间"}
           </span>
-          {universe && !myPlanet && (
+          {universe && !myPlanet && !cloudStudent && (
             <button
               className="primary small"
               onClick={() => void createPlanet()}
@@ -843,6 +864,24 @@ export function App() {
           )}
         </div>
       </header>
+      {cloudStudent && route !== "cloudworks" && route !== "classroom" && (
+        <aside className="cloud-demo-guidance" aria-label="课堂入口提示">
+          <span>
+            这里是本地视觉演示。设计自己的星球、上传作品和拜访同学，请进入云端课堂。
+          </span>
+          <button
+            className="primary small"
+            onClick={() =>
+              void action(async () => {
+                await flush();
+                setRoute("cloudworks");
+              })
+            }
+          >
+            进入我的云端星球 →
+          </button>
+        </aside>
+      )}
       {notice && (
         <div className="notice" role="status">
           <span>{notice}</span>
@@ -867,6 +906,7 @@ export function App() {
           <CloudClassroomView
             key={`${cloudSession?.identity.id}-${cloudEntry.sequence}`}
             session={cloudSession}
+            onPendingChange={setCloudPending}
             initialClassId={cloudEntry.classId}
           />
         </Suspense>
@@ -877,6 +917,7 @@ export function App() {
             <CloudGallery
               key={`${cloudSession.identity.id}-${cloudEntry.sequence}`}
               session={cloudSession}
+              onPendingChange={setCloudPending}
               initialClassId={cloudEntry.classId}
             />
           </Suspense>
@@ -947,8 +988,9 @@ export function App() {
       {route === "room" && doc && preview && (
         <PlanetRoomView
           canEdit={
-            layoutRole === "teacher" ||
-            ownership[doc.planetId] === "demo-student-1"
+            !cloudStudent &&
+            (layoutRole === "teacher" ||
+              ownership[doc.planetId] === "demo-student-1")
           }
           workspace={workspace}
           doc={doc}

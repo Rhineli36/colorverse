@@ -2421,3 +2421,23 @@ p {
     width: min(285px, 88vw);
   }
 }
+.cloud-demo-guidance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  background: #183342;
+  color: #d5e8eb;
+  border-bottom: 1px solid #86c6ce38;
+}
+.cloud-demo-guidance button {
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .cloud-demo-guidance {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px 18px;
+  }
+}

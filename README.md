@@ -119,3 +119,5 @@ apps/web 的 features 分为 universe、studio、planet-room、teacher-demo 和 
 学生进入后的十项功能任务、自动进度、五类设置和实际云端验收见 [40](docs/40-student-guided-tasks.md)。刷新课堂测试版、确认进入自己的星球即可看到；没有其他学生星球时，拜访和互动任务等待同学加入。
 
 教师演示入口现在仅对服务端验证的教师账户显示；恒星已放大并调整为更透亮的发光外观。说明及验证见 [41](docs/41-teacher-navigation-and-emissive-stars.md)。包含本地教师操作的浏览器脚本需启用云端登录构建，使用隔离教师身份 fixture。
+
+正常登录续期现在保留云端上传表单和编辑内容；有未完成操作时保护导航和退出，星球设置需要保存或明确放弃。云端学生导航收起本地工坊和模拟课程入口，将「我的星球与作品」和「宇宙演示」区分。完整班级宇宙同步仍待完成；边界与试用前后续事项见 [42](docs/42-pilot-session-continuity.md)。新会话回归为 `python tests/cloud_session_continuity_browser.py`，使用隔离 Auth/API。
