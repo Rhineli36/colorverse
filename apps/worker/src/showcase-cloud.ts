@@ -212,10 +212,10 @@ export async function handleShowcaseCloud(
         const facts = (
           await client.query(
             `SELECT EXISTS(SELECT 1 FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.id<>$2 AND e.role='student' AND e.status='active' AND u.status='active') peers,
-          EXISTS(SELECT 1 FROM colorverse.showcase_works WHERE planet_id=$3) work,
-          EXISTS(SELECT 1 FROM colorverse.showcase_works WHERE planet_id=$3 AND revision>0) element,
-          EXISTS(SELECT 1 FROM colorverse.classroom_interactions i JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE i.actor_enrollment_id=$2 AND e.class_id=$1 AND e.id<>$2 AND i.kind IN ('like','emoji')) reaction,
-          EXISTS(SELECT 1 FROM colorverse.classroom_interactions i JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE i.actor_enrollment_id=$2 AND e.class_id=$1 AND e.id<>$2 AND i.kind='comment' AND length(trim(i.content))>0) comment`,
+          EXISTS(SELECT 1 FROM colorverse.showcase_works WHERE planet_id=$3 AND withdrawn_at IS NULL) work,
+          EXISTS(SELECT 1 FROM colorverse.showcase_works WHERE planet_id=$3 AND element_edited AND withdrawn_at IS NULL) element,
+          EXISTS(SELECT 1 FROM colorverse.classroom_interactions i JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id LEFT JOIN colorverse.showcase_works w ON w.id=i.work_id WHERE (i.work_id IS NULL OR w.withdrawn_at IS NULL) AND i.actor_enrollment_id=$2 AND e.class_id=$1 AND e.id<>$2 AND i.kind IN ('like','emoji')) reaction,
+          EXISTS(SELECT 1 FROM colorverse.classroom_interactions i JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id LEFT JOIN colorverse.showcase_works w ON w.id=i.work_id WHERE (i.work_id IS NULL OR w.withdrawn_at IS NULL) AND i.actor_enrollment_id=$2 AND e.class_id=$1 AND e.id<>$2 AND i.kind='comment' AND length(trim(i.content))>0) comment`,
             [classId, actor.id, own?.id ?? null],
           )
         ).rows[0];
@@ -240,8 +240,12 @@ export async function handleShowcaseCloud(
     }
     if (resource === "planets" && request.method === "GET") {
       const rows = await client.query(
-        `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' ORDER BY u.display_name`,
-        [classId],
+        `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision,'withdrawn',w.withdrawn_at IS NOT NULL,'canRestore',(w.withdrawn_at IS NULL OR w.withdrawn_by=p.owner_enrollment_id OR $3::boolean)) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$2::uuid OR $3::boolean)),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' ORDER BY u.display_name`,
+        [
+          classId,
+          actor.id,
+          actor.role === "teacher" || actor.role === "assistant",
+        ],
       );
       await client.query("COMMIT");
       return Response.json({ actorId: actor.id, planets: rows.rows });
@@ -484,8 +488,13 @@ export async function handleShowcaseCloud(
       if (!z.uuid().safeParse(fileMatch[1]).success)
         throw new ClassroomFailure(404, "NOT_FOUND", "作品不存在");
       const result = await client.query(
-        "SELECT w.storage_key,w.original_storage_key,w.original_mime FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE w.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active'",
-        [fileMatch[1], classId],
+        "SELECT w.storage_key,w.original_storage_key,w.original_mime FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE w.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active' AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$3::uuid OR $4::boolean)",
+        [
+          fileMatch[1],
+          classId,
+          actor.id,
+          actor.role === "teacher" || actor.role === "assistant",
+        ],
       );
       if (!result.rows.length)
         throw new ClassroomFailure(404, "NOT_FOUND", "作品不存在");
@@ -678,7 +687,7 @@ export async function handleShowcaseCloud(
           ),
         );
       const result = await client.query(
-        "UPDATE colorverse.showcase_works w SET preset_id=$1,color=$2,element_params=$5,revision=revision+1 FROM colorverse.planets p WHERE w.planet_id=p.id AND w.id=$3 AND p.owner_enrollment_id=$4 AND w.revision=$6 RETURNING w.id",
+        "UPDATE colorverse.showcase_works w SET preset_id=$1,color=$2,element_params=$5,element_edited=true,revision=revision+1 FROM colorverse.planets p WHERE w.planet_id=p.id AND w.id=$3 AND p.owner_enrollment_id=$4 AND w.revision=$6 AND w.withdrawn_at IS NULL RETURNING w.id",
         [
           input.presetId,
           input.color,
@@ -701,6 +710,65 @@ export async function handleShowcaseCloud(
         );
       await client.query("COMMIT");
       return Response.json({ saved: true });
+    }
+    const visibility = /^works\/([a-f0-9-]+)\/visibility$/.exec(resource);
+    if (visibility && request.method === "PUT") {
+      const input = z
+        .strictObject({
+          withdrawn: z.boolean(),
+          revision: z.number().int().nonnegative(),
+        })
+        .safeParse(await request.json().catch(() => null));
+      if (!input.success)
+        throw new ClassroomFailure(400, "INVALID_VISIBILITY", "作品状态无效");
+      const staff = actor.role === "teacher" || actor.role === "assistant";
+      const result = await client.query(
+        `UPDATE colorverse.showcase_works w SET withdrawn_at=CASE WHEN $1 THEN now() ELSE NULL END,withdrawn_by=CASE WHEN $1 THEN $2::uuid ELSE NULL END,revision=w.revision+1
+         FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id
+         WHERE w.planet_id=p.id AND w.id=$3 AND e.class_id=$4 AND e.status='active' AND u.status='active'
+           AND (p.owner_enrollment_id=$2 OR $5::boolean) AND w.revision=$6
+           AND (w.withdrawn_at IS NOT NULL)<>$1
+           AND ($1 OR w.withdrawn_by=p.owner_enrollment_id OR $5::boolean)
+         RETURNING w.id,w.revision`,
+        [
+          input.data.withdrawn,
+          actor.id,
+          visibility[1],
+          classId,
+          staff,
+          input.data.revision,
+        ],
+      );
+      if (!result.rows.length)
+        throw new ClassroomFailure(
+          409,
+          "VISIBILITY_CONFLICT",
+          "状态已变化或你无权操作，请关闭作品并刷新；教师撤下的作品需由教师恢复",
+        );
+      await client.query("COMMIT");
+      return Response.json({ saved: true, ...result.rows[0] });
+    }
+    const removal = /^interactions\/([a-f0-9-]+)$/.exec(resource);
+    if (removal && request.method === "DELETE") {
+      const result = await client.query(
+        `DELETE FROM colorverse.classroom_interactions i USING colorverse.planets p,colorverse.enrollments e
+         WHERE i.id=$1 AND i.planet_id=p.id AND e.id=p.owner_enrollment_id AND e.class_id=$2
+           AND e.status='active' AND (i.actor_enrollment_id=$3 OR ($4::boolean AND i.kind='comment')) RETURNING i.id`,
+        [
+          removal[1],
+          classId,
+          actor.id,
+          actor.role === "teacher" || actor.role === "assistant",
+        ],
+      );
+      if (!result.rows.length)
+        throw new ClassroomFailure(
+          404,
+          "INTERACTION_NOT_FOUND",
+          "互动已移除或你无权操作",
+        );
+      await client.query("COMMIT");
+      return Response.json({ removed: true });
     }
     if (resource === "interactions" && request.method === "POST") {
       const input = z
@@ -739,7 +807,7 @@ export async function handleShowcaseCloud(
         input.workId &&
         !(
           await client.query(
-            "SELECT id FROM colorverse.showcase_works WHERE id=$1 AND planet_id=$2",
+            "SELECT id FROM colorverse.showcase_works WHERE id=$1 AND planet_id=$2 AND withdrawn_at IS NULL FOR UPDATE",
             [input.workId, input.planetId],
           )
         ).rows.length
@@ -770,8 +838,15 @@ export async function handleShowcaseCloud(
         .uuid()
         .parse(new URL(request.url).searchParams.get("planetId"));
       const result = await client.query(
-        "SELECT i.id,i.kind,i.content,i.work_id,i.created_at,u.display_name FROM colorverse.classroom_interactions i JOIN colorverse.enrollments actor ON actor.id=i.actor_enrollment_id JOIN colorverse.users u ON u.id=actor.user_id JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments owner ON owner.id=p.owner_enrollment_id WHERE p.id=$1 AND owner.class_id=$2 AND owner.status='active' ORDER BY i.created_at DESC LIMIT 200",
-        [planetId, classId],
+        `WITH visible AS (
+          SELECT i.id,i.kind,i.content,i.work_id,i.created_at,u.display_name,(i.actor_enrollment_id=$3::uuid) own,(i.actor_enrollment_id=$3::uuid OR ($4::boolean AND i.kind='comment')) can_remove FROM colorverse.classroom_interactions i JOIN colorverse.enrollments actor ON actor.id=i.actor_enrollment_id JOIN colorverse.users u ON u.id=actor.user_id JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments owner ON owner.id=p.owner_enrollment_id LEFT JOIN colorverse.showcase_works w ON w.id=i.work_id WHERE p.id=$1 AND owner.class_id=$2 AND owner.status='active' AND (i.work_id IS NULL OR w.withdrawn_at IS NULL)
+        ) SELECT * FROM visible WHERE id IN (SELECT id FROM visible ORDER BY created_at DESC,id DESC LIMIT 200) OR (own AND kind IN ('like','emoji')) ORDER BY created_at DESC,id DESC`,
+        [
+          planetId,
+          classId,
+          actor.id,
+          actor.role === "teacher" || actor.role === "assistant",
+        ],
       );
       await client.query("COMMIT");
       return Response.json({ interactions: result.rows });

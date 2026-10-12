@@ -412,6 +412,63 @@ export function growthShapes(id: GrowthPresetId, seed: number): GrowthShape[] {
         circle(-75, -37, 3, "light"),
         circle(65, 48, 4, "light"),
       ];
+    case "paper-crane":
+      return [
+        poly([-8, 12, -90, -62, -44, 20, 8, 37], "theme", 0.9),
+        poly([-8, 12, 81, -43, 43, 30, 8, 37], "theme", 0.7),
+        poly([-8, 12, 12, -26, 24, -17, 8, 37], "light", 0.85),
+        poly([12, -26, 25, -62, 57, -55, 30, -45, 24, -17], "theme"),
+        line([-90, -62, -8, 12, 8, 37, 81, -43], "light", 2, 0.55),
+        poly([8, 37, -31, 64, -17, 21], "theme", 0.65),
+        circle(30, -53, 2, "dark", 0.9),
+      ];
+    case "wind-chime":
+      return [
+        line([0, -85, 0, -57], "light", 2, 0.8),
+        poly([-55, -30, -40, -57, 0, -70, 40, -57, 55, -30], "theme", 0.8),
+        ellipse(0, -30, 55, 9, "light", 0.5),
+        ...[-30, 0, 30].flatMap((x, i) => [
+          line([x, -23, x, 23 + i * 13], "light", 2, 0.7),
+          poly(
+            [
+              x - 7,
+              6 + i * 13,
+              x + 7,
+              6 + i * 13,
+              x + 7,
+              35 + i * 13,
+              x - 7,
+              35 + i * 13,
+            ],
+            "theme",
+            0.85,
+          ),
+        ]),
+        line([0, 42, 0, 67], "light", 2, 0.6),
+        poly([-12, 62, 12, 62, 8, 88, -8, 83], "light", 0.7),
+      ];
+    case "solar-sail":
+      return [
+        poly([0, -80, 79, 0, 0, 80, -79, 0], "theme", 0.65),
+        poly([0, -80, 0, 0, -79, 0], "light", 0.5),
+        poly([0, 0, 79, 0, 0, 80], "dark", 0.3),
+        line([0, -80, 0, 80], "light", 2, 0.8),
+        line([-79, 0, 79, 0], "light", 2, 0.8),
+        circle(0, 0, 10, "light", 0.95),
+        line([-23, 26, -49, 58], "theme", 3, 0.5),
+        circle(-53, 62, 3, "light", 0.7),
+      ];
+    case "dream-kite":
+      return [
+        poly([0, -78, 48, -27, 0, 31, -48, -27], "theme", 0.9),
+        poly([0, -78, 0, -27, -48, -27], "light", 0.45),
+        poly([0, -27, 48, -27, 0, 31], "dark", 0.25),
+        line([0, -78, 0, 31], "light", 2, 0.75),
+        line([-48, -27, 48, -27], "light", 2, 0.75),
+        line([0, 31, 15, 51, -8, 72, 12, 92], "light", 2, 0.7),
+        poly([15, 50, 0, 42, 0, 57, 15, 50, 30, 42, 30, 57], "theme", 0.8),
+        poly([-8, 72, -23, 64, -23, 79, -8, 72, 7, 64, 7, 79], "theme", 0.65),
+      ];
     case "portal":
       return [
         { ...ellipse(0, 0, 55, 79, "theme", 0.18), stroke: "theme", width: 8 },

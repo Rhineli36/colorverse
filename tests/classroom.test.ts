@@ -45,6 +45,9 @@ beforeAll(async () => {
   await db.exec(
     await readFile("apps/api/migrations/003-showcase-originals.sql", "utf8"),
   );
+  await db.exec(
+    await readFile("apps/api/migrations/004-showcase-withdrawal.sql", "utf8"),
+  );
   for (const id of ids.slice(0, 4))
     await db.query(
       "INSERT INTO users VALUES($1::uuid,$2,$1::uuid::text,'测试用户','active')",
@@ -330,8 +333,8 @@ describe("teacher classroom statistics", () => {
   });
 });
 describe("expanded growth library", () => {
-  it("provides 30 distinct bounded geometries within the shared rendering budget", () => {
-    expect(GrowthPresetIds).toHaveLength(30);
+  it("provides 34 distinct bounded geometries within the shared rendering budget", () => {
+    expect(GrowthPresetIds).toHaveLength(34);
     const signatures = new Set<string>();
     for (const id of GrowthPresetIds) {
       const shapes = growthShapes(id, 42);
@@ -348,7 +351,7 @@ describe("expanded growth library", () => {
         ).toBe(true);
       }
     }
-    expect(signatures.size).toBe(30);
+    expect(signatures.size).toBe(34);
   });
 });
 
@@ -795,4 +798,304 @@ describe("student guided tasks", () => {
       ]);
     }
   });
+});
+
+describe("reversible cloud work management", () => {
+  const call = (
+    resource: string,
+    user: string,
+    body?: unknown,
+    method = "GET",
+    cls = ids[5],
+  ) =>
+    handleShowcaseCloud(
+      body === undefined
+        ? new Request(`https://app.test/${resource}`, { method })
+        : request(resource, body, method),
+      env,
+      identity(user),
+      cls,
+      resource.split("?")[0],
+      clientFactory,
+    );
+  const gallery = async (user: string) =>
+    (await (await call("planets", user)).json()).planets.find(
+      (p: { id: string }) => p.id === ids[11],
+    );
+  async function isolated(
+    run: (work: string, comment: string, like: string) => Promise<void>,
+  ) {
+    const work = randomUUID(),
+      comment = randomUUID(),
+      like = randomUUID();
+    await db.query(
+      "INSERT INTO showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id) VALUES($1,$2,'管理验证',$3,100,'paper-crane',$4)",
+      [work, ids[11], randomUUID(), randomUUID()],
+    );
+    for (const [id, kind] of [
+      [comment, "comment"],
+      [like, "like"],
+    ])
+      await db.query(
+        "INSERT INTO classroom_interactions(id,actor_enrollment_id,planet_id,work_id,kind,content,request_id) VALUES($1,$2,$3,$4,$5,'测试互动',$6)",
+        [id, ids[9], ids[11], work, kind, randomUUID()],
+      );
+    try {
+      await run(work, comment, like);
+    } finally {
+      vi.unstubAllGlobals();
+      await db.query("DELETE FROM classroom_interactions WHERE work_id=$1", [
+        work,
+      ]);
+      await db.query("DELETE FROM showcase_works WHERE id=$1", [work]);
+    }
+  }
+  it("withdraws work and its element together, retains files/reactions, restricts private reads and restores original counts", async () =>
+    isolated(async (work) => {
+      const initial = await classroomOverview(sql, identity(ids[0]), ids[5]);
+      const initialGuide = (await (await call("guide", ids[1])).json())
+        .completed;
+      expect(
+        (await gallery(ids[1])).works.find(
+          (w: { id: string }) => w.id === work,
+        ),
+      ).toMatchObject({ withdrawn: false, canRestore: true });
+      const own = () =>
+        initial.students.find((s) => s.enrollment_id === ids[8]);
+      await call(
+        `works/${work}/visibility`,
+        ids[1],
+        { withdrawn: true, revision: 0 },
+        "PUT",
+      );
+      expect(
+        (await gallery(ids[2])).works.some(
+          (w: { id: string }) => w.id === work,
+        ),
+      ).toBe(false);
+      expect(
+        (await gallery(ids[1])).works.find(
+          (w: { id: string }) => w.id === work,
+        ),
+      ).toMatchObject({ withdrawn: true, canRestore: true, revision: 1 });
+      expect(
+        (await gallery(ids[0])).works.some(
+          (w: { id: string }) => w.id === work,
+        ),
+      ).toBe(true);
+      const withdrawn = (
+        await classroomOverview(sql, identity(ids[0]), ids[5])
+      ).students.find((s) => s.enrollment_id === ids[8]);
+      expect(withdrawn!.showcase_count).toBe(Number(own()?.showcase_count) - 1);
+      expect(withdrawn!.received_count).toBe(Number(own()?.received_count) - 2);
+      expect((await (await call("guide", ids[1])).json()).completed).toEqual(
+        initialGuide,
+      );
+      expect(
+        (
+          await db.query(
+            "SELECT element_edited FROM showcase_works WHERE id=$1",
+            [work],
+          )
+        ).rows[0].element_edited,
+      ).toBe(false);
+      const fetchMock = vi.fn(
+        async () => new Response(new Uint8Array([1, 2, 3])),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      for (const resource of ["image", "original"])
+        await expect(
+          call(`works/${work}/${resource}`, ids[2]),
+        ).rejects.toMatchObject({ status: 404 });
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect((await call(`works/${work}/image`, ids[1])).status).toBe(200);
+      expect(
+        (
+          await db.query(
+            "SELECT count(*)::int n FROM classroom_interactions WHERE work_id=$1",
+            [work],
+          )
+        ).rows[0].n,
+      ).toBe(2);
+      await expect(
+        call(
+          `works/${work}/visibility`,
+          ids[1],
+          { withdrawn: false, revision: 0 },
+          "PUT",
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      await call(
+        `works/${work}/visibility`,
+        ids[1],
+        { withdrawn: false, revision: 1 },
+        "PUT",
+      );
+      const restored = (
+        await classroomOverview(sql, identity(ids[0]), ids[5])
+      ).students.find((s) => s.enrollment_id === ids[8]);
+      expect(restored!.showcase_count).toBe(own()?.showcase_count);
+      expect(restored!.received_count).toBe(own()?.received_count);
+      expect(
+        (await gallery(ids[2])).works.some(
+          (w: { id: string }) => w.id === work,
+        ),
+      ).toBe(true);
+      expect((await (await call("guide", ids[1])).json()).completed).toEqual(
+        initialGuide,
+      );
+      expect(
+        (
+          await db.query(
+            "SELECT element_edited FROM showcase_works WHERE id=$1",
+            [work],
+          )
+        ).rows[0].element_edited,
+      ).toBe(false);
+    }));
+  it("prevents peers and foreign classes from changing visibility and reserves teacher withdrawal recovery for staff", async () =>
+    isolated(async (work) => {
+      await expect(
+        call(
+          `works/${work}/visibility`,
+          ids[2],
+          { withdrawn: true, revision: 0 },
+          "PUT",
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      await expect(
+        call(
+          `works/${work}/visibility`,
+          ids[3],
+          { withdrawn: true, revision: 0 },
+          "PUT",
+          ids[6],
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      await call(
+        `works/${work}/visibility`,
+        ids[0],
+        { withdrawn: true, revision: 0 },
+        "PUT",
+      );
+      expect(
+        (await gallery(ids[1])).works.find((w: { id: string }) => w.id === work)
+          .canRestore,
+      ).toBe(false);
+      await expect(
+        call(
+          `works/${work}/visibility`,
+          ids[1],
+          { withdrawn: false, revision: 1 },
+          "PUT",
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      await expect(
+        call(
+          `works/${work}/element`,
+          ids[1],
+          {
+            presetId: "dream-kite",
+            color: "#123456",
+            x: 0.5,
+            y: 0.5,
+            size: 0.6,
+            motion: "float",
+            revision: 1,
+          },
+          "PUT",
+        ),
+      ).rejects.toMatchObject({ status: 409 });
+      await expect(
+        call(
+          "interactions",
+          ids[2],
+          {
+            planetId: ids[11],
+            workId: work,
+            kind: "comment",
+            content: "不可评论已撤下作品",
+            requestId: randomUUID(),
+          },
+          "POST",
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      await call(
+        `works/${work}/visibility`,
+        ids[0],
+        { withdrawn: false, revision: 1 },
+        "PUT",
+      );
+    }));
+  it("keeps an old own reaction cancellable beyond the 200-entry recent message window", async () =>
+    isolated(async (work, _comment, like) => {
+      await db.query(
+        "UPDATE classroom_interactions SET created_at=now()-interval '10 days' WHERE id=$1",
+        [like],
+      );
+      for (let i = 0; i < 205; i++)
+        await db.query(
+          "INSERT INTO classroom_interactions(id,actor_enrollment_id,planet_id,work_id,kind,content,request_id) VALUES($1,$2,$3,$4,'comment','窗口验证',$5)",
+          [randomUUID(), ids[9], ids[11], work, randomUUID()],
+        );
+      const own = (
+        await (await call(`interactions?planetId=${ids[11]}`, ids[2])).json()
+      ).interactions;
+      expect(own.some((i: { id: string }) => i.id === like)).toBe(true);
+      expect(own.length).toBe(201);
+      const peer = (
+        await (await call(`interactions?planetId=${ids[11]}`, ids[1])).json()
+      ).interactions;
+      expect(peer.some((i: { id: string }) => i.id === like)).toBe(false);
+      await call(`interactions/${like}`, ids[2], {}, "DELETE");
+    }));
+  it("only allows authors to withdraw reactions, and authors or verified class staff to remove comments", async () =>
+    isolated(async (work, comment, like) => {
+      const entries = (
+        await (await call(`interactions?planetId=${ids[11]}`, ids[2])).json()
+      ).interactions;
+      expect(entries.find((i: { id: string }) => i.id === like)).toMatchObject({
+        own: true,
+        can_remove: true,
+      });
+      await expect(
+        call(`interactions/${comment}`, ids[1], undefined, "DELETE"),
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(
+        call(`interactions/${comment}`, ids[3], undefined, "DELETE", ids[6]),
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(
+        call(`interactions/${like}`, ids[0], undefined, "DELETE"),
+      ).rejects.toMatchObject({ status: 404 });
+      await call(`interactions/${like}`, ids[2], {}, "DELETE");
+      await call(
+        "interactions",
+        ids[2],
+        {
+          planetId: ids[11],
+          workId: work,
+          kind: "like",
+          content: "",
+          requestId: randomUUID(),
+        },
+        "POST",
+      );
+      expect(
+        (
+          await db.query(
+            "SELECT count(*)::int n FROM classroom_interactions WHERE work_id=$1 AND kind='like'",
+            [work],
+          )
+        ).rows[0].n,
+      ).toBe(1);
+      await call(`interactions/${comment}`, ids[0], {}, "DELETE");
+      expect(
+        (
+          await db.query(
+            "SELECT count(*)::int n FROM classroom_interactions WHERE id=$1",
+            [comment],
+          )
+        ).rows[0].n,
+      ).toBe(0);
+    }));
 });

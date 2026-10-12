@@ -35,6 +35,8 @@ const Work = z.object({
   createdAt: z.string(),
   params: Params,
   revision: z.number(),
+  withdrawn: z.boolean().default(false),
+  canRestore: z.boolean().default(true),
 });
 const Planet = z.object({
   id: z.uuid(),
@@ -99,6 +101,13 @@ export function CloudGallery({
     [data, setData] = useState<z.infer<typeof Gallery> | null>(null),
     [planetId, setPlanetId] = useState(initialPlanetId ?? ""),
     [work, setWork] = useState<WorkData | null>(null),
+    [confirmation, setConfirmation] = useState<{
+      kind: "work" | "interaction";
+      id: string;
+      label: string;
+      withdrawn?: boolean;
+      revision?: number;
+    } | null>(null),
     [editing, setEditing] = useState(false),
     [draft, setDraft] = useState<WorkData | null>(null),
     [birth, setBirth] = useState(""),
@@ -124,6 +133,8 @@ export function CloudGallery({
         content: string;
         display_name: string;
         work_id: string | null;
+        own?: boolean;
+        can_remove?: boolean;
       }[]
     >([]);
   const generation = useRef(0),
@@ -132,7 +143,12 @@ export function CloudGallery({
     settings = useRef<HTMLDivElement>(null),
     social = useRef<HTMLElement>(null);
   const pending =
-    busy || editing || uploadOpen || appearanceDirty || Boolean(comment.trim());
+    busy ||
+    editing ||
+    uploadOpen ||
+    appearanceDirty ||
+    Boolean(confirmation) ||
+    Boolean(comment.trim());
   useEffect(() => {
     onPendingChange?.(pending);
   }, [pending, onPendingChange]);
@@ -277,12 +293,13 @@ export function CloudGallery({
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || busy) return;
-      if (uploadOpen) setUploadOpen(false);
+      if (confirmation) setConfirmation(null);
+      else if (uploadOpen) setUploadOpen(false);
       else if (work && !editing) setWork(null);
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [busy, uploadOpen, work, editing]);
+  }, [busy, uploadOpen, work, editing, confirmation]);
   const perform = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
@@ -317,6 +334,57 @@ export function CloudGallery({
       setGuideRevision((r) => r + 1);
       setNotice("互动已记录，教师端刷新后可以查看。");
     });
+  const staff = memberships.some(
+    (m) => m.classId === classId && ["teacher", "assistant"].includes(m.role),
+  );
+  const targetReactions = interactions.filter(
+    (i) => i.own && i.work_id === (work?.id ?? null),
+  );
+  const reaction = (kind: "like" | "emoji") =>
+    targetReactions.find((i) => i.kind === kind);
+  const removeInteraction = async (id: string) => {
+    await classroomRequest(`classes/${classId}/interactions/${id}`, {
+      method: "DELETE",
+    });
+    const response = await classroomRequest(
+      `classes/${classId}/interactions?planetId=${planetId}`,
+    );
+    setInteractions((await response.json()).interactions);
+    setGuideRevision((r) => r + 1);
+    setNotice("互动已移除，教师统计刷新后同步更新。");
+  };
+  const toggleReaction = (kind: "like" | "emoji", content: string) => {
+    const current = reaction(kind);
+    if (current) void perform(() => removeInteraction(current.id));
+    else interact(kind, content);
+  };
+  const interactionRow = (
+    i: (typeof interactions)[number],
+    subject: string,
+  ) => (
+    <div key={i.id} className="cloud-message-row">
+      <p>
+        <strong>{i.display_name}</strong>{" "}
+        {i.kind === "like" ? `♡ 点赞了${subject}` : i.content}
+      </p>
+      {i.can_remove && (
+        <button
+          disabled={busy}
+          onClick={() => {
+            if (i.kind === "comment")
+              setConfirmation({
+                kind: "interaction",
+                id: i.id,
+                label: i.own ? "撤回留言" : "移除留言",
+              });
+            else void perform(() => removeInteraction(i.id));
+          }}
+        >
+          {i.own ? "撤回" : "移除留言"}
+        </button>
+      )}
+    </div>
+  );
   const saveElement = async (next: WorkData) => {
     await classroomRequest(`classes/${classId}/works/${next.id}/element`, {
       method: "PUT",
@@ -376,7 +444,7 @@ export function CloudGallery({
       setFile(null);
       setUploadOpen(true);
     } else if (id === "element") {
-      const first = myPlanet.works[0];
+      const first = myPlanet.works.find((w) => !w.withdrawn);
       if (first) {
         setWork(first);
         setDraft(structuredClone(first));
@@ -519,7 +587,8 @@ export function CloudGallery({
             <span>
               <strong>{p.document.metadata.name}</strong>
               <small>
-                {p.display_name} · {p.works.length} 件作品
+                {p.display_name} · {p.works.filter((w) => !w.withdrawn).length}{" "}
+                件作品
                 {p.owner_enrollment_id === data.actorId ? " · 我的星球" : ""}
               </small>
             </span>
@@ -630,95 +699,98 @@ export function CloudGallery({
                 <p>从这里开始，留下你的色彩。</p>
               </div>
             )}
-            {selected.works.map((w, index) => {
-              const current = editing && draft?.id === w.id ? draft : w;
-              return (
-                <button
-                  key={w.id}
-                  className={`cloud-growth ${birth === w.id ? "born" : ""} motion-${current.params.motion} ${editing && draft?.id === w.id ? "editing" : ""}`}
-                  aria-label={`查看作品 ${w.title}`}
-                  style={{
-                    left: `${current.params.x * 100}%`,
-                    top: `${current.params.y * 100}%`,
-                    width: 110 * current.params.size,
-                    height: 110 * current.params.size,
-                    animationDelay: birth === w.id ? "0s" : `${index * 0.13}s`,
-                  }}
-                  onClick={() => {
-                    if (editing) return;
-                    setWork(w);
-                    setDraft(null);
-                  }}
-                  onPointerDown={(e) => {
-                    if (!editing || draft?.id !== w.id || busy) return;
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                  }}
-                  onPointerMove={(e) => {
-                    if (
-                      !editing ||
-                      draft?.id !== w.id ||
-                      !e.currentTarget.hasPointerCapture(e.pointerId)
-                    )
-                      return;
-                    const bounds = stage.current?.getBoundingClientRect();
-                    if (bounds)
-                      setDraft({
-                        ...draft,
-                        params: {
-                          ...draft.params,
-                          x: Math.max(
-                            0.05,
-                            Math.min(
-                              0.95,
-                              (e.clientX - bounds.left) / bounds.width,
+            {selected.works
+              .filter((w) => !w.withdrawn)
+              .map((w, index) => {
+                const current = editing && draft?.id === w.id ? draft : w;
+                return (
+                  <button
+                    key={w.id}
+                    className={`cloud-growth ${birth === w.id ? "born" : ""} motion-${current.params.motion} ${editing && draft?.id === w.id ? "editing" : ""}`}
+                    aria-label={`查看作品 ${w.title}`}
+                    style={{
+                      left: `${current.params.x * 100}%`,
+                      top: `${current.params.y * 100}%`,
+                      width: 110 * current.params.size,
+                      height: 110 * current.params.size,
+                      animationDelay:
+                        birth === w.id ? "0s" : `${index * 0.13}s`,
+                    }}
+                    onClick={() => {
+                      if (editing) return;
+                      setWork(w);
+                      setDraft(null);
+                    }}
+                    onPointerDown={(e) => {
+                      if (!editing || draft?.id !== w.id || busy) return;
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    }}
+                    onPointerMove={(e) => {
+                      if (
+                        !editing ||
+                        draft?.id !== w.id ||
+                        !e.currentTarget.hasPointerCapture(e.pointerId)
+                      )
+                        return;
+                      const bounds = stage.current?.getBoundingClientRect();
+                      if (bounds)
+                        setDraft({
+                          ...draft,
+                          params: {
+                            ...draft.params,
+                            x: Math.max(
+                              0.05,
+                              Math.min(
+                                0.95,
+                                (e.clientX - bounds.left) / bounds.width,
+                              ),
                             ),
-                          ),
-                          y: Math.max(
-                            0.1,
-                            Math.min(
-                              0.9,
-                              (e.clientY - bounds.top) / bounds.height,
+                            y: Math.max(
+                              0.1,
+                              Math.min(
+                                0.9,
+                                (e.clientY - bounds.top) / bounds.height,
+                              ),
                             ),
-                          ),
-                        },
-                      });
-                  }}
-                  onKeyDown={(e) => {
-                    if (!editing || draft?.id !== w.id) return;
-                    const d = {
-                      ArrowLeft: [-0.01, 0],
-                      ArrowRight: [0.01, 0],
-                      ArrowUp: [0, -0.01],
-                      ArrowDown: [0, 0.01],
-                    }[e.key];
-                    if (d) {
-                      e.preventDefault();
-                      setDraft({
-                        ...draft,
-                        params: {
-                          ...draft.params,
-                          x: Math.max(
-                            0.05,
-                            Math.min(0.95, draft.params.x + d[0]),
-                          ),
-                          y: Math.max(
-                            0.1,
-                            Math.min(0.9, draft.params.y + d[1]),
-                          ),
-                        },
-                      });
-                    }
-                  }}
-                >
-                  <GrowthPresetPreview
-                    id={current.presetId}
-                    color={current.color}
-                  />
-                  <span>{w.title}</span>
-                </button>
-              );
-            })}
-            {!selected.works.length && (
+                          },
+                        });
+                    }}
+                    onKeyDown={(e) => {
+                      if (!editing || draft?.id !== w.id) return;
+                      const d = {
+                        ArrowLeft: [-0.01, 0],
+                        ArrowRight: [0.01, 0],
+                        ArrowUp: [0, -0.01],
+                        ArrowDown: [0, 0.01],
+                      }[e.key];
+                      if (d) {
+                        e.preventDefault();
+                        setDraft({
+                          ...draft,
+                          params: {
+                            ...draft.params,
+                            x: Math.max(
+                              0.05,
+                              Math.min(0.95, draft.params.x + d[0]),
+                            ),
+                            y: Math.max(
+                              0.1,
+                              Math.min(0.9, draft.params.y + d[1]),
+                            ),
+                          },
+                        });
+                      }
+                    }}
+                  >
+                    <GrowthPresetPreview
+                      id={current.presetId}
+                      color={current.color}
+                    />
+                    <span>{w.title}</span>
+                  </button>
+                );
+              })}
+            {!selected.works.some((w) => !w.withdrawn) && (
               <div className="cloud-room-empty">
                 ✧
                 <p>
@@ -737,14 +809,23 @@ export function CloudGallery({
           {!owned && !work && (
             <section className="cloud-social" ref={social}>
               <strong>为这颗星球留下回应</strong>
-              <button disabled={busy} onClick={() => interact("like", "")}>
-                ♡ 点赞星球
+              <button
+                disabled={busy}
+                onClick={() => toggleReaction("like", "")}
+              >
+                {reaction("like") ? "♥ 已点赞 · 点击取消" : "♡ 点赞星球"}
               </button>
               {["✨", "💙", "👏", "🔥", "🌈"].map((emoji) => (
                 <button
-                  disabled={busy}
+                  disabled={
+                    busy ||
+                    Boolean(
+                      reaction("emoji") && reaction("emoji")?.content !== emoji,
+                    )
+                  }
                   key={emoji}
-                  onClick={() => interact("emoji", emoji)}
+                  aria-pressed={reaction("emoji")?.content === emoji}
+                  onClick={() => toggleReaction("emoji", emoji)}
                 >
                   {emoji}
                 </button>
@@ -765,21 +846,49 @@ export function CloudGallery({
             </section>
           )}
           <section className="cloud-work-list" aria-label="云端展示作品">
-            {selected.works.map((w) => (
-              <button
-                key={w.id}
-                onClick={() => {
-                  if (!editing) setWork(w);
-                }}
-              >
-                <GrowthPresetPreview id={w.presetId} color={w.color} />
-                <strong>{w.title}</strong>
-                <small>
-                  {new Date(w.createdAt).toLocaleDateString("zh-CN")}
-                </small>
-              </button>
-            ))}
+            {selected.works
+              .filter((w) => !w.withdrawn)
+              .map((w) => (
+                <button
+                  key={w.id}
+                  onClick={() => {
+                    if (!editing) setWork(w);
+                  }}
+                >
+                  <GrowthPresetPreview id={w.presetId} color={w.color} />
+                  <strong>{w.title}</strong>
+                  <small>
+                    {new Date(w.createdAt).toLocaleDateString("zh-CN")}
+                  </small>
+                </button>
+              ))}
           </section>
+          {(owned || staff) && selected.works.some((w) => w.withdrawn) && (
+            <details className="cloud-withdrawn-list">
+              <summary>
+                已撤下的作品（{selected.works.filter((w) => w.withdrawn).length}
+                ）
+              </summary>
+              <p className="muted">
+                仅作者和教师可查看，原图保留，可恢复展示。仍占用存储空间。
+              </p>
+              <div className="cloud-work-list">
+                {selected.works
+                  .filter((w) => w.withdrawn)
+                  .map((w) => (
+                    <button
+                      key={w.id}
+                      disabled={busy || editing}
+                      onClick={() => setWork(w)}
+                    >
+                      <GrowthPresetPreview id={w.presetId} color={w.color} />
+                      <strong>{w.title}</strong>
+                      <small>查看与恢复</small>
+                    </button>
+                  ))}
+              </div>
+            </details>
+          )}
           {editing && draft && (
             <section
               className="cloud-element-controls"
@@ -875,12 +984,7 @@ export function CloudGallery({
             {interactions
               .filter((i) => !i.work_id)
               .slice(0, 20)
-              .map((i) => (
-                <p key={i.id}>
-                  <strong>{i.display_name}</strong>{" "}
-                  {i.kind === "like" ? "♡ 点赞了这颗星球" : i.content}
-                </p>
-              ))}
+              .map((i) => interactionRow(i, "这颗星球"))}
           </section>
         </>
       )}
@@ -982,7 +1086,14 @@ export function CloudGallery({
             aria-label="云端作品展示"
             className="cloud-modal cloud-artwork"
           >
-            <button className="modal-close" onClick={() => setWork(null)}>
+            <button
+              className="modal-close"
+              disabled={busy || Boolean(confirmation)}
+              onClick={() => {
+                setWork(null);
+                setComment("");
+              }}
+            >
               ×
             </button>
             <PrivateImage classId={classId} id={work.id} />
@@ -992,6 +1103,11 @@ export function CloudGallery({
               {selected?.display_name} ·{" "}
               {new Date(work.createdAt).toLocaleDateString("zh-CN")}
             </p>
+            {work.withdrawn && (
+              <p className="cloud-withdrawn-note">
+                作品已撤下，仅作者和教师可查看。原图、元素设置和互动保留；仍计入存储限额。
+              </p>
+            )}
             <div className="row-buttons">
               <button
                 disabled={busy}
@@ -1013,7 +1129,7 @@ export function CloudGallery({
               >
                 下载原图
               </button>
-              {owned && (
+              {owned && !work.withdrawn && (
                 <button
                   className="primary"
                   onClick={() => {
@@ -1024,17 +1140,47 @@ export function CloudGallery({
                   编辑元素
                 </button>
               )}
+              {(owned || staff) &&
+                (!work.withdrawn || staff || work.canRestore) && (
+                  <button
+                    disabled={busy}
+                    onClick={() =>
+                      setConfirmation({
+                        kind: "work",
+                        id: work.id,
+                        label: work.withdrawn ? "恢复展示" : "撤下作品",
+                        withdrawn: !work.withdrawn,
+                        revision: work.revision,
+                      })
+                    }
+                  >
+                    {work.withdrawn ? "恢复展示" : "撤下作品"}
+                  </button>
+                )}
+              {owned && work.withdrawn && !work.canRestore && !staff && (
+                <span className="muted">教师撤下的作品，请联系教师恢复。</span>
+              )}
             </div>
-            {!owned && (
+            {!owned && !work.withdrawn && (
               <section className="cloud-social">
-                <button disabled={busy} onClick={() => interact("like", "")}>
-                  ♡ 点赞作品
+                <button
+                  disabled={busy}
+                  onClick={() => toggleReaction("like", "")}
+                >
+                  {reaction("like") ? "♥ 已点赞 · 点击取消" : "♡ 点赞作品"}
                 </button>
                 {["✨", "💙", "👏", "🔥", "🌈"].map((emoji) => (
                   <button
                     key={emoji}
-                    disabled={busy}
-                    onClick={() => interact("emoji", emoji)}
+                    disabled={
+                      busy ||
+                      Boolean(
+                        reaction("emoji") &&
+                        reaction("emoji")?.content !== emoji,
+                      )
+                    }
+                    aria-pressed={reaction("emoji")?.content === emoji}
+                    onClick={() => toggleReaction("emoji", emoji)}
                   >
                     {emoji}
                   </button>
@@ -1056,12 +1202,71 @@ export function CloudGallery({
             )}
             {interactions
               .filter((i) => i.work_id === work.id)
-              .map((i) => (
-                <p key={i.id}>
-                  <strong>{i.display_name}</strong>{" "}
-                  {i.kind === "like" ? "♡ 点赞了作品" : i.content}
-                </p>
-              ))}
+              .map((i) => interactionRow(i, "作品"))}
+          </section>
+        </div>
+      )}
+      {confirmation && (
+        <div className="cloud-modal-backdrop cloud-confirm-backdrop">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="确认管理操作"
+            className="cloud-modal cloud-confirm"
+          >
+            <h2>{confirmation.label}？</h2>
+            <p>
+              {confirmation.kind === "interaction"
+                ? "留言移除后无法恢复，对应互动次数也会减少。"
+                : confirmation.withdrawn
+                  ? "作品和对应元素会一起退出展示。原图、元素设置和互动保留，可恢复；教师统计只计入正在展示的作品及互动。"
+                  : "恢复后，作品、元素和原有互动将重新展示，教师统计也会恢复。"}
+            </p>
+            {notice && <p role="status">{notice}</p>}
+            <div className="row-buttons">
+              <button
+                disabled={busy}
+                onClick={() => setConfirmation(null)}
+                autoFocus
+              >
+                取消
+              </button>
+              <button
+                className="primary"
+                disabled={busy}
+                onClick={() =>
+                  void perform(async () => {
+                    if (confirmation.kind === "interaction")
+                      await removeInteraction(confirmation.id);
+                    else {
+                      await classroomRequest(
+                        `classes/${classId}/works/${confirmation.id}/visibility`,
+                        {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            withdrawn: confirmation.withdrawn,
+                            revision: confirmation.revision,
+                          }),
+                        },
+                      );
+                      setWork(null);
+                      setDraft(null);
+                      setComment("");
+                      await refresh();
+                      setNotice(
+                        confirmation.withdrawn
+                          ? "作品已撤下，可在已撤下的作品中恢复。原图保留，仍占用存储空间。"
+                          : "作品、元素和原有互动已恢复展示。",
+                      );
+                    }
+                    setConfirmation(null);
+                  })
+                }
+              >
+                {busy ? "正在保存…" : `确认${confirmation.label}`}
+              </button>
+            </div>
           </section>
         </div>
       )}

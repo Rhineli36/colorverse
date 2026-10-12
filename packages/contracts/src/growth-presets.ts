@@ -29,10 +29,14 @@ export const GrowthPresetIds = [
   "mountain",
   "spiral-galaxy",
   "portal",
+  "paper-crane",
+  "wind-chime",
+  "solar-sail",
+  "dream-kite",
 ] as const;
 export type GrowthPresetId = (typeof GrowthPresetIds)[number];
 export const GrowthLibrarySpec = {
-  version: "1.1.0",
+  version: "1.2.0",
   rendering: "programmatic",
   baseSizePx: 200,
   maxShapes: 16,
@@ -228,6 +232,30 @@ export const GrowthPresets: Record<
     name: "星际之门",
     category: "轨道物件",
     keywords: ["门", "科技", "未来"],
+    capability: "growth-library@1",
+  },
+  "paper-crane": {
+    name: "星愿纸鹤",
+    category: "生灵",
+    keywords: ["纸", "鹤", "折纸", "愿望", "crane"],
+    capability: "growth-library@1",
+  },
+  "wind-chime": {
+    name: "月光风铃",
+    category: "光效",
+    keywords: ["风", "铃", "月", "chime"],
+    capability: "growth-library@1",
+  },
+  "solar-sail": {
+    name: "光帆飞船",
+    category: "轨道物件",
+    keywords: ["帆", "光", "探索", "sail"],
+    capability: "growth-library@1",
+  },
+  "dream-kite": {
+    name: "流星风筝",
+    category: "天空",
+    keywords: ["风", "筝", "自由", "kite"],
     capability: "growth-library@1",
   },
 };

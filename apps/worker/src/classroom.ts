@@ -46,10 +46,10 @@ export async function classroomOverview(
   // Aggregate each source before joining: multiple works and reactions must not multiply counts.
   const result = await sql.query(
     `WITH week AS (SELECT date_trunc('week', now() AT TIME ZONE $2) AT TIME ZONE $2 AS start),
-    works AS (SELECT planet_id,count(*)::int total,count(*) FILTER(WHERE created_at >= (SELECT start FROM week))::int weekly,max(created_at) latest FROM colorverse.showcase_works GROUP BY planet_id),
+    works AS (SELECT planet_id,count(*)::int total,count(*) FILTER(WHERE created_at >= (SELECT start FROM week))::int weekly,max(created_at) latest FROM colorverse.showcase_works WHERE withdrawn_at IS NULL GROUP BY planet_id),
     submissions AS (SELECT s.enrollment_id,count(v.id)::int total FROM colorverse.submissions s JOIN colorverse.submission_versions v ON v.submission_id=s.id GROUP BY s.enrollment_id),
-    sent AS (SELECT actor_enrollment_id,count(*)::int total,count(*) FILTER(WHERE created_at >= (SELECT start FROM week))::int weekly FROM colorverse.classroom_interactions GROUP BY actor_enrollment_id),
-    received AS (SELECT planet_id,count(*)::int total,count(*) FILTER(WHERE created_at >= (SELECT start FROM week))::int weekly FROM colorverse.classroom_interactions GROUP BY planet_id)
+    sent AS (SELECT actor_enrollment_id,count(*)::int total,count(*) FILTER(WHERE i.created_at >= (SELECT start FROM week))::int weekly FROM colorverse.classroom_interactions i LEFT JOIN colorverse.showcase_works w ON w.id=i.work_id WHERE i.work_id IS NULL OR w.withdrawn_at IS NULL GROUP BY actor_enrollment_id),
+    received AS (SELECT i.planet_id,count(*)::int total,count(*) FILTER(WHERE i.created_at >= (SELECT start FROM week))::int weekly FROM colorverse.classroom_interactions i LEFT JOIN colorverse.showcase_works w ON w.id=i.work_id WHERE i.work_id IS NULL OR w.withdrawn_at IS NULL GROUP BY i.planet_id)
     SELECT e.id enrollment_id,u.display_name,u.status account_status,e.status enrollment_status,p.id planet_id,p.document->'metadata'->>'name' planet_name,
       COALESCE(w.total,0)::int showcase_count,COALESCE(w.weekly,0)::int weekly_showcase_count,COALESCE(sub.total,0)::int course_submission_count,
       COALESCE(s.total,0)::int sent_count,COALESCE(s.weekly,0)::int weekly_sent_count,COALESCE(r.total,0)::int received_count,COALESCE(r.weekly,0)::int weekly_received_count,w.latest last_submission

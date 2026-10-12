@@ -1101,3 +1101,44 @@
     flex-wrap: wrap;
   }
 }
+
+.cloud-message-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+  border-bottom: 1px solid #ffffff12;
+}
+.cloud-message-row p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cloud-message-row button {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.cloud-withdrawn-list {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid #a9d8d32d;
+  border-radius: 16px;
+}
+.cloud-withdrawn-list summary {
+  cursor: pointer;
+  color: #a9d8d3;
+}
+.cloud-withdrawn-note {
+  padding: 16px;
+  background: #a9d8d310;
+  border-radius: 12px;
+}
+.cloud-confirm-backdrop {
+  z-index: 120;
+}
+.cloud-confirm {
+  max-width: 520px;
+}
+.cloud-social button[aria-pressed="true"] {
+  background: #a9d8d326;
+  border-color: #a9d8d3;
+}

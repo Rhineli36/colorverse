@@ -75,3 +75,5 @@
 41. [教师入口与恒星视觉区分](41-teacher-navigation-and-emissive-stars.md)
 
 42. [登录续期、未提交内容与云端入口](42-pilot-session-continuity.md)
+
+- [43 · 云端作品管理与生长元素扩充](43-cloud-work-management-and-growth.md)

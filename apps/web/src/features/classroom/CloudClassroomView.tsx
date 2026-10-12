@@ -212,7 +212,7 @@ export function CloudClassroomView({
             <thead>
               <tr>
                 <th>学生 / 星球</th>
-                <th>作品提交</th>
+                <th>展示作品</th>
                 <th>发起互动</th>
                 <th>收到互动</th>
                 <th>最近提交</th>
@@ -244,7 +244,7 @@ export function CloudClassroomView({
                   <td>
                     <b>{count(s, "showcase")}</b>
                     <small>
-                      累计 {s.showcase_count} 件
+                      现有 {s.showcase_count} 件
                       {s.course_submission_count > 0
                         ? ` · 课程提交 ${s.course_submission_count} 次`
                         : ""}
@@ -298,7 +298,7 @@ export function CloudClassroomView({
         )}
       </section>
       <p className="classroom-footnote">
-        互动统计为有效的点赞、表情和留言记录；重复点赞不增加次数。展示作品与课程作业提交分别统计。刷新后核对学生端的上传结果。
+        展示与互动统计只计入正在展示的作品及有效互动；撤下作品、撤回互动或移除留言后会减少，恢复作品后对应记录重新计入。原始上传日期决定所属周。课程作业提交单独统计。刷新后核对学生端结果。
       </p>
     </main>
   );

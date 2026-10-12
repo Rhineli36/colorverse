@@ -53,6 +53,27 @@ try {
     );
   }
   await client.query("COMMIT");
+  const withdrawal = await readFile(
+    "apps/api/migrations/004-showcase-withdrawal.sql",
+    "utf8",
+  );
+  const withdrawalHash = createHash("sha256").update(withdrawal).digest("hex");
+  await client.query("BEGIN");
+  await client.query("SELECT pg_advisory_xact_lock(7301941)");
+  await client.query("SET LOCAL search_path=colorverse,pg_catalog");
+  const fourth = await client.query(
+    "SELECT sha256 FROM course_migrations WHERE version=4",
+  );
+  if (fourth.rows.length && fourth.rows[0].sha256 !== withdrawalHash)
+    throw new Error("MIGRATION_HASH_MISMATCH");
+  if (!fourth.rows.length) {
+    await client.query(withdrawal);
+    await client.query(
+      "INSERT INTO course_migrations(version,sha256) VALUES(4,$1)",
+      [withdrawalHash],
+    );
+  }
+  await client.query("COMMIT");
   const counts = await client.query(
     "SELECT count(*)::int AS students FROM colorverse.enrollments WHERE role='student' AND status='active'",
   );

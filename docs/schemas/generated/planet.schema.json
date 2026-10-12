@@ -612,7 +612,11 @@
                               "bubble-cluster",
                               "mountain",
                               "spiral-galaxy",
-                              "portal"
+                              "portal",
+                              "paper-crane",
+                              "wind-chime",
+                              "solar-sail",
+                              "dream-kite"
                             ]
                           },
                           "presetVersion": {
@@ -1492,7 +1496,11 @@
                           "bubble-cluster",
                           "mountain",
                           "spiral-galaxy",
-                          "portal"
+                          "portal",
+                          "paper-crane",
+                          "wind-chime",
+                          "solar-sail",
+                          "dream-kite"
                         ]
                       },
                       "presetVersion": {
@@ -2259,7 +2267,11 @@
                     "bubble-cluster",
                     "mountain",
                     "spiral-galaxy",
-                    "portal"
+                    "portal",
+                    "paper-crane",
+                    "wind-chime",
+                    "solar-sail",
+                    "dream-kite"
                   ]
                 },
                 "presetVersion": {
