@@ -1,3 +1,4 @@
+import { classroomRequest } from "../features/classroom/cloud-request";
 import { download } from "./download";
 import { CourseView } from "../features/course/CourseView";
 import { TeacherView } from "../features/teacher-demo/TeacherView";
@@ -21,6 +22,7 @@ import {
 } from "react";
 import {
   VERSION,
+  CloudGuideSchema,
   EffectIds,
   defaultTransform,
   defaultAdjustments,
@@ -90,6 +92,32 @@ export function App() {
   const canUseTeacherTools =
     cloudSession?.access === "active" &&
     cloudSession.memberships.some((m) => m.role === "teacher");
+  const [guideOpenRequest, setGuideOpenRequest] = useState(0);
+  const [cloudGuideProgress, setCloudGuideProgress] = useState<{
+    identityId: string;
+    classId: string;
+    completed: number | null;
+  } | null>(null);
+  const guideFetchGeneration = useRef(0);
+  const reportGuideProgress = useCallback(
+    (progress: {
+      identityId: string;
+      classId: string;
+      completed: number | null;
+    }) => {
+      guideFetchGeneration.current++;
+      setCloudGuideProgress(progress);
+      try {
+        localStorage.setItem(
+          `colorverse-guide-class-${progress.identityId}`,
+          progress.classId,
+        );
+      } catch {
+        /* Optional remembered class. */
+      }
+    },
+    [],
+  );
   const [cloudEntry, setCloudEntry] = useState({ classId: "", sequence: 0 });
   const [cloudPending, setCloudPending] = useState(false);
   const cloudStudent =
@@ -97,6 +125,49 @@ export function App() {
     cloudSession.cloudWrites &&
     cloudSession.memberships.length > 0 &&
     cloudSession.memberships.every((m) => m.role === "student");
+  const guideMembershipSignature = cloudStudent
+    ? cloudSession.memberships.map((m) => m.classId).join("|")
+    : "";
+  useEffect(() => {
+    if (!cloudStudent || !cloudSession) return;
+    let active = true;
+    const generation = ++guideFetchGeneration.current;
+    const identityId = cloudSession.identity.id;
+    let rememberedClass = "";
+    try {
+      rememberedClass =
+        localStorage.getItem(`colorverse-guide-class-${identityId}`) ?? "";
+    } catch {
+      /* Use the first accessible class if storage is unavailable. */
+    }
+    const classId =
+      cloudSession.memberships.find(
+        (m) => m.classId === (cloudEntry.classId || rememberedClass),
+      )?.classId ?? cloudSession.memberships[0].classId;
+    setCloudGuideProgress({ identityId, classId, completed: null });
+    void classroomRequest(`classes/${classId}/guide`)
+      .then((r) => r.json())
+      .then((value) => {
+        if (active && generation === guideFetchGeneration.current)
+          setCloudGuideProgress({
+            identityId,
+            classId,
+            completed: CloudGuideSchema.parse(value).completed.length,
+          });
+      })
+      .catch(() => {
+        /* The progress entry remains available for retry through the guide. */
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    cloudStudent,
+    cloudSession?.identity.id,
+    guideMembershipSignature,
+    cloudEntry.classId,
+  ]);
+
   const [planets, setPlanets] = useState<PlanetDocument[]>([]),
     [universe, setUniverse] = useState<UniverseDocument | null>(null),
     [route, setRoute] = useState<
@@ -740,6 +811,44 @@ export function App() {
           </span>
         </button>
         <nav aria-label="主导航">
+          {cloudStudent &&
+            cloudGuideProgress?.identityId === cloudSession?.identity.id && (
+              <button
+                className="cloud-progress-entry"
+                aria-label="打开功能探索进度"
+                aria-description={
+                  cloudGuideProgress.completed === null
+                    ? "进度等待同步"
+                    : `已完成 ${cloudGuideProgress.completed} 项，共 10 项`
+                }
+                onClick={() => {
+                  try {
+                    localStorage.setItem(
+                      `colorverse-guide-${cloudGuideProgress.identityId}-${cloudGuideProgress.classId}`,
+                      "open",
+                    );
+                  } catch {
+                    /* Optional guide preference. */
+                  }
+                  if (route === "cloudworks") setGuideOpenRequest((r) => r + 1);
+                  else
+                    void action(async () => {
+                      await flush();
+                      setCloudEntry((entry) => ({
+                        ...entry,
+                        classId: cloudGuideProgress.classId,
+                      }));
+                      setGuideOpenRequest((r) => r + 1);
+                      setRoute("cloudworks");
+                    });
+                }}
+              >
+                ✦ 功能探索 ·{" "}
+                {cloudGuideProgress.completed === null
+                  ? "待同步"
+                  : `${cloudGuideProgress.completed}/10`}
+              </button>
+            )}
           {cloudSession?.access === "active" && (
             <button
               className={route === "cloudworks" ? "active" : ""}
@@ -918,7 +1027,14 @@ export function App() {
               key={`${cloudSession.identity.id}-${cloudEntry.sequence}`}
               session={cloudSession}
               onPendingChange={setCloudPending}
-              initialClassId={cloudEntry.classId}
+              onGuideProgress={reportGuideProgress}
+              guideOpenRequest={guideOpenRequest}
+              initialClassId={
+                cloudEntry.classId ||
+                (cloudGuideProgress?.identityId === cloudSession.identity.id
+                  ? cloudGuideProgress.classId
+                  : undefined)
+              }
             />
           </Suspense>
         ) : (

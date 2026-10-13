@@ -4,6 +4,7 @@ import {
   CloudPlanetDocumentSchema,
   CloudPlanetPresets,
 } from "@colorverse/contracts";
+import { CloudAtmosphere } from "./CloudStudentGuide";
 import { classroomRequest } from "./CloudClassroomView";
 
 type PlanetDocument = z.infer<typeof CloudPlanetDocumentSchema>;
@@ -53,14 +54,19 @@ export function CloudPlanetOrb({
     document.media.exterior?.id,
   );
   return (
-    <img
-      className="student-orb cloud-planet-orb"
-      alt="星球外貌"
-      src={
-        image.url ||
-        `${import.meta.env.BASE_URL}demo/v2/body-${document.skin}.webp`
-      }
-    />
+    <span
+      className={`cloud-orb-frame halo-${document.halo}`}
+      style={{ "--halo-color": document.color } as React.CSSProperties}
+    >
+      <img
+        className="student-orb cloud-planet-orb"
+        alt="星球外貌"
+        src={
+          image.url ||
+          `${import.meta.env.BASE_URL}demo/v2/body-${document.skin}.webp`
+        }
+      />
+    </span>
   );
 }
 export type AppearanceSection =
@@ -98,7 +104,8 @@ export function CloudPlanetAppearance({
     [skin, setSkin] = useState(document.skin),
     [color, setColor] = useState(document.color);
   const [summary, setSummary] = useState(document.metadata.summary),
-    [atmosphere, setAtmosphere] = useState(document.atmosphere);
+    [atmosphere, setAtmosphere] = useState(document.atmosphere),
+    [halo, setHalo] = useState(document.halo);
   const [brightness, setBrightness] = useState(document.brightness),
     [saturation, setSaturation] = useState(document.saturation);
   const [files, setFiles] = useState<
@@ -111,6 +118,7 @@ export function CloudPlanetAppearance({
     skin !== document.skin ||
     color !== document.color ||
     atmosphere !== document.atmosphere ||
+    halo !== document.halo ||
     brightness !== document.brightness ||
     saturation !== document.saturation ||
     Boolean(files.exterior || files.interior);
@@ -126,6 +134,12 @@ export function CloudPlanetAppearance({
     setSection(initialSection);
     setStatus("");
   }, [initialSection]);
+  const background = usePlanetImage(
+    classId,
+    id,
+    "interior",
+    document.media.interior?.id,
+  );
   // Save only this section: uploading an image must not accidentally save drafts in other tabs.
   const save = () =>
     void run(async () => {
@@ -134,7 +148,7 @@ export function CloudPlanetAppearance({
         section === "summary"
           ? { summary }
           : section === "atmosphere"
-            ? { atmosphere }
+            ? { atmosphere, halo }
             : section === "tone"
               ? { color, brightness, saturation, practice: "tone" }
               : { skin };
@@ -315,11 +329,55 @@ export function CloudPlanetAppearance({
           </div>
         </>
       )}
+      {section === "atmosphere" && (
+        <>
+          <h3>星球外部光晕</h3>
+          <p>光晕围绕整颗星球显示；粒子出现在内部场景，两种效果可以组合。</p>
+          <div className="row-buttons">
+            {(
+              [
+                ["none", "无光晕"],
+                ["soft", "柔光光晕"],
+                ["ring", "霓虹光环"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                disabled={busy}
+                aria-pressed={halo === value}
+                onClick={() => setHalo(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {(section === "atmosphere" || section === "tone") && (
+        <div className="cloud-effect-preview" aria-label="星球效果即时预览">
+          <div
+            className="cloud-preview-backdrop"
+            style={{
+              backgroundColor: color,
+              filter: `brightness(${brightness}) saturate(${saturation})`,
+            }}
+          >
+            {background.url && <img src={background.url} alt="" />}
+          </div>
+          <CloudAtmosphere kind={atmosphere} />
+          <CloudPlanetOrb
+            classId={classId}
+            id={id}
+            document={{ ...document, halo, color }}
+          />
+          <small>即时预览 · 点击保存后应用到云端星球</small>
+        </div>
+      )}
       {section === "tone" && (
         <>
           <h3>调整场景的色彩层次</h3>
           <p>
-            亮度和饱和度影响内部背景，成长元素保留自己的颜色。保存后在下方场景中欣赏效果。
+            亮度和饱和度影响内部背景，成长元素保留自己的颜色。调整时可在上方预览中观察，保存后应用到内部场景。
           </p>
           <label>
             环境色调

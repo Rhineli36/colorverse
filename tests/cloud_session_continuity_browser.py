@@ -109,7 +109,7 @@ with sync_playwright() as p:
 
     def renew():
         assert assets
-        result = page.evaluate('async (url) => {const m=await import(url); const r=await m.g().auth.refreshSession(); return !r.error;}', assets[0])
+        result = page.evaluate('async (url) => {const m=await import(url); const r=await m.getAuthClient().auth.refreshSession(); return !r.error;}', assets[0])
         assert result
 
     def release():
@@ -185,12 +185,14 @@ with sync_playwright() as p:
     page.get_by_role('button', name='进入我的星球 →', exact=True).click()
     passed('failed verification revokes cached teacher controls and classroom access; retry recovers')
 
+    page.get_by_role('button',name='关闭任务引导',exact=True).click()
     page.get_by_role('button', name='＋ 上传展示作品', exact=True).click()
     page.get_by_label('作品名称', exact=True).fill('属于上一个账户的草稿')
     user['id'] = str(uuid.uuid4())
     user['email'] = 'other@example.test'
-    page.evaluate('async (url) => {const m=await import(url); await m.g().auth.signInWithPassword({email:"other@example.test",password:"isolated-password"});}', assets[0])
+    page.evaluate('async (url) => {const m=await import(url); await m.getAuthClient().auth.signInWithPassword({email:"other@example.test",password:"isolated-password"});}', assets[0])
     expect(upload).to_have_count(0)
+    expect(page.get_by_role('button',name='关闭任务引导',exact=True)).to_be_visible()
     expect(page.get_by_role('heading', name='续期测试星球', exact=True)).to_be_visible()
     page.get_by_role('button', name='＋ 上传展示作品', exact=True).click()
     expect(page.get_by_label('作品名称', exact=True)).to_have_value('')

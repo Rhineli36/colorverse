@@ -60,7 +60,14 @@ with sync_playwright() as p:
     a = pixels(page); page.wait_for_timeout(900); b = pixels(page)
     assert ImageChops.difference(a,b).getbbox() is not None
     passed('satellites visibly orbit and speed zero is truly still')
-    for name in ['星环','光晕','边缘光','星尘','萤火虫']: page.get_by_role('button', name=name, exact=True).click()
+    slider(page, '运动速度', 0); page.wait_for_timeout(250)
+    baseline = pixels(page)
+    page.get_by_role('button',name='光晕',exact=True).click(); page.wait_for_timeout(300)
+    halo_pixels = pixels(page)
+    changed = sum(1 for pixel in ImageChops.difference(baseline,halo_pixels).getdata() if max(pixel) > 16)
+    assert changed > 200, changed
+    passed('default halo changes more than 200 canvas pixels visibly, including its rim outside the planet')
+    for name in ['星环','边缘光','星尘','萤火虫']: page.get_by_role('button', name=name, exact=True).click()
     slider(page, '密度', .8)
     expect(page.locator('canvas')).to_have_attribute('data-effect-layers','6')
     assert 0 < int(page.locator('canvas').get_attribute('data-particle-count')) <= 1000
@@ -136,7 +143,7 @@ with sync_playwright() as p:
     passed('first planet click focuses and a second canvas click enters the interior')
     explorer.get_by_role('button',name='打开色彩练习档案 ↗',exact=True).click()
     expect(explorer.get_by_role('dialog')).to_contain_text('色彩的第一封信')
-    explorer.locator('.modal-close').click()
+    explorer.get_by_role('button',name='关闭展示',exact=True).click()
     explorer.get_by_label('返回宇宙总览',exact=True).click()
     expect(explorer.locator('.universe-main')).to_have_attribute('data-view-mode','focus')
     explorer.get_by_role('button',name='进入星球内部 ↗',exact=True).focus()

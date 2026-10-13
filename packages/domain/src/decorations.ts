@@ -159,8 +159,8 @@ export function particlePosition(
     };
   }
   return {
-    x: p.x + (Math.cos(t * 0.18 + p.phase) - Math.cos(p.phase)) * 24 * p.drift,
-    y: p.y + (Math.sin(t * 0.22 + p.phase) - Math.sin(p.phase)) * 20 * p.drift,
+    x: p.x + (Math.cos(t * 0.7 + p.phase) - Math.cos(p.phase)) * 45 * p.drift,
+    y: p.y + (Math.sin(t * 0.85 + p.phase) - Math.sin(p.phase)) * 36 * p.drift,
   };
 }
 export function satellitePosition(
@@ -172,7 +172,7 @@ export function satellitePosition(
   const phase =
     (params.seed / 4294967296) * Math.PI * 2 +
     (index * Math.PI * 2) / count +
-    seconds * params.speed * 0.15;
+    seconds * params.speed * 0.5;
   const radius = params.orbitRadiusPx ?? 340;
   return {
     x: Math.cos(phase) * radius,

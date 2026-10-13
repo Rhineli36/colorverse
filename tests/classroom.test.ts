@@ -409,7 +409,13 @@ describe("cloud planet onboarding and personalization", () => {
         ids[11],
       ]);
       const resource = `planets/${ids[11]}/appearance`,
-        input = { name: "我的新星球", color: "#abcdef", skin: 4, revision: 0 };
+        input = {
+          name: "我的新星球",
+          color: "#abcdef",
+          skin: 4,
+          halo: "ring",
+          revision: 0,
+        };
       await expect(
         handleShowcaseCloud(
           request(resource, input, "PUT"),
@@ -444,9 +450,26 @@ describe("cloud planet onboarding and personalization", () => {
       ).toMatchObject({
         metadata: { name: input.name },
         skin: 4,
+        halo: "ring",
         revision: 1,
         media,
       });
+      await handleShowcaseCloud(
+        request(
+          resource,
+          { ...input, halo: undefined, revision: 1, summary: "新介绍" },
+          "PUT",
+        ),
+        env,
+        identity(ids[1]),
+        ids[5],
+        resource,
+        clientFactory,
+      );
+      expect(
+        (await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]]))
+          .rows[0].document,
+      ).toMatchObject({ halo: "ring", media, revision: 2 });
     } finally {
       await db.query("UPDATE planets SET document=$1 WHERE id=$2", [
         JSON.stringify(previous),

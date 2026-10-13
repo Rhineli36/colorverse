@@ -15,6 +15,7 @@ export const CloudPlanetAppearanceInput = z.strictObject({
   skin: z.number().int().min(0).max(5).default(0),
   summary: z.string().trim().max(1000).optional(),
   atmosphere: z.enum(["none", "stardust", "fireflies"]).optional(),
+  halo: z.enum(["none", "soft", "ring"]).optional(),
   brightness: z.number().min(0.5).max(1.5).optional(),
   saturation: z.number().min(0).max(2).optional(),
   practice: z.literal("tone").optional(),
@@ -25,6 +26,7 @@ export const CloudPlanetDocumentSchema = z.object({
   skin: z.number().int().min(0).max(5).default(0),
   revision: z.number().int().nonnegative().default(0),
   atmosphere: z.enum(["none", "stardust", "fireflies"]).default("none"),
+  halo: z.enum(["none", "soft", "ring"]).default("none"),
   brightness: z.number().min(0.5).max(1.5).default(1),
   saturation: z.number().min(0).max(2).default(1),
   media: z

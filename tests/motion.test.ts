@@ -136,8 +136,8 @@ describe("versioned planet motion", () => {
           const o = planetOrbit(e, 42),
             b = orbitBounds(e, 42),
             r = 256 * 0.8 * 0.9;
-          expect(o.periodSec).toBeGreaterThanOrEqual(mode === "slow" ? 90 : 30);
-          expect(o.periodSec).toBeLessThanOrEqual(mode === "slow" ? 190 : 60);
+          expect(o.periodSec).toBeGreaterThanOrEqual(mode === "slow" ? 45 : 12);
+          expect(o.periodSec).toBeLessThanOrEqual(mode === "slow" ? 75 : 20);
           expect(orbitPosition(o, 0).x).toBeCloseTo(e.position.x);
           expect(orbitPosition(o, 0).y).toBeCloseTo(e.position.y);
           expect(orbitPosition(o, o.periodSec).x).toBeCloseTo(e.position.x);
@@ -157,6 +157,26 @@ describe("versioned planet motion", () => {
             expect(p.y + r).toBeLessThanOrEqual(b.bottom + 1e-6);
           }
         }
+  });
+  it("makes fast motion visibly faster within a short observation, without moving the anchor", () => {
+    const entry = upgradeUniverse(fixtureUniverse([fixturePlanet(0)]))
+      .entries[0];
+    const distance = (mode: "slow" | "fast") => {
+      const orbit = planetOrbit(
+        {
+          ...entry,
+          motion: { ...DEFAULT_PLANET_MOTION, mode, trajectory: "circle" },
+        },
+        42,
+      );
+      const start = orbitPosition(orbit, 0),
+        later = orbitPosition(orbit, 2);
+      expect(start.x).toBeCloseTo(entry.position.x);
+      expect(start.y).toBeCloseTo(entry.position.y);
+      return Math.hypot(later.x - start.x, later.y - start.y);
+    };
+    expect(distance("fast")).toBeGreaterThan(40);
+    expect(distance("fast") / distance("slow")).toBeGreaterThan(2.5);
   });
   it("stationary preserves the selected path and has no position change", () => {
     const e = upgradeUniverse(fixtureUniverse([fixturePlanet(0)])).entries[0];

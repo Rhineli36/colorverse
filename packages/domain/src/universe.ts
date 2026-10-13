@@ -116,7 +116,9 @@ export function planetOrbit(entry: PlanetGeometry, seed: number): Orbit {
         : radius * (m.trajectory === "circle" ? 1 : 0.55);
     orbit.phase = 0;
     orbit.periodSec =
-      m.mode === "fast" ? 30 + (orbit.periodSec - 90) * 0.3 : orbit.periodSec;
+      m.mode === "fast"
+        ? 12 + (orbit.periodSec - 90) * 0.08
+        : 45 + (orbit.periodSec - 90) * 0.3;
     orbit.direction = m.direction === "forward" ? 1 : -1;
   }
   const initial = orbitPosition(orbit, 0);

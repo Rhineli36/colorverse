@@ -77,3 +77,5 @@
 42. [登录续期、未提交内容与云端入口](42-pilot-session-continuity.md)
 
 - [43 · 云端作品管理与生长元素扩充](43-cloud-work-management-and-growth.md)
+
+- [44 · 自由任务引导与可见效果预览](44-optional-guide-and-visible-effects.md)

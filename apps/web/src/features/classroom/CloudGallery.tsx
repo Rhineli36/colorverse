@@ -85,12 +85,20 @@ export function CloudGallery({
   initialClassId,
   onBack,
   onPendingChange,
+  onGuideProgress,
+  guideOpenRequest = 0,
 }: {
   session: CloudSession;
   initialPlanetId?: string;
   initialClassId?: string;
   onBack?: () => void;
   onPendingChange?: (pending: boolean) => void;
+  onGuideProgress?: (progress: {
+    identityId: string;
+    classId: string;
+    completed: number | null;
+  }) => void;
+  guideOpenRequest?: number;
 }) {
   const memberships = session.access === "active" ? session.memberships : [],
     [classId, setClassId] = useState(
@@ -228,17 +236,37 @@ export function CloudGallery({
       .then((r) => r.json())
       .then((value) => {
         if (active) {
-          setGuide(CloudGuideSchema.parse(value));
+          const result = CloudGuideSchema.parse(value);
+          setGuide(result);
           setGuideError(false);
+          onGuideProgress?.({
+            identityId: session.identity.id,
+            classId,
+            completed: result.completed.length,
+          });
         }
       })
       .catch(() => {
-        if (active) setGuideError(true);
+        if (active) {
+          setGuideError(true);
+          onGuideProgress?.({
+            identityId: session.identity.id,
+            classId,
+            completed: null,
+          });
+        }
       });
     return () => {
       active = false;
     };
-  }, [classId, student, data, guideRevision]);
+  }, [
+    classId,
+    student,
+    data,
+    guideRevision,
+    onGuideProgress,
+    session.identity.id,
+  ]);
   useEffect(() => {
     let active = true;
     if (!student || !myPlanet || !selected || owned) return;
@@ -385,6 +413,11 @@ export function CloudGallery({
       )}
     </div>
   );
+  const cancelElement = () => {
+    setEditing(false);
+    setDraft(null);
+    setWork(null);
+  };
   const saveElement = async (next: WorkData) => {
     await classroomRequest(`classes/${classId}/works/${next.id}/element`, {
       method: "PUT",
@@ -555,6 +588,9 @@ export function CloudGallery({
       )}
       {student && myPlanet && (guide || guideError) && (
         <CloudStudentGuide
+          key={`${session.identity.id}-${classId}`}
+          storageKey={`colorverse-guide-${session.identity.id}-${classId}`}
+          openRequest={guideOpenRequest}
           completed={guide?.completed ?? []}
           hasPeers={guide?.hasPeers ?? false}
           busy={
@@ -639,6 +675,26 @@ export function CloudGallery({
               </div>
             )}
           </div>
+          {editing && draft && (
+            <div className="cloud-edit-toolbar" aria-label="元素编辑操作">
+              <span>
+                正在编辑「{GrowthPresets[draft.presetId].name}」
+                <small>保存或退出后，即可继续自由编辑星球。</small>
+              </span>
+              <div className="row-buttons">
+                <button disabled={busy} onClick={cancelElement}>
+                  退出元素编辑
+                </button>
+                <button
+                  className="primary"
+                  disabled={busy}
+                  onClick={() => void perform(() => saveElement(draft))}
+                >
+                  保存并结束编辑
+                </button>
+              </div>
+            </div>
+          )}
           {owned && settingsOpen && (
             <div ref={settings}>
               <CloudPlanetAppearance
@@ -960,14 +1016,7 @@ export function CloudGallery({
                 >
                   重置本次修改
                 </button>
-                <button
-                  disabled={busy}
-                  onClick={() => {
-                    setEditing(false);
-                    setDraft(null);
-                    setWork(null);
-                  }}
-                >
+                <button disabled={busy} onClick={cancelElement}>
                   取消修改
                 </button>
                 <button

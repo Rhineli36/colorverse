@@ -66,11 +66,11 @@ export function renderEffect(
     return;
   }
   if (id === "halo") {
-    for (let i = 0; i < 6; i++)
-      g.circle(0, 0, 263 + i * 5).stroke({
+    for (let i = 0; i < 5; i++)
+      g.circle(0, 0, 269 + i * 9).stroke({
         color: p.color,
-        alpha: alpha * 0.32 * (1 - i / 6),
-        width: 4,
+        alpha: alpha * 0.85 * (1 - i / 5),
+        width: 5 + p.intensity * 5,
       });
     blur(6);
     return;
@@ -90,15 +90,24 @@ export function renderEffect(
     return;
   }
   if (["soft-glow", "outer-glow", "breathe"].includes(id)) {
-    for (let i = 0; i < 5; i++)
-      g.circle(0, 0, 180 + i * 25 + p.intensity * 30).fill({
-        color: p.color,
-        alpha: alpha * 0.04,
-      });
+    // Draw beyond the body silhouette so background glows survive planet occlusion.
+    for (let i = 0; i < 6; i++) {
+      if (id === "outer-glow")
+        g.circle(0, 0, 260 + i * 12).stroke({
+          color: p.color,
+          alpha: alpha * (0.5 - i * 0.07),
+          width: 16,
+        });
+      else
+        g.circle(0, 0, 245 + i * 16).fill({
+          color: p.color,
+          alpha: alpha * (0.09 - i * 0.012),
+        });
+    }
     blur(id === "outer-glow" ? 14 : 35);
     if (id === "breathe")
       return (seconds) => {
-        g.alpha = 0.7 + 0.3 * Math.cos(seconds * p.speed);
+        g.alpha = 0.65 + 0.35 * Math.cos(seconds * p.speed * 2.5);
       };
     return;
   }
@@ -154,11 +163,11 @@ export function renderEffect(
         else {
           const r =
             particle.radius *
-            (id === "floating-lights" ? 2.5 : id === "fireflies" ? 1.6 : 1);
+            (id === "floating-lights" ? 4 : id === "fireflies" ? 2.6 : 1.8);
           if (id === "fireflies" || id === "floating-lights")
             g.circle(position.x, position.y, r * 2.4).fill({
               color: p.color,
-              alpha: a * 0.12,
+              alpha: a * 0.25,
             });
           g.circle(position.x, position.y, r).fill({
             color: p.color,

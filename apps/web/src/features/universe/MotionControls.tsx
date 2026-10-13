@@ -120,7 +120,7 @@ export function MotionControls({
                       <animateMotion
                         key={`${d}-${draft.direction}-${draft.mode}`}
                         path={d}
-                        dur={draft.mode === "fast" ? "4s" : "8s"}
+                        dur={draft.mode === "fast" ? "2.5s" : "8s"}
                         repeatCount="indefinite"
                         keyPoints="0;1"
                         keyTimes="0;1"
@@ -172,8 +172,8 @@ export function MotionControls({
         {draft.mode === "stationary"
           ? "星球固定在布局位置，装饰保留。"
           : draft.mode === "fast"
-            ? "快速约30–60秒一圈，范围受限。"
-            : "慢速约90–190秒一圈，适合日常展览。"}
+            ? "快速约12–20秒一圈，范围受限。"
+            : "慢速约45–75秒一圈，适合日常展览。"}
         {reduced && " 系统已减少动态效果，当前观看保持静止。"}
       </p>
       {error && (

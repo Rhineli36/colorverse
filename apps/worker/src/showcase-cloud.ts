@@ -222,7 +222,10 @@ export async function handleShowcaseCloud(
         const d = own?.document;
         const completed = Object.entries({
           exterior: Boolean(d?.media?.exterior),
-          atmosphere: Boolean(d?.atmosphere && d.atmosphere !== "none"),
+          atmosphere: Boolean(
+            (d?.atmosphere && d.atmosphere !== "none") ||
+            (d?.halo && d.halo !== "none"),
+          ),
           interior: Boolean(d?.media?.interior),
           tone: Boolean(d?.guide?.tone),
           summary: Boolean(d?.metadata?.summary?.trim()),
@@ -344,6 +347,7 @@ export async function handleShowcaseCloud(
               ...(input.atmosphere !== undefined
                 ? { atmosphere: input.atmosphere }
                 : {}),
+              ...(input.halo !== undefined ? { halo: input.halo } : {}),
               ...(input.brightness !== undefined
                 ? { brightness: input.brightness }
                 : {}),

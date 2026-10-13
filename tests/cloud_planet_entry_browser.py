@@ -1,4 +1,5 @@
 """Isolated first/returning student flows against a cloud-auth build."""
+import io
 import base64
 import json
 import os
@@ -11,6 +12,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'work/python-deps'))
 from playwright.sync_api import sync_playwright, expect
+from PIL import Image, ImageChops
 
 expect.set_options(timeout=15000)
 URL = os.environ.get('COLORVERSE_TEST_URL', 'http://127.0.0.1:5174')
@@ -60,7 +62,7 @@ with sync_playwright() as p:
             assert data['revision'] == doc['revision']
             doc['metadata'].update({'name': data['name']})
             if 'summary' in data: doc['metadata']['summary'] = data['summary']
-            for key in ['skin', 'color', 'atmosphere', 'brightness', 'saturation']:
+            for key in ['skin', 'color', 'atmosphere', 'halo', 'brightness', 'saturation']:
                 if key in data: doc[key] = data[key]
             if data.get('practice') == 'tone': doc.setdefault('guide', {})['tone'] = True
             doc['revision'] += 1
@@ -134,9 +136,20 @@ with sync_playwright() as p:
     guide.get_by_role('button', name='查看全部任务').click()
     expect(guide.get_by_role('button',name='等待同学加入')).to_have_count(3)
     for button in guide.get_by_role('button',name='等待同学加入').all(): expect(button).to_be_disabled()
-    expect(guide.get_by_role('button',name='上传后解锁')).to_be_disabled()
+    expect(guide.get_by_role('button',name='上传后可编辑')).to_be_disabled()
     page.screenshot(path=str(ROOT / 'outputs/COLORVERSE-student-guide-first.png'),full_page=True)
     guide.get_by_role('button', name='收起任务列表').click()
+    guide.get_by_role('button', name='关闭任务引导', exact=True).click()
+    expect(guide.get_by_role('heading')).to_have_count(0)
+    expect(guide.get_by_role('progressbar')).to_have_attribute('value','0')
+    page.get_by_role('button',name='编辑星球外貌与背景',exact=True).click()
+    settings = page.get_by_role('region',name='云端星球设置')
+    settings.get_by_role('button',name='星球介绍',exact=True).click()
+    expect(page.get_by_label('星球介绍',exact=True)).to_be_visible()
+    settings.get_by_role('button',name='完成设置',exact=True).click()
+    page.get_by_role('button',name='打开功能探索进度',exact=True).click()
+    expect(guide.get_by_role('button',name='关闭任务引导',exact=True)).to_be_visible()
+    passed('guide can close completely; uncompleted tasks do not prevent freely opening settings')
     state['hasPeers'] = True
     page.get_by_role('button',name='刷新作品',exact=True).click()
     passed('peer tasks wait for classmates; element task waits for the first upload')
@@ -153,9 +166,33 @@ with sync_playwright() as p:
     expect(guide.get_by_role('progressbar')).to_have_attribute('value', '1')
     guide.get_by_role('button', name='选择粒子效果 →', exact=True).click()
     expect(settings.get_by_role('button', name='粒子氛围', exact=True)).to_have_attribute('aria-pressed','true')
+    preview = page.get_by_label('星球效果即时预览')
+    def preview_pixels(): return Image.open(io.BytesIO(preview.screenshot(animations='disabled'))).convert('RGB')
+    no_effect = preview_pixels()
     page.get_by_role('button', name='萤火微光', exact=True).click()
+    particles = preview_pixels()
+    changed = lambda a,b: sum(1 for pixel in ImageChops.difference(a,b).getdata() if max(pixel)>20)
+    assert changed(no_effect,particles) > 200
+
+    expect(preview.locator('.cloud-atmosphere.fireflies i')).to_have_count(24)
+    page.get_by_role('button',name='霓虹光环',exact=True).click()
+    expect(preview.locator('.halo-ring')).to_have_count(1)
+    ring = preview_pixels()
+    assert changed(particles,ring) > 400
+    page.get_by_role('button',name='柔光光晕',exact=True).click()
+    soft = preview_pixels()
+    assert changed(ring,soft) > 400
+    page.get_by_role('button',name='霓虹光环',exact=True).click()
+    page.emulate_media(reduced_motion='reduce')
+    assert preview.locator('.cloud-atmosphere i').first.evaluate('(el)=>getComputedStyle(el).animationName') == 'none'
+    still = preview_pixels();page.wait_for_timeout(350);assert ImageChops.difference(still,preview_pixels()).getbbox() is None
+    page.emulate_media(reduced_motion='no-preference')
+    preview.screenshot(path=str(ROOT / 'outputs/COLORVERSE-effects-preview-detail.png'),animations='disabled')
+    passed('particle and both halo choices change real preview pixels immediately; reduced motion keeps the scene still')
+    assert state['planet']['document'].get('halo','none') == 'none'
+    page.screenshot(path=str(ROOT / 'outputs/COLORVERSE-effects-live-preview.png'),full_page=True)
     page.get_by_role('button', name='保存星球设置', exact=True).click()
-    expect(page.locator('.cloud-atmosphere.fireflies i')).to_have_count(24)
+    expect(page.locator('.cloud-room .cloud-atmosphere.fireflies i')).to_have_count(24)
     guide.get_by_role('button', name='替换内部背景 →', exact=True).click()
     page.get_by_label('星球内部背景图片', exact=True).set_input_files(image)
     page.get_by_role('button', name='上传内部背景', exact=True).click()
@@ -163,6 +200,7 @@ with sync_playwright() as p:
     expect(page.get_by_role('img', name='星球内部背景')).to_be_visible()
     guide.get_by_role('button', name='调整色调 →', exact=True).click()
     page.get_by_label('背景饱和度',exact=True).fill('0.5')
+    expect(page.locator('.cloud-preview-backdrop')).to_have_attribute('style', __import__('re').compile(r'saturate\(0.5\)'))
     page.get_by_role('button', name='保存星球设置', exact=True).click()
     expect(page.locator('.cloud-room-scenery')).to_have_attribute('style', __import__('re').compile(r'saturate\(0.5\)'))
     guide.get_by_role('button', name='填写星球介绍 →', exact=True).click()
@@ -184,11 +222,42 @@ with sync_playwright() as p:
     guide.get_by_role('button', name='编辑成长元素 →', exact=True).click()
     editor = page.get_by_role('region', name='云端元素编辑')
     expect(editor).to_be_visible()
+    guide.get_by_role('button', name='关闭任务引导', exact=True).click()
+    expect(guide.get_by_role('heading')).to_have_count(0)
+    expect(page.get_by_label('元素编辑操作').get_by_role('button',name='退出元素编辑',exact=True)).to_be_enabled()
+    page.get_by_role('button',name='退出元素编辑',exact=True).click()
+    expect(editor).to_have_count(0)
+    page.get_by_role('button',name='编辑星球外貌与背景',exact=True).click()
+    expect(settings).to_be_visible()
+    settings.get_by_role('button',name='完成设置',exact=True).click()
+    page.get_by_role('button',name='打开功能探索进度',exact=True).click()
+    guide.get_by_role('button',name='编辑成长元素 →',exact=True).click()
     editor.get_by_label('元素运动').select_option('still')
-    editor.get_by_role('button', name='保存元素', exact=True).click()
+    page.get_by_label('元素编辑操作').get_by_role('button',name='保存并结束编辑',exact=True).click()
     expect(editor).not_to_be_visible()
     expect(guide.get_by_role('progressbar')).to_have_attribute('value', '7')
     passed('guide opens work upload and element editing, saving completes separate tasks')
+    state['hasPeers'] = False
+    page.get_by_role('button',name='刷新作品',exact=True).click()
+    expect(guide.get_by_role('button',name='等待同学加入',exact=True)).to_be_disabled()
+    guide.get_by_role('button',name='关闭任务引导',exact=True).click()
+    page.get_by_role('button',name='宇宙演示',exact=True).click()
+    badge = page.get_by_role('button',name='打开功能探索进度',exact=True)
+    expect(badge).to_contain_text('7/10')
+    badge.click()
+    expect(guide.get_by_role('button',name='关闭任务引导',exact=True)).to_be_visible()
+    guide.get_by_role('button',name='关闭任务引导',exact=True).click()
+    page.reload();page.wait_for_load_state('networkidle')
+    expect(badge).to_contain_text('7/10')
+    page.get_by_role('button',name='我的星球与作品',exact=True).click()
+    expect(guide.get_by_role('button',name='打开任务引导',exact=True)).to_be_visible()
+    page.get_by_role('button',name='编辑星球外貌与背景',exact=True).click()
+    expect(settings).to_be_visible()
+    settings.get_by_role('button',name='完成设置',exact=True).click()
+    guide.get_by_role('button',name='打开任务引导',exact=True).click()
+    state['hasPeers'] = True
+    page.get_by_role('button',name='刷新作品',exact=True).click()
+    passed('seven completed tasks and unavailable peers do not lock editing; main-page progress reopens the guide and closed preference survives reload')
     guide.get_by_role('button', name='拜访同学 →', exact=True).click()
     expect(guide.get_by_role('progressbar')).to_have_attribute('value','8')
     page.get_by_role('button', name='♡ 点赞星球',exact=True).click()
