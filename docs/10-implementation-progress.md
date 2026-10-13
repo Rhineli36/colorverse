@@ -382,3 +382,5 @@ Cloudflare实际发布为[登录测试版](https://colorverse-dev.2999346.worker
 ## 2026-10-13：自由任务与可见效果
 
 任务引导可随时收起，主导航保留当前班级完成进度，并记住账户/班级下的收起偏好。第七项编辑顶部提供保存/退出；任务未完成或同学未加入均不限制星球设置。云端新增即时粒子、色调和外部光晕预览，本地装饰/自定义轨迹速度增强；作用范围与兼容性见 [44](44-optional-guide-and-visible-effects.md)。191 项模块检查、lint、TypeScript、构建通过，发布及浏览器回归记录随后补充。无收费资源或数据库迁移。
+
+本轮应用 c8aefca 已发布，Cloudflare 版本 ef3aa20e-cd5a-437c-97f1-a345b2bd55b3，GitHub 核心/真实 PostgreSQL 18 与 Pages CI 全部成功。54 组隔离浏览器、9 组真实学生只读和 7 项云端入口边界通过；现有星球/作品前后完全一致。详细记录见 [44](44-optional-guide-and-visible-effects.md)。
