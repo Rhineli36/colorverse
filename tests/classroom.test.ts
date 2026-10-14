@@ -12,6 +12,8 @@ import {
   type CourseDatabase,
 } from "../apps/api/src/database";
 import { classroomOverview } from "../apps/worker/src/classroom";
+import { ShowcaseReviewResponse } from "@colorverse/contracts";
+import { showcaseReview } from "../apps/worker/src/showcase-review";
 import {
   GrowthPresetIds,
   GrowthLibrarySpec,
@@ -47,6 +49,9 @@ beforeAll(async () => {
   );
   await db.exec(
     await readFile("apps/api/migrations/004-showcase-withdrawal.sql", "utf8"),
+  );
+  await db.exec(
+    await readFile("apps/api/migrations/005-showcase-reviews.sql", "utf8"),
   );
   for (const id of ids.slice(0, 4))
     await db.query(
@@ -1155,4 +1160,209 @@ describe("reversible cloud work management", () => {
         ).rows[0].n,
       ).toBe(0);
     }));
+});
+
+describe("cloud teacher showcase reviews", () => {
+  const work = async () => {
+    const id = randomUUID();
+    await db.query(
+      "INSERT INTO showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id) VALUES($1,$2,'点评验证',$3,100,'crystal',$4)",
+      [id, ids[11], randomUUID(), randomUUID()],
+    );
+    return id;
+  };
+  const call = (id: string, user = ids[0], body?: unknown, cls = ids[5]) =>
+    handleShowcaseCloud(
+      body === undefined
+        ? new Request("https://app.test/review")
+        : request("review", body),
+      env,
+      identity(user),
+      cls,
+      `works/${id}/review`,
+      clientFactory,
+    );
+  const input = () => ({
+    score: 88.5,
+    comment: "冷暖对比清晰，建议保留更多留白。",
+    revision: 0,
+    requestId: randomUUID(),
+  });
+  it("only verified class staff can score; owners and peer students can read but not write", async () => {
+    const id = await work();
+    for (const student of [ids[1], ids[2]])
+      await expect(call(id, student, input())).rejects.toMatchObject({
+        status: 403,
+        code: "TEACHER_REQUIRED",
+      });
+    await expect(call(id, ids[3], undefined, ids[6])).rejects.toMatchObject({
+      status: 404,
+    });
+    await call(id, ids[0], input());
+    const result = ShowcaseReviewResponse.parse(
+      await (await call(id, ids[2])).json(),
+    );
+    expect(result.review).toMatchObject({
+      source: "teacher",
+      score: 88.5,
+      revision: 1,
+    });
+    await db.query("UPDATE enrollments SET status='inactive' WHERE id=$1", [
+      ids[7],
+    ]);
+    try {
+      await expect(call(id, ids[0], input())).rejects.toMatchObject({
+        status: 403,
+      });
+    } finally {
+      await db.query("UPDATE enrollments SET status='active' WHERE id=$1", [
+        ids[7],
+      ]);
+    }
+  });
+  it("rejects invalid scores, empty reviews, forged source and roles without writing", async () => {
+    const id = await work();
+    for (const patch of [
+      { score: -1 },
+      { score: 101 },
+      { score: "90" },
+      { score: null, comment: "  " },
+      { source: "demo" },
+      { role: "teacher" },
+      { comment: "字".repeat(2001) },
+      { revision: -1 },
+    ])
+      await expect(
+        call(id, ids[0], { ...input(), ...patch }),
+      ).rejects.toMatchObject({ status: 400 });
+    expect(
+      (
+        await db.query(
+          "SELECT count(*)::int n FROM showcase_reviews WHERE work_id=$1",
+          [id],
+        )
+      ).rows[0].n,
+    ).toBe(0);
+  });
+  it("idempotent retries create one version; changed request content and stale versions conflict", async () => {
+    const id = await work(),
+      body = input();
+    const first = await (await call(id, ids[0], body)).json();
+    expect(await (await call(id, ids[0], body)).json()).toEqual(first);
+    await expect(
+      call(id, ids[0], { ...body, score: 90 }),
+    ).rejects.toMatchObject({ status: 409, code: "REQUEST_CONFLICT" });
+    await expect(
+      call(id, ids[0], { ...body, requestId: randomUUID() }),
+    ).rejects.toMatchObject({ status: 409, code: "REVIEW_CONFLICT" });
+    await call(id, ids[0], {
+      ...body,
+      score: 92,
+      revision: 1,
+      requestId: randomUUID(),
+    });
+    expect(
+      (
+        await db.query(
+          "SELECT count(*)::int n FROM showcase_reviews WHERE work_id=$1",
+          [id],
+        )
+      ).rows[0].n,
+    ).toBe(2);
+    for (const statement of [
+      "UPDATE showcase_reviews SET score=1 WHERE work_id=$1",
+      "DELETE FROM showcase_reviews WHERE work_id=$1",
+    ])
+      await expect(db.query(statement, [id])).rejects.toThrow("immutable");
+    expect((await (await call(id, ids[1])).json()).review.score).toBe(92);
+  });
+  it("supports score-only and comment-only feedback including zero points", async () => {
+    const id = await work();
+    await call(id, ids[0], { ...input(), score: 0, comment: "" });
+    expect((await (await call(id)).json()).review.score).toBe(0);
+    await call(id, ids[0], {
+      ...input(),
+      score: null,
+      comment: "  建议调整层次。  ",
+      revision: 1,
+    });
+    expect((await (await call(id)).json()).review).toMatchObject({
+      score: null,
+      comment: "建议调整层次。",
+    });
+  });
+  it("excludes demo suggestions and old versions from confirmed averages and retains feedback on withdrawal", async () => {
+    const id = await work();
+    await db.query(
+      "INSERT INTO showcase_reviews(id,work_id,reviewer_enrollment_id,revision,base_revision,score,comment,source,request_id) VALUES($1,$2,$3,1,0,95,'演示建议','demo',$4)",
+      [randomUUID(), id, ids[7], randomUUID()],
+    );
+    const before = (
+      await classroomOverview(sql, identity(ids[0]), ids[5])
+    ).students.find((s) => s.enrollment_id === ids[8])!;
+    expect(before.suggested_review_count).toBe(1);
+    await call(id, ids[0], { ...input(), score: 90, revision: 1 });
+    const after = (
+      await classroomOverview(sql, identity(ids[0]), ids[5])
+    ).students.find((s) => s.enrollment_id === ids[8])!;
+    expect(after.suggested_review_count).toBe(0);
+    expect(after.reviewed_showcase_count).toBe(
+      Number(before.reviewed_showcase_count) + 1,
+    );
+    await db.query(
+      "UPDATE showcase_works SET withdrawn_at=now(),withdrawn_by=$1 WHERE id=$2",
+      [ids[7], id],
+    );
+    await expect(call(id, ids[2])).rejects.toMatchObject({ status: 404 });
+    expect((await (await call(id, ids[1])).json()).review.score).toBe(90);
+    await expect(
+      call(id, ids[0], { ...input(), revision: 2 }),
+    ).rejects.toMatchObject({ status: 409, code: "WORK_WITHDRAWN" });
+    const hidden = (
+      await classroomOverview(sql, identity(ids[0]), ids[5])
+    ).students.find((s) => s.enrollment_id === ids[8])!;
+    expect(hidden.reviewed_showcase_count).toBe(before.reviewed_showcase_count);
+    expect(hidden.average_showcase_score).toBe(before.average_showcase_score);
+    await db.query(
+      "UPDATE showcase_works SET withdrawn_at=NULL,withdrawn_by=NULL WHERE id=$1",
+      [id],
+    );
+    expect((await (await call(id)).json()).review.revision).toBe(2);
+  });
+  it("works with SELECT/INSERT review privileges and cannot mutate review history", async () => {
+    const id = await work(),
+      role = `test_review_${randomUUID().replaceAll("-", "")}`;
+    await db.exec(
+      `CREATE ROLE ${role}; GRANT USAGE ON SCHEMA ${schema} TO ${role}; GRANT SELECT ON users,enrollments,planets TO ${role}; GRANT SELECT,UPDATE ON showcase_works TO ${role}; GRANT SELECT,INSERT ON showcase_reviews TO ${role}`,
+    );
+    try {
+      await db.transaction(async (tx) => {
+        await tx.exec(`SET LOCAL ROLE ${role}`);
+        const limited = {
+          query: (q: string, params: unknown[]) =>
+            tx.query(q.replaceAll("colorverse.", `${schema}.`), params),
+        };
+        const saved = await showcaseReview(
+          limited,
+          { id: ids[7], role: "teacher" },
+          ids[5],
+          id,
+          "POST",
+          input(),
+        );
+        expect(saved.review).toMatchObject({ score: 88.5, source: "teacher" });
+      });
+      await expect(
+        db.transaction(async (tx) => {
+          await tx.exec(`SET LOCAL ROLE ${role}`);
+          await tx.query(
+            "UPDATE showcase_reviews SET score=1 WHERE work_id=$1",
+            [id],
+          );
+        }),
+      ).rejects.toThrow(/permission denied/i);
+    } finally {
+      await db.exec(`DROP OWNED BY ${role}; DROP ROLE ${role}`);
+    }
+  });
 });

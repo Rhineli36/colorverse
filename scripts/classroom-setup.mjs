@@ -74,19 +74,59 @@ try {
     );
   }
   await client.query("COMMIT");
-  const counts = await client.query(
+  const reviews = await readFile(
+    "apps/api/migrations/005-showcase-reviews.sql",
+    "utf8",
+  );
+  const reviewsHash = createHash("sha256").update(reviews).digest("hex");
+  await client.query("BEGIN");
+  await client.query("SELECT pg_advisory_xact_lock(7301941)");
+  await client.query("SET LOCAL search_path=colorverse,pg_catalog");
+  const fifth = await client.query(
+    "SELECT sha256 FROM course_migrations WHERE version=5",
+  );
+  if (fifth.rows.length && fifth.rows[0].sha256 !== reviewsHash)
+    throw new Error("MIGRATION_HASH_MISMATCH");
+  if (!fifth.rows.length) {
+    await client.query(reviews);
+    await client.query(
+      "INSERT INTO course_migrations(version,sha256) VALUES(5,$1)",
+      [reviewsHash],
+    );
+  }
+  await client.query(
+    "REVOKE ALL ON colorverse.showcase_reviews FROM PUBLIC,anon,authenticated",
+  );
+  await client.query(
+    "GRANT SELECT ON colorverse.showcase_reviews TO colorverse_identity_reader",
+  );
+  if (
+    (
+      await client.query(
+        "SELECT 1 FROM pg_roles WHERE rolname='colorverse_classroom_writer'",
+      )
+    ).rows.length
+  )
+    await client.query(
+      "GRANT SELECT,INSERT ON colorverse.showcase_reviews TO colorverse_classroom_writer",
+    );
+  await client.query("COMMIT");
+  const studentCounts = await client.query(
     "SELECT count(*)::int AS students FROM colorverse.enrollments WHERE role='student' AND status='active'",
   );
   await writeFile(
     "outputs/classroom-setup.json",
     JSON.stringify(
-      { status: "classroom_statistics_ready", ...counts.rows[0] },
+      { status: "classroom_statistics_ready", ...studentCounts.rows[0] },
       null,
       2,
     ),
   );
   console.log(
-    JSON.stringify({ status: "classroom_statistics_ready", ...counts.rows[0] }),
+    JSON.stringify({
+      status: "classroom_statistics_ready",
+      ...studentCounts.rows[0],
+    }),
   );
 } catch (error) {
   if (client) await client.query("ROLLBACK").catch(() => {});

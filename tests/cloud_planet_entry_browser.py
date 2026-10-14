@@ -100,6 +100,7 @@ with sync_playwright() as p:
                 data = json.loads(route.request.post_data)
                 state['reaction' if data['kind'] in ['like','emoji'] else 'comment'] = True
             route.fulfill(json={'interactions': []})
+        elif path.endswith('/review'): route.fulfill(json={'review':None})
         elif path.endswith('/overview'): route.fulfill(json={'classId': class_b, 'title': '第二班', 'timezone': 'Asia/Shanghai', 'generatedAt': '2026-10-11T12:00:00Z', 'students': []})
         else: route.fulfill(status=404, json={'error': {'message': 'unexpected isolated API request'}})
     page.route('https://*.supabase.co/auth/v1/**', auth)

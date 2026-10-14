@@ -1582,3 +1582,74 @@
 .cloud-universe-node.compact:focus-visible > span:last-child {
   display: block;
 }
+.cloud-work-review {
+  margin: 24px 0;
+  padding: 22px;
+  border: 1px solid #86cbb844;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #172f39cc, #121b2bcc);
+}
+.cloud-review-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+.cloud-review-heading h3 {
+  margin: 0;
+}
+.cloud-review-heading > span {
+  color: #bfe1cb;
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 1px solid #bfe1cb44;
+  border-radius: 12px;
+}
+.cloud-review-record p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.cloud-review-record > small {
+  color: #a0b4c2;
+  line-height: 1.6;
+}
+.cloud-review-score {
+  display: block;
+  margin-top: 18px;
+  color: #dfecc4;
+  font-size: 38px;
+}
+.cloud-review-score small {
+  font-size: 14px;
+  font-weight: normal;
+}
+.cloud-review-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+.cloud-review-form label {
+  display: grid;
+  gap: 8px;
+}
+.cloud-review-form input {
+  max-width: 180px;
+}
+.cloud-review-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font: inherit;
+  color: inherit;
+  padding: 12px;
+  background: #08111c99;
+  border: 1px solid #8fabb344;
+  border-radius: 12px;
+}
+@media (max-width: 600px) {
+  .cloud-work-review {
+    padding: 16px;
+  }
+}

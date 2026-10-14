@@ -9,6 +9,7 @@ import { imageInfo } from "@colorverse/package-io";
 import type { VerifiedIdentity } from "./auth";
 import type { AuthEnvironment } from "./auth";
 import { classroomActor, ClassroomFailure } from "./classroom";
+import { showcaseReview } from "./showcase-review";
 interface ImagesBinding {
   input(stream: ReadableStream<Uint8Array>): {
     transform(options: Record<string, unknown>): {
@@ -149,6 +150,25 @@ export async function handleShowcaseCloud(
     await client.connect();
     await client.query("BEGIN");
     const actor = await classroomActor(client, identity, classId);
+    const review = /^works\/([a-f0-9-]+)\/review$/.exec(resource);
+    if (review) {
+      const body =
+        request.method === "POST"
+          ? JSON.parse(
+              new TextDecoder().decode(await readLimited(request, 16000)),
+            )
+          : undefined;
+      const result = await showcaseReview(
+        client,
+        actor,
+        classId,
+        review[1],
+        request.method,
+        body,
+      );
+      await client.query("COMMIT");
+      return Response.json(result);
+    }
     if (resource === "guide") {
       if (actor.role !== "student")
         throw new ClassroomFailure(

@@ -34,6 +34,7 @@ with sync_playwright() as p:
    planets[0]['document']['revision']+=1;route.fulfill(json={'saved':True})
   elif path.endswith('/interactions'): route.fulfill(json={'interactions':[]})
   elif path.endswith('/image'): route.fulfill(body=(ROOT/'apps/web/public/demo/v2/body-2.webp').read_bytes(),content_type='image/webp')
+  elif path.endswith('/review'): route.fulfill(json={'review':None})
   elif path.endswith('/overview'): route.fulfill(json={'classId':cls,'title':'演示班','timezone':'Asia/Shanghai','generatedAt':'2026-10-14T01:00:00Z','students':[]})
   else: raise AssertionError('Unexpected API '+path)
  page.route('https://*.supabase.co/auth/v1/**',auth);page.route('**/api/v1/cloud/**',api)

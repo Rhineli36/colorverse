@@ -76,6 +76,8 @@ with sync_playwright() as p:
             route.fulfill(json={'completed': ['work'], 'hasPeers': False})
         elif '/interactions?' in url:
             route.fulfill(json={'interactions': []})
+        elif url.endswith('/review'):
+            route.fulfill(json={'review': None})
         elif url.endswith('/image'):
             route.fulfill(body=(ROOT / 'apps/web/public/demo/v2/body-2.webp').read_bytes(), content_type='image/webp')
         else:

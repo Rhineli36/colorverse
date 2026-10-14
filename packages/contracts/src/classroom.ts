@@ -14,6 +14,9 @@ export const ClassroomStudentSchema = z.strictObject({
   received_count: z.number().int().nonnegative(),
   weekly_received_count: z.number().int().nonnegative(),
   last_submission: z.string().nullable(),
+  reviewed_showcase_count: z.number().int().nonnegative().default(0),
+  suggested_review_count: z.number().int().nonnegative().default(0),
+  average_showcase_score: z.number().min(0).max(100).nullable().default(null),
 });
 export const ClassroomOverviewSchema = z.strictObject({
   classId: z.uuid(),
@@ -24,3 +27,24 @@ export const ClassroomOverviewSchema = z.strictObject({
 });
 export type ClassroomOverview = z.infer<typeof ClassroomOverviewSchema>;
 export type ClassroomStudent = z.infer<typeof ClassroomStudentSchema>;
+export const ShowcaseReviewInput = z
+  .strictObject({
+    score: z.number().min(0).max(100).nullable(),
+    comment: z.string().trim().max(2000),
+    revision: z.number().int().nonnegative(),
+    requestId: z.uuid(),
+  })
+  .refine((v) => v.score !== null || v.comment.length > 0);
+export const ShowcaseReviewResponse = z.strictObject({
+  review: z
+    .strictObject({
+      id: z.uuid(),
+      revision: z.number().int().positive(),
+      score: z.number().min(0).max(100).nullable(),
+      comment: z.string(),
+      source: z.enum(["teacher", "demo"]),
+      created_at: z.string(),
+      reviewer_name: z.string(),
+    })
+    .nullable(),
+});

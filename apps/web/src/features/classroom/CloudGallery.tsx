@@ -1,4 +1,5 @@
 import { CloudUniverse } from "./CloudUniverse";
+import { CloudWorkReview } from "./CloudWorkReview";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
@@ -134,6 +135,7 @@ export function CloudGallery({
     [description, setDescription] = useState(""),
     [settingsOpen, setSettingsOpen] = useState(false),
     [appearanceDirty, setAppearanceDirty] = useState(false),
+    [reviewPending, setReviewPending] = useState(false),
     [settingsSection, setSettingsSection] =
       useState<AppearanceSection>("exterior"),
     [guide, setGuide] = useState<z.infer<typeof CloudGuideSchema> | null>(null),
@@ -163,6 +165,7 @@ export function CloudGallery({
     editing ||
     uploadOpen ||
     appearanceDirty ||
+    reviewPending ||
     Boolean(confirmation) ||
     Boolean(comment.trim());
   useEffect(() => {
@@ -330,14 +333,14 @@ export function CloudGallery({
   }, [birth]);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || busy) return;
+      if (event.key !== "Escape" || busy || reviewPending) return;
       if (confirmation) setConfirmation(null);
       else if (uploadOpen) setUploadOpen(false);
       else if (work && !editing) setWork(null);
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [busy, uploadOpen, work, editing, confirmation]);
+  }, [busy, reviewPending, uploadOpen, work, editing, confirmation]);
   const perform = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
@@ -368,7 +371,10 @@ export function CloudGallery({
         `classes/${classId}/interactions?planetId=${planetId}`,
       );
       setInteractions((await response.json()).interactions);
-      setComment("");
+      if (kind === "comment")
+        setComment((current) =>
+          current.trim() === content.trim() ? "" : current,
+        );
       setGuideRevision((r) => r + 1);
       setNotice("互动已记录，教师端刷新后可以查看。");
     });
@@ -1254,7 +1260,7 @@ export function CloudGallery({
           >
             <button
               className="modal-close"
-              disabled={busy || Boolean(confirmation)}
+              disabled={busy || reviewPending || Boolean(confirmation)}
               onClick={() => {
                 setWork(null);
                 setComment("");
@@ -1274,6 +1280,14 @@ export function CloudGallery({
                 作品已撤下，仅作者和教师可查看。原图、元素设置和互动保留；仍计入存储限额。
               </p>
             )}
+            <CloudWorkReview
+              key={`${session.identity.id}:${classId}:${work.id}`}
+              classId={classId}
+              workId={work.id}
+              staff={staff}
+              withdrawn={work.withdrawn}
+              onPendingChange={setReviewPending}
+            />
             <div className="row-buttons">
               <button
                 disabled={busy}
@@ -1309,7 +1323,7 @@ export function CloudGallery({
               {(owned || staff) &&
                 (!work.withdrawn || staff || work.canRestore) && (
                   <button
-                    disabled={busy}
+                    disabled={busy || reviewPending}
                     onClick={() =>
                       setConfirmation({
                         kind: "work",

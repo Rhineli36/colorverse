@@ -52,6 +52,7 @@ with sync_playwright() as p:
     data=json.loads(route.request.post_data);state['writes']+=1;state['messages'].append({'id':str(uuid.uuid4()),'kind':data['kind'],'content':data['content'],'display_name':'我','work_id':data['workId'],'own':True,'can_remove':True})
    route.fulfill(json={'interactions':state['messages'] if not state['withdrawn'] else []})
   elif path.endswith('/image'): route.fulfill(body=(ROOT/'apps/web/public/demo/v2/body-2.webp').read_bytes(),content_type='image/webp')
+  elif path.endswith('/review'): route.fulfill(json={'review':None})
   elif path.endswith('/overview'): route.fulfill(json={'classId':cls,'title':'管理测试班','timezone':'Asia/Shanghai','generatedAt':'2026-10-12T00:00:00Z','students':[]})
   else: raise AssertionError('unexpected API '+method+' '+path)
  page.route('https://*.supabase.co/auth/v1/**',auth);page.route('**/api/v1/cloud/**',api)

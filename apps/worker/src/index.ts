@@ -36,7 +36,7 @@ export async function handleRequest(
   const url = new URL(request.url);
   if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
   const showcase =
-    /^\/api\/v1\/cloud\/classes\/([^/]+)\/(guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior)|works|works\/[a-f0-9-]+\/(image|original|element|visibility)|interactions|interactions\/[a-f0-9-]+)$/.exec(
+    /^\/api\/v1\/cloud\/classes\/([^/]+)\/(guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review)|interactions|interactions\/[a-f0-9-]+)$/.exec(
       url.pathname,
     );
   if (showcase) {

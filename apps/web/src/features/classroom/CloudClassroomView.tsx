@@ -96,6 +96,8 @@ export function CloudClassroomView({
           .includes(query.toLowerCase())) &&
       (filter !== "no-planet" || !s.planet_id) &&
       (filter !== "no-work" || count(s, "showcase") === 0) &&
+      (filter !== "unreviewed" ||
+        s.reviewed_showcase_count < s.showcase_count) &&
       (filter !== "interactions" || count(s, "sent") < 5),
   );
   students.sort((a, b) =>
@@ -168,6 +170,7 @@ export function CloudClassroomView({
           <option value="all">全部学生</option>
           <option value="no-planet">尚未创建星球</option>
           <option value="no-work">还没有展示作品</option>
+          <option value="unreviewed">有作品等待教师点评</option>
           <option value="interactions">互动不足 5 次</option>
         </select>
         <select
@@ -197,6 +200,7 @@ export function CloudClassroomView({
                 <th>展示作品</th>
                 <th>发起互动</th>
                 <th>收到互动</th>
+                <th>教师点评 / 评分</th>
                 <th>最近提交</th>
                 <th>状态</th>
               </tr>
@@ -244,6 +248,22 @@ export function CloudClassroomView({
                     <b>{count(s, "received")}</b>
                   </td>
                   <td>
+                    <b>
+                      {s.reviewed_showcase_count} / {s.showcase_count}
+                    </b>
+                    <small>
+                      累计已确认点评
+                      {s.suggested_review_count
+                        ? ` · 演示建议 ${s.suggested_review_count} 件`
+                        : ""}
+                    </small>
+                    <small>
+                      {s.average_showcase_score === null
+                        ? "尚无教师确认评分"
+                        : `已确认作品均分 ${s.average_showcase_score} / 100`}
+                    </small>
+                  </td>
+                  <td>
                     {s.last_submission
                       ? new Date(s.last_submission).toLocaleString("zh-CN", {
                           timeZone: data?.timezone,
@@ -279,6 +299,9 @@ export function CloudClassroomView({
           </div>
         )}
       </section>
+      <p className="classroom-footnote">
+        教师点评栏始终显示累计进度；均分仅计算正在展示的作品的最新教师确认评分，演示建议不计入。学生点赞和留言不影响评分。
+      </p>
       <p className="classroom-footnote">
         展示与互动统计只计入正在展示的作品及有效互动；撤下作品、撤回互动或移除留言后会减少，恢复作品后对应记录重新计入。原始上传日期决定所属周。课程作业提交单独统计。刷新后核对学生端结果。
       </p>

@@ -144,6 +144,16 @@ try {
     "GRANT SELECT,INSERT,DELETE ON colorverse.classroom_interactions TO colorverse_classroom_writer",
   );
   await client.query("COMMIT");
+  if (
+    (
+      await client.query(
+        "SELECT to_regclass('colorverse.showcase_reviews') AS table_name",
+      )
+    ).rows[0].table_name
+  )
+    await client.query(
+      "GRANT SELECT,INSERT ON colorverse.showcase_reviews TO colorverse_classroom_writer",
+    );
   console.log(
     JSON.stringify({
       status: "student_test_and_private_storage_ready",
