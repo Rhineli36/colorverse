@@ -56,6 +56,7 @@ with sync_playwright() as p:
   elif path.endswith('/overview'): route.fulfill(json={'classId':cls,'title':'管理测试班','timezone':'Asia/Shanghai','generatedAt':'2026-10-12T00:00:00Z','students':[]})
   else: raise AssertionError('unexpected API '+method+' '+path)
  page.route('https://*.supabase.co/auth/v1/**',auth);page.route('**/api/v1/cloud/**',api)
+ page.route("**/api/supabase/auth/v1/**",auth)
  page.goto(URL);page.wait_for_load_state('networkidle')
  page.get_by_role('button',name='登录',exact=True).click();page.get_by_label('课堂邮箱').fill(user['email']);page.get_by_label('密码',exact=True).fill('isolated-password')
  page.get_by_role('dialog').get_by_role('button',name='登录',exact=True).click();page.get_by_role('button',name='进入我的星球 →',exact=True).click()
@@ -66,11 +67,11 @@ with sync_playwright() as p:
  expect(page.locator('.cloud-growth')).to_have_count(1)
  dialog=open_work();expect(dialog.get_by_role('button',name='移除留言',exact=True)).to_have_count(0)
  dialog.get_by_role('button',name='编辑元素',exact=True).click()
- choices=page.locator('.element-library-cards');expect(choices.get_by_role('button')).to_have_count(36)
- for name in ['星愿纸鹤','月光风铃','光帆飞船','流星风筝','色谱折扇','琉璃灯盏']:
+ choices=page.locator('.element-library-cards');expect(choices.get_by_role('button')).to_have_count(38)
+ for name in ['星愿纸鹤','月光风铃','光帆飞船','流星风筝','色谱折扇','琉璃灯盏','色轮陀螺','棱镜城堡']:
   btn=choices.get_by_role('button',name='选择'+name,exact=True);expect(btn).to_be_visible();btn.click();expect(btn).to_have_attribute('aria-pressed','true')
  page.get_by_role('button',name='保存元素',exact=True).click();expect(page.get_by_role('region',name='云端元素编辑')).to_have_count(0)
- assert state['preset']=='glass-lantern';passed('36 choices include six distinct new shapes and persist the selected shape')
+ assert state['preset']=='prism-castle';passed('38 choices include six distinct new shapes and persist the selected shape')
  dialog=open_work();dialog.get_by_role('button',name='撤下作品',exact=True).click();confirm=page.get_by_role('dialog',name='确认管理操作')
  before=state['writes'];confirm.get_by_role('button',name='取消',exact=True).click();assert state['writes']==before
  passed('withdrawal requires confirmation; cancel makes no write')

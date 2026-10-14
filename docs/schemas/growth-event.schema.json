@@ -87,7 +87,7 @@
       "properties": {
         "layerId": {"$ref": "#/$defs/uuid"},
         "sceneKind": {"enum": ["exterior", "interior"]},
-        "presetId": {"enum": ["glow-flower", "crystal", "luminous-leaf", "moon-mushroom", "cloudlet", "floating-island", "star-seed", "orbit-stone", "aurora-jelly", "moon-bloom", "coral-fan", "comet", "butterfly", "ice-spire", "sun-disc", "rain-drop", "satellite", "nebula-shell", "little-tree", "lotus", "meteor-cluster", "light-lantern", "rainbow-arch", "cosmic-eye", "snow-flake", "feather", "bubble-cluster", "mountain", "spiral-galaxy", "portal", "paper-crane", "wind-chime", "solar-sail", "dream-kite", "color-fan", "glass-lantern"]},
+        "presetId": {"enum": ["glow-flower", "crystal", "luminous-leaf", "moon-mushroom", "cloudlet", "floating-island", "star-seed", "orbit-stone", "aurora-jelly", "moon-bloom", "coral-fan", "comet", "butterfly", "ice-spire", "sun-disc", "rain-drop", "satellite", "nebula-shell", "little-tree", "lotus", "meteor-cluster", "light-lantern", "rainbow-arch", "cosmic-eye", "snow-flake", "feather", "bubble-cluster", "mountain", "spiral-galaxy", "portal", "paper-crane", "wind-chime", "solar-sail", "dream-kite", "color-fan", "glass-lantern", "color-top", "prism-castle"]},
         "presetVersion": {"const": "1.0.0"},
         "params": {
           "type": "object", "additionalProperties": false,

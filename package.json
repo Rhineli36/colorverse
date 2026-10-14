@@ -10,7 +10,9 @@
   "scripts": {
     "dev": "vite --config apps/web/vite.config.ts --host 127.0.0.1",
     "dev:api": "tsx apps/api/src/start.ts",
+    "start:server": "tsx apps/server/src/start.ts",
     "build": "tsc --noEmit && vite build --config apps/web/vite.config.ts",
+    "build:competition": "node scripts/build-competition.mjs",
     "preview": "vite preview --config apps/web/vite.config.ts --host 127.0.0.1",
     "test": "vitest run",
     "test:watch": "vitest",

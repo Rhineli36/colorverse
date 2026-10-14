@@ -338,8 +338,8 @@ describe("teacher classroom statistics", () => {
   });
 });
 describe("expanded growth library", () => {
-  it("provides 36 distinct bounded geometries within the shared rendering budget", () => {
-    expect(GrowthPresetIds).toHaveLength(36);
+  it("provides 38 distinct bounded geometries within the shared rendering budget", () => {
+    expect(GrowthPresetIds).toHaveLength(38);
     const signatures = new Set<string>();
     for (const id of GrowthPresetIds) {
       const shapes = growthShapes(id, 42);
@@ -356,7 +356,7 @@ describe("expanded growth library", () => {
         ).toBe(true);
       }
     }
-    expect(signatures.size).toBe(36);
+    expect(signatures.size).toBe(38);
   });
 });
 

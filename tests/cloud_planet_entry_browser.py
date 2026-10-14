@@ -104,6 +104,7 @@ with sync_playwright() as p:
         elif path.endswith('/overview'): route.fulfill(json={'classId': class_b, 'title': '第二班', 'timezone': 'Asia/Shanghai', 'generatedAt': '2026-10-11T12:00:00Z', 'students': []})
         else: route.fulfill(status=404, json={'error': {'message': 'unexpected isolated API request'}})
     page.route('https://*.supabase.co/auth/v1/**', auth)
+    page.route("**/api/supabase/auth/v1/**",auth)
     page.route('**/api/v1/cloud/**', api)
     page.goto(URL)
     page.wait_for_load_state('networkidle')

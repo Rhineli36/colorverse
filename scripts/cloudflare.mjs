@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile, cp } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
@@ -81,14 +81,26 @@ try {
       ...process.env,
       VITE_BASE_PATH: "/",
       VITE_ENABLE_CLOUD_AUTH: "true",
+      VITE_EXHIBITION_MODE: "false",
+      VITE_USE_AUTH_PROXY: "true",
     };
+    await run(["build:competition"], env);
     await run(["build"], env);
+    await cp(
+      resolve(root, "work/competition-site"),
+      resolve(root, "apps/web/dist/exhibition"),
+      { recursive: true },
+    );
     const config = JSON.parse(
       await readFile(resolve(root, "wrangler.json"), "utf8"),
     );
     config.main = "../apps/worker/src/index.ts";
     config.assets.directory = "../apps/web/dist";
-    config.vars = { SUPABASE_URL: url, SUPABASE_PUBLISHABLE_KEY: key };
+    config.vars = {
+      SUPABASE_URL: url,
+      SUPABASE_PUBLISHABLE_KEY: key,
+      AUTH_PROXY_ENABLED: "true",
+    };
     let hyperdrive;
     try {
       hyperdrive = parseEnv(

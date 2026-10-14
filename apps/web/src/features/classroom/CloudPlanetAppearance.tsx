@@ -43,10 +43,12 @@ export function CloudPlanetOrb({
   classId,
   id,
   document,
+  previewImage,
 }: {
   classId: string;
   id: string;
   document: PlanetDocument;
+  previewImage?: string;
 }) {
   const image = usePlanetImage(
     classId,
@@ -63,6 +65,7 @@ export function CloudPlanetOrb({
         className="student-orb cloud-planet-orb"
         alt="星球外貌"
         src={
+          previewImage ||
           image.url ||
           `${import.meta.env.BASE_URL}demo/v2/body-${document.skin}.webp`
         }

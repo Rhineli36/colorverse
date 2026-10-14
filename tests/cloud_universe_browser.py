@@ -38,6 +38,7 @@ with sync_playwright() as p:
   elif path.endswith('/overview'): route.fulfill(json={'classId':cls,'title':'演示班','timezone':'Asia/Shanghai','generatedAt':'2026-10-14T01:00:00Z','students':[]})
   else: raise AssertionError('Unexpected API '+path)
  page.route('https://*.supabase.co/auth/v1/**',auth);page.route('**/api/v1/cloud/**',api)
+ page.route("**/api/supabase/auth/v1/**",auth)
  page.goto(URL);page.wait_for_load_state('networkidle');page.get_by_role('button',name='登录',exact=True).click()
  page.get_by_label('课堂邮箱').fill(user['email']);page.get_by_label('密码',exact=True).fill('isolated-password');page.get_by_role('dialog').get_by_role('button',name='登录',exact=True).click();page.get_by_role('button',name='进入我的星球 →',exact=True).click()
  universe=page.get_by_role('region',name='真实班级宇宙');scene=universe.locator('.cloud-universe-scene')

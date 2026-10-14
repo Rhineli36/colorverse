@@ -4,9 +4,10 @@ import { planetOrbit } from "./universe";
 /** Stable automatic arrangement, separate from the editable local universe layout. */
 export function cloudUniverseLayout(
   planets: { id: string; motion: PlanetMotion }[],
+  columnLimit: 1 | 2 | 3 | 4 | 5 = 3,
 ) {
   const sorted = [...planets].sort((a, b) => a.id.localeCompare(b.id));
-  const columns = Math.max(1, Math.min(3, sorted.length));
+  const columns = Math.max(1, Math.min(columnLimit, sorted.length));
   const rows = Math.max(1, Math.ceil(sorted.length / columns));
   return {
     width: columns * 1000,

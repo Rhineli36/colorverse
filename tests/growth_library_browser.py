@@ -1,4 +1,4 @@
-"""Thirty-four registered choices, legacy rendered presets and durable preview."""
+"""Thirty-eight registered choices, legacy rendered presets and durable preview."""
 import os, sys, json, hashlib
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,16 +35,16 @@ with sync_playwright() as p:
     page.get_by_role('button',name='编辑你的星球',exact=True).click()
     page.get_by_role('button',name='继续预览成长',exact=True).click()
     picker=page.get_by_role('group',name='选择成长造型',exact=True)
-    expect(picker.get_by_role('button',name='选择',exact=False)).to_have_count(36)
+    expect(picker.get_by_role('button',name='选择',exact=False)).to_have_count(38)
     signatures=set(); canvas=page.locator('canvas')
-    for name in ['微光花','晶体','发光叶片','月光蘑菇','彩色云朵','漂浮岛','星光种子','轨道石','星愿纸鹤','月光风铃','光帆飞船','流星风筝','色谱折扇','琉璃灯盏']:
+    for name in ['微光花','晶体','发光叶片','月光蘑菇','彩色云朵','漂浮岛','星光种子','轨道石','星愿纸鹤','月光风铃','光帆飞船','流星风筝','色谱折扇','琉璃灯盏','色轮陀螺','棱镜城堡']:
         old=canvas.get_attribute('data-scene-generation')
         button=page.get_by_role('button',name='选择'+name,exact=True);button.click()
         expect(button).to_have_attribute('aria-pressed','true')
         page.wait_for_function('(old)=>{const c=document.querySelector("canvas");return c.dataset.sceneReady==="true"&&c.dataset.sceneGeneration!==old}',arg=old)
         signatures.add(hashlib.sha256(canvas.screenshot()).hexdigest())
-    assert len(signatures)==14
-    passed('legacy saved v2 proposal retains eight old and six new distinct preview shapes and remains manually confirmable')
+    assert len(signatures)==16
+    passed('legacy saved v2 proposal retains eight old and eight new distinct preview shapes and remains manually confirmable')
     page.get_by_role('button',name='选择月光蘑菇',exact=True).click()
     page.get_by_label('成长大小',exact=True).fill('0.65')
     page.get_by_role('button',name='保存预览调整',exact=True).click()

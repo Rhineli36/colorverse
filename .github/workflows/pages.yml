@@ -36,6 +36,15 @@ jobs:
       - run: pnpm build
         env:
           VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+      - name: Build competition exhibition alongside the local demo
+        run: |
+          mkdir -p work
+          mv apps/web/dist work/pages-main
+          pnpm build:competition
+          mkdir -p work/pages-main/exhibition
+          cp -R work/competition-site/. work/pages-main/exhibition/
+          rm -rf apps/web/dist
+          mv work/pages-main apps/web/dist
       - uses: actions/upload-pages-artifact@v4
         with:
           path: apps/web/dist

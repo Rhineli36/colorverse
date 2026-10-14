@@ -84,6 +84,7 @@ with sync_playwright() as p:
             raise AssertionError('unexpected fixture request: ' + route.request.method + ' ' + url)
 
     page.route('https://*.supabase.co/auth/v1/**', auth)
+    page.route("**/api/supabase/auth/v1/**",auth)
     page.route('**/api/v1/cloud/**', api)
     page.goto(URL)
     page.wait_for_load_state('networkidle')

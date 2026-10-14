@@ -1,4 +1,5 @@
 import { Client } from "pg";
+import { databaseClient, type DatabaseBinding } from "./database-client";
 import { z } from "zod";
 import {
   GrowthPresetIds,
@@ -20,7 +21,7 @@ interface ImagesBinding {
   };
 }
 export interface ShowcaseCloudEnvironment extends AuthEnvironment {
-  HYPERDRIVE_WRITER?: { connectionString: string };
+  HYPERDRIVE_WRITER?: DatabaseBinding;
   SUPABASE_SECRET_KEY?: string;
   IMAGES?: ImagesBinding;
 }
@@ -131,11 +132,7 @@ export async function handleShowcaseCloud(
   classId: string,
   resource: string,
   clientFactory: () => Pick<Client, "connect" | "query" | "end"> = () =>
-    new Client({
-      connectionString: env.HYPERDRIVE_WRITER!.connectionString,
-      connectionTimeoutMillis: 4000,
-      query_timeout: 8000,
-    }),
+    databaseClient(env.HYPERDRIVE_WRITER!),
 ) {
   if (!cloudUploadsReady(env))
     throw new ClassroomFailure(

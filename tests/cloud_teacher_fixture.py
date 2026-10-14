@@ -26,6 +26,7 @@ def install_identity(page, role="teacher"):
             route.fulfill(status=503,json={"error":{"message":"暂时无法验证班级"}});return
         route.fulfill(json={"identity":{"id":subject,"email":email},"access":state["access"],"database":"connected","cloudWrites":False,"memberships":[{"enrollmentId":enrollment,"classId":class_id,"title":"教师工具测试班","timezone":"Asia/Shanghai","role":state["role"]}] if state["access"]=="active" else []})
     context.route("https://*.supabase.co/auth/v1/**",auth)
+    context.route("**/api/supabase/auth/v1/**",auth)
     context.route("**/api/v1/cloud/session",session)
     context._colorverse_identity_fixture = state
     return state

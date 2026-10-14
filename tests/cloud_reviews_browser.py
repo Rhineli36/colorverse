@@ -47,6 +47,7 @@ with sync_playwright()as p:
    route.fulfill(json={'classId':cls,'title':'点评演示班','timezone':'Asia/Shanghai','generatedAt':'2026-10-14T01:00:00Z','students':[{'enrollment_id':owner,'display_name':'演示学生 01','account_status':'active','enrollment_status':'active','planet_id':planet,'planet_name':'点评演示星球','showcase_count':1,'weekly_showcase_count':1,'course_submission_count':0,'sent_count':6,'weekly_sent_count':6,'received_count':8,'weekly_received_count':8,'last_submission':'2026-10-14T01:00:00Z','reviewed_showcase_count':1 if confirmed else 0,'suggested_review_count':0 if confirmed else 1,'average_showcase_score':state['review']['score']if confirmed else None}]})
   else:raise AssertionError('Unexpected API '+path)
  page.route('https://*.supabase.co/auth/v1/**',auth);page.route('**/api/v1/cloud/**',api)
+ page.route("**/api/supabase/auth/v1/**",auth)
  page.goto(URL);page.wait_for_load_state('networkidle');page.get_by_role('button',name='登录',exact=True).click();page.get_by_label('课堂邮箱').fill(user['email']);page.get_by_label('密码',exact=True).fill('isolated-password');page.get_by_role('dialog').get_by_role('button',name='登录',exact=True).click();page.get_by_role('button',name='进入我的星球 →',exact=True).click()
  page.get_by_role('button',name='演示学生 01',exact=False).filter(has=page.locator('strong')).last.click()
  def open_work():

@@ -618,7 +618,9 @@
                               "solar-sail",
                               "dream-kite",
                               "color-fan",
-                              "glass-lantern"
+                              "glass-lantern",
+                              "color-top",
+                              "prism-castle"
                             ]
                           },
                           "presetVersion": {
@@ -1504,7 +1506,9 @@
                           "solar-sail",
                           "dream-kite",
                           "color-fan",
-                          "glass-lantern"
+                          "glass-lantern",
+                          "color-top",
+                          "prism-castle"
                         ]
                       },
                       "presetVersion": {
@@ -2277,7 +2281,9 @@
                     "solar-sail",
                     "dream-kite",
                     "color-fan",
-                    "glass-lantern"
+                    "glass-lantern",
+                    "color-top",
+                    "prism-castle"
                   ]
                 },
                 "presetVersion": {

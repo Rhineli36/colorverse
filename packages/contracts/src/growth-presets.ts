@@ -35,10 +35,12 @@ export const GrowthPresetIds = [
   "dream-kite",
   "color-fan",
   "glass-lantern",
+  "color-top",
+  "prism-castle",
 ] as const;
 export type GrowthPresetId = (typeof GrowthPresetIds)[number];
 export const GrowthLibrarySpec = {
-  version: "1.3.0",
+  version: "1.4.0",
   rendering: "programmatic",
   baseSizePx: 200,
   maxShapes: 16,
@@ -270,6 +272,18 @@ export const GrowthPresets: Record<
     name: "琉璃灯盏",
     category: "光效",
     keywords: ["琉璃", "灯", "玻璃", "lantern"],
+    capability: "growth-library@1",
+  },
+  "color-top": {
+    name: "色轮陀螺",
+    category: "几何",
+    keywords: ["色轮", "旋转", "陀螺", "top"],
+    capability: "growth-library@1",
+  },
+  "prism-castle": {
+    name: "棱镜城堡",
+    category: "地形",
+    keywords: ["棱镜", "城堡", "建筑", "castle"],
     capability: "growth-library@1",
   },
 };

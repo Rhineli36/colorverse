@@ -10,3 +10,4 @@ __pycache__/
 *.pyc
 .wrangler/
 .dev.vars*
+deploy/server/secrets/

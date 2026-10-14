@@ -66,6 +66,7 @@ with sync_playwright() as playwright:
             route.fulfill(status=503, json={'error': {'message': 'unavailable'}})
 
     page.route('https://*.supabase.co/auth/v1/**', auth)
+    page.route("**/api/supabase/auth/v1/**",auth)
     page.route('**/api/v1/cloud/session', session)
     page.goto(URL)
     page.wait_for_load_state('networkidle')

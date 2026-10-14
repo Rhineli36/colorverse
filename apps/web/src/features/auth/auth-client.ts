@@ -4,6 +4,7 @@ export interface AuthConfig {
   enabled: boolean;
   url: string;
   publishableKey: string;
+  useProxy?: true;
 }
 export function readAuthConfig(
   env: Record<string, unknown>,
@@ -18,29 +19,40 @@ export function readAuthConfig(
     !key.startsWith("sb_publishable_")
   )
     return null;
-  return { enabled: true, url, publishableKey: key };
+  return {
+    enabled: true,
+    url,
+    publishableKey: key,
+    ...(env.VITE_USE_AUTH_PROXY === "true" ? { useProxy: true as const } : {}),
+  };
 }
 let client: SupabaseClient | null = null;
 export function getAuthClient() {
   const config = readAuthConfig(import.meta.env);
   if (!config) return null;
-  client ??= createClient(config.url, config.publishableKey, {
-    global: {
-      fetch: (input, init) =>
-        fetch(input, {
-          ...init,
-          signal: init?.signal
-            ? AbortSignal.any([init.signal, AbortSignal.timeout(10000)])
-            : AbortSignal.timeout(10000),
-        }),
+  client ??= createClient(
+    config.useProxy
+      ? new URL("/api/supabase", location.origin).href
+      : config.url,
+    config.publishableKey,
+    {
+      global: {
+        fetch: (input, init) =>
+          fetch(input, {
+            ...init,
+            signal: init?.signal
+              ? AbortSignal.any([init.signal, AbortSignal.timeout(10000)])
+              : AbortSignal.timeout(10000),
+          }),
+      },
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        storageKey: `colorverse.auth.${new URL(config.url).hostname}`,
+      },
     },
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: false,
-      storageKey: `colorverse.auth.${new URL(config.url).hostname}`,
-    },
-  });
+  );
   return client;
 }
 export function loginError(status?: number, code?: string) {

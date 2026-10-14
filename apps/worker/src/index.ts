@@ -1,4 +1,5 @@
 import { AuthFailure, verifyIdentity, type AuthEnvironment } from "./auth";
+import { authProxy, type AuthProxyEnvironment } from "./auth-proxy";
 import { CloudSessionSchema } from "@colorverse/contracts";
 import { ClassroomFailure } from "./classroom";
 import { resolveClassroomOverview } from "./classroom-database";
@@ -13,7 +14,11 @@ import {
 } from "./enrollment-database";
 
 export interface WorkerEnvironment
-  extends AuthEnvironment, EnrollmentEnvironment, ShowcaseCloudEnvironment {
+  extends
+    AuthEnvironment,
+    AuthProxyEnvironment,
+    EnrollmentEnvironment,
+    ShowcaseCloudEnvironment {
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 function json(status: number, data: unknown, extra?: Record<string, string>) {
@@ -35,6 +40,8 @@ export async function handleRequest(
 ) {
   const url = new URL(request.url);
   if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
+  if (url.pathname.startsWith("/api/supabase/"))
+    return authProxy(request, env, transport);
   const showcase =
     /^\/api\/v1\/cloud\/classes\/([^/]+)\/(guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review)|interactions|interactions\/[a-f0-9-]+)$/.exec(
       url.pathname,

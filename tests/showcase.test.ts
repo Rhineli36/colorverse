@@ -75,7 +75,7 @@ async function setup() {
 }
 describe("showcase archives and optional rule growth", () => {
   it("keeps thirty-six registered, bounded and visibly distinct silhouettes", () => {
-    expect(GrowthPresetIds).toHaveLength(36);
+    expect(GrowthPresetIds).toHaveLength(38);
     const signatures = new Set();
     for (const id of GrowthPresetIds) {
       expect(GrowthPresets[id].name).toBeTruthy();
@@ -96,11 +96,11 @@ describe("showcase archives and optional rule growth", () => {
         ).toBe(true);
       }
     }
-    expect(signatures.size).toBe(36);
+    expect(signatures.size).toBe(38);
   });
   it("rule selection reaches all registered presets without changing saved old proposals", () => {
     const choices = new Set();
-    for (let i = 0; i < 256; i++) {
+    for (let i = 0; i < 1024; i++) {
       const archive: ArchiveEntry = {
         ...fixturePlanet(0).archiveEntries[0],
         id: uid(40000 + i),

@@ -502,6 +502,31 @@ export function growthShapes(id: GrowthPresetId, seed: number): GrowthShape[] {
         line([0, 70, 0, 85], "light", 2, 0.65),
         poly([-7, 83, 7, 83, 4, 97, -4, 94], "theme", 0.8),
       ];
+    case "color-top":
+      return [
+        line([0, -85, 0, -18], "light", 5, 0.9),
+        ellipse(0, -12, 78, 27, "theme", 0.95),
+        poly([-78, -12, 0, 82, 78, -12, 0, 12], "theme", 0.9),
+        poly([0, 12, 78, -12, 0, 82], "dark", 0.35),
+        poly([-78, -12, -30, -35, 0, -12, -30, 10], "light", 0.5),
+        poly([0, -12, 32, -35, 78, -12, 30, 10], "light", 0.2),
+        line([-78, -12, 0, 12, 78, -12], "light", 2, 0.8),
+        circle(0, -12, 8, "white", 0.9),
+        line([0, 82, 0, 94], "light", 3, 0.8),
+      ];
+    case "prism-castle":
+      return [
+        poly([-70, 50, -70, -5, -45, -31, -20, -5, -20, 50], "theme", 0.85),
+        poly([20, 50, 20, -5, 45, -31, 70, -5, 70, 50], "theme", 0.85),
+        poly([-28, 50, -28, -38, 0, -76, 28, -38, 28, 50], "theme", 0.95),
+        poly([0, -76, 28, -38, 0, -18, -28, -38], "light", 0.4),
+        poly([0, -18, 28, -38, 28, 50, 0, 65], "dark", 0.3),
+        poly([-83, 50, 0, 72, 83, 50, 0, 91], "theme", 0.75),
+        line([-83, 50, 0, 72, 83, 50], "light", 2, 0.7),
+        poly([-9, 44, -9, 7, 0, -4, 9, 7, 9, 44], "light", 0.8),
+        circle(-45, 12, 5, "white", 0.8),
+        circle(45, 12, 5, "white", 0.8),
+      ];
     case "portal":
       return [
         { ...ellipse(0, 0, 55, 79, "theme", 0.18), stroke: "theme", width: 8 },

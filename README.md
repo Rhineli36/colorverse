@@ -99,7 +99,7 @@ python tests/default_art_browser.py
 
 脚本默认在 Windows 使用本机 Chrome，无头运行。Linux/无 Chrome 环境请执行 `python -m playwright install chromium`，Windows 可将 COLORVERSE_BROWSER_CHANNEL 设为空字符串改用已安装的 Playwright Chromium。本次记录使用 Windows Chrome/SwiftShader，不能视为普通机房集成显卡性能基准。`COLORVERSE_TEST_URL` 可指定生产预览地址。测试使用独立浏览器上下文，不改用户日常 Chrome 配置；结果和截图写入 outputs/，下载包写入 work/。
 
-CI执行lint、200项模块测试和生产构建，另在PostgreSQL18服务运行课程契约/事务/HTTP测试；浏览器及机房验收暂由上述独立脚本执行。启用云端登录的隔离浏览器检查见 `python tests/cloud_auth_browser.py`，所有 Auth 请求均使用模拟响应。
+CI执行lint、211项模块测试和生产构建，另在PostgreSQL18服务运行课程契约/事务/HTTP测试；浏览器及机房验收暂由上述独立脚本执行。启用云端登录的隔离浏览器检查见 `python tests/cloud_auth_browser.py`，所有 Auth 请求均使用模拟响应。
 
 代码仓库：[Rhineli36/colorverse](https://github.com/Rhineli36/colorverse)。main推送通过检查后部署GitHub Pages，实际状态见[Actions](https://github.com/Rhineli36/colorverse/actions)。本机草稿不会自动同步到在线演示，需导出/导入ZIP；部署与明天接续记录见[21](docs/21-github-deployment-and-handoff.md)。
 
@@ -112,7 +112,7 @@ apps/web 的 features 分为 universe、studio、planet-room、teacher-demo 和 
 已完成本机课程闭环（见22），尚未完成正式账号/云端课程系统、真实 AI、音频播放与全格式校验、300颗LOD/缓存上限实机验收、完整GPU失效只读模式、展览发布/脱敏和大包分批恢复。预设球体仅有契约与基础渲染支持，Studio 操作入口待补齐。生产构建可能打印第三方 Zod 注释的 Rollup 警告，构建已验证可完成。
 # 当前云端试用入口
 
-[Cloudflare 课堂测试版](https://colorverse-dev.2999346.workers.dev/)已接通真实教师/学生身份、班级统计、私有展示作品上传/原图下载、班级互动和 36 种成长造型、展示作品教师点评与评分。教师进入“班级管理”，学生进入“我的星球与作品”。原本完整创作工坊和宇宙布局仍保存在本机，尚未自动同步云端课堂。实际验证及限制见[38](docs/38-cloud-teacher-dashboard-and-student-pilot.md)。GitHub Pages保持本地演示。
+[Cloudflare 课堂测试版](https://colorverse-dev.2999346.workers.dev/)已接通真实教师/学生身份、班级统计、私有展示作品上传/原图下载、班级互动和 38 种成长造型、展示作品教师点评与评分。教师进入“班级管理”，学生进入“我的星球与作品”。原本完整创作工坊和宇宙布局仍保存在本机，尚未自动同步云端课堂。实际验证及限制见[38](docs/38-cloud-teacher-dashboard-and-student-pilot.md)。GitHub Pages保持本地演示。
 
 学生确认进入、首次随机创建和云端星球外貌/背景设置见 [39](docs/39-student-entry-and-cloud-planet-appearance.md)。已有星球再次进入会选中本人星球。
 
@@ -129,3 +129,5 @@ apps/web 的 features 分为 universe、studio、planet-room、teacher-demo 和 
 班级素材演示、云端运行与教师回放说明见 [45](docs/45-classroom-demo-and-shared-motion.md)。
 
 云端教师作品点评、100 分制评分和演示建议确认见 [46](docs/46-cloud-showcase-teacher-reviews.md)。评分与学生互动分开，展示作品点评不替代正式课程成绩。
+
+比赛公开展示版见 [展示部署说明](deploy/exhibition/README.md) 和 [五组作业风格星球](docs/competition-planet-styles.md)。`pnpm build:competition` 输出不依赖登录/API 的静态站点：5 个真实作业风格案例、25 件压缩预览、5 个默认星球、统计快照和明确标注的演示点评。Cloudflare 与 GitHub Pages 的 `/exhibition/` 是现有镜像；国内比赛入口仍需另部署并进行校园/手机网络实测。真实课堂的通用 Node 服务适配准备在 `deploy/server/`，尚未完成 Linux/Docker 主机验收。

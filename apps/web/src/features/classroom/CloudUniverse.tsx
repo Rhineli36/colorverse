@@ -15,6 +15,8 @@ type CloudPlanet = {
   owner_enrollment_id: string;
   display_name: string;
   document: z.infer<typeof CloudPlanetDocumentSchema>;
+  previewImage?: string;
+  sample?: boolean;
   works: { withdrawn: boolean }[];
 };
 const motionNames = { stationary: "静止", slow: "慢速", fast: "快速" };
@@ -26,6 +28,7 @@ export function CloudUniverse({
   disabled,
   teacher,
   onSelect,
+  exhibition = false,
 }: {
   classId: string;
   planets: CloudPlanet[];
@@ -34,18 +37,31 @@ export function CloudUniverse({
   disabled: boolean;
   teacher: boolean;
   onSelect: (id: string) => void;
+  exhibition?: boolean;
 }) {
   const [paused, setPaused] = useState(false),
     [guides, setGuides] = useState(true),
     [rate, setRate] = useState(1);
   const reduced = useReducedMotion();
+  const [columns, setColumns] = useState<2 | 3 | 5>(() =>
+    exhibition ? (matchMedia("(min-width: 800px)").matches ? 5 : 2) : 3,
+  );
+  useEffect(() => {
+    if (!exhibition) return;
+    const media = matchMedia("(min-width: 800px)");
+    const update = () => setColumns(media.matches ? 5 : 2);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, [exhibition]);
   const visible = planets.slice(0, 40);
   const layout = useMemo(
     () =>
       cloudUniverseLayout(
         visible.map((p) => ({ id: p.id, motion: p.document.motion })),
+        columns,
       ),
-    [planets],
+    [planets, columns],
   );
   const scene = useRef<HTMLDivElement>(null),
     nodes = useRef(new Map<string, HTMLButtonElement>());
@@ -100,7 +116,7 @@ export function CloudUniverse({
         node.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
         node.style.setProperty(
           "--orb-size",
-          `${Math.max(32, Math.min(100, scale * 200))}px`,
+          `${Math.max(exhibition ? 48 : 32, Math.min(exhibition ? 120 : 100, scale * (exhibition ? 400 : 200)))}px`,
         );
         node.dataset.x = x.toFixed(2);
         node.dataset.y = y.toFixed(2);
@@ -115,13 +131,18 @@ export function CloudUniverse({
     };
   }, [layout, paused, reduced, rate, teacher]);
   return (
-    <section className="cloud-universe" aria-label="真实班级宇宙">
+    <section
+      className="cloud-universe"
+      aria-label={exhibition ? "比赛演示宇宙" : "真实班级宇宙"}
+    >
       <div className="cloud-universe-heading">
         <div>
           <p className="eyebrow">COLORVERSE · OUR CLASS</p>
           <h2>一颗星球，一个色彩世界</h2>
           <p className="muted">
-            班级真实星球 · 点击进入作品空间 · 运行和光晕来自已保存设置
+            {exhibition
+              ? "演示星球 · 点击欣赏作品 · 星球运行、光晕与轨迹可直接观看"
+              : "班级真实星球 · 点击进入作品空间 · 运行和光晕来自已保存设置"}
           </p>
         </div>
         <div className="row-buttons">
@@ -181,11 +202,18 @@ export function CloudUniverse({
             disabled={disabled}
             onClick={() => onSelect(p.id)}
           >
-            <CloudPlanetOrb classId={classId} id={p.id} document={p.document} />
+            <CloudPlanetOrb
+              classId={classId}
+              id={p.id}
+              document={p.document}
+              previewImage={p.previewImage}
+            />
             <strong>{p.document.metadata.name}</strong>
             <small>
-              {p.display_name} · {p.works.filter((w) => !w.withdrawn).length}{" "}
-              件作品
+              {p.display_name} ·{" "}
+              {p.sample
+                ? "默认风格样本"
+                : `${p.works.filter((w) => !w.withdrawn).length} 件作品`}
             </small>
             <span>
               {motionNames[p.document.motion.mode]}
@@ -200,7 +228,9 @@ export function CloudUniverse({
               ? "运行已暂停"
               : teacher && rate === 3
                 ? "演示加速 ×3 · 不改变任何保存设置"
-                : "按各星球已保存的速度运行"}
+                : exhibition
+                  ? "按演示星球预置的速度运行"
+                  : "按各星球已保存的速度运行"}
         </span>
       </div>
       {planets.length > 40 && (
