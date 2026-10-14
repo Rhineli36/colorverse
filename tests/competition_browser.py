@@ -4,14 +4,14 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'work/python-deps'))
 from playwright.sync_api import sync_playwright,expect
 expect.set_options(timeout=15000)
-URL=os.environ.get('COLORVERSE_TEST_URL','http://127.0.0.1:5193');checks=[];errors=[];network=[]
+URL=os.environ.get('COLORVERSE_TEST_URL','http://127.0.0.1:5193').rstrip('/');checks=[];errors=[];network=[]
 def passed(s):checks.append(s);print('PASS:',s,flush=True)
 with sync_playwright()as p:
- b=p.chromium.launch(headless=True,channel='chrome'if os.name=='nt'else None,args=['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader']);page=b.new_page(viewport={'width':1440,'height':1000});page.on('pageerror',lambda e:errors.append(str(e)))
+ b=p.chromium.launch(headless=True,channel='chrome'if os.name=='nt'else None,proxy={'server':os.environ['COLORVERSE_TEST_PROXY']}if os.environ.get('COLORVERSE_TEST_PROXY')else None,args=['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader']);page=b.new_page(viewport={'width':1440,'height':1000});page.on('pageerror',lambda e:errors.append(str(e)))
  def request(r):
   network.append(r.url)
-  if not r.url.startswith(URL+'/'):raise AssertionError('exhibition requested an external service')
- page.on('request',request);page.goto(URL);page.wait_for_load_state('networkidle');universe=page.get_by_role('region',name='比赛演示宇宙');expect(universe.locator('.cloud-universe-node')).to_have_count(10);expect(page.get_by_role('button',name='登录',exact=True)).to_have_count(0);assert not any('/api/'in u or 'auth-client-'in u for u in network);passed('ten planets combine five real-work style cases and five clearly labeled defaults without login or API calls')
+  if not (r.url.startswith(URL+'/') or r.url==URL):raise AssertionError('exhibition requested an external service')
+ page.on('request',request);page.goto(URL+'/');page.wait_for_load_state('networkidle');universe=page.get_by_role('region',name='比赛演示宇宙');expect(universe.locator('.cloud-universe-node')).to_have_count(10);expect(page.get_by_role('button',name='登录',exact=True)).to_have_count(0);assert not any('/api/'in u or 'auth-client-'in u for u in network);passed('ten planets combine five real-work style cases and five clearly labeled defaults without login or API calls')
  universe.locator('.cloud-universe-scene').scroll_into_view_if_needed();page.wait_for_function('()=>[...document.querySelectorAll(".cloud-universe-node")].every(n=>n.dataset.x)')
  moving=universe.locator('[data-mode="fast"]').first
  def pos():return [float(moving.get_attribute('data-x')),float(moving.get_attribute('data-y'))]
