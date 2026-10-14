@@ -33,10 +33,12 @@ export const GrowthPresetIds = [
   "wind-chime",
   "solar-sail",
   "dream-kite",
+  "color-fan",
+  "glass-lantern",
 ] as const;
 export type GrowthPresetId = (typeof GrowthPresetIds)[number];
 export const GrowthLibrarySpec = {
-  version: "1.2.0",
+  version: "1.3.0",
   rendering: "programmatic",
   baseSizePx: 200,
   maxShapes: 16,
@@ -256,6 +258,18 @@ export const GrowthPresets: Record<
     name: "流星风筝",
     category: "天空",
     keywords: ["风", "筝", "自由", "kite"],
+    capability: "growth-library@1",
+  },
+  "color-fan": {
+    name: "色谱折扇",
+    category: "几何",
+    keywords: ["色谱", "扇", "折叠", "fan"],
+    capability: "growth-library@1",
+  },
+  "glass-lantern": {
+    name: "琉璃灯盏",
+    category: "光效",
+    keywords: ["琉璃", "灯", "玻璃", "lantern"],
     capability: "growth-library@1",
   },
 };

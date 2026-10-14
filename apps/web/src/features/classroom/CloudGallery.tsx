@@ -1,3 +1,4 @@
+import { CloudUniverse } from "./CloudUniverse";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
@@ -43,6 +44,13 @@ const Planet = z.object({
   owner_enrollment_id: z.uuid(),
   display_name: z.string(),
   document: CloudPlanetDocumentSchema,
+  stats: z
+    .object({
+      likes: z.number().int().nonnegative(),
+      emojis: z.number().int().nonnegative(),
+      comments: z.number().int().nonnegative(),
+    })
+    .default({ likes: 0, emojis: 0, comments: 0 }),
   works: z.array(Work),
 });
 const Gallery = z.object({ actorId: z.uuid(), planets: z.array(Planet) });
@@ -223,7 +231,9 @@ export function CloudGallery({
     };
   }, [classId, session.identity.id, initialPlanetId]);
   const selected = data?.planets.find((p) => p.id === planetId),
-    owned = selected?.owner_enrollment_id === data?.actorId,
+    owned =
+      selected?.owner_enrollment_id === data?.actorId &&
+      memberships.find((m) => m.classId === classId)?.role === "student",
     myPlanet = data?.planets.find(
       (p) => p.owner_enrollment_id === data.actorId,
     ),
@@ -606,6 +616,84 @@ export function CloudGallery({
           onAction={guideAction}
         />
       )}
+      {data &&
+        data.planets.some(
+          (p) => p.stats.likes + p.stats.emojis + p.stats.comments > 0,
+        ) && (
+          <section className="cloud-highlights" aria-label="班级互动亮点">
+            <h2>同学们正在回应这些星球</h2>
+            <p className="muted">
+              按当前有效点赞、表情和留言总数排列，不代表成绩。
+            </p>
+            <div>
+              {[...data.planets]
+                .filter(
+                  (p) => p.stats.likes + p.stats.emojis + p.stats.comments > 0,
+                )
+                .sort(
+                  (a, b) =>
+                    b.stats.likes +
+                      b.stats.emojis +
+                      b.stats.comments -
+                      (a.stats.likes + a.stats.emojis + a.stats.comments) ||
+                    a.id.localeCompare(b.id),
+                )
+                .slice(0, 3)
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    disabled={pending}
+                    aria-label={`查看互动亮点：${p.display_name}`}
+                    onClick={() => {
+                      setPlanetId(p.id);
+                      setSettingsOpen(false);
+                      requestAnimationFrame(() =>
+                        stage.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        }),
+                      );
+                    }}
+                  >
+                    <CloudPlanetOrb
+                      classId={classId}
+                      id={p.id}
+                      document={p.document}
+                    />
+                    <span>
+                      <strong>{p.document.metadata.name}</strong>
+                      <small>
+                        ♥ {p.stats.likes} · 表情 {p.stats.emojis} · 留言{" "}
+                        {p.stats.comments}
+                      </small>
+                    </span>
+                  </button>
+                ))}
+            </div>
+          </section>
+        )}
+      {data && data.planets.length > 0 && (
+        <CloudUniverse
+          classId={classId}
+          planets={data.planets}
+          actorId={data.actorId}
+          selectedId={planetId}
+          disabled={pending}
+          teacher={!student}
+          onSelect={(id) => {
+            if (pending) return;
+            setPlanetId(id);
+            setWork(null);
+            setSettingsOpen(false);
+            requestAnimationFrame(() =>
+              stage.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              }),
+            );
+          }}
+        />
+      )}
       <div className="cloud-planets" aria-label="班级云端星球">
         {data?.planets.map((p) => (
           <button
@@ -647,6 +735,35 @@ export function CloudGallery({
                   : "点击成长元素欣赏对应的作业；选择「编辑元素」再修改。"}
               </p>
             </div>
+            {!student && (
+              <div className="row-buttons">
+                <button
+                  disabled={pending || Boolean(planetBirth || birth)}
+                  onClick={() => {
+                    setPlanetBirth(selected.id);
+                    setNotice("正在回放星球诞生，不会创建新星球。");
+                  }}
+                >
+                  回看星球诞生
+                </button>
+                <button
+                  disabled={
+                    pending ||
+                    Boolean(planetBirth || birth) ||
+                    !selected.works.some((w) => !w.withdrawn)
+                  }
+                  onClick={() => {
+                    const first = selected.works.find((w) => !w.withdrawn);
+                    if (first) {
+                      setBirth(first.id);
+                      setNotice("正在回放元素生长，不会重复提交作业。");
+                    }
+                  }}
+                >
+                  回看元素生长
+                </button>
+              </div>
+            )}
             {owned && (
               <div className="row-buttons">
                 <button

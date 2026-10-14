@@ -333,8 +333,8 @@ describe("teacher classroom statistics", () => {
   });
 });
 describe("expanded growth library", () => {
-  it("provides 34 distinct bounded geometries within the shared rendering budget", () => {
-    expect(GrowthPresetIds).toHaveLength(34);
+  it("provides 36 distinct bounded geometries within the shared rendering budget", () => {
+    expect(GrowthPresetIds).toHaveLength(36);
     const signatures = new Set<string>();
     for (const id of GrowthPresetIds) {
       const shapes = growthShapes(id, 42);
@@ -351,7 +351,7 @@ describe("expanded growth library", () => {
         ).toBe(true);
       }
     }
-    expect(signatures.size).toBe(34);
+    expect(signatures.size).toBe(36);
   });
 });
 
@@ -414,6 +414,13 @@ describe("cloud planet onboarding and personalization", () => {
           color: "#abcdef",
           skin: 4,
           halo: "ring",
+          motion: {
+            version: "1.0.0",
+            mode: "fast",
+            trajectory: "figure-eight",
+            range: "wide",
+            direction: "reverse",
+          },
           revision: 0,
         };
       await expect(
@@ -451,13 +458,20 @@ describe("cloud planet onboarding and personalization", () => {
         metadata: { name: input.name },
         skin: 4,
         halo: "ring",
+        motion: input.motion,
         revision: 1,
         media,
       });
       await handleShowcaseCloud(
         request(
           resource,
-          { ...input, halo: undefined, revision: 1, summary: "新介绍" },
+          {
+            ...input,
+            halo: undefined,
+            motion: undefined,
+            revision: 1,
+            summary: "新介绍",
+          },
           "PUT",
         ),
         env,
@@ -469,7 +483,12 @@ describe("cloud planet onboarding and personalization", () => {
       expect(
         (await db.query("SELECT document FROM planets WHERE id=$1", [ids[11]]))
           .rows[0].document,
-      ).toMatchObject({ halo: "ring", media, revision: 2 });
+      ).toMatchObject({
+        halo: "ring",
+        motion: input.motion,
+        media,
+        revision: 2,
+      });
     } finally {
       await db.query("UPDATE planets SET document=$1 WHERE id=$2", [
         JSON.stringify(previous),
@@ -876,6 +895,15 @@ describe("reversible cloud work management", () => {
   it("withdraws work and its element together, retains files/reactions, restricts private reads and restores original counts", async () =>
     isolated(async (work) => {
       const initial = await classroomOverview(sql, identity(ids[0]), ids[5]);
+      const originalStats = (await gallery(ids[1])).stats;
+      expect(
+        originalStats.likes + originalStats.emojis + originalStats.comments,
+      ).toBe(
+        Number(
+          initial.students.find((s) => s.enrollment_id === ids[8])!
+            .received_count,
+        ),
+      );
       const initialGuide = (await (await call("guide", ids[1])).json())
         .completed;
       expect(
@@ -906,6 +934,12 @@ describe("reversible cloud work management", () => {
           (w: { id: string }) => w.id === work,
         ),
       ).toBe(true);
+      const hiddenStats = (await gallery(ids[2])).stats;
+      expect(
+        hiddenStats.likes + hiddenStats.emojis + hiddenStats.comments,
+      ).toBe(
+        originalStats.likes + originalStats.emojis + originalStats.comments - 2,
+      );
       const withdrawn = (
         await classroomOverview(sql, identity(ids[0]), ids[5])
       ).students.find((s) => s.enrollment_id === ids[8]);

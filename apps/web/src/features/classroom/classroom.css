@@ -1314,3 +1314,271 @@
 .cloud-planets button {
   gap: 14px;
 }
+
+.cloud-universe {
+  margin: 28px 0;
+  border: 1px solid #36536c;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0b1625;
+}
+.cloud-universe-heading {
+  padding: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.cloud-universe-heading h2 {
+  margin: 6px 0 10px;
+}
+.cloud-universe-heading p {
+  margin: 0;
+}
+.cloud-universe-scene {
+  position: relative;
+  height: clamp(360px, 52vw, 660px);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  isolation: isolate;
+}
+.cloud-universe-paths {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cloud-universe-paths path {
+  fill: none;
+  stroke: #9abde870;
+  stroke-width: 2;
+  stroke-dasharray: 12 18;
+}
+.cloud-universe-node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 0 !important;
+  padding: 8px !important;
+  background: transparent !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 160px;
+  text-align: center;
+  opacity: 0;
+  will-change: transform;
+  z-index: 2;
+}
+.cloud-universe-node .cloud-planet-orb {
+  width: var(--orb-size, 80px);
+  height: var(--orb-size, 80px);
+}
+.cloud-universe-node > strong {
+  font-size: 14px;
+  color: #eaf5ff;
+  margin: 14px 0 4px;
+  max-width: 150px;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 4px #000;
+}
+.cloud-universe-node > small {
+  font-size: 10px;
+  color: #c3d6e9;
+}
+.cloud-universe-node > span:last-child {
+  font-size: 10px;
+  color: #b5d6c1;
+  margin-top: 5px;
+}
+.cloud-universe-node[aria-pressed="true"] .cloud-orb-frame {
+  outline: 1px solid #e2f3cf;
+  outline-offset: 13px;
+  border-radius: 50%;
+}
+.cloud-universe-node:focus-visible {
+  outline: 2px solid #d0e4f3 !important;
+  border-radius: 16px;
+}
+.cloud-universe-status {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: #091426c9;
+  color: #c4dae9;
+  border: 1px solid #9dc1d633;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 11px;
+  z-index: 3;
+  pointer-events: none;
+}
+.cloud-universe-sun {
+  position: absolute;
+  left: 88%;
+  top: 49%;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    #fff5c4,
+    #ffac55 35%,
+    #c47126 68%,
+    transparent 74%
+  );
+  box-shadow: 0 0 48px 10px #ffbe4833;
+  opacity: 0.5;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.cloud-universe-hole {
+  position: absolute;
+  left: 9%;
+  top: 52%;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #01040b;
+  box-shadow: 0 0 8px 2px #ddad7666;
+  pointer-events: none;
+}
+.cloud-universe-hole::after {
+  content: "";
+  position: absolute;
+  width: 70px;
+  height: 18px;
+  border: 2px solid #dbb68b88;
+  left: -20px;
+  top: 4px;
+  border-radius: 50%;
+  transform: rotate(-25deg);
+  box-shadow: 0 0 7px #ddad7644;
+}
+.cloud-motion-preview {
+  border: 1px solid #48677d;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at center, #16334c, #081321);
+  padding: 18px;
+  text-align: center;
+  margin: 16px 0;
+}
+.cloud-motion-preview svg {
+  display: block;
+  width: 200px;
+  max-width: 100%;
+  height: 180px;
+  margin: auto;
+}
+.cloud-motion-preview p {
+  margin: 4px;
+  color: #e3efdd;
+}
+.cloud-motion-preview small {
+  color: #adc3d4;
+}
+.cloud-motion-controls label {
+  margin: 12px 0;
+}
+@media (max-width: 600px) {
+  .cloud-universe-heading {
+    padding: 16px;
+    gap: 14px;
+  }
+  .cloud-universe-scene {
+    height: 420px;
+  }
+  .cloud-universe-node {
+    width: 100px;
+    padding: 5px !important;
+  }
+  .cloud-universe-node > strong {
+    font-size: 11px;
+    margin-top: 10px;
+  }
+  .cloud-universe-node > small,
+  .cloud-universe-node > span:last-child {
+    font-size: 9px;
+  }
+  .cloud-universe-sun {
+    width: 65px;
+    height: 65px;
+  }
+  .cloud-universe-heading .row-buttons {
+    gap: 6px;
+  }
+  .cloud-universe-heading button {
+    padding: 10px 12px;
+  }
+}
+
+.cloud-highlights {
+  padding: 22px;
+  margin: 24px 0;
+  border: 1px solid #bfbe7844;
+  border-radius: 18px;
+  background: linear-gradient(115deg, #233a3355, #17283988);
+}
+.cloud-highlights h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+.cloud-highlights > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.cloud-highlights button {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  text-align: left;
+  min-width: 0;
+  background: #0c1d2988;
+}
+.cloud-highlights strong,
+.cloud-highlights small {
+  display: block;
+}
+.cloud-highlights strong {
+  overflow-wrap: anywhere;
+}
+.cloud-highlights small {
+  color: #b4d1ca;
+  margin-top: 8px;
+  font-size: 11px;
+}
+@media (max-width: 760px) {
+  .cloud-highlights > div {
+    grid-template-columns: 1fr;
+  }
+  .cloud-highlights {
+    padding: 16px;
+  }
+}
+
+.cloud-universe-paths {
+  padding: 40px;
+  box-sizing: border-box;
+}
+.cloud-universe-node.compact {
+  width: 90px;
+}
+.cloud-universe-node.compact > strong,
+.cloud-universe-node.compact > small,
+.cloud-universe-node.compact > span:last-child {
+  display: none;
+}
+.cloud-universe-node.compact:hover > strong,
+.cloud-universe-node.compact:focus-visible > strong,
+.cloud-universe-node.compact:hover > small,
+.cloud-universe-node.compact:focus-visible > small,
+.cloud-universe-node.compact:hover > span:last-child,
+.cloud-universe-node.compact:focus-visible > span:last-child {
+  display: block;
+}

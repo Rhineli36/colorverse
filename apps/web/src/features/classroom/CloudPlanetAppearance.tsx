@@ -1,3 +1,4 @@
+import { CloudMotionPreview } from "./CloudMotionPreview";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import {
@@ -70,10 +71,11 @@ export function CloudPlanetOrb({
   );
 }
 export type AppearanceSection =
-  "exterior" | "atmosphere" | "interior" | "tone" | "summary";
+  "exterior" | "atmosphere" | "interior" | "tone" | "summary" | "motion";
 const sections: { id: AppearanceSection; title: string }[] = [
   { id: "exterior", title: "外貌" },
   { id: "atmosphere", title: "粒子氛围" },
+  { id: "motion", title: "星球运行" },
   { id: "interior", title: "内部背景" },
   { id: "tone", title: "色调细节" },
   { id: "summary", title: "星球介绍" },
@@ -112,6 +114,7 @@ export function CloudPlanetAppearance({
     Partial<Record<"exterior" | "interior", File>>
   >({});
   const [status, setStatus] = useState("");
+  const [motion, setMotion] = useState(document.motion);
   const dirty =
     name !== document.metadata.name ||
     summary !== document.metadata.summary ||
@@ -119,6 +122,7 @@ export function CloudPlanetAppearance({
     color !== document.color ||
     atmosphere !== document.atmosphere ||
     halo !== document.halo ||
+    JSON.stringify(motion) !== JSON.stringify(document.motion) ||
     brightness !== document.brightness ||
     saturation !== document.saturation ||
     Boolean(files.exterior || files.interior);
@@ -147,11 +151,13 @@ export function CloudPlanetAppearance({
       const changes =
         section === "summary"
           ? { summary }
-          : section === "atmosphere"
-            ? { atmosphere, halo }
-            : section === "tone"
-              ? { color, brightness, saturation, practice: "tone" }
-              : { skin };
+          : section === "motion"
+            ? { motion }
+            : section === "atmosphere"
+              ? { atmosphere, halo }
+              : section === "tone"
+                ? { color, brightness, saturation, practice: "tone" }
+                : { skin };
       try {
         await classroomRequest(`classes/${classId}/planets/${id}/appearance`, {
           method: "PUT",
@@ -416,6 +422,91 @@ export function CloudPlanetAppearance({
             />
           </label>
         </>
+      )}
+      {section === "motion" && (
+        <div className="cloud-motion-controls">
+          <h3>整颗星球在班级宇宙中的运动</h3>
+          <p>
+            控制这颗星球的绕行，不控制内部成长元素。保存后可在上方班级宇宙观察。
+          </p>
+          <div className="row-buttons">
+            {(
+              [
+                ["stationary", "静止"],
+                ["slow", "慢速"],
+                ["fast", "快速"],
+              ] as const
+            ).map(([mode, label]) => (
+              <button
+                key={mode}
+                disabled={busy}
+                aria-pressed={motion.mode === mode}
+                onClick={() => setMotion({ ...motion, mode })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <label>
+            云端运行轨迹
+            <select
+              aria-label="云端运行轨迹"
+              value={motion.trajectory}
+              disabled={busy}
+              onChange={(e) =>
+                setMotion({
+                  ...motion,
+                  trajectory: e.target.value as typeof motion.trajectory,
+                })
+              }
+            >
+              <option value="circle">圆形绕行</option>
+              <option value="ellipse">椭圆绕行</option>
+              <option value="figure-eight">八字漫游</option>
+              <option value="drift">轻柔往返</option>
+            </select>
+          </label>
+          <label>
+            云端活动范围
+            <select
+              aria-label="云端活动范围"
+              value={motion.range}
+              disabled={busy}
+              onChange={(e) =>
+                setMotion({
+                  ...motion,
+                  range: e.target.value as typeof motion.range,
+                })
+              }
+            >
+              <option value="compact">紧凑</option>
+              <option value="regular">常规</option>
+              <option value="wide">开阔</option>
+            </select>
+          </label>
+          <label>
+            云端运行方向
+            <select
+              aria-label="云端运行方向"
+              value={motion.direction}
+              disabled={busy}
+              onChange={(e) =>
+                setMotion({
+                  ...motion,
+                  direction: e.target.value as typeof motion.direction,
+                })
+              }
+            >
+              <option value="forward">正向</option>
+              <option value="reverse">反向</option>
+            </select>
+          </label>
+          <CloudMotionPreview motion={motion} />
+          <p className="muted">
+            慢速约 45–75 秒一圈；快速约 12–20
+            秒一圈。未保存的调整仅在预览中显示。
+          </p>
+        </div>
       )}
       {section === "summary" && (
         <>

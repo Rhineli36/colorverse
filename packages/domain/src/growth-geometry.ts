@@ -469,6 +469,39 @@ export function growthShapes(id: GrowthPresetId, seed: number): GrowthShape[] {
         poly([15, 50, 0, 42, 0, 57, 15, 50, 30, 42, 30, 57], "theme", 0.8),
         poly([-8, 72, -23, 64, -23, 79, -8, 72, 7, 64, 7, 79], "theme", 0.65),
       ];
+    case "color-fan":
+      return [
+        poly(
+          [-80, 24, -64, -30, -22, -72, 22, -72, 64, -30, 80, 24, 0, 55],
+          "theme",
+          0.9,
+        ),
+        poly([0, 55, -64, -30, -22, -72], "light", 0.4),
+        poly([0, 55, 22, -72, 64, -30], "dark", 0.25),
+        ...[-64, -22, 22, 64].map((x) =>
+          line([0, 55, x, Math.abs(x) > 30 ? -30 : -72], "light", 2, 0.65),
+        ),
+        circle(0, 55, 7, "dark", 0.9),
+        line([0, 55, 0, 84], "theme", 5, 0.9),
+        circle(0, 88, 4, "light", 0.85),
+      ];
+    case "glass-lantern":
+      return [
+        { ...ellipse(0, -73, 17, 15, "theme", 0), stroke: "light", width: 2 },
+        {
+          ...poly([-33, -50, 33, -50, 46, 44, 0, 69, -46, 44], "theme", 0.35),
+          stroke: "light",
+          width: 2,
+        },
+        circle(0, 7, 26, "light", 0.35),
+        ellipse(0, 7, 16, 27, "theme", 0.85),
+        poly([0, -20, 12, 10, 0, 32, -12, 10], "white", 0.85),
+        ellipse(0, -50, 34, 7, "dark", 0.85),
+        line([-29, -48, 29, -48], "light", 2, 0.75),
+        ellipse(0, 44, 33, 7, "theme", 0.9),
+        line([0, 70, 0, 85], "light", 2, 0.65),
+        poly([-7, 83, 7, 83, 4, 97, -4, 94], "theme", 0.8),
+      ];
     case "portal":
       return [
         { ...ellipse(0, 0, 55, 79, "theme", 0.18), stroke: "theme", width: 8 },

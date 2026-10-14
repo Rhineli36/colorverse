@@ -79,3 +79,5 @@
 - [43 · 云端作品管理与生长元素扩充](43-cloud-work-management-and-growth.md)
 
 - [44 · 自由任务引导与可见效果预览](44-optional-guide-and-visible-effects.md)
+
+- [45 · 班级演示与真实云端运行](45-classroom-demo-and-shared-motion.md)

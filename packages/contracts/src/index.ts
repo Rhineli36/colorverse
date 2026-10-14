@@ -1,3 +1,4 @@
+import { MotionSchema, MOTION_CAPABILITY } from "./motion";
 import { z } from "zod";
 import { GrowthPresetIds } from "./growth-presets";
 export * from "./growth-presets";
@@ -347,15 +348,6 @@ export const PlanetSchema = z.strictObject({
   optionalCapabilities: z.array(z.string().max(80)).max(30),
   extensions: z.record(z.string(), z.json()).optional(),
 });
-export const MOTION_CAPABILITY = "motion-presets@1";
-export const MotionSchema = z.strictObject({
-  version: z.literal(VERSION),
-  mode: z.enum(["stationary", "slow", "fast"]),
-  trajectory: z.enum(["circle", "ellipse", "figure-eight", "drift"]),
-  range: z.enum(["compact", "regular", "wide"]),
-  direction: z.enum(["forward", "reverse"]),
-});
-export type PlanetMotion = z.infer<typeof MotionSchema>;
 export const LegacyUniverseSchema = z.strictObject({
   schemaVersion: z.literal(VERSION),
   universeId: id,
@@ -426,3 +418,5 @@ export type UniverseDocument = Omit<
 export type EffectParams = z.infer<typeof EffectParamsSchema>;
 export * from "./classroom";
 export * from "./cloud-planet";
+
+export * from "./motion";

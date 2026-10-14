@@ -1,4 +1,4 @@
-"""Reversible management, teacher controls and 34 element choices; isolated Auth/API."""
+"""Reversible management, teacher controls and 36 element choices; isolated Auth/API."""
 import base64, json, os, sys, time, uuid
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -65,11 +65,11 @@ with sync_playwright() as p:
  expect(page.locator('.cloud-growth')).to_have_count(1)
  dialog=open_work();expect(dialog.get_by_role('button',name='移除留言',exact=True)).to_have_count(0)
  dialog.get_by_role('button',name='编辑元素',exact=True).click()
- choices=page.locator('.element-library-cards');expect(choices.get_by_role('button')).to_have_count(34)
- for name in ['星愿纸鹤','月光风铃','光帆飞船','流星风筝']:
+ choices=page.locator('.element-library-cards');expect(choices.get_by_role('button')).to_have_count(36)
+ for name in ['星愿纸鹤','月光风铃','光帆飞船','流星风筝','色谱折扇','琉璃灯盏']:
   btn=choices.get_by_role('button',name='选择'+name,exact=True);expect(btn).to_be_visible();btn.click();expect(btn).to_have_attribute('aria-pressed','true')
  page.get_by_role('button',name='保存元素',exact=True).click();expect(page.get_by_role('region',name='云端元素编辑')).to_have_count(0)
- assert state['preset']=='dream-kite';passed('34 choices include four distinct new shapes and persist the selected shape')
+ assert state['preset']=='glass-lantern';passed('36 choices include six distinct new shapes and persist the selected shape')
  dialog=open_work();dialog.get_by_role('button',name='撤下作品',exact=True).click();confirm=page.get_by_role('dialog',name='确认管理操作')
  before=state['writes'];confirm.get_by_role('button',name='取消',exact=True).click();assert state['writes']==before
  passed('withdrawal requires confirmation; cancel makes no write')

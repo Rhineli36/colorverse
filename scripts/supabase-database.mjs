@@ -22,9 +22,16 @@ export async function connectDatabase(config, runtime) {
   if (process.argv.includes("--proxy")) {
     stream = await new Promise((resolveSocket, reject) => {
       const endpoint = `${host}:5432`;
+      const proxy = new URL(
+        process.env.COLORVERSE_DB_PROXY ??
+          process.env.HTTPS_PROXY ??
+          "http://127.0.0.1:7892",
+      );
+      if (proxy.protocol !== "http:" || proxy.username || proxy.password)
+        throw new Error("INVALID_DATABASE_PROXY");
       const request = http.request({
-        host: "127.0.0.1",
-        port: 7892,
+        host: proxy.hostname,
+        port: Number(proxy.port || 80),
         method: "CONNECT",
         path: endpoint,
         headers: { Host: endpoint },

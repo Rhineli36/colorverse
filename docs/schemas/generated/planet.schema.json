@@ -616,7 +616,9 @@
                               "paper-crane",
                               "wind-chime",
                               "solar-sail",
-                              "dream-kite"
+                              "dream-kite",
+                              "color-fan",
+                              "glass-lantern"
                             ]
                           },
                           "presetVersion": {
@@ -1500,7 +1502,9 @@
                           "paper-crane",
                           "wind-chime",
                           "solar-sail",
-                          "dream-kite"
+                          "dream-kite",
+                          "color-fan",
+                          "glass-lantern"
                         ]
                       },
                       "presetVersion": {
@@ -2271,7 +2275,9 @@
                     "paper-crane",
                     "wind-chime",
                     "solar-sail",
-                    "dream-kite"
+                    "dream-kite",
+                    "color-fan",
+                    "glass-lantern"
                   ]
                 },
                 "presetVersion": {

@@ -224,7 +224,8 @@ export async function handleShowcaseCloud(
           exterior: Boolean(d?.media?.exterior),
           atmosphere: Boolean(
             (d?.atmosphere && d.atmosphere !== "none") ||
-            (d?.halo && d.halo !== "none"),
+            (d?.halo && d.halo !== "none") ||
+            (d?.motion && d.motion.mode !== "stationary"),
           ),
           interior: Boolean(d?.media?.interior),
           tone: Boolean(d?.guide?.tone),
@@ -243,7 +244,7 @@ export async function handleShowcaseCloud(
     }
     if (resource === "planets" && request.method === "GET") {
       const rows = await client.query(
-        `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision,'withdrawn',w.withdrawn_at IS NOT NULL,'canRestore',(w.withdrawn_at IS NULL OR w.withdrawn_by=p.owner_enrollment_id OR $3::boolean)) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$2::uuid OR $3::boolean)),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' ORDER BY u.display_name`,
+        `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, (SELECT jsonb_build_object('likes', count(*) FILTER(WHERE i.kind='like'), 'emojis', count(*) FILTER(WHERE i.kind='emoji'), 'comments', count(*) FILTER(WHERE i.kind='comment')) FROM colorverse.classroom_interactions i LEFT JOIN colorverse.showcase_works iw ON iw.id=i.work_id WHERE i.planet_id=p.id AND (i.work_id IS NULL OR iw.withdrawn_at IS NULL)) stats, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision,'withdrawn',w.withdrawn_at IS NOT NULL,'canRestore',(w.withdrawn_at IS NULL OR w.withdrawn_by=p.owner_enrollment_id OR $3::boolean)) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$2::uuid OR $3::boolean)),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' ORDER BY u.display_name`,
         [
           classId,
           actor.id,
@@ -348,6 +349,7 @@ export async function handleShowcaseCloud(
                 ? { atmosphere: input.atmosphere }
                 : {}),
               ...(input.halo !== undefined ? { halo: input.halo } : {}),
+              ...(input.motion !== undefined ? { motion: input.motion } : {}),
               ...(input.brightness !== undefined
                 ? { brightness: input.brightness }
                 : {}),
