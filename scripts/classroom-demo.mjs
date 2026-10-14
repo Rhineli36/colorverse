@@ -74,6 +74,19 @@ try {
       let user = users.find((u) => u.email === student.email);
       if (user && user.user_metadata?.demo_marker !== marker)
         throw new Error("DEMO_EMAIL_ALREADY_IN_USE");
+      // User-editable metadata is a label, never proof of a managed identity.
+      if (user && student.authId && user.id !== student.authId)
+        throw new Error("DEMO_AUTH_ID_MISMATCH");
+      if (user && !student.authId) {
+        const proof = await admin(
+          "/auth/v1/token?grant_type=password",
+          "POST",
+          { email: student.email, password: student.password },
+        );
+        if (proof.user?.id !== user.id)
+          throw new Error("DEMO_ACCOUNT_CONTROL_REQUIRED");
+      }
+      if (!user && student.authId) throw new Error("DEMO_AUTH_ACCOUNT_MISSING");
       if (!user)
         user = await admin("/auth/v1/admin/users", "POST", {
           email: student.email,
