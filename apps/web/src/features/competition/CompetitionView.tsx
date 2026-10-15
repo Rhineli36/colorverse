@@ -1,3 +1,4 @@
+import { SceneLayout } from "../classroom/SceneLayout";
 import { PlanetExplorer } from "../classroom/PlanetExplorer";
 import { KnowledgePanel } from "../classroom/LearningPanels";
 import { nextGrowthPlacement, growthElementColor } from "@colorverse/domain";
@@ -14,6 +15,11 @@ import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
 import { CloudAtmosphere } from "../classroom/CloudStudentGuide";
 import "../classroom/classroom.css";
 import "./competition.css";
+const SnapshotInteraction = z.object({
+  kind: z.enum(["like", "emoji", "comment"]),
+  content: z.string(),
+  author: z.string(),
+});
 const Work = z.strictObject({
   color: z.string().optional(),
   id: z.string(),
@@ -49,6 +55,7 @@ const Snapshot = z.strictObject({
       z.strictObject({
         id: z.string(),
         display_name: z.string(),
+        planetInteractions: z.array(SnapshotInteraction).optional(),
         realName: z.string().optional(),
         studentNumber: z.string().optional(),
         document: CloudPlanetDocumentSchema,
@@ -224,13 +231,7 @@ export function CompetitionView() {
           <>
             {tab === "learning" && (
               <section className="learning-panel" aria-label="色彩的奥秘">
-                <div className="mystery-intro">
-                  <p className="eyebrow">THE SECRETS OF COLOR</p>
-                  <h2>色彩的奥秘</h2>
-                  <p>{LearningContent.introduction}</p>
-                  <p>{LearningContent.notice}</p>
-                </div>
-                <KnowledgePanel />
+                <KnowledgePanel expanded />
                 <h3>试着为星球讲一个色彩故事</h3>
                 <p>
                   这里可以浏览模板与知识卡片。静态备用版不记录任务提交、互评或成绩；真实教学流程在登录后的云端课堂中完成。
@@ -423,92 +424,119 @@ export function CompetitionView() {
                     ))}
                   </section>
                 )}
-                <PlanetExplorer sceneId={student.id}>
-                  <div
-                    className="competition-room"
-                    data-planet-id={student.id}
-                    style={
-                      {
-                        "--room-color": student.document.color,
-                      } as React.CSSProperties
-                    }
-                  >
-                    {student.interior ? (
-                      <img
-                        key={sceneRetry}
-                        className="scene-saved-background"
-                        src={
-                          root +
-                          student.interior +
-                          (sceneRetry ? `?retry=${sceneRetry}` : "")
-                        }
-                        alt={`${student.display_name}保存的内部背景`}
-                        onError={() => setSceneFailed(true)}
-                        onLoad={() => setSceneFailed(false)}
-                      />
-                    ) : (
-                      <span className="scene-default-note">
-                        默认内部背景 · 真实课堂可由学生自行设置
-                      </span>
-                    )}
-                    {sceneFailed && (
-                      <div className="scene-image-error" role="status">
-                        <p>内部背景暂时无法读取，作品元素仍可打开。</p>
-                        <button
-                          onClick={() => {
-                            setSceneFailed(false);
-                            setSceneRetry((n) => n + 1);
-                          }}
-                        >
-                          重新读取背景
-                        </button>
-                      </div>
-                    )}
-                    <CloudAtmosphere kind={student.document.atmosphere} />
-                    {student.works.map((w, i) => {
-                      const params =
-                        w.params ??
-                        nextGrowthPlacement(
-                          student.works
-                            .slice(0, i)
-                            .map(
-                              (p, j) =>
-                                p.params ?? { x: 0.16 + j * 0.16, y: 0.6 },
-                            ),
-                          i,
+                <SceneLayout
+                  story={student.document.metadata}
+                  author={student.display_name}
+                  works={student.works}
+                >
+                  <PlanetExplorer sceneId={student.id}>
+                    <div
+                      className="competition-room"
+                      data-planet-id={student.id}
+                      style={
+                        {
+                          "--room-color": student.document.color,
+                        } as React.CSSProperties
+                      }
+                    >
+                      {student.interior ? (
+                        <img
+                          key={sceneRetry}
+                          className="scene-saved-background"
+                          src={
+                            root +
+                            student.interior +
+                            (sceneRetry ? `?retry=${sceneRetry}` : "")
+                          }
+                          alt={`${student.display_name}保存的内部背景`}
+                          onError={() => setSceneFailed(true)}
+                          onLoad={() => setSceneFailed(false)}
+                        />
+                      ) : (
+                        <span className="scene-default-note">
+                          默认内部背景 · 真实课堂可由学生自行设置
+                        </span>
+                      )}
+                      {sceneFailed && (
+                        <div className="scene-image-error" role="status">
+                          <p>内部背景暂时无法读取，作品元素仍可打开。</p>
+                          <button
+                            onClick={() => {
+                              setSceneFailed(false);
+                              setSceneRetry((n) => n + 1);
+                            }}
+                          >
+                            重新读取背景
+                          </button>
+                        </div>
+                      )}
+                      <CloudAtmosphere kind={student.document.atmosphere} />
+                      {student.works.map((w, i) => {
+                        const params =
+                          w.params ??
+                          nextGrowthPlacement(
+                            student.works
+                              .slice(0, i)
+                              .map(
+                                (p, j) =>
+                                  p.params ?? { x: 0.16 + j * 0.16, y: 0.6 },
+                              ),
+                            i,
+                          );
+                        return (
+                          <button
+                            key={w.id}
+                            className={`scene-growth ${birth && i === 0 ? "born" : ""}`}
+                            data-work-id={w.id}
+                            aria-label={`欣赏作品：${w.title}`}
+                            title={w.title}
+                            style={{
+                              left: `${params.x * 100}%`,
+                              top: `${params.y * 100}%`,
+                            }}
+                            onClick={() => openWork(w)}
+                          >
+                            <GrowthPresetPreview
+                              id={w.presetId}
+                              color={
+                                w.color ??
+                                growthElementColor(student.document.color, i)
+                              }
+                            />
+                            <span>{w.title}</span>
+                          </button>
                         );
-                      return (
-                        <button
-                          key={w.id}
-                          className={`scene-growth ${birth && i === 0 ? "born" : ""}`}
-                          data-work-id={w.id}
-                          aria-label={`欣赏作品：${w.title}`}
-                          title={w.title}
-                          style={{
-                            left: `${params.x * 100}%`,
-                            top: `${params.y * 100}%`,
-                          }}
-                          onClick={() => openWork(w)}
-                        >
-                          <GrowthPresetPreview
-                            id={w.presetId}
-                            color={
-                              w.color ??
-                              growthElementColor(student.document.color, i)
-                            }
-                          />
-                          <span>{w.title}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </PlanetExplorer>
+                      })}
+                    </div>
+                  </PlanetExplorer>
+                </SceneLayout>
+                <section className="planet-quick-message">
+                  <strong>给这颗星球留一句话</strong>
+                  <span>展示快照保留已有回应，登录真实课堂后可以留言。</span>
+                  <a
+                    className="community-login"
+                    href="https://colorverse-dev.2999346.workers.dev/"
+                  >
+                    去云端留言 ↗
+                  </a>
+                </section>
+                <section className="cloud-messages" aria-label="星球互动记录">
+                  <h3>留在星球上的回声</h3>
+                  {student.planetInteractions?.map((r, i) => (
+                    <div className="cloud-message-row" key={i}>
+                      <p>
+                        <strong>{r.author}</strong>{" "}
+                        {r.kind === "like" ? "♡ 点赞了这颗星球" : r.content}
+                      </p>
+                    </div>
+                  ))}
+                </section>
               </section>
             )}
           </>
         )}
         <footer className="competition-footer">
-          往届设计色彩课程作品的演示预览 · 学生身份匿名展示 ·
+          往届设计色彩课程作品的演示预览 · 往届案例经授权展示 ·
           不包含真实账号、密码或班级成绩 · 星球外貌与场景为 AI 辅助素材
         </footer>
       </main>

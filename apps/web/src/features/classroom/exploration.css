@@ -879,3 +879,482 @@
     font-size: 9px;
   }
 }
+/* Competition composition: the room is a fixed canvas; the document keeps normal vertical scrolling. */
+.immersive-layout {
+  display: grid;
+  grid-template-columns: minmax(165px, 15fr) minmax(0, 70fr) minmax(180px, 15fr);
+  gap: 24px;
+  align-items: start;
+  margin: 10px 0 18px;
+}
+.immersive-center {
+  min-width: 0;
+}
+.planet-story,
+.scene-work-directory {
+  padding: 30px 6px;
+  color: #c9d7dd;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.planet-story h2 {
+  font-size: 23px !important;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #edf1de;
+  margin: 8px 0 12px;
+}
+.planet-story > small {
+  font-size: 10px;
+  color: #8da8b5;
+}
+.planet-story section {
+  margin-top: 30px;
+  border-top: 1px solid #8ba2b633;
+  padding-top: 17px;
+}
+.planet-story h3,
+.scene-work-directory h3 {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #dbe7cc;
+  margin: 0 0 10px;
+}
+.planet-story section p {
+  white-space: pre-line;
+  margin: 0;
+  color: #b8ccd4;
+  font-size: 12px;
+  line-height: 2;
+}
+.scene-work-directory ol {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.scene-work-directory li {
+  border-bottom: 1px solid #8ba2b622;
+}
+.scene-work-directory li button {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  text-align: left;
+  background: none;
+  border: 0;
+  width: 100%;
+  padding: 17px 0;
+  color: #d6e3df;
+  min-height: 48px;
+}
+.scene-work-directory button > span {
+  font-family: Georgia, serif;
+  color: #88a6a9;
+  font-size: 11px;
+}
+.scene-work-directory button > div {
+  flex: 1;
+  min-width: 0;
+}
+.scene-work-directory strong {
+  font-size: 12px;
+  font-weight: 500;
+  display: block;
+  line-height: 1.7;
+}
+.scene-work-directory time {
+  display: block;
+  font-size: 10px;
+  color: #92adb7;
+  letter-spacing: 0.03em;
+  margin-top: 4px;
+}
+.scene-work-directory button b {
+  font-size: 13px;
+  font-weight: 400;
+}
+.scene-work-directory > p:not(.eyebrow),
+.scene-work-directory > small {
+  font-size: 10px;
+  color: #8ba5b1;
+  line-height: 1.9;
+}
+.scene-work-directory h3 small {
+  color: #91aab0;
+  font-size: 12px;
+  margin-left: 9px;
+}
+.fixed-scene .explorer-viewport {
+  cursor: default;
+  touch-action: pan-y;
+  overscroll-behavior: auto;
+}
+.fixed-scene .explorer-viewport:active {
+  cursor: default;
+}
+.fixed-scene .explorer-world {
+  will-change: auto;
+  transform: none !important;
+}
+.immersive-layout .planet-explorer {
+  margin: 0;
+}
+.immersive-layout .explorer-controls {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: #a7bfc4;
+  letter-spacing: 0.08em;
+}
+.cloud-gallery.scene-exploring .immersive-layout .explorer-viewport,
+.immersive-layout .explorer-viewport {
+  height: clamp(450px, calc(100dvh - 190px), 900px);
+  min-height: 0;
+  border-radius: 12px;
+  border-color: #789b9f33;
+}
+.cloud-gallery.scene-exploring .immersive-layout .cloud-room-background,
+.immersive-layout .scene-saved-background {
+  object-fit: contain;
+  background: #0a1420;
+}
+.immersive-layout .explorer-hint {
+  font-size: 10px;
+  margin: 8px 0;
+}
+.cloud-growth:focus,
+.scene-growth:focus {
+  outline: 2px solid #f1efbf !important;
+  outline-offset: 8px;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 22px #fff2a6);
+  z-index: 4;
+}
+.cloud-growth:focus > span,
+.scene-growth:focus > span {
+  opacity: 1 !important;
+}
+.planet-quick-message {
+  padding: 20px !important;
+  background: #10212c !important;
+  border: 1px solid #76969b33 !important;
+  border-radius: 14px;
+  gap: 10px;
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.planet-quick-message strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.planet-quick-message input {
+  flex: 1;
+  min-width: 200px;
+  min-height: 42px;
+  background: #081722;
+  border: 1px solid #75979e55;
+  border-radius: 8px;
+  color: #e6efe8;
+  padding: 0 14px;
+}
+.cloud-messages {
+  padding: 10px 22px 30px;
+}
+.cloud-messages .cloud-message-row {
+  padding: 18px 0;
+  border-bottom: 1px solid #75979e22;
+}
+.identity-switch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: #bed0d2;
+  cursor: pointer;
+  background: #10212bbd;
+  border: 1px solid #809aa133;
+  border-radius: 16px;
+  padding: 6px 11px;
+}
+.cloud-observatory .identity-switch input {
+  min-height: 0;
+  accent-color: #b9cfad;
+  width: 13px;
+  height: 13px;
+}
+.cloud-orb-frame {
+  border-radius: 50%;
+}
+/* Broad, two-topic atlas shared with the editor and static fallback. */
+.cloud-modal.mystery-modal {
+  width: min(1400px, 95vw);
+  max-width: 1400px;
+  padding: 36px 48px;
+  max-height: 92dvh;
+  background:
+    radial-gradient(ellipse at top right, #263d4f66, transparent 55%), #0d1a28;
+}
+.color-mystery {
+  color: #d6e5df;
+}
+.mystery-hero {
+  padding: 20px 0 32px;
+  border-bottom: 1px solid #a7bfc333;
+  max-width: none;
+}
+.mystery-hero h2 {
+  font-size: clamp(28px, 3vw, 42px) !important;
+  letter-spacing: 0.12em;
+  font-weight: 400;
+}
+.mystery-hero h2 span {
+  display: block;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: #9eb8c0;
+  margin-top: 15px;
+}
+.mystery-hero > p:last-child {
+  max-width: 760px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #b4c9ce;
+}
+.mystery-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin: 30px 0 40px;
+}
+.mystery-tabs button {
+  padding: 25px 30px;
+  text-align: left;
+  display: grid;
+  gap: 10px;
+  border: 1px solid #7fa7ad44;
+  background: linear-gradient(120deg, #142d3b, #152132);
+  border-radius: 16px;
+  color: #cbdbd9;
+}
+.mystery-tabs button:nth-child(2) {
+  background: linear-gradient(120deg, #302b49, #182c39);
+}
+.mystery-tabs button[aria-selected="true"] {
+  border-color: #d4dfad;
+  box-shadow: inset 0 -3px #d4dfad;
+}
+.mystery-tabs small {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #a2b8b9;
+}
+.mystery-tabs strong {
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 0.13em;
+}
+.mystery-tabs span {
+  font-size: 11px;
+  color: #acbec6;
+}
+.color-mystery [role="tabpanel"] > h3 {
+  font-size: 17px;
+  font-weight: 400;
+  margin-bottom: 25px;
+  letter-spacing: 0.1em;
+}
+.mystery-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 18px 0 28px;
+}
+.mystery-knowledge-card,
+.mystery-color-card {
+  background: #122434;
+  border: 1px solid #879eae33;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.mystery-knowledge-card summary,
+.mystery-color-card summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 20px;
+  cursor: pointer;
+  list-style: none;
+  min-height: 70px;
+  position: relative;
+  box-sizing: border-box;
+}
+.mystery-color-band {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+}
+.mystery-card-grid summary small {
+  font-size: 10px;
+  color: #98b3b8;
+}
+.mystery-knowledge-card summary strong,
+.mystery-color-card summary strong {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.7;
+  flex: 1;
+}
+.mystery-knowledge-card summary > span:last-child,
+.mystery-color-card summary > span:last-child {
+  color: #a5c0b4;
+  font-size: 18px;
+}
+.mystery-card-body {
+  padding: 0 22px 20px;
+}
+.mystery-card-body p {
+  font-size: 12px !important;
+  color: #bdcfd7;
+  line-height: 1.9;
+}
+.mystery-card-body .mystery-question {
+  padding: 12px;
+  background: #0a1925;
+  border-radius: 8px;
+  color: #e2e7be;
+}
+.mystery-notice {
+  max-width: 850px;
+  color: #aec5cc;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.mystery-sources {
+  border-top: 1px solid #8da7ac33;
+  padding-top: 20px;
+  font-size: 10px;
+  color: #8ca7b1;
+}
+.mystery-sources p {
+  font-size: 10px !important;
+}
+@media (max-width: 1100px) {
+  .immersive-layout {
+    grid-template-columns: minmax(140px, 18fr) minmax(0, 64fr) minmax(
+        150px,
+        18fr
+      );
+    gap: 15px;
+  }
+  .planet-story h2 {
+    font-size: 20px !important;
+  }
+  .mystery-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .immersive-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .immersive-center {
+    order: 0;
+    width: 100%;
+  }
+  .planet-story {
+    order: 1;
+    padding: 18px 8px;
+    width: auto;
+  }
+  .planet-story section {
+    margin-top: 18px;
+  }
+  .scene-work-directory {
+    order: 2;
+    padding: 10px 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .scene-work-directory ol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 14px;
+  }
+  .cloud-gallery.scene-exploring .immersive-layout .explorer-viewport {
+    height: 58vh;
+    min-height: 400px;
+  }
+  .cloud-modal.mystery-modal {
+    padding: 20px;
+    width: 95vw;
+  }
+  .mystery-tabs {
+    gap: 10px;
+    margin: 20px 0;
+  }
+  .mystery-tabs button {
+    padding: 20px 14px;
+  }
+  .mystery-tabs strong {
+    font-size: 20px;
+  }
+  .mystery-tabs span {
+    font-size: 10px;
+  }
+  .mystery-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .planet-quick-message input {
+    flex-basis: 100%;
+  }
+}
+/* Match the saved landscape artwork rather than stretching the room to a tall screen. */
+.cloud-gallery.scene-exploring .immersive-layout .explorer-viewport,
+.immersive-layout .explorer-viewport {
+  height: auto;
+  aspect-ratio: 16/9;
+  max-height: calc(100dvh - 180px);
+  min-height: 0;
+}
+.story-demo-label {
+  font-size: 10px;
+  color: #92aaab;
+  margin: 10px 0 0;
+}
+.message-time {
+  display: block;
+  font-size: 10px;
+  color: #8eaab3;
+  margin-top: 8px;
+}
+.planet-quick-message > span {
+  font-size: 12px;
+  color: #a7bec8;
+}
+@media (max-width: 760px) {
+  .cloud-gallery.scene-exploring .immersive-layout .explorer-viewport,
+  .immersive-layout .explorer-viewport {
+    height: auto;
+    min-height: 230px;
+    max-height: none;
+  }
+  .immersive-layout .cloud-growth,
+  .immersive-layout .scene-growth {
+    width: 50px !important;
+    height: 50px !important;
+  }
+  .planet-quick-message > span {
+    font-size: 11px;
+  }
+}
+.cloud-gallery.scene-exploring > .mystery-entry {
+  display: none;
+}
+.mystery-card-grid {
+  align-items: start;
+}

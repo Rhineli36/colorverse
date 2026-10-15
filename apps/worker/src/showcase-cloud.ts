@@ -369,7 +369,7 @@ export async function handleShowcaseCloud(
       if (kind === "appearance" && request.method === "PUT") {
         const input = appearanceInput.parse(
           JSON.parse(
-            new TextDecoder().decode(await readLimited(request, 8192)),
+            new TextDecoder().decode(await readLimited(request, 24576)),
           ),
         );
         if (input.revision !== revision)
@@ -388,6 +388,15 @@ export async function handleShowcaseCloud(
                 name: input.name,
                 ...(input.summary !== undefined
                   ? { summary: input.summary }
+                  : {}),
+                ...(input.reflection !== undefined
+                  ? { reflection: input.reflection }
+                  : {}),
+                ...(input.courseNotes !== undefined
+                  ? { courseNotes: input.courseNotes }
+                  : {}),
+                ...(input.demoWriting !== undefined
+                  ? { demoWriting: input.demoWriting }
                   : {}),
               },
               color: input.color,
@@ -792,6 +801,40 @@ export async function handleShowcaseCloud(
       await client.query("COMMIT");
       uploadedKeys.length = 0;
       return Response.json({ id, presetId: preset, created: true });
+    }
+    const description = /^works\/([a-f0-9-]+)\/description$/.exec(resource);
+    if (description && request.method === "PUT") {
+      const input = z
+        .strictObject({
+          description: z.string().trim().max(2000),
+          revision: z.number().int().nonnegative(),
+        })
+        .parse(
+          JSON.parse(
+            new TextDecoder().decode(await readLimited(request, 12288)),
+          ),
+        );
+      const result = await client.query(
+        `UPDATE colorverse.showcase_works w SET description=$1,revision=w.revision+1
+         FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id
+         WHERE w.id=$2 AND w.planet_id=p.id AND e.id=$3 AND e.class_id=$4
+           AND w.revision=$5 AND w.withdrawn_at IS NULL RETURNING w.id,w.revision`,
+        [
+          input.description,
+          z.uuid().parse(description[1]),
+          actor.id,
+          classId,
+          input.revision,
+        ],
+      );
+      if (!result.rows.length)
+        throw new ClassroomFailure(
+          409,
+          "WORK_CONFLICT",
+          "作品已更新或不属于你，请刷新后再试",
+        );
+      await client.query("COMMIT");
+      return Response.json({ saved: true, revision: result.rows[0].revision });
     }
     const element = /^works\/([a-f0-9-]+)\/element$/.exec(resource);
     if (element && request.method === "PUT") {

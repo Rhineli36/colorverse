@@ -1,3 +1,7 @@
+import {
+  exhibitionProfiles,
+  exhibitionDescriptions,
+} from "./exhibition-profiles.mjs";
 import { nextGrowthPlacement, growthElementColor } from "@colorverse/domain";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -19,11 +23,11 @@ try {
   )
     throw new Error("DEMO_MATERIALS_REQUIRED");
   const styles = [
-    ["流焰画室", 0, "#efa568", "ring", "fireflies", "fast", "ellipse"],
-    ["潮汐画室", 2, "#5a9dde", "soft", "stardust", "slow", "circle"],
-    ["翡翠画室", 1, "#82c9ae", "soft", "fireflies", "slow", "drift"],
-    ["紫雾画室", 3, "#b397d4", "ring", "stardust", "fast", "figure-eight"],
-    ["月岩画室", 5, "#c5bdaa", "none", "none", "stationary", "ellipse"],
+    ["焰色失重", 0, "#efa568", "ring", "fireflies", "fast", "ellipse"],
+    ["落日来信", 2, "#5a9dde", "soft", "stardust", "slow", "circle"],
+    ["森野绮梦", 1, "#82c9ae", "soft", "fireflies", "slow", "drift"],
+    ["云隙漫游", 3, "#b397d4", "ring", "stardust", "fast", "figure-eight"],
+    ["月白棱镜", 5, "#c5bdaa", "none", "none", "stationary", "ellipse"],
   ];
   await mkdir(destination, { recursive: true });
   const students = [];
@@ -64,13 +68,14 @@ try {
           j,
         ),
         title: work.title,
+        description: exhibitionDescriptions[i][j],
         image,
         presetId: journal.students[i].works[j].presetId,
         score: reviews[i][j].score,
         comment: reviews[i][j].comment,
       });
     }
-    const [name, skin, color, halo, atmosphere, mode, trajectory] = styles[i];
+    const [, skin, color, halo, atmosphere, mode, trajectory] = styles[i];
     students.push({
       id: `demo-${i + 1}`,
       display_name: journal.students[i].displayName,
@@ -84,7 +89,7 @@ try {
         "紫绿白·几何纹样",
       ][i],
       document: CloudPlanetDocumentSchema.parse({
-        metadata: { name },
+        metadata: { ...exhibitionProfiles[i], demoWriting: true },
         skin,
         color,
         halo,
@@ -102,11 +107,13 @@ try {
       works,
     });
   }
-  const defaults = styles.map(([name, skin, color], i) => ({
+  const defaults = styles.map(([, skin, color], i) => ({
     id: `default-${i + 1}`,
     display_name: "默认风格",
     document: CloudPlanetDocumentSchema.parse({
-      metadata: { name: `默认 · ${name.replace("画室", "星")}` },
+      metadata: {
+        name: `默认 · ${["流焰星", "潮汐星", "翡翠星", "紫雾星", "月岩星"][i]}`,
+      },
       skin,
       color,
       motion: {

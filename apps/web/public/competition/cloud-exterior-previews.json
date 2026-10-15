@@ -1,0 +1,27 @@
+[
+  {
+    "planetId": "87e16402-f4ad-401a-8075-893e86608a94",
+    "mediaId": "aa972b53-f405-4c61-baba-d29198b81b58",
+    "image": "case-1-exterior.webp"
+  },
+  {
+    "planetId": "9fa7ced8-f580-4f89-98a0-1b45deefe75f",
+    "mediaId": "72d2fe3d-1a35-4294-bb52-2d9197834fab",
+    "image": "case-2-exterior.webp"
+  },
+  {
+    "planetId": "ac4af0ea-7b22-43df-bb5a-537ce68be56d",
+    "mediaId": "fb08d2b9-4aca-4370-aba2-f8d39d4348f6",
+    "image": "case-3-exterior.webp"
+  },
+  {
+    "planetId": "c86e5f81-5c76-4f53-9426-712bd1ab544b",
+    "mediaId": "267a51d3-acb8-48bb-9a83-34eccd710617",
+    "image": "case-4-exterior.webp"
+  },
+  {
+    "planetId": "a1f3a0dc-e781-4e8c-8d74-ac11dab803ed",
+    "mediaId": "7207f3f9-4fa1-4603-a999-d0512624196d",
+    "image": "case-5-exterior.webp"
+  }
+]

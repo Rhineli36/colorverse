@@ -91,3 +91,5 @@
 - [48 · 沉浸式星球与情感色卡验收](48-immersive-scenes-and-emotion-colors.md)
 
 - [49 · 统一云端大宇宙与实名案例](49-unified-cloud-universe.md)
+
+- [50 · 参赛展示界面精修与实测](50-presentation-refinement.md)

@@ -25,6 +25,9 @@ export const CloudPlanetAppearanceInput = z.strictObject({
   color: z.string().regex(/^#[a-f0-9]{6}$/i),
   skin: z.number().int().min(0).max(5).default(0),
   summary: z.string().trim().max(1000).optional(),
+  reflection: z.string().trim().max(1500).optional(),
+  courseNotes: z.string().trim().max(1000).optional(),
+  demoWriting: z.boolean().optional(),
   atmosphere: z.enum(["none", "stardust", "fireflies"]).optional(),
   halo: z.enum(["none", "soft", "ring"]).optional(),
   motion: MotionSchema.optional(),
@@ -34,7 +37,13 @@ export const CloudPlanetAppearanceInput = z.strictObject({
 });
 export const CloudPlanetDocumentSchema = z.object({
   learningIntent: LearningIntentSchema.nullable().optional(),
-  metadata: z.object({ name: z.string(), summary: z.string().default("") }),
+  metadata: z.object({
+    name: z.string(),
+    summary: z.string().default(""),
+    reflection: z.string().max(1500).optional(),
+    courseNotes: z.string().max(1000).optional(),
+    demoWriting: z.boolean().optional(),
+  }),
   color: z.string().default("#82c9c7"),
   skin: z.number().int().min(0).max(5).default(0),
   revision: z.number().int().nonnegative().default(0),

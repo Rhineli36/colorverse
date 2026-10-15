@@ -1,3 +1,5 @@
+import { SceneLayout } from "./SceneLayout";
+import { showLearningGuide } from "./presentation-options";
 import { PlanetExplorer } from "./PlanetExplorer";
 import {
   KnowledgePanel,
@@ -181,6 +183,7 @@ export function CloudGallery({
         id: string;
         kind: string;
         content: string;
+        created_at?: string;
         learning_feedback?: PeerObservation | null;
         display_name: string;
         work_id: string | null;
@@ -597,6 +600,11 @@ export function CloudGallery({
           </>
         )}
       </p>
+      {i.created_at && (
+        <time className="message-time" dateTime={i.created_at}>
+          {new Date(i.created_at).toLocaleString("zh-CN", { hour12: false })}
+        </time>
+      )}
       {i.can_remove && (
         <button
           disabled={busy}
@@ -768,9 +776,7 @@ export function CloudGallery({
           {notice}
         </p>
       )}
-      {data?.planets.some(
-        (p) => p.document.media.exterior || p.document.media.interior,
-      ) && (
+      {background.error && (
         <button className="small" onClick={retryPlanetImages}>
           重新读取星球图片
         </button>
@@ -810,7 +816,7 @@ export function CloudGallery({
           </button>
         </section>
       )}
-      {student && myPlanet && (guide || guideError) && (
+      {showLearningGuide && student && myPlanet && (guide || guideError) && (
         <CloudStudentGuide
           key={`${session.identity.id}-${classId}`}
           storageKey={`colorverse-guide-${session.identity.id}-${classId}`}
@@ -1070,179 +1076,185 @@ export function CloudGallery({
               内部背景读取失败，请点击「重新读取星球图片」重试。
             </p>
           )}
-          <PlanetExplorer
-            sceneId={`${session.identity.id}:${selected.id}`}
-            disabled={editing}
+          <SceneLayout
+            story={selected.document.metadata}
+            author={selected.display_name}
+            works={selected.works.filter((w) => !w.withdrawn)}
           >
-            <div
-              className={`cloud-room ${planetBirth === selected.id ? "planet-born" : ""}`}
-              ref={stage}
-              aria-label="云端星球内部"
-              style={{ backgroundColor: selected.document.color }}
+            <PlanetExplorer
+              sceneId={`${session.identity.id}:${selected.id}`}
+              disabled={editing}
             >
               <div
-                className="cloud-room-scenery"
-                style={{
-                  filter: `brightness(${selected.document.brightness}) saturate(${selected.document.saturation})`,
-                }}
+                className={`cloud-room ${planetBirth === selected.id ? "planet-born" : ""}`}
+                ref={stage}
+                aria-label="云端星球内部"
+                style={{ backgroundColor: selected.document.color }}
               >
-                {background.url ? (
-                  <img
-                    className="cloud-room-background"
-                    src={background.url}
-                    alt="星球内部背景"
-                  />
-                ) : (
-                  <>
-                    <div className="cloud-room-moon" />
-                    <div className="cloud-room-land" />
-                  </>
-                )}
                 <div
-                  className="cloud-room-tint"
-                  style={{ backgroundColor: selected.document.color }}
-                />
-              </div>
-              {!selected.document.media.interior && !background.loading && (
-                <span className="scene-default-note">
-                  默认内部场景
-                  {owned
-                    ? " · 在「编辑星球外貌与背景」中上传自己的背景"
-                    : " · 作者尚未设置背景"}
-                </span>
-              )}
-              <CloudAtmosphere kind={selected.document.atmosphere} />
-              <div className="scene-description">
-                <span>{selected.display_name}</span>
-                <h3>{selected.document.metadata.name}</h3>
-                <p>
-                  {selected.document.metadata.summary ||
-                    "在微光之间，发现这个色彩世界的作品。"}
-                </p>
-              </div>
-              {planetBirth === selected.id && (
-                <div className="cloud-planet-birth" role="status">
-                  <CloudPlanetOrb
-                    classId={classId}
-                    id={selected.id}
-                    document={selected.document}
+                  className="cloud-room-scenery"
+                  style={{
+                    filter: `brightness(${selected.document.brightness}) saturate(${selected.document.saturation})`,
+                  }}
+                >
+                  {background.url ? (
+                    <img
+                      className="cloud-room-background"
+                      src={background.url}
+                      alt="星球内部背景"
+                    />
+                  ) : (
+                    <>
+                      <div className="cloud-room-moon" />
+                      <div className="cloud-room-land" />
+                    </>
+                  )}
+                  <div
+                    className="cloud-room-tint"
+                    style={{ backgroundColor: selected.document.color }}
                   />
-                  <h3>{selected.document.metadata.name} · 为你诞生</h3>
-                  <p>从这里开始，留下你的色彩。</p>
                 </div>
-              )}
-              {selected.works
-                .filter((w) => !w.withdrawn)
-                .map((w, index) => {
-                  const current = editing && draft?.id === w.id ? draft : w;
-                  return (
-                    <button
-                      key={w.id}
-                      className={`cloud-growth ${birth === w.id ? "born" : ""} motion-${current.params.motion} ${editing && draft?.id === w.id ? "editing" : ""}`}
-                      data-work-id={w.id}
-                      title={w.title}
-                      aria-label={`查看作品 ${w.title}`}
-                      style={{
-                        left: `${current.params.x * 100}%`,
-                        top: `${current.params.y * 100}%`,
-                        width: 110 * current.params.size,
-                        height: 110 * current.params.size,
-                        animationDelay:
-                          birth === w.id ? "0s" : `${index * 0.13}s`,
-                      }}
-                      onClick={() => {
-                        if (editing) return;
-                        setWork(w);
-                        setDraft(null);
-                      }}
-                      onPointerDown={(e) => {
-                        if (!editing || draft?.id !== w.id || busy) return;
-                        e.currentTarget.setPointerCapture(e.pointerId);
-                      }}
-                      onPointerMove={(e) => {
-                        if (
-                          !editing ||
-                          draft?.id !== w.id ||
-                          !e.currentTarget.hasPointerCapture(e.pointerId)
-                        )
-                          return;
-                        const bounds = stage.current?.getBoundingClientRect();
-                        if (bounds)
-                          setDraft({
-                            ...draft,
-                            params: {
-                              ...draft.params,
-                              x: Math.max(
-                                0.05,
-                                Math.min(
-                                  0.95,
-                                  (e.clientX - bounds.left) / bounds.width,
-                                ),
-                              ),
-                              y: Math.max(
-                                0.1,
-                                Math.min(
-                                  0.9,
-                                  (e.clientY - bounds.top) / bounds.height,
-                                ),
-                              ),
-                            },
-                          });
-                      }}
-                      onKeyDown={(e) => {
-                        if (!editing || draft?.id !== w.id) return;
-                        const d = {
-                          ArrowLeft: [-0.01, 0],
-                          ArrowRight: [0.01, 0],
-                          ArrowUp: [0, -0.01],
-                          ArrowDown: [0, 0.01],
-                        }[e.key];
-                        if (d) {
-                          e.preventDefault();
-                          setDraft({
-                            ...draft,
-                            params: {
-                              ...draft.params,
-                              x: Math.max(
-                                0.05,
-                                Math.min(0.95, draft.params.x + d[0]),
-                              ),
-                              y: Math.max(
-                                0.1,
-                                Math.min(0.9, draft.params.y + d[1]),
-                              ),
-                            },
-                          });
-                        }
-                      }}
-                    >
-                      <GrowthPresetPreview
-                        id={current.presetId}
-                        color={current.color}
-                      />
-                      <span>{w.title}</span>
-                    </button>
-                  );
-                })}
-              {!selected.works.some((w) => !w.withdrawn) && (
-                <div className="cloud-room-empty">
-                  ✧
-                  <p>
+                {!selected.document.media.interior && !background.loading && (
+                  <span className="scene-default-note">
+                    默认内部场景
                     {owned
-                      ? "上传第一件作品，让星球开始生长。"
-                      : "这颗星球正在等待第一件作品。"}
-                  </p>
-                </div>
-              )}
-              {birth && (
-                <div className="cloud-birth-caption">
-                  一件作品，长成了一束新的光。
-                </div>
-              )}
-            </div>
-          </PlanetExplorer>
+                      ? " · 在「编辑星球外貌与背景」中上传自己的背景"
+                      : " · 作者尚未设置背景"}
+                  </span>
+                )}
+                <CloudAtmosphere kind={selected.document.atmosphere} />
+                {planetBirth === selected.id && (
+                  <div className="cloud-planet-birth" role="status">
+                    <CloudPlanetOrb
+                      classId={classId}
+                      id={selected.id}
+                      document={selected.document}
+                    />
+                    <h3>{selected.document.metadata.name} · 为你诞生</h3>
+                    <p>从这里开始，留下你的色彩。</p>
+                  </div>
+                )}
+                {selected.works
+                  .filter((w) => !w.withdrawn)
+                  .map((w, index) => {
+                    const current = editing && draft?.id === w.id ? draft : w;
+                    return (
+                      <button
+                        key={w.id}
+                        className={`cloud-growth ${birth === w.id ? "born" : ""} motion-${current.params.motion} ${editing && draft?.id === w.id ? "editing" : ""}`}
+                        data-work-id={w.id}
+                        title={w.title}
+                        aria-label={`查看作品 ${w.title}`}
+                        style={{
+                          left: `${current.params.x * 100}%`,
+                          top: `${current.params.y * 100}%`,
+                          width: 110 * current.params.size,
+                          height: 110 * current.params.size,
+                          animationDelay:
+                            birth === w.id ? "0s" : `${index * 0.13}s`,
+                        }}
+                        onClick={() => {
+                          if (editing) return;
+                          setWork(w);
+                          setDraft(null);
+                        }}
+                        onPointerDown={(e) => {
+                          if (!editing || draft?.id !== w.id || busy) return;
+                          e.currentTarget.setPointerCapture(e.pointerId);
+                        }}
+                        onPointerMove={(e) => {
+                          if (
+                            !editing ||
+                            draft?.id !== w.id ||
+                            !e.currentTarget.hasPointerCapture(e.pointerId)
+                          )
+                            return;
+                          const bounds = stage.current?.getBoundingClientRect();
+                          if (bounds)
+                            setDraft({
+                              ...draft,
+                              params: {
+                                ...draft.params,
+                                x: Math.max(
+                                  0.05,
+                                  Math.min(
+                                    0.95,
+                                    (e.clientX - bounds.left) / bounds.width,
+                                  ),
+                                ),
+                                y: Math.max(
+                                  0.1,
+                                  Math.min(
+                                    0.9,
+                                    (e.clientY - bounds.top) / bounds.height,
+                                  ),
+                                ),
+                              },
+                            });
+                        }}
+                        onKeyDown={(e) => {
+                          if (!editing || draft?.id !== w.id) return;
+                          const d = {
+                            ArrowLeft: [-0.01, 0],
+                            ArrowRight: [0.01, 0],
+                            ArrowUp: [0, -0.01],
+                            ArrowDown: [0, 0.01],
+                          }[e.key];
+                          if (d) {
+                            e.preventDefault();
+                            setDraft({
+                              ...draft,
+                              params: {
+                                ...draft.params,
+                                x: Math.max(
+                                  0.05,
+                                  Math.min(0.95, draft.params.x + d[0]),
+                                ),
+                                y: Math.max(
+                                  0.1,
+                                  Math.min(0.9, draft.params.y + d[1]),
+                                ),
+                              },
+                            });
+                          }
+                        }}
+                      >
+                        <GrowthPresetPreview
+                          id={current.presetId}
+                          color={current.color}
+                        />
+                        <span>{w.title}</span>
+                      </button>
+                    );
+                  })}
+                {!selected.works.some((w) => !w.withdrawn) && (
+                  <div className="cloud-room-empty">
+                    ✧
+                    <p>
+                      {owned
+                        ? "上传第一件作品，让星球开始生长。"
+                        : "这颗星球正在等待第一件作品。"}
+                    </p>
+                  </div>
+                )}
+                {birth && (
+                  <div className="cloud-birth-caption">
+                    一件作品，长成了一束新的光。
+                  </div>
+                )}
+              </div>
+            </PlanetExplorer>
+          </SceneLayout>
+          {owned && (
+            <section className="planet-quick-message">
+              <strong>星球留言板</strong>
+              <span>
+                同学的回应会留在这里。拜访其他星球时，可以在这里快速留言。
+              </span>
+            </section>
+          )}
           {!owned && !work && (
-            <section className="cloud-social" ref={social}>
+            <section className="cloud-social planet-quick-message" ref={social}>
               <strong>为这颗星球留下回应</strong>
               <button
                 disabled={busy}
@@ -1270,7 +1282,7 @@ export function CloudGallery({
                 maxLength={500}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="写下你的感受…"
+                placeholder="这一趟星球旅行，让你想到什么？留下感受或建议…"
               />
               <button
                 disabled={busy || !comment.trim()}
@@ -1280,29 +1292,6 @@ export function CloudGallery({
               </button>
             </section>
           )}
-          <details className="cloud-work-list-collapsed">
-            <summary>
-              作品目录 · {selected.works.filter((w) => !w.withdrawn).length} 件
-            </summary>
-            <section className="cloud-work-list" aria-label="云端展示作品">
-              {selected.works
-                .filter((w) => !w.withdrawn)
-                .map((w) => (
-                  <button
-                    key={w.id}
-                    onClick={() => {
-                      if (!editing) setWork(w);
-                    }}
-                  >
-                    <GrowthPresetPreview id={w.presetId} color={w.color} />
-                    <strong>{w.title}</strong>
-                    <small>
-                      {new Date(w.createdAt).toLocaleDateString("zh-CN")}
-                    </small>
-                  </button>
-                ))}
-            </section>
-          </details>
           {(owned || staff) && selected.works.some((w) => w.withdrawn) && (
             <details className="cloud-withdrawn-list">
               <summary>
@@ -1414,9 +1403,12 @@ export function CloudGallery({
             </section>
           )}
           <section className="cloud-messages" aria-label="星球互动记录">
+            <h3>留在星球上的回声</h3>
+            {!interactions.some((i) => !i.work_id) && (
+              <p className="muted">还没有星球留言，等待下一位旅人留下回应。</p>
+            )}
             {interactions
               .filter((i) => !i.work_id)
-              .slice(0, 20)
               .map((i) => interactionRow(i, "这颗星球"))}
           </section>
         </>
@@ -1838,7 +1830,7 @@ export function CloudGallery({
       {mysteryOpen && (
         <div className="cloud-modal-backdrop">
           <section
-            className="cloud-modal"
+            className="cloud-modal mystery-modal"
             role="dialog"
             aria-modal="true"
             aria-label="色彩的奥秘"
@@ -1850,7 +1842,6 @@ export function CloudGallery({
             >
               ×
             </button>
-            <h2>色彩的奥秘</h2>
             <KnowledgePanel expanded />
           </section>
         </div>

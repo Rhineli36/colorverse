@@ -170,6 +170,10 @@ export function CloudPlanetAppearance({
     document.learningIntent ?? blankIntent(),
   );
   const [summary, setSummary] = useState(document.metadata.summary),
+    [reflection, setReflection] = useState(document.metadata.reflection ?? ""),
+    [courseNotes, setCourseNotes] = useState(
+      document.metadata.courseNotes ?? "",
+    ),
     [atmosphere, setAtmosphere] = useState(document.atmosphere),
     [halo, setHalo] = useState(document.halo);
   const [brightness, setBrightness] = useState(document.brightness),
@@ -184,6 +188,8 @@ export function CloudPlanetAppearance({
       JSON.stringify(document.learningIntent ?? blankIntent()) ||
     name !== document.metadata.name ||
     summary !== document.metadata.summary ||
+    reflection !== (document.metadata.reflection ?? "") ||
+    courseNotes !== (document.metadata.courseNotes ?? "") ||
     skin !== document.skin ||
     color !== document.color ||
     atmosphere !== document.atmosphere ||
@@ -216,7 +222,13 @@ export function CloudPlanetAppearance({
       setStatus("");
       const changes =
         section === "summary"
-          ? { summary, learningIntent }
+          ? {
+              summary,
+              reflection,
+              courseNotes,
+              learningIntent,
+              demoWriting: false,
+            }
           : section === "motion"
             ? { motion }
             : section === "atmosphere"
@@ -611,7 +623,7 @@ export function CloudPlanetAppearance({
             />
           </label>
           <label>
-            星球介绍
+            写给这颗星球的寄语
             <textarea
               aria-label="星球介绍"
               value={summary}
@@ -623,6 +635,30 @@ export function CloudPlanetAppearance({
             />
           </label>
           <small>{summary.length}/1000</small>
+          <label>
+            创作碎碎念
+            <textarea
+              aria-label="创作碎碎念"
+              rows={5}
+              maxLength={1500}
+              value={reflection}
+              disabled={busy}
+              onChange={(e) => setReflection(e.target.value)}
+              placeholder="记录一次配色尝试、灵感，或者创作中遇到的小问题。"
+            />
+          </label>
+          <label>
+            关于这堂色彩课
+            <textarea
+              aria-label="课程感受"
+              rows={3}
+              maxLength={1000}
+              value={courseNotes}
+              disabled={busy}
+              onChange={(e) => setCourseNotes(e.target.value)}
+              placeholder="有什么新的发现？还有什么想试一试？"
+            />
+          </label>
           <IntentFields
             value={learningIntent}
             onChange={setLearningIntent}

@@ -52,6 +52,41 @@ export function CloudObservatory({
   const [query, setQuery] = useState(""),
     [imageErrors, setImageErrors] = useState(0),
     [retry, setRetry] = useState(0);
+  const [showIdentities, setShowIdentities] = useState(() => {
+    try {
+      return localStorage.getItem("colorverse-show-identities") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [previews, setPreviews] = useState<
+    { planetId: string; mediaId: string; image: string }[] | null
+  >(null);
+  useEffect(() => {
+    let active = true;
+    fetch(
+      `${import.meta.env.BASE_URL}competition/cloud-exterior-previews.json`,
+      { signal: AbortSignal.timeout(5000) },
+    )
+      .then((r) => (r.ok ? r.json() : []))
+      .then((v) => {
+        if (active && Array.isArray(v))
+          setPreviews(
+            v.filter(
+              (p) =>
+                typeof p.planetId === "string" &&
+                typeof p.mediaId === "string" &&
+                /^case-[1-5]-exterior\.webp$/.test(p.image),
+            ),
+          );
+      })
+      .catch(() => {
+        if (active) setPreviews([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const visible = useMemo(
     () =>
       planets.filter((p) =>
@@ -106,17 +141,27 @@ export function CloudObservatory({
             i + 1,
           ),
         );
+      // Only previously authorized exhibition art with the exact current media version uses a public preview.
+      const approved = previews?.find(
+        (v) =>
+          v.planetId === p.id && v.mediaId === p.document.media.exterior?.id,
+      );
+      const preview =
+        p.previewImage ??
+        (approved
+          ? `${import.meta.env.BASE_URL}competition/${approved.image}`
+          : undefined);
       const record = doc.assetRefs[0],
         path = `cloud-orb:${p.id}:${p.document.media.exterior?.id ?? p.document.skin}:${retry}`;
       record.original.path = path;
       sources.set(path, {
         url:
-          p.previewImage ??
+          preview ??
           (p.document.media.exterior
             ? `classes/${classId}/planets/${p.id}/exterior`
             : `${import.meta.env.BASE_URL}demo/v2/body-${p.document.skin}.webp`),
         fallback: `${import.meta.env.BASE_URL}demo/v2/body-${p.document.skin}.webp`,
-        private: !p.previewImage && Boolean(p.document.media.exterior),
+        private: !preview && Boolean(p.document.media.exterior),
       });
       doc.assetRefs = [record];
       doc.archiveEntries = [];
@@ -155,7 +200,7 @@ export function CloudObservatory({
             try {
               const response = source.private
                 ? await classroomRequest(source.url, {
-                    signal: AbortSignal.timeout(10000),
+                    signal: AbortSignal.timeout(25000),
                   })
                 : await fetch(source.url, {
                     signal: AbortSignal.timeout(15000),
@@ -197,14 +242,15 @@ export function CloudObservatory({
       },
     };
     return { documents, universe, assets };
-  }, [visible, classId, retry]);
+  }, [visible, classId, retry, previews]);
   useEffect(() => {
+    if (!previews) return;
     void Promise.allSettled(
       projection.documents.map((p) =>
         projection.assets.resolve(p.assetRefs[0], "thumbnail"),
       ),
     );
-  }, [projection]);
+  }, [projection, previews]);
   useEffect(() => {
     const observer = new ResizeObserver(([e]) =>
       setViewport({ width: e.contentRect.width, height: e.contentRect.height }),
@@ -265,24 +311,26 @@ export function CloudObservatory({
       aria-label="云端大宇宙"
       data-view-mode={mode}
     >
-      <SceneCanvas
-        assets={projection.assets}
-        planets={projection.documents}
-        universe={projection.universe}
-        camera={camera}
-        positionReader={positions}
-        motionPaused={paused}
-        showOrbitGuides={guides}
-        focusId={mode === "focus" ? selected : null}
-        options={{
-          onSelect: setSelected,
-          onDoubleSelect: doubleSelect,
-          onCamera: (c) => {
-            setMode("free");
-            setCamera(c);
-          },
-        }}
-      />
+      {previews && (
+        <SceneCanvas
+          assets={projection.assets}
+          planets={projection.documents}
+          universe={projection.universe}
+          camera={camera}
+          positionReader={positions}
+          motionPaused={paused}
+          showOrbitGuides={guides}
+          focusId={mode === "focus" ? selected : null}
+          options={{
+            onSelect: setSelected,
+            onDoubleSelect: doubleSelect,
+            onCamera: (c) => {
+              setMode("free");
+              setCamera(c);
+            },
+          }}
+        />
+      )}
       <div className="observatory-labels" aria-hidden="true">
         {visible.map((p) => (
           <div
@@ -294,7 +342,7 @@ export function CloudObservatory({
             }}
           >
             <strong>{p.document.metadata.name}</strong>
-            <small>{p.display_name}</small>
+            {showIdentities && <small>{p.display_name}</small>}
           </div>
         ))}
       </div>
@@ -309,6 +357,24 @@ export function CloudObservatory({
         </p>
       </div>
       <div className="view-switcher">
+        <label className="identity-switch">
+          <input
+            type="checkbox"
+            checked={showIdentities}
+            onChange={(e) => {
+              setShowIdentities(e.target.checked);
+              try {
+                localStorage.setItem(
+                  "colorverse-show-identities",
+                  String(e.target.checked),
+                );
+              } catch {
+                /* Optional presentation preference. */
+              }
+            }}
+          />
+          显示姓名与学号
+        </label>
         <button onClick={() => setMode("overview")}>宇宙全景</button>
         <button disabled={!current} onClick={() => focus(selected)}>
           聚焦星球
@@ -326,7 +392,7 @@ export function CloudObservatory({
             {current.id === ownId ? "MY PLANET" : "PLANET SPOTLIGHT"}
           </p>
           <h2>{current.document.metadata.name}</h2>
-          <p>{current.display_name}</p>
+          {showIdentities && <p>{current.display_name}</p>}
           <p className="muted">
             {current.sample
               ? "默认风格样本"
@@ -401,7 +467,8 @@ export function CloudObservatory({
                 onClick={() => focus(p.id)}
                 onDoubleClick={() => doubleSelect(p.id)}
               >
-                {p.document.metadata.name} · {p.display_name}
+                {p.document.metadata.name}
+                {showIdentities ? ` · ${p.display_name}` : ""}
               </button>
             ))}
           </div>

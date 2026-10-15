@@ -1,3 +1,4 @@
+import { showLearningGuide } from "../features/classroom/presentation-options";
 import { classroomRequest } from "../features/classroom/cloud-request";
 import { download } from "./download";
 import { CourseView } from "../features/course/CourseView";
@@ -846,27 +847,26 @@ export function App() {
         <nav aria-label="主导航">
           {cloudSession?.access === "active" && (
             <>
-              <button
-                disabled={cloudPending}
-                onClick={() => void navigateCloud("knowledge")}
-              >
-                色彩的奥秘
-              </button>
-              <button
-                disabled={cloudPending}
-                onClick={() => void navigateCloud("universe")}
-              >
-                探索宇宙
-              </button>
-              <button
-                disabled={cloudPending}
-                onClick={() => void navigateCloud("edit")}
-              >
-                编辑我的星球
-              </button>
+              {(
+                [
+                  ["universe", "探索宇宙"],
+                  ["room", "我的星球"],
+                  ["edit", "编辑星球"],
+                  ["knowledge", "色彩的奥秘"],
+                ] as const
+              ).map(([destination, label]) => (
+                <button
+                  key={destination}
+                  disabled={cloudPending}
+                  onClick={() => void navigateCloud(destination)}
+                >
+                  {label}
+                </button>
+              ))}
             </>
           )}
-          {cloudStudent &&
+          {showLearningGuide &&
+            cloudStudent &&
             cloudGuideProgress?.identityId === cloudSession?.identity.id && (
               <button
                 className="cloud-progress-entry"
@@ -904,25 +904,6 @@ export function App() {
                   : `${cloudGuideProgress.completed}/10`}
               </button>
             )}
-          {cloudSession?.access === "active" && (
-            <button
-              className={route === "cloudworks" ? "active" : ""}
-              disabled={cloudPending}
-              onClick={() =>
-                void action(async () => {
-                  await flush();
-                  setCloudNavigation((v) => ({
-                    action: "room",
-                    sequence: v.sequence + 1,
-                  }));
-                  localStorage.setItem("colorverse-entered-cloud", "1");
-                  setRoute("cloudworks");
-                })
-              }
-            >
-              星球内部
-            </button>
-          )}
           {cloudSession?.access === "active" &&
             cloudSession.memberships.some(
               (m) => m.role === "teacher" || m.role === "assistant",

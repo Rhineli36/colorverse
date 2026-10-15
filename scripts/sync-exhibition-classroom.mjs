@@ -1,3 +1,4 @@
+import { exhibitionProfiles } from "./exhibition-profiles.mjs";
 // Explicitly scoped to five already managed demo identities. Does not create users or touch real students.
 import { readFile, writeFile } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
@@ -36,6 +37,7 @@ try {
     throw Error("JOURNAL_MISMATCH");
   const save = () =>
     writeFile(journalFile, JSON.stringify(journal, null, 2), { mode: 0o600 });
+  const previews = [];
   let images = 0,
     elements = 0;
   for (const [i, actor] of managed.students.entries()) {
@@ -46,6 +48,11 @@ try {
     )
       throw Error("ACTOR_NOT_MANAGED");
     const source = snapshot.students[i];
+    source.document.metadata = {
+      ...source.document.metadata,
+      ...exhibitionProfiles[i],
+      demoWriting: true,
+    };
     const appearance = CloudPlanetDocumentSchema.parse(source.document);
     phase = "login";
     const login = await fetch(
@@ -97,7 +104,11 @@ try {
       name: appearance.metadata.name,
       color: appearance.color,
       skin: appearance.skin,
-      summary: `${source.style}。往届设计色彩作业风格案例，外观和环境为 AI 辅助演绎。`,
+      summary: appearance.metadata.summary,
+      reflection: appearance.metadata.reflection,
+      courseNotes: appearance.metadata.courseNotes,
+      demoWriting: true,
+      brightness: 1,
       halo: appearance.halo,
       atmosphere: appearance.atmosphere,
       motion: appearance.motion,
@@ -115,6 +126,12 @@ try {
         journal.media[key]?.hash === hash &&
         p.document.media[kind]?.id === journal.media[key].mediaId
       ) {
+        if (kind === "exterior")
+          previews.push({
+            planetId: p.id,
+            mediaId: p.document.media.exterior.id,
+            image: file,
+          });
         images++;
         continue;
       }
@@ -127,6 +144,12 @@ try {
       p = await own();
       journal.media[key] = { hash, mediaId: p.document.media[kind]?.id };
       await save();
+      if (kind === "exterior")
+        previews.push({
+          planetId: p.id,
+          mediaId: p.document.media.exterior.id,
+          image: file,
+        });
       images++;
     }
     phase = "element_colors";
@@ -146,6 +169,10 @@ try {
       elements++;
     }
   }
+  await writeFile(
+    "apps/web/public/competition/cloud-exterior-previews.json",
+    JSON.stringify(previews, null, 2) + "\n",
+  );
   await writeFile(
     "apps/web/public/competition/manifest.json",
     JSON.stringify(snapshot, null, 2) + "\n",

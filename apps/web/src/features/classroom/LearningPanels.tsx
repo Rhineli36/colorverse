@@ -20,45 +20,128 @@ export function KnowledgePanel({
   related?: string[];
   expanded?: boolean;
 }) {
-  return (
-    <details className="learning-panel" open={expanded || undefined}>
-      <summary>色彩的奥秘</summary>
-      <p>{LearningContent.introduction}</p>
-      <p>{LearningContent.notice}</p>
-      <div className="learning-cards">
-        {[...LearningContent.knowledge, ...LearningContent.colors].map((c) => (
-          <details key={c.id} open={related.includes(c.id) || undefined}>
-            <summary>
-              {c.id} · {c.title}
-            </summary>
-            {"exampleHex" in c && (
-              <span
-                className="learning-swatch"
-                style={{ background: c.exampleHex }}
-              />
-            )}
-            <p>{"summary" in c ? c.summary : c.words}</p>
-            <p>{c.body}</p>
-            <p className="muted">试一试：{c.tryPrompt}</p>
-          </details>
-        ))}
+  const [topic, setTopic] = useState("knowledge");
+  const renderCard = (
+    c:
+      | (typeof LearningContent.knowledge)[number]
+      | (typeof LearningContent.colors)[number],
+  ) => (
+    <details
+      key={c.id}
+      className={
+        "exampleHex" in c ? "mystery-color-card" : "mystery-knowledge-card"
+      }
+      open={related.includes(c.id) || undefined}
+    >
+      <summary>
+        {"exampleHex" in c && (
+          <span
+            className="mystery-color-band"
+            style={{ background: c.exampleHex }}
+          />
+        )}
+        <small>{c.id}</small>
+        <strong>{c.title}</strong>
+        <span>＋</span>
+      </summary>
+      <div className="mystery-card-body">
+        <p>{"summary" in c ? c.summary : c.words}</p>
+        <p>{c.body}</p>
+        <p className="mystery-question">试一试：{c.tryPrompt}</p>
       </div>
-      <p className="muted">
-        色卡文案由课程负责人提供，知识卡片经 AI 辅助整理，使用前由教师校核。
-      </p>
-      <details>
-        <summary>参考资料</summary>
-        {LearningContent.sources.map((s) => (
-          <p key={s.id}>
-            <a href={s.url} target="_blank" rel="noreferrer">
-              {s.id} · {s.title}
-            </a>
-          </p>
-        ))}
-      </details>
+    </details>
+  );
+  const content = (
+    <>
+      <header className="mystery-hero">
+        <p className="eyebrow">COLORVERSE · CHROMATIC EXPLORATIONS</p>
+        <h2>
+          色彩的奥秘<span>每一种颜色，都是一个新世界。</span>
+        </h2>
+        <p>{LearningContent.introduction}</p>
+      </header>
+      <div className="mystery-tabs" role="tablist" aria-label="色彩探索专题">
+        <button
+          role="tab"
+          id="knowledge-tab"
+          aria-controls="knowledge-content"
+          aria-selected={topic === "knowledge"}
+          onClick={() => setTopic("knowledge")}
+        >
+          <small>01 / FOUNDATIONS</small>
+          <strong>色彩知识</strong>
+          <span>色相、明暗、冷暖与搭配 · K01—K07</span>
+        </button>
+        <button
+          role="tab"
+          id="emotion-tab"
+          aria-controls="emotion-content"
+          aria-selected={topic === "emotion"}
+          onClick={() => setTopic("emotion")}
+        >
+          <small>02 / FEELINGS IN COLOR</small>
+          <strong>色彩情感</strong>
+          <span>从自己的感受开始 · K08 与情感色卡</span>
+        </button>
+      </div>
+      <section
+        role="tabpanel"
+        id={topic === "knowledge" ? "knowledge-content" : "emotion-content"}
+        aria-labelledby={
+          topic === "knowledge" ? "knowledge-tab" : "emotion-tab"
+        }
+      >
+        {topic === "knowledge" ? (
+          <>
+            <h3>看见颜色之间的关系</h3>
+            <div className="mystery-card-grid">
+              {LearningContent.knowledge
+                .filter((c) => c.id !== "K08")
+                .map(renderCard)}
+            </div>
+          </>
+        ) : (
+          <>
+            <h3>让感受，找到自己的颜色</h3>
+            <p className="mystery-notice">{LearningContent.notice}</p>
+            {LearningContent.knowledge
+              .filter((c) => c.id === "K08")
+              .map(renderCard)}
+            <div className="mystery-card-grid emotion-colors">
+              {LearningContent.colors.map(renderCard)}
+            </div>
+          </>
+        )}
+      </section>
+      <footer className="mystery-sources">
+        <p>
+          色卡文案由课程负责人提供，知识卡片经 AI 辅助整理，使用前由教师校核。
+        </p>
+        <details>
+          <summary>参考资料</summary>
+          {LearningContent.sources.map((s) => (
+            <p key={s.id}>
+              <a href={s.url} target="_blank" rel="noreferrer">
+                {s.id} · {s.title}
+              </a>
+            </p>
+          ))}
+        </details>
+      </footer>
+    </>
+  );
+  return expanded ? (
+    <section className="color-mystery" aria-label="色彩知识与情感专题">
+      {content}
+    </section>
+  ) : (
+    <details className="learning-panel color-mystery">
+      <summary>色彩的奥秘</summary>
+      {content}
     </details>
   );
 }
+
 function MoodFields({
   value,
   custom,
