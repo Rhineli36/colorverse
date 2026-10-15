@@ -91,3 +91,5 @@ node scripts/static-preview.mjs work/competition-site --open
 - 已将便携 ZIP 解压到独立检查目录，实际运行包内 node.exe v24.19.0，浏览器验证默认游客宇宙、右上角登录及学生首次创建，无外网请求、无页面脚本错误。尚未在另一台电脑验收，也未把便携包表述为完成的 EXE 安装程序。
 - 云端匿名会话、无效令牌、禁用开发入口及 HTTP 方法边界的七项检查通过；云端显示名称清理不更改数据库中的作者/账号记录。
 - Node.js 的完整版本对应许可证随运行时提供：`docs/third-party/node-v24.19.0-LICENSE.txt`，来源 `https://raw.githubusercontent.com/nodejs/node/v24.19.0/LICENSE`。
+
+- 真实云端 Chrome 界面复验：学生登录后“我的星球”先聚焦；开启姓名学号后不再出现“作品风格案例/演示账号”后缀；无教师管理入口；私有内部背景解码成功，五个作品元素正常显示。证据：`outputs/cloud-presentation-live.json`、`cloud-clean-planet-labels.png`、`cloud-refined-interior.png`。
