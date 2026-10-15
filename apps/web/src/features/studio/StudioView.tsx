@@ -792,6 +792,16 @@ export function StudioView({
           <details className="studio-emotion-colors">
             <summary>用色彩表达情感</summary>
             <ColorCardPicker
+              referenceCaseId={
+                typeof doc.extensions?.colorCaseId === "string"
+                  ? doc.extensions.colorCaseId
+                  : undefined
+              }
+              onReference={(id) =>
+                patch((p) => {
+                  p.extensions = { ...p.extensions, colorCaseId: id };
+                })
+              }
               color={doc.metadata.palette.primary}
               onColor={(v) =>
                 patch((p) => {

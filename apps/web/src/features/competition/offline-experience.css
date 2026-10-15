@@ -1,0 +1,446 @@
+.offline-app .competition-main {
+  max-width: none;
+}
+.offline-login-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #040b13a8;
+  backdrop-filter: blur(8px);
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border: 0;
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+}
+.offline-login-backdrop::backdrop {
+  background: #040b1388;
+}
+.offline-login-backdrop:not([open]) {
+  display: none;
+}
+.offline-login-close {
+  float: right;
+  background: transparent;
+  color: #d4e5dc;
+  border: 0;
+  font-size: 26px;
+  padding: 4px 10px;
+}
+.offline-login {
+  width: min(900px, 90vw);
+  padding: 50px;
+  background: linear-gradient(125deg, #112938ed, #0b1625f2);
+  border: 1px solid #91ada366;
+  border-radius: 25px;
+  box-shadow: 0 30px 100px #0009;
+}
+.offline-login h1 {
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #e5ebc8;
+}
+.offline-login > p:not(.eyebrow) {
+  max-width: 630px;
+  font-size: 14px;
+  line-height: 1.9;
+  color: #afc6cf;
+}
+.offline-role-choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-top: 35px;
+}
+.offline-role-choices button {
+  background: #132c3a;
+  border: 1px solid #8fa4ac55;
+  border-radius: 14px;
+  padding: 25px;
+  text-align: left;
+  display: grid;
+  gap: 14px;
+  color: #d4e5dc;
+}
+.offline-role-choices button:hover,
+.offline-role-choices button:focus-visible {
+  border-color: #e4eabb;
+  box-shadow: 0 0 25px #b0d0b322;
+}
+.offline-role-choices span {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #98b3bd;
+}
+.offline-role-choices strong {
+  font-size: 20px;
+  font-weight: 400;
+}
+.offline-role-choices small {
+  font-size: 12px;
+  color: #a5bdc6;
+}
+.offline-account-controls {
+  display: flex;
+  gap: 9px;
+}
+.offline-account-controls button {
+  font-size: 11px;
+  background: #112432;
+  color: #bbd1cf;
+  border: 1px solid #8ca49c44;
+  border-radius: 8px;
+  padding: 10px;
+}
+.offline-notice {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  padding: 10px 20px;
+  border: 1px solid #93b1a655;
+  background: #152c39e8;
+  border-radius: 12px;
+  color: #dce6bc;
+  pointer-events: none;
+  font-size: 12px;
+}
+.offline-editor {
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  color: #d5e2dd;
+}
+.offline-editor header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.offline-editor h1 {
+  font-weight: 400;
+  font-size: 29px;
+}
+.offline-editor-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+}
+.offline-edit-fields {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+.offline-editor label,
+.offline-upload label,
+.offline-element-editor label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  color: #b7cdd1;
+}
+.offline-editor input,
+.offline-editor textarea,
+.offline-editor select,
+.offline-upload input,
+.offline-upload textarea,
+.offline-element-editor select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  background: #102330;
+  border: 1px solid #88a3a355;
+  border-radius: 9px;
+  color: #e0e9df;
+  font-family: inherit;
+}
+.offline-editor button,
+.offline-save button,
+.offline-confirm button,
+.offline-upload button {
+  background: #17323e;
+  border: 1px solid #8ca7a155;
+  border-radius: 10px;
+  padding: 12px 18px;
+  color: #d5e6d7;
+}
+.offline-editor button.primary,
+.offline-confirm button.primary,
+.offline-upload button.primary {
+  background: #e0e9b5;
+  color: #17283a;
+}
+.default-skins {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.default-skins button {
+  padding: 8px;
+  background: #0e1e2a;
+}
+.default-skins img {
+  width: 75px;
+  height: 75px;
+  max-width: 100%;
+  object-fit: contain;
+}
+.default-skins button[aria-pressed="true"] {
+  outline: 2px solid #dce9b6;
+}
+.offline-planet-preview {
+  border-radius: 18px;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--preview-color), transparent 65%),
+    #0a1624 75%
+  );
+  display: grid;
+  justify-items: center;
+  gap: 15px;
+  padding: 35px;
+  margin-bottom: 25px;
+}
+.offline-planet-preview img {
+  border-radius: 50%;
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border: 3px solid var(--preview-color);
+  box-shadow: 0 0 35px var(--preview-color);
+}
+.offline-planet-preview strong {
+  font-size: 20px;
+  font-weight: 400;
+}
+.offline-planet-preview span {
+  font-size: 11px;
+  color: #a9c5c6;
+}
+.offline-save {
+  position: sticky;
+  bottom: 0;
+  padding: 20px;
+  background: #081521ef;
+  text-align: right;
+  z-index: 5;
+}
+.offline-default-interior {
+  position: absolute;
+  inset: 0;
+}
+.offline-app .competition-main > .color-mystery {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px;
+}
+.offline-planet-social {
+  max-width: 1000px;
+  margin: 15px auto 40px;
+}
+.offline-planet-social h3 {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+.offline-comment-composer {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: #112532;
+  border: 1px solid #839c9f33;
+  border-radius: 12px;
+  align-items: center;
+}
+.offline-comment-composer button {
+  background: none;
+  border: 0;
+  color: #cbded7;
+  min-height: 34px;
+  font-size: 12px;
+}
+.offline-comment-composer input {
+  flex: 1;
+  min-width: 220px;
+  background: #0b1c28;
+  border: 1px solid #819da644;
+  border-radius: 8px;
+  color: #dfede5;
+  padding: 10px;
+  font-size: 12px;
+}
+.offline-replies article {
+  display: flex;
+  align-items: baseline;
+  gap: 15px;
+  padding: 12px 0;
+  border-bottom: 1px solid #6f8d9622;
+  font-size: 12px;
+}
+.offline-replies strong {
+  font-size: 11px;
+  font-weight: 500;
+  color: #b4cece;
+  min-width: 80px;
+}
+.offline-replies p {
+  flex: 1;
+  margin: 0;
+  font-size: 12px !important;
+  line-height: 1.8 !important;
+}
+.offline-replies time {
+  font-size: 10px;
+  color: #8ea8b6;
+}
+.offline-confirm {
+  padding: 32px;
+  border: 1px solid #8fa7a466;
+  border-radius: 17px;
+  background: #102633;
+  color: #d5e2d9;
+  max-width: 500px;
+}
+.offline-confirm::backdrop {
+  background: #020713bb;
+}
+.offline-confirm h2 {
+  font-size: 22px;
+  font-weight: 400;
+}
+.offline-confirm p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #b9cdd1;
+}
+.offline-confirm button {
+  margin: 12px 12px 0 0;
+}
+.offline-teacher {
+  max-width: 1350px;
+  margin: 30px auto;
+  padding: 25px;
+}
+.offline-teacher h1 {
+  font-size: 27px;
+  font-weight: 400;
+}
+.offline-teacher table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.offline-teacher td,
+.offline-teacher th {
+  padding: 18px 12px;
+  border-bottom: 1px solid #809a9d33;
+  text-align: left;
+  font-weight: 400;
+}
+.offline-teacher td small {
+  display: block;
+  color: #96b0bc;
+  font-size: 10px;
+  margin-top: 8px;
+}
+.offline-teacher button {
+  margin: 3px;
+  padding: 9px;
+  background: #15303d;
+  border: 1px solid #83a29e44;
+  border-radius: 8px;
+  color: #d0e0d1;
+  font-size: 12px;
+}
+.offline-upload {
+  display: grid;
+  gap: 18px;
+}
+.offline-element-editor {
+  display: grid;
+  gap: 13px;
+  background: #102635;
+  padding: 20px;
+  border-radius: 12px;
+}
+.offline-element-editor > svg {
+  width: 110px;
+  height: 110px;
+}
+.offline-element-editor input[type="color"] {
+  width: 75px;
+}
+.offline-app .competition-modal > form {
+  display: grid;
+  gap: 15px;
+  margin: 20px 0;
+}
+.offline-app .scene-growth.motion-float svg {
+  animation: offline-float 5s ease-in-out infinite;
+}
+.offline-app .scene-growth.motion-breathe svg {
+  animation: scene-glow 4s ease-in-out infinite;
+}
+.offline-app .scene-growth.motion-rotate svg {
+  animation: offline-rotate 25s linear infinite;
+}
+@keyframes offline-float {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes offline-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 760px) {
+  .offline-login {
+    padding: 25px;
+  }
+  .offline-login h1 {
+    font-size: 27px;
+  }
+  .offline-role-choices {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .offline-role-choices button {
+    padding: 16px;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+  }
+  .offline-role-choices button > span {
+    display: none;
+  }
+  .offline-role-choices strong {
+    font-size: 17px;
+  }
+  .offline-editor-columns {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .offline-account-controls button {
+    font-size: 10px;
+    padding: 7px;
+  }
+  .offline-replies article {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .offline-replies p {
+    min-width: 200px;
+  }
+  .offline-teacher {
+    overflow: auto;
+    padding: 12px;
+  }
+}

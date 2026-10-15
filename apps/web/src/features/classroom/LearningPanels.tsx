@@ -1,3 +1,5 @@
+import { EmotionCases } from "./EmotionCases";
+import type { EmotionCase } from "@colorverse/contracts";
 import { useEffect, useRef, useState } from "react";
 import {
   LearningContent,
@@ -16,11 +18,14 @@ export const blankIntent = (): LearningIntent => LearningIntentSchema.parse({});
 export function KnowledgePanel({
   related = [],
   expanded = false,
+  onApplyColor,
 }: {
   related?: string[];
   expanded?: boolean;
+  onApplyColor?: (c: EmotionCase) => void;
 }) {
-  const [topic, setTopic] = useState("knowledge");
+  const legacyCase = related.find((id) => /^C\d{2}$/.test(id));
+  const [topic, setTopic] = useState(legacyCase ? "emotion" : "knowledge");
   const renderCard = (
     c:
       | (typeof LearningContent.knowledge)[number]
@@ -107,9 +112,7 @@ export function KnowledgePanel({
             {LearningContent.knowledge
               .filter((c) => c.id === "K08")
               .map(renderCard)}
-            <div className="mystery-card-grid emotion-colors">
-              {LearningContent.colors.map(renderCard)}
-            </div>
+            <EmotionCases onApply={onApplyColor} initialCaseId={legacyCase} />
           </>
         )}
       </section>

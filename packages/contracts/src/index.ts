@@ -420,4 +420,5 @@ export * from "./classroom";
 export * from "./cloud-planet";
 
 export * from "./motion";
-export * from './learning';
+export * from "./learning";
+export * from "./emotion-cases";

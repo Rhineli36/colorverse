@@ -1,4 +1,5 @@
 import { SceneLayout } from "./SceneLayout";
+import { presentationName } from "./presentation-name";
 import { showLearningGuide } from "./presentation-options";
 import { PlanetExplorer } from "./PlanetExplorer";
 import {
@@ -65,7 +66,7 @@ const Work = z.object({
 const Planet = z.object({
   id: z.uuid(),
   owner_enrollment_id: z.uuid(),
-  display_name: z.string(),
+  display_name: z.string().transform(presentationName),
   document: CloudPlanetDocumentSchema,
   stats: z
     .object({
@@ -141,6 +142,13 @@ export function CloudGallery({
     [planetId, setPlanetId] = useState(initialPlanetId ?? ""),
     [exploring, setExploring] = useState(Boolean(initialPlanetId)),
     [mysteryOpen, setMysteryOpen] = useState(false),
+    [exampleDates, setExampleDates] = useState<Record<string, string>>({}),
+    [colorCase, setColorCase] =
+      useState<import("@colorverse/contracts").EmotionCase>(),
+    [focusRequest, setFocusRequest] = useState<{
+      id: string;
+      sequence: number;
+    }>(),
     [editLaunch, setEditLaunch] = useState(false),
     [samples, setSamples] = useState<ObservatoryPlanet[]>([]),
     [sample, setSample] = useState<ObservatoryPlanet | null>(null),
@@ -191,6 +199,18 @@ export function CloudGallery({
         can_remove?: boolean;
       }[]
     >([]);
+  useEffect(() => {
+    let active = true;
+    void fetch(`${import.meta.env.BASE_URL}competition/example-work-dates.json`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((v) => {
+        if (active) setExampleDates(v);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   const detailVisible = Boolean(work && !editing);
   const observatoryPlanets = useMemo(
     () => [...(data?.planets ?? []), ...samples],
@@ -400,7 +420,9 @@ export function CloudGallery({
       return;
     }
     if (myPlanet) setPlanetId(myPlanet.id);
-    setExploring(navigation.action === "room");
+    setExploring(false);
+    if (navigation.action === "room" && myPlanet)
+      setFocusRequest({ id: myPlanet.id, sequence: navigation.sequence });
   }, [navigation, data, myPlanet]);
   useEffect(() => {
     let active = true;
@@ -577,8 +599,10 @@ export function CloudGallery({
   ) => (
     <div key={i.id} className="cloud-message-row">
       <p>
-        <strong>{i.display_name}</strong>{" "}
-        {i.kind === "like" ? `♡ 点赞了${subject}` : i.content}
+        <strong>{presentationName(i.display_name)}</strong>{" "}
+        {i.kind === "like"
+          ? `♡ 点赞了${subject}`
+          : i.content.replace(/^演示留言(?:（[^）]*）)?[：:]\s*/, "")}
         {i.learning_feedback && (
           <>
             <br />
@@ -935,6 +959,7 @@ export function CloudGallery({
       )}
       {data && !exploring && !editLaunch && (
         <CloudObservatory
+          focusRequest={focusRequest}
           classId={classId}
           planets={observatoryPlanets}
           ownId={myPlanet?.id}
@@ -987,6 +1012,16 @@ export function CloudGallery({
             </div>
             {!student && (
               <div className="row-buttons">
+                <button
+                  disabled={pending}
+                  onClick={() => {
+                    setSettingsSection("exterior");
+                    setColorCase(undefined);
+                    setSettingsOpen(true);
+                  }}
+                >
+                  修改星球
+                </button>
                 <button
                   disabled={pending || Boolean(planetBirth || birth)}
                   onClick={() => {
@@ -1054,7 +1089,7 @@ export function CloudGallery({
               </div>
             </div>
           )}
-          {owned && settingsOpen && (
+          {(owned || staff) && settingsOpen && (
             <div ref={settings}>
               <CloudPlanetAppearance
                 key={selected.id}
@@ -1062,6 +1097,7 @@ export function CloudGallery({
                 id={selected.id}
                 document={selected.document}
                 initialSection={settingsSection}
+                initialColorCase={colorCase}
                 busy={busy}
                 run={perform}
                 onSaved={() => refresh(selected.id)}
@@ -1079,7 +1115,9 @@ export function CloudGallery({
           <SceneLayout
             story={selected.document.metadata}
             author={selected.display_name}
-            works={selected.works.filter((w) => !w.withdrawn)}
+            works={selected.works
+              .filter((w) => !w.withdrawn)
+              .map((w) => ({ ...w, exampleDate: exampleDates[w.id] }))}
           >
             <PlanetExplorer
               sceneId={`${session.identity.id}:${selected.id}`}
@@ -1842,7 +1880,29 @@ export function CloudGallery({
             >
               ×
             </button>
-            <KnowledgePanel expanded />
+            <KnowledgePanel
+              expanded
+              onApplyColor={(c) => {
+                if (!myPlanet) {
+                  setNotice("请先创建自己的星球，再把颜色带回创作。");
+                  return;
+                }
+                if (
+                  appearanceDirty &&
+                  !window.confirm(
+                    "应用案例色会更新主色调。是否保留其他编辑并继续？",
+                  )
+                )
+                  return;
+                setColorCase(c);
+                setMysteryOpen(false);
+                setPlanetId(myPlanet.id);
+                setEditLaunch(false);
+                setExploring(true);
+                setSettingsSection("tone");
+                setSettingsOpen(true);
+              }}
+            />
           </section>
         </div>
       )}

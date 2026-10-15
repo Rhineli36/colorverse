@@ -1,6 +1,6 @@
-import { KnowledgePanel } from "./LearningPanels";
+import { EmotionCases } from "./EmotionCases";
 import { useState } from "react";
-import { LearningContent } from "@colorverse/contracts";
+import { EmotionContent, findEmotionCase } from "@colorverse/contracts";
 import "./exploration.css";
 export function ColorCardPicker({
   color,
@@ -8,20 +8,26 @@ export function ColorCardPicker({
   mood,
   onMood,
   disabled = false,
+  referenceCaseId,
+  onReference,
 }: {
   color: string;
   onColor: (v: string) => void;
   mood: string;
   onMood: (v: string) => void;
   disabled?: boolean;
+  referenceCaseId?: string;
+  onReference?: (id: string) => void;
 }) {
-  const cards = LearningContent.colors;
+  const cards = EmotionContent.groups.flatMap((g) => g.cases);
+  const [explore, setExplore] = useState(0);
   const [selected, setSelected] = useState(
-      cards.find((c) => c.exampleHex.toLowerCase() === color.toLowerCase())
-        ?.id ?? "",
+      cards.find((c) => c.hex.toLowerCase() === color.toLowerCase())?.id ??
+        referenceCaseId ??
+        "",
     ),
     [hex, setHex] = useState<string | null>(null);
-  const card = cards.find((c) => c.id === selected);
+  const card = findEmotionCase(selected);
   return (
     <section className="color-creation" aria-label="情感色卡创作">
       <p className="eyebrow">COLOR · FEELING · YOUR WORLD</p>
@@ -39,34 +45,80 @@ export function ColorCardPicker({
       <p className="muted">
         可以先选氛围，也可以从颜色开始。色卡会设置主色调，之后仍可微调。
       </p>
-      <div className="color-card-orbit" role="group" aria-label="选择主色色卡">
-        {cards.map((c) => (
-          <button
-            type="button"
-            key={c.id}
-            disabled={disabled}
-            aria-pressed={selected === c.id}
-            aria-label={`选择${c.title.split(/[｜：]/)[0]}色卡`}
-            onClick={() => {
-              setHex(null);
-              setSelected(c.id);
-              onColor(c.exampleHex);
-            }}
-            style={{ "--card-color": c.exampleHex } as React.CSSProperties}
+      <div
+        className="color-case-chooser"
+        role="group"
+        aria-label="选择主色色卡"
+      >
+        {EmotionContent.groups.map((g) => (
+          <details
+            key={g.id}
+            open={g.cases.some((c) => c.id === selected) || undefined}
           >
-            <span className="color-card-dot" />
-            <span>{c.title.split(/[｜：]/)[0]}</span>
-          </button>
+            <summary>
+              {g.name} · {g.cases.length}种表达
+            </summary>
+            <div className="emotion-variants">
+              {g.cases.map((c) => (
+                <button
+                  type="button"
+                  key={c.id}
+                  disabled={disabled}
+                  aria-pressed={selected === c.id}
+                  aria-label={`选择${c.name}·${c.emotion}`}
+                  onClick={() => {
+                    setHex(null);
+                    setSelected(c.id);
+                    onColor(c.hex);
+                    onReference?.(c.id);
+                  }}
+                >
+                  <i style={{ background: c.hex }} />
+                  <span>
+                    {c.name}
+                    <small>{c.emotion}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </details>
         ))}
       </div>
       {card && (
         <article className="color-card-detail" aria-label="当前色卡详情">
-          <h4>{card.title}</h4>
-          <code>{card.exampleHex}</code>
-          <p>氛围联想：{card.words}</p>
-          <p>{card.body}</p>
-          <p className="color-card-question">{card.tryPrompt}</p>
+          <h4>
+            {card.name} · {card.emotion}
+          </h4>
+          <code>{card.hex}</code>
+          <p>{card.observation}</p>
+          <p>{card.suggestion}</p>
+          <button type="button" onClick={() => setExplore((n) => n + 1)}>
+            探索这个颜色
+          </button>
         </article>
+      )}
+      {explore > 0 && card && (
+        <div className="color-case-detail-browser">
+          <EmotionCases
+            key={explore}
+            initialCaseId={card.id}
+            onApply={(c) => {
+              if (
+                color.toUpperCase() !== c.hex.toUpperCase() &&
+                !window.confirm(
+                  "将主色调调整为" +
+                    c.hex +
+                    "？只改变颜色，不重置背景、作品或元素位置。",
+                )
+              )
+                return;
+              setSelected(c.id);
+              setHex(null);
+              onColor(c.hex);
+              onReference?.(c.id);
+            }}
+          />
+        </div>
       )}
       <div className="color-fine-tune">
         <label>
@@ -102,8 +154,7 @@ export function ColorCardPicker({
         </label>
         <output aria-label="当前主色调">{color.toUpperCase()}</output>
       </div>
-      <p className="muted">{LearningContent.notice}</p>
-      <KnowledgePanel />
+      <p className="muted">{EmotionContent.notice}</p>
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import { TaskSettings } from "./LearningPanels";
+import { presentationName } from "./presentation-name";
 import { useEffect, useState } from "react";
 import {
   ClassroomOverviewSchema,
@@ -220,7 +221,7 @@ export function CloudClassroomView({
                       className={`student-orb ${s.planet_id ? "" : "empty"}`}
                       aria-hidden="true"
                     />
-                    <strong>{s.display_name}</strong>
+                    <strong>{presentationName(s.display_name)}</strong>
                     <small>
                       {s.planet_name ??
                         (s.planet_id ? "未命名星球" : "尚未创建星球")}

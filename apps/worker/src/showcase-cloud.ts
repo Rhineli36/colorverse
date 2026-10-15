@@ -354,13 +354,15 @@ export async function handleShowcaseCloud(
         );
       const row = (
         await client.query(
-          "SELECT p.owner_enrollment_id,p.document FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE p.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active'",
+          "SELECT p.owner_enrollment_id,p.document FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE p.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active'" +
+            (mutation ? " FOR UPDATE OF p" : ""),
           [id, classId],
         )
       ).rows[0];
       if (!row) throw new ClassroomFailure(404, "NOT_FOUND", "星球不存在");
       if (
         mutation &&
+        !(actor.role === "teacher" || actor.role === "assistant") &&
         (actor.role !== "student" || row.owner_enrollment_id !== actor.id)
       )
         throw new ClassroomFailure(403, "OWNER_REQUIRED", "只能修改自己的星球");

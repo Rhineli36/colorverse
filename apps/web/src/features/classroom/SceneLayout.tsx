@@ -15,7 +15,12 @@ export function SceneLayout({
 }: {
   story: Story;
   author: string;
-  works: { id: string; title: string; createdAt?: string | null }[];
+  works: {
+    id: string;
+    title: string;
+    createdAt?: string | null;
+    exampleDate?: string;
+  }[];
   children: ReactNode;
 }) {
   const scene = useRef<HTMLDivElement>(null);
@@ -25,7 +30,6 @@ export function SceneLayout({
         <p className="eyebrow">A WORLD IN MY COLORS</p>
         <h2>{story.name}</h2>
         <small>{author}</small>
-        {story.demoWriting && <p className="story-demo-label">演示创作手记</p>}
         <section>
           <h3>写给这颗星球</h3>
           <p>
@@ -75,24 +79,26 @@ export function SceneLayout({
                 <span>{String(i + 1).padStart(2, "0")}</span>
                 <div>
                   <strong>{w.title}</strong>
-                  <time dateTime={w.createdAt ?? undefined}>
+                  <time dateTime={w.exampleDate ?? w.createdAt ?? undefined}>
                     {w.createdAt
-                      ? new Date(w.createdAt).toLocaleString("zh-CN", {
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })
+                      ? new Date(w.exampleDate ?? w.createdAt).toLocaleString(
+                          "zh-CN",
+                          {
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                          },
+                        )
                       : "未记录提交时间"}
                   </time>
                 </div>
-                <b>↗</b>
               </button>
             </li>
           ))}
         </ol>
-        <small>定位后点击发光元素，欣赏完整作品。</small>
+        <small>点击条目高亮元素，点击元素欣赏作品。</small>
       </aside>
     </div>
   );

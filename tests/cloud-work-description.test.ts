@@ -14,7 +14,7 @@ const [classId, otherClass, owner, peer, teacher, planet, work] = Array.from(
   { length: 7 },
   () => randomUUID(),
 );
-const identity = (id = owner) => ({
+const identity = (id: string = owner) => ({
   issuer: "https://test.invalid/auth/v1",
   subject: id,
   email: "test@example.test",
@@ -53,7 +53,7 @@ beforeAll(async () => {
  CREATE TABLE colorverse.users(id uuid PRIMARY KEY,auth_issuer text,auth_subject text,status text);
  CREATE TABLE colorverse.classes(id uuid PRIMARY KEY,title text,timezone text,archived_at timestamptz);
  CREATE TABLE colorverse.enrollments(id uuid PRIMARY KEY,user_id uuid,class_id uuid,role text,status text);
- CREATE TABLE colorverse.planets(id uuid PRIMARY KEY,owner_enrollment_id uuid);
+ CREATE TABLE colorverse.planets(id uuid PRIMARY KEY,owner_enrollment_id uuid,document jsonb);
  CREATE TABLE colorverse.showcase_works(id uuid PRIMARY KEY,planet_id uuid,description text,revision integer,withdrawn_at timestamptz);`);
   for (const id of [classId, otherClass])
     await db.query(
@@ -79,10 +79,10 @@ beforeAll(async () => {
     "INSERT INTO colorverse.enrollments VALUES($1,$2,$3,'student','active')",
     [randomUUID(), owner, otherClass],
   );
-  await db.query("INSERT INTO colorverse.planets VALUES($1,$2)", [
-    planet,
-    owner,
-  ]);
+  await db.query(
+    "INSERT INTO colorverse.planets(id,owner_enrollment_id) VALUES($1,$2)",
+    [planet, owner],
+  );
   await db.query(
     "INSERT INTO colorverse.showcase_works VALUES($1,$2,'原说明',0,NULL)",
     [work, planet],
@@ -120,6 +120,50 @@ describe("cloud work description ownership and revisions", () => {
         )
       ).rows[0].description,
     ).toBe("校订后的配色说明");
+  });
+  it("lets only the same-class teacher or owner change planet appearance, with revision protection", async () => {
+    await db.query("UPDATE colorverse.planets SET document=$1 WHERE id=$2", [
+      JSON.stringify({
+        metadata: { name: "原星球", summary: "原介绍" },
+        revision: 0,
+        color: "#112233",
+        skin: 0,
+        media: { interior: { id: randomUUID(), key: "unchanged-private-key" } },
+      }),
+      planet,
+    ]);
+    const save = (actor: string, revision = 0, targetClass = classId) =>
+      handleShowcaseCloud(
+        new Request("https://test.invalid", {
+          method: "PUT",
+          body: JSON.stringify({
+            name: "教师调整",
+            color: "#456789",
+            revision,
+          }),
+        }),
+        env,
+        identity(actor),
+        targetClass,
+        `planets/${planet}/appearance`,
+        client,
+      );
+    await expect(save(peer)).rejects.toMatchObject({ status: 403 });
+    expect((await save(teacher)).status).toBe(200);
+    const doc = (
+      await db.query("SELECT document FROM colorverse.planets WHERE id=$1", [
+        planet,
+      ])
+    ).rows[0].document as {
+      revision: number;
+      media: { interior: { key: string } };
+    };
+    expect(doc.revision).toBe(1);
+    expect(doc.media.interior.key).toBe("unchanged-private-key");
+    await expect(save(owner, 0)).rejects.toMatchObject({ status: 409 });
+    await expect(save(teacher, 1, otherClass)).rejects.toMatchObject({
+      status: 403,
+    });
   });
   it("rejects oversized explanations and malformed input", async () => {
     await expect(request(owner, 1, "字".repeat(2001))).rejects.toMatchObject({

@@ -1,9 +1,11 @@
 import http from "node:http";
+import { spawn } from "node:child_process";
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 const root = resolve(
-    process.argv[2] ?? fileURLToPath(new URL(".", import.meta.url)),
+    process.argv.slice(2).find((a) => a !== "--open") ??
+      fileURLToPath(new URL(".", import.meta.url)),
   ),
   port = 5198;
 const types = {
@@ -43,11 +45,24 @@ const server = http.createServer(async (req, res) => {
     res.end("File not found");
   }
 });
-server.listen(port, "127.0.0.1", () =>
+server.listen(port, "127.0.0.1", () => {
   console.log(
     `Static exhibition: http://127.0.0.1:${port} (no classroom backend)`,
-  ),
-);
+  );
+  if (process.argv.includes("--open")) {
+    const url = `http://127.0.0.1:${port}`;
+    const child =
+      process.platform === "win32"
+        ? spawn("rundll32.exe", ["url.dll,FileProtocolHandler", url], {
+            windowsHide: true,
+            stdio: "ignore",
+          })
+        : spawn(process.platform === "darwin" ? "open" : "xdg-open", [url], {
+            stdio: "ignore",
+          });
+    child.on("error", () => console.log(`Open ${url} in your browser.`));
+  }
+});
 server.on("error", (e) => {
   console.error(
     e.code === "EADDRINUSE"

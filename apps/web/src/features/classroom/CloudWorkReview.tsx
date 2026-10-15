@@ -109,13 +109,6 @@ export function CloudWorkReview({
     <section className="cloud-work-review" aria-label="教师点评与评分">
       <div className="cloud-review-heading">
         <h3>教师点评与评分</h3>
-        <span>
-          {review?.source === "demo"
-            ? "演示建议 · 待教师确认"
-            : review
-              ? "教师已确认"
-              : "等待教师点评"}
-        </span>
       </div>
       {loading && <p role="status">正在读取点评…</p>}
       {error && (
@@ -137,15 +130,16 @@ export function CloudWorkReview({
           {review.score !== null && (
             <strong className="cloud-review-score">
               {review.score}
-              <small> / 100{review.source === "demo" ? " · 建议分" : ""}</small>
+              <small> / 100</small>
             </strong>
           )}
           <p>{review.comment || "暂无文字点评"}</p>
-          <small>
-            {review.source === "demo"
-              ? "系统预置的演示建议，不是原课程成绩；教师确认保存后才标为教师点评。"
-              : `${review.reviewer_name} · ${new Date(review.created_at).toLocaleString("zh-CN")} · 第 ${review.revision} 版`}
-          </small>
+          {review.source === "teacher" && (
+            <small>
+              {review.reviewer_name} ·{" "}
+              {new Date(review.created_at).toLocaleString("zh-CN")}
+            </small>
+          )}
         </div>
       )}
       {ready && !review && !loading && (
@@ -153,7 +147,10 @@ export function CloudWorkReview({
       )}
       {staff && ready && (
         <div className="cloud-review-form">
-          <p className="muted">教学参考：色彩关系的理解、氛围表达、说明依据、比较与反思。总分仍为 100 分，系统不自动评分。</p>
+          <p className="muted">
+            教学参考：色彩关系的理解、氛围表达、说明依据、比较与反思。总分仍为
+            100 分，系统不自动评分。
+          </p>
           <label>
             教师评分（100 分制，可留空）
             <input

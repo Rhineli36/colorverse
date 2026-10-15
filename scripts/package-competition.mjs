@@ -77,11 +77,36 @@ backup["colorverse-static/serve.mjs"] = new Uint8Array(
   await readFile("scripts/static-preview.mjs"),
 );
 backup["colorverse-static/启动展示.cmd"] = strToU8(
-  '@echo off\r\ncd /d "%~dp0"\r\nwhere node >nul 2>nul\r\nif errorlevel 1 (echo Please install Node.js first. & pause & exit /b 1)\r\nstart "" "http://127.0.0.1:5198"\r\nnode serve.mjs\r\npause\r\n',
+  '@echo off\r\ncd /d "%~dp0"\r\nwhere node >nul 2>nul\r\nif errorlevel 1 (echo Please install Node.js first. & pause & exit /b 1)\r\nnode serve.mjs --open\r\npause\r\n',
 );
 backup["colorverse-static/运行说明.md"] = strToU8(
-  "# 色彩星球静态展示备用版\n\n请预装 Node.js。解压后在本目录运行 `node serve.mjs`，或在 Windows 双击“启动展示.cmd”。打开 http://127.0.0.1:5198。无需安装依赖。不要直接双击 index.html。\n\n包含五个实名署名的往届作品风格案例、五个默认星球、二十五幅作品预览、教学卡片、三个模板、演示点评和成长播放。全部展示素材在包内；关闭互联网仍可浏览。参考资料的外部链接除外。\n\n这是静态快照，没有真实登录、上传、云数据库写入、评分或互评。点赞只在当前页面生效，刷新不保存。预置建议分不代表原课程成绩。星球外貌和场景为 AI 辅助素材；历史作业预览由负责人授权用于演示。\n\n真实教学入口与账号由负责人另行提供。完整源码包的 docs/47-competition-run-and-package.md 说明三种运行模式及外部依赖。\n",
+  "# 色彩星球离线体验\n\n预装 Node.js 22.12+。解压后运行 `node serve.mjs --open`，或在 Windows 双击“启动展示.cmd”。地址固定 http://127.0.0.1:5198；无需安装依赖。不要直接双击 index.html。关闭启动窗口即停止本机服务。\n\n启动默认游客浏览，右上角登录可选择学生或教师；退出后返回游客。离线身份选择用于本机体验，不是真实账号认证。学生创建星球、导入图片、提交作品、生成元素、互评，教师管理与评分，均保存在浏览器独立 IndexedDB。刷新与退出登录不会清除；换浏览器、换地址或清理浏览数据后不会共享。使用“重新开始”确认后恢复初始素材，仅清理此离线空间。\n\n五个作品风格案例、五个默认星球、二十五幅预览与知识卡均在包内。八色系二十三个情感案例已接入，四张临时 AI 图，其余为占位，最终图片待替换。无外网仍可完成本机流程；参考资料的外链除外。没有云端账户、跨设备同步、真实数据库和正式教学任务发布。\n\n预置点评及分数为案例准备数据，不代表原课程成绩。星球外貌、环境及临时案例图由 AI 辅助生成；往届作业预览用于获准的参赛准备，素材授权仍由负责人最终核对。离线包使用同学编号，不附真实密码、云密钥或学号。详见源码 docs/51-emotion-offline-experience.md。\n",
 );
+const portable = {};
+if (process.platform === "win32") {
+  for (const [key, bytes] of Object.entries(backup))
+    portable[key.replace("colorverse-static/", "colorverse-windows/")] = bytes;
+  portable["colorverse-windows/runtime/node.exe"] = new Uint8Array(
+    await readFile(process.execPath),
+  );
+  portable["colorverse-windows/runtime/NODE-LICENSE.txt"] = new Uint8Array(
+    await readFile(
+      process.env.COLORVERSE_NODE_LICENSE_PATH ??
+        `docs/third-party/node-${process.version}-LICENSE.txt`,
+    ),
+  );
+  portable["colorverse-windows/启动展示.cmd"] = strToU8(
+    '@echo off\r\ncd /d "%~dp0"\r\n"runtime\\node.exe" serve.mjs --open\r\npause\r\n',
+  );
+  portable["colorverse-windows/运行说明.md"] = strToU8(
+    new TextDecoder()
+      .decode(backup["colorverse-static/运行说明.md"])
+      .replace(
+        "预装 Node.js 22.12+。",
+        "此 Windows x64 便携包已附 Node.js 运行时，无需另装 Node.js。",
+      ),
+  );
+}
 const secrets = [];
 for (const f of [
   ".env.supabase.local",
@@ -107,7 +132,7 @@ for (const f of [
     if (e.code !== "ENOENT") throw e;
   }
 }
-for (const bundle of [source, backup])
+for (const bundle of [source, backup, portable])
   for (const [n, bytes] of Object.entries(bundle)) {
     if (
       /(^|\/)(work|node_modules|outputs|\.git|secrets)(\/|$)/.test(n) ||
@@ -122,6 +147,9 @@ const results = [];
 for (const [name, files] of [
   ["色彩星球源码包.zip", source],
   ["色彩星球静态展示备用包.zip", backup],
+  ...(Object.keys(portable).length
+    ? [["色彩星球Windows便携体验包.zip", portable]]
+    : []),
 ]) {
   const bytes = zipSync(files, { level: 6 }),
     roundtrip = unzipSync(bytes);

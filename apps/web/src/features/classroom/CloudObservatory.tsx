@@ -14,6 +14,7 @@ import {
 } from "@colorverse/domain";
 import { SceneCanvas } from "../../app/SceneCanvas";
 import { classroomRequest } from "./cloud-request";
+import { presentationName } from "./presentation-name";
 
 export type ObservatoryPlanet = {
   id: string;
@@ -31,11 +32,13 @@ export function CloudObservatory({
   onEnter,
   selectedId,
   ownId,
+  focusRequest,
 }: {
   classId: string;
   planets: ObservatoryPlanet[];
   selectedId?: string;
   ownId?: string;
+  focusRequest?: { id: string; sequence: number };
   onEnter: (id: string) => void;
 }) {
   const host = useRef<HTMLElement>(null);
@@ -89,9 +92,13 @@ export function CloudObservatory({
   }, []);
   const visible = useMemo(
     () =>
-      planets.filter((p) =>
-        `${p.display_name} ${p.document.metadata.name}`.includes(query.trim()),
-      ),
+      planets
+        .filter((p) =>
+          `${p.display_name} ${p.document.metadata.name}`.includes(
+            query.trim(),
+          ),
+        )
+        .map((p) => ({ ...p, display_name: presentationName(p.display_name) })),
     [planets, query],
   );
   const projection = useMemo(() => {
@@ -299,6 +306,16 @@ export function CloudObservatory({
       ),
     );
   };
+  useEffect(() => {
+    if (!focusRequest) return;
+    const timer = window.setInterval(() => {
+      if (positions.current?.(focusRequest.id)) {
+        focus(focusRequest.id);
+        clearInterval(timer);
+      }
+    }, 50);
+    return () => clearInterval(timer);
+  }, [focusRequest?.id, focusRequest?.sequence, projection]);
   const doubleSelect = (id: string) => {
     if (mode === "focus" && selected === id) onEnter(id);
     else focus(id);

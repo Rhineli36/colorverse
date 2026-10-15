@@ -1,0 +1,192 @@
+{
+  "version": 1,
+  "method": "imagegen",
+  "generatedAt": "2026-10-15",
+  "sharedPrompt": "用于高校设计色彩学习的艺术化抽象星球内部场景，大块形体、简洁空间；构图、光线、形状与颜色共同表达情感，无文字和水印；横向4:3。",
+  "resources": [
+    {
+      "id": "red-vermilion",
+      "status": "ready",
+      "prompt": "抽象星球广场，朱红色拱形与宽阔飘带向外展开，少量暖金光，充满迎接和庆祝的气息；画面整体、形状大而清晰，无密集纸屑。",
+      "image": "emotion-cases/red-vermilion.webp",
+      "thumbnail": "emotion-cases/red-vermilion-thumb.webp",
+      "source": "2026-10-15 使用内置 imagegen 生成，经人工图文核对；非学生作品"
+    },
+    {
+      "id": "red-blush",
+      "status": "ready",
+      "prompt": "柔软的浅粉色星球庭院，两组圆润抽象形体轻轻相依，漫射光与大面积干净空间，温柔、安静、有关怀感，不使用爱心符号堆砌。",
+      "image": "emotion-cases/red-blush.webp",
+      "thumbnail": "emotion-cases/red-blush-thumb.webp",
+      "source": "2026-10-15 使用内置 imagegen 生成，经人工图文核对；非学生作品"
+    },
+    {
+      "id": "red-wine",
+      "status": "ready",
+      "prompt": "暗酒红星球中的安静纪念空间，简洁高耸的抽象拱门，极少量柔和暖光，稳定构图，有分量、庄重、深情，无文字与纪念碑铭文。",
+      "image": "emotion-cases/red-wine.webp",
+      "thumbnail": "emotion-cases/red-wine-thumb.webp",
+      "source": "2026-10-15 使用内置 imagegen 生成，经人工图文核对；非学生作品"
+    },
+    {
+      "id": "red-dusty-rose",
+      "status": "ready",
+      "prompt": "灰玫瑰色星球窗边空间，一条未走完的曲线通向远处空座，柔和侧光，朦胧但清楚的轮廓，含蓄、牵挂、轻微惆怅，不画信纸文字。",
+      "image": "emotion-cases/red-dusty-rose.webp",
+      "thumbnail": "emotion-cases/red-dusty-rose-thumb.webp",
+      "source": "2026-10-15 使用内置 imagegen 生成，经人工图文核对；非学生作品"
+    },
+    {
+      "id": "orange-tangerine",
+      "status": "placeholder",
+      "prompt": "鲜橙色抽象星球活动场，宽大的弧形与弹跳般的几何形体，有节奏地上升，明快暖光，活力、欢聚、期待出发，无人物文字。",
+      "image": "emotion-cases/orange-tangerine.webp",
+      "thumbnail": "emotion-cases/orange-tangerine-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "orange-apricot",
+      "status": "placeholder",
+      "prompt": "浅杏橙色星球休憩角，低矮圆润平台和简洁植物，柔和午后光，松弛、亲近、安心，画面留白，无文字。",
+      "image": "emotion-cases/orange-apricot.webp",
+      "thumbnail": "emotion-cases/orange-apricot-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "yellow-sunshine",
+      "status": "placeholder",
+      "prompt": "明黄色抽象星球探险入口，打开的几何门与清晰延伸的小路，局部明亮阳光，惊喜、好奇、轻快，轮廓清楚、不刺眼，无文字。",
+      "image": "emotion-cases/yellow-sunshine.webp",
+      "thumbnail": "emotion-cases/yellow-sunshine-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "yellow-cream",
+      "status": "placeholder",
+      "prompt": "奶油黄色星球清晨空间，开阔平台、缓慢展开的弧线与一处新芽，柔和晨光，舒缓、希望、平和，避免梦幻光粒堆叠。",
+      "image": "emotion-cases/yellow-cream.webp",
+      "thumbnail": "emotion-cases/yellow-cream-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "green-spring",
+      "status": "placeholder",
+      "prompt": "嫩黄绿色星球花园，大块抽象叶形与几处刚舒展的新芽，明快日光，萌动、生机、轻盈，结构整体。",
+      "image": "emotion-cases/green-spring.webp",
+      "thumbnail": "emotion-cases/green-spring-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "green-mint",
+      "status": "placeholder",
+      "prompt": "薄荷绿色星球庭院，舒展的宽弧线、少量叶片与充足空隙，干净漫射光，清爽、舒展、通风感，无水晶碎屑。",
+      "image": "emotion-cases/green-mint.webp",
+      "thumbnail": "emotion-cases/green-mint-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "green-forest",
+      "status": "placeholder",
+      "prompt": "深森林绿色星球内部，层叠的大叶形与简洁石台，一束稀疏柔光照到小径，幽静、沉稳、有庇护感，暗部仍有细节。",
+      "image": "emotion-cases/green-forest.webp",
+      "thumbnail": "emotion-cases/green-forest-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "blue-cyan-aqua",
+      "status": "placeholder",
+      "prompt": "清青色星球水庭，宽阔连贯的水纹曲线、几层简洁半透明形体，干净透光，清透、流动、轻快，不出现文字与复杂折射噪点。",
+      "image": "emotion-cases/blue-cyan-aqua.webp",
+      "thumbnail": "emotion-cases/blue-cyan-aqua-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "blue-cyan-sky",
+      "status": "placeholder",
+      "prompt": "浅天蓝色星球天空平台，开阔地平线、轻盈宽带形体向远处延伸，柔和明亮光线，自由、轻盈、辽阔，细节简洁。",
+      "image": "emotion-cases/blue-cyan-sky.webp",
+      "thumbnail": "emotion-cases/blue-cyan-sky-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "blue-cyan-midnight",
+      "status": "placeholder",
+      "prompt": "深夜蓝色星球海岸，空旷的大平台与遥远单独一处微光，宽阔暗色海面，静止、深远、略有孤独，暗部可辨识，无悲伤人物。",
+      "image": "emotion-cases/blue-cyan-midnight.webp",
+      "thumbnail": "emotion-cases/blue-cyan-midnight-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "blue-cyan-slate",
+      "status": "placeholder",
+      "prompt": "灰蓝色星球雾中步道，层次清楚的大形体逐渐退远，一处安静停靠的平台，漫射光，克制、沉思、朦胧但不模糊。",
+      "image": "emotion-cases/blue-cyan-slate.webp",
+      "thumbnail": "emotion-cases/blue-cyan-slate-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "purple-lavender",
+      "status": "placeholder",
+      "prompt": "浅薰衣草紫星球梦境庭院，少量大块悬浮圆弧、轻薄云层与柔和漫射光，轻柔、梦幻、舒缓，整体简洁。",
+      "image": "emotion-cases/purple-lavender.webp",
+      "thumbnail": "emotion-cases/purple-lavender-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "purple-vivid",
+      "status": "placeholder",
+      "prompt": "鲜紫色抽象星球剧场，醒目的宽大几何舞台与斜向形体，局部聚光，戏剧张力、个性、登场感，不加字母霓虹。",
+      "image": "emotion-cases/purple-vivid.webp",
+      "thumbnail": "emotion-cases/purple-vivid-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "purple-deep",
+      "status": "placeholder",
+      "prompt": "深紫色星球神秘入口，大块弧形遮挡一部分空间，入口深处有少量柔和光，神秘、未知、诱发好奇，轮廓清楚。",
+      "image": "emotion-cases/purple-deep.webp",
+      "thumbnail": "emotion-cases/purple-deep-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "brown-honey",
+      "status": "placeholder",
+      "prompt": "蜂蜜浅棕色星球小屋内部，简洁木纹平台和圆润窗洞，一束柔和侧光，温暖、熟悉、日常记忆，少量整洁细节，无文字。",
+      "image": "emotion-cases/brown-honey.webp",
+      "thumbnail": "emotion-cases/brown-honey-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "brown-earth",
+      "status": "placeholder",
+      "prompt": "深土棕色星球地景，厚实低矮的大块地层、稳定的几何平台，柔和局部照明，朴实、安定、可靠，非荒凉废墟。",
+      "image": "emotion-cases/brown-earth.webp",
+      "thumbnail": "emotion-cases/brown-earth-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "neutral-ivory",
+      "status": "placeholder",
+      "prompt": "暖白色星球开放空间，简洁弧形墙、大片留白和少量浅色形体，柔和日光，开放、轻盈、可以停留，边缘清晰。",
+      "image": "emotion-cases/neutral-ivory.webp",
+      "thumbnail": "emotion-cases/neutral-ivory-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "neutral-gray",
+      "status": "placeholder",
+      "prompt": "中性灰色星球几何庭院，清楚有节奏的方形与弧形，细腻明暗层次，克制、秩序、安静，无工业脏污感。",
+      "image": "emotion-cases/neutral-gray.webp",
+      "thumbnail": "emotion-cases/neutral-gray-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    },
+    {
+      "id": "neutral-charcoal",
+      "status": "placeholder",
+      "prompt": "炭黑色星球静谧舞台，稳定大块形体围合一处柔和暖光，暗部清晰，庄严、凝聚、深邃，无恐怖元素。",
+      "image": "emotion-cases/neutral-charcoal.webp",
+      "thumbnail": "emotion-cases/neutral-charcoal-thumb.webp",
+      "source": "待制作的AI辅助教学配图，非学生作品"
+    }
+  ]
+}

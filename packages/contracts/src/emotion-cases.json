@@ -1,0 +1,666 @@
+{
+  "version": 1,
+  "introduction": "同一个色系，也能讲出不同的故事。点开色标，看看颜色与画面怎样一起传递感受，再把你的发现带回自己的星球。",
+  "notice": "这些情感提示是创作参考，不是标准答案。颜色的感受也与构图、光线、材质、文化和个人经历有关。欢迎你说出不同的理解。",
+  "groups": [
+    {
+      "id": "red",
+      "name": "红色系",
+      "theme": "从热烈到柔软，再到深沉与克制",
+      "legacyIds": [
+        "C01",
+        "C08"
+      ],
+      "cases": [
+        {
+          "id": "red-vermilion",
+          "name": "朱红",
+          "emotion": "热情与庆祝",
+          "hex": "#E64B45",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较鲜明的红色，视觉存在感较强。",
+          "scene": "在这个案例中，朱红与向外舒展的形状共同表现庆祝、勇气和主动靠近的愿望。",
+          "suggestion": "用较大块红色建立氛围，再留出清楚的焦点。鲜明不等于把每个角落都填满。",
+          "question": "你想邀请别人加入怎样的时刻？",
+          "prompt": "抽象星球广场，朱红色拱形与宽阔飘带向外展开，少量暖金光，充满迎接和庆祝的气息；画面整体、形状大而清晰，无密集纸屑。",
+          "image": {
+            "key": "red-vermilion",
+            "path": "emotion-cases/red-vermilion.webp",
+            "thumbnail": "emotion-cases/red-vermilion-thumb.webp",
+            "status": "ready",
+            "alt": "朱红的抽象星球情感表达案例",
+            "caption": "朱红：一次关于热情与庆祝的表达尝试。",
+            "source": "2026-10-15 使用内置 imagegen 生成，经人工图文核对；非学生作品"
+          }
+        },
+        {
+          "id": "red-blush",
+          "name": "浅粉红",
+          "emotion": "温柔与关怀",
+          "hex": "#F3B9C6",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "比朱红更浅，整体对比更柔和。",
+          "scene": "在这个案例中，浅粉与圆润、相互靠近的形状共同表现关心、陪伴与轻柔的相遇。",
+          "suggestion": "保留足够的明暗区别，让柔和的画面仍有可辨认的主体。粉色不限定性别或性格。",
+          "question": "怎样表现关心，而不依赖文字说明？",
+          "prompt": "柔软的浅粉色星球庭院，两组圆润抽象形体轻轻相依，漫射光与大面积干净空间，温柔、安静、有关怀感，不使用爱心符号堆砌。",
+          "image": {
+            "key": "red-blush",
+            "path": "emotion-cases/red-blush.webp",
+            "thumbnail": "emotion-cases/red-blush-thumb.webp",
+            "status": "ready",
+            "alt": "浅粉红的抽象星球情感表达案例",
+            "caption": "浅粉红：一次关于温柔与关怀的表达尝试。",
+            "source": "2026-10-15 使用内置 imagegen 生成，经人工图文核对；非学生作品"
+          }
+        },
+        {
+          "id": "red-wine",
+          "name": "暗酒红",
+          "emotion": "庄重与深情",
+          "hex": "#7D2E3C",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "明度较低的红色，画面可以更厚重。",
+          "scene": "在这个案例中，暗酒红与稳定的垂直结构、克制的灯光共同营造庄重与深情，像一句经过思考才说出的承诺。",
+          "suggestion": "用少量亮色保留空间层次。深沉不代表全部压暗，也不固定等于悲伤。",
+          "question": "你希望这份深沉表达承诺，还是纪念？",
+          "prompt": "暗酒红星球中的安静纪念空间，简洁高耸的抽象拱门，极少量柔和暖光，稳定构图，有分量、庄重、深情，无文字与纪念碑铭文。",
+          "image": {
+            "key": "red-wine",
+            "path": "emotion-cases/red-wine.webp",
+            "thumbnail": "emotion-cases/red-wine-thumb.webp",
+            "status": "ready",
+            "alt": "暗酒红的抽象星球情感表达案例",
+            "caption": "暗酒红：一次关于庄重与深情的表达尝试。",
+            "source": "2026-10-15 使用内置 imagegen 生成，经人工图文核对；非学生作品"
+          }
+        },
+        {
+          "id": "red-dusty-rose",
+          "name": "灰玫瑰红",
+          "emotion": "含蓄与牵挂",
+          "hex": "#B78388",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "饱和度较低，带有灰感的红。",
+          "scene": "在这个案例中，灰玫瑰红与留白、轻薄雾感一起表现含蓄的牵挂，像有些话还没有完全说出口。",
+          "suggestion": "减少醒目点的数量，让细微关系成为表达。它与浅粉的差别重点在克制与灰感，不只是换个名称。",
+          "question": "如果不把情绪说满，你准备留下什么线索？",
+          "prompt": "灰玫瑰色星球窗边空间，一条未走完的曲线通向远处空座，柔和侧光，朦胧但清楚的轮廓，含蓄、牵挂、轻微惆怅，不画信纸文字。",
+          "image": {
+            "key": "red-dusty-rose",
+            "path": "emotion-cases/red-dusty-rose.webp",
+            "thumbnail": "emotion-cases/red-dusty-rose-thumb.webp",
+            "status": "ready",
+            "alt": "灰玫瑰红的抽象星球情感表达案例",
+            "caption": "灰玫瑰红：一次关于含蓄与牵挂的表达尝试。",
+            "source": "2026-10-15 使用内置 imagegen 生成，经人工图文核对；非学生作品"
+          }
+        }
+      ]
+    },
+    {
+      "id": "orange",
+      "name": "橙色系",
+      "theme": "比较外向的活力与日常的温暖",
+      "legacyIds": [
+        "C02"
+      ],
+      "cases": [
+        {
+          "id": "orange-tangerine",
+          "name": "鲜橙",
+          "emotion": "活力与欢聚",
+          "hex": "#F28A32",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较鲜明、温暖的橙色。",
+          "scene": "在这个案例中，鲜橙和有节奏的向上形状共同表达跃动与欢聚，让场景像一段即将开始的节奏。",
+          "suggestion": "用疏密形成节奏，并让少数形状承担主要动势，避免细碎装饰抢走注意。",
+          "question": "你的活力来自热闹，还是准备出发的期待？",
+          "prompt": "鲜橙色抽象星球活动场，宽大的弧形与弹跳般的几何形体，有节奏地上升，明快暖光，活力、欢聚、期待出发，无人物文字。",
+          "image": {
+            "key": "orange-tangerine",
+            "path": "emotion-cases/orange-tangerine.webp",
+            "thumbnail": "emotion-cases/orange-tangerine-thumb.webp",
+            "status": "placeholder",
+            "alt": "鲜橙的抽象星球情感表达案例",
+            "caption": "鲜橙：一次关于活力与欢聚的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "orange-apricot",
+          "name": "浅杏橙",
+          "emotion": "亲近与安适",
+          "hex": "#F2C49E",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较浅、较柔和的橙色。",
+          "scene": "在这个案例中，浅杏橙与低矮形体、柔和日光一起营造日常的亲近，像一个可以坐下来休息的角落。",
+          "suggestion": "减少强烈对比，把温暖放在整体光线中；保留局部较深的形状，让空间不显得平。",
+          "question": "什么样的颜色和空间会让你愿意停留？",
+          "prompt": "浅杏橙色星球休憩角，低矮圆润平台和简洁植物，柔和午后光，松弛、亲近、安心，画面留白，无文字。",
+          "image": {
+            "key": "orange-apricot",
+            "path": "emotion-cases/orange-apricot.webp",
+            "thumbnail": "emotion-cases/orange-apricot-thumb.webp",
+            "status": "placeholder",
+            "alt": "浅杏橙的抽象星球情感表达案例",
+            "caption": "浅杏橙：一次关于亲近与安适的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        }
+      ]
+    },
+    {
+      "id": "yellow",
+      "name": "黄色系",
+      "theme": "比较醒目的明快与柔和的期待",
+      "legacyIds": [
+        "C03"
+      ],
+      "cases": [
+        {
+          "id": "yellow-sunshine",
+          "name": "明黄",
+          "emotion": "明快与好奇",
+          "hex": "#F2D447",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较鲜亮的黄色，适合探索醒目的视觉重点。",
+          "scene": "在这个案例中，明黄与打开的空间、向前延伸的路径共同表达好奇，像刚刚发现一条新的探索路线。",
+          "suggestion": "让黄色照亮重点，不让所有部分同样耀眼。检查文字和入口是否清晰。",
+          "question": "你希望这束黄色的光引导别人发现什么？",
+          "prompt": "明黄色抽象星球探险入口，打开的几何门与清晰延伸的小路，局部明亮阳光，惊喜、好奇、轻快，轮廓清楚、不刺眼，无文字。",
+          "image": {
+            "key": "yellow-sunshine",
+            "path": "emotion-cases/yellow-sunshine.webp",
+            "thumbnail": "emotion-cases/yellow-sunshine-thumb.webp",
+            "status": "placeholder",
+            "alt": "明黄的抽象星球情感表达案例",
+            "caption": "明黄：一次关于明快与好奇的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "yellow-cream",
+          "name": "奶油黄",
+          "emotion": "舒缓与希望",
+          "hex": "#F3E6B1",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较浅、较柔和的黄色。",
+          "scene": "在这个案例中，奶油黄与缓慢展开的空间、低对比光线共同表现舒缓的希望，像清晨逐渐亮起来的房间。",
+          "suggestion": "用少量明暗差形成层次；温柔的希望也可以很有力量，不必增加大量光效。",
+          "question": "怎样表达期待，而不让画面显得急促？",
+          "prompt": "奶油黄色星球清晨空间，开阔平台、缓慢展开的弧线与一处新芽，柔和晨光，舒缓、希望、平和，避免梦幻光粒堆叠。",
+          "image": {
+            "key": "yellow-cream",
+            "path": "emotion-cases/yellow-cream.webp",
+            "thumbnail": "emotion-cases/yellow-cream-thumb.webp",
+            "status": "placeholder",
+            "alt": "奶油黄的抽象星球情感表达案例",
+            "caption": "奶油黄：一次关于舒缓与希望的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        }
+      ]
+    },
+    {
+      "id": "green",
+      "name": "绿色系",
+      "theme": "比较萌发、清爽与幽静",
+      "legacyIds": [
+        "C04"
+      ],
+      "cases": [
+        {
+          "id": "green-spring",
+          "name": "嫩黄绿",
+          "emotion": "萌动与生机",
+          "hex": "#B8CF67",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "略偏黄、较明快的绿色。",
+          "scene": "在这个案例中，嫩黄绿与新芽、向上的形状共同表现刚刚开始的变化，重点是新鲜与生机。",
+          "suggestion": "用几处清晰的生长节点代替满屏叶片，让“新出现”的变化容易被看见。",
+          "question": "你的星球刚刚发生了哪一个小变化？",
+          "prompt": "嫩黄绿色星球花园，大块抽象叶形与几处刚舒展的新芽，明快日光，萌动、生机、轻盈，结构整体。",
+          "image": {
+            "key": "green-spring",
+            "path": "emotion-cases/green-spring.webp",
+            "thumbnail": "emotion-cases/green-spring-thumb.webp",
+            "status": "placeholder",
+            "alt": "嫩黄绿的抽象星球情感表达案例",
+            "caption": "嫩黄绿：一次关于萌动与生机的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "green-mint",
+          "name": "薄荷绿",
+          "emotion": "清爽与舒展",
+          "hex": "#A8D8C3",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较浅、较柔和，略带清凉感的绿。",
+          "scene": "在这个案例中，薄荷绿与通风般的留白、舒展曲线共同营造清爽感，让观看者有慢慢呼吸的空间。",
+          "suggestion": "控制装饰密度，保留较大安静区域。这里的舒展是画面描述，不是疗效承诺。",
+          "question": "如果让画面“透一口气”，你会减少什么？",
+          "prompt": "薄荷绿色星球庭院，舒展的宽弧线、少量叶片与充足空隙，干净漫射光，清爽、舒展、通风感，无水晶碎屑。",
+          "image": {
+            "key": "green-mint",
+            "path": "emotion-cases/green-mint.webp",
+            "thumbnail": "emotion-cases/green-mint-thumb.webp",
+            "status": "placeholder",
+            "alt": "薄荷绿的抽象星球情感表达案例",
+            "caption": "薄荷绿：一次关于清爽与舒展的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "green-forest",
+          "name": "深森林绿",
+          "emotion": "幽静与沉稳",
+          "hex": "#285A43",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "明度较低的绿色。",
+          "scene": "在这个案例中，深森林绿与重叠形体、稀疏光线一起形成幽静而沉稳的氛围，像一处不急于展示全部细节的空间。",
+          "suggestion": "用不同深浅区分前后，再留一处明确入口；幽静不应让作品元素难以发现。",
+          "question": "你希望人们在这里感到安定，还是带着好奇深入？",
+          "prompt": "深森林绿色星球内部，层叠的大叶形与简洁石台，一束稀疏柔光照到小径，幽静、沉稳、有庇护感，暗部仍有细节。",
+          "image": {
+            "key": "green-forest",
+            "path": "emotion-cases/green-forest.webp",
+            "thumbnail": "emotion-cases/green-forest-thumb.webp",
+            "status": "placeholder",
+            "alt": "深森林绿的抽象星球情感表达案例",
+            "caption": "深森林绿：一次关于幽静与沉稳的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        }
+      ]
+    },
+    {
+      "id": "blue-cyan",
+      "name": "蓝青色系",
+      "theme": "比较清透、自由、深远与沉思",
+      "legacyIds": [
+        "C05",
+        "C06"
+      ],
+      "cases": [
+        {
+          "id": "blue-cyan-aqua",
+          "name": "清青色",
+          "emotion": "清透与流动",
+          "hex": "#58BFC2",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "介于蓝与绿之间，较鲜明的青色。",
+          "scene": "在这个案例中，青色与连贯曲线、透光层次共同表现清透与流动，重点是视线怎样轻快地穿过空间。",
+          "suggestion": "色彩本身不等于透明，需结合重叠、边缘和光影来表现。此例偏重流动感。",
+          "question": "如果这种颜色会流动，它会流向哪里？",
+          "prompt": "清青色星球水庭，宽阔连贯的水纹曲线、几层简洁半透明形体，干净透光，清透、流动、轻快，不出现文字与复杂折射噪点。",
+          "image": {
+            "key": "blue-cyan-aqua",
+            "path": "emotion-cases/blue-cyan-aqua.webp",
+            "thumbnail": "emotion-cases/blue-cyan-aqua-thumb.webp",
+            "status": "placeholder",
+            "alt": "清青色的抽象星球情感表达案例",
+            "caption": "清青色：一次关于清透与流动的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "blue-cyan-sky",
+          "name": "浅天蓝",
+          "emotion": "轻盈与自由",
+          "hex": "#AFD3EF",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "明度较高、柔和的蓝色。",
+          "scene": "在这个案例中，浅天蓝与开阔视野、向远方延展的形体共同表达自由，观看者可以想象自己继续向外探索。",
+          "suggestion": "拉开空间层次，保留开放的方向；不要只用云朵符号来代替整体的开阔感。",
+          "question": "你会把哪一个方向留给自由探索？",
+          "prompt": "浅天蓝色星球天空平台，开阔地平线、轻盈宽带形体向远处延伸，柔和明亮光线，自由、轻盈、辽阔，细节简洁。",
+          "image": {
+            "key": "blue-cyan-sky",
+            "path": "emotion-cases/blue-cyan-sky.webp",
+            "thumbnail": "emotion-cases/blue-cyan-sky-thumb.webp",
+            "status": "placeholder",
+            "alt": "浅天蓝的抽象星球情感表达案例",
+            "caption": "浅天蓝：一次关于轻盈与自由的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "blue-cyan-midnight",
+          "name": "深夜蓝",
+          "emotion": "深远与孤独",
+          "hex": "#253A67",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "明度较低的蓝色。",
+          "scene": "在这个案例中，深夜蓝与空旷构图、远处微光一起表现距离和孤独。也有人会从中感到宁静，允许不同理解。",
+          "suggestion": "保持一个可辨认的视觉焦点，用空与满的关系表达距离，不把所有细节都压成黑色。",
+          "question": "这片远方让你感到孤独，还是终于获得安静？",
+          "prompt": "深夜蓝色星球海岸，空旷的大平台与遥远单独一处微光，宽阔暗色海面，静止、深远、略有孤独，暗部可辨识，无悲伤人物。",
+          "image": {
+            "key": "blue-cyan-midnight",
+            "path": "emotion-cases/blue-cyan-midnight.webp",
+            "thumbnail": "emotion-cases/blue-cyan-midnight-thumb.webp",
+            "status": "placeholder",
+            "alt": "深夜蓝的抽象星球情感表达案例",
+            "caption": "深夜蓝：一次关于深远与孤独的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "blue-cyan-slate",
+          "name": "灰蓝",
+          "emotion": "克制与沉思",
+          "hex": "#889BAF",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较灰淡的蓝色。",
+          "scene": "在这个案例中，灰蓝与雾中的层次、缓慢延伸的路径一起营造沉思感，像还在整理的一段记忆。",
+          "suggestion": "通过相邻形状的细小明暗差保留空间，不依赖大量模糊滤镜。此例强调灰感与内省。",
+          "question": "你想用灰蓝色保留哪一种没有说完的想法？",
+          "prompt": "灰蓝色星球雾中步道，层次清楚的大形体逐渐退远，一处安静停靠的平台，漫射光，克制、沉思、朦胧但不模糊。",
+          "image": {
+            "key": "blue-cyan-slate",
+            "path": "emotion-cases/blue-cyan-slate.webp",
+            "thumbnail": "emotion-cases/blue-cyan-slate-thumb.webp",
+            "status": "placeholder",
+            "alt": "灰蓝的抽象星球情感表达案例",
+            "caption": "灰蓝：一次关于克制与沉思的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        }
+      ]
+    },
+    {
+      "id": "purple",
+      "name": "紫色系",
+      "theme": "比较轻柔的梦、戏剧张力与未知",
+      "legacyIds": [
+        "C07"
+      ],
+      "cases": [
+        {
+          "id": "purple-lavender",
+          "name": "浅薰衣草紫",
+          "emotion": "轻柔与梦幻",
+          "hex": "#C7B7E4",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较浅、较柔和的紫色。",
+          "scene": "在这个案例中，浅紫与轻盈的悬浮形体、柔和空间一起形成梦幻感，像一个可以慢慢想象的片刻。",
+          "suggestion": "保留形状之间的呼应与空隙，避免把梦幻等同于满屏发光粒子。",
+          "question": "这个梦境里，你最想保留哪一处安静？",
+          "prompt": "浅薰衣草紫星球梦境庭院，少量大块悬浮圆弧、轻薄云层与柔和漫射光，轻柔、梦幻、舒缓，整体简洁。",
+          "image": {
+            "key": "purple-lavender",
+            "path": "emotion-cases/purple-lavender.webp",
+            "thumbnail": "emotion-cases/purple-lavender-thumb.webp",
+            "status": "placeholder",
+            "alt": "浅薰衣草紫的抽象星球情感表达案例",
+            "caption": "浅薰衣草紫：一次关于轻柔与梦幻的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "purple-vivid",
+          "name": "鲜紫",
+          "emotion": "张力与个性",
+          "hex": "#8F54C7",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较鲜明的紫色。",
+          "scene": "在这个案例中，鲜紫与鲜明的形状对比、舞台式光线共同表达个性和张力，像一场准备登场的表演。",
+          "suggestion": "控制高饱和区域的面积，让舞台有主角。强烈表达也需要清楚的层次。",
+          "question": "你准备让哪一种个性站到画面中央？",
+          "prompt": "鲜紫色抽象星球剧场，醒目的宽大几何舞台与斜向形体，局部聚光，戏剧张力、个性、登场感，不加字母霓虹。",
+          "image": {
+            "key": "purple-vivid",
+            "path": "emotion-cases/purple-vivid.webp",
+            "thumbnail": "emotion-cases/purple-vivid-thumb.webp",
+            "status": "placeholder",
+            "alt": "鲜紫的抽象星球情感表达案例",
+            "caption": "鲜紫：一次关于张力与个性的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "purple-deep",
+          "name": "深紫",
+          "emotion": "神秘与未知",
+          "hex": "#463058",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "明度较低的紫色。",
+          "scene": "在这个案例中，深紫与部分遮挡的入口、局部微光一起保留未知，邀请观众继续探索。",
+          "suggestion": "让“尚未看见”成为叙事线索，同时让可点击元素清楚可辨，避免神秘变成操作困难。",
+          "question": "如果不立刻展示答案，你会用什么吸引别人走近？",
+          "prompt": "深紫色星球神秘入口，大块弧形遮挡一部分空间，入口深处有少量柔和光，神秘、未知、诱发好奇，轮廓清楚。",
+          "image": {
+            "key": "purple-deep",
+            "path": "emotion-cases/purple-deep.webp",
+            "thumbnail": "emotion-cases/purple-deep-thumb.webp",
+            "status": "placeholder",
+            "alt": "深紫的抽象星球情感表达案例",
+            "caption": "深紫：一次关于神秘与未知的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        }
+      ]
+    },
+    {
+      "id": "brown",
+      "name": "棕色系",
+      "theme": "比较生活的温度与厚实的安定",
+      "legacyIds": [
+        "C09"
+      ],
+      "cases": [
+        {
+          "id": "brown-honey",
+          "name": "蜂蜜浅棕",
+          "emotion": "温暖与熟悉",
+          "hex": "#C69C70",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "较浅、略偏暖的棕色。",
+          "scene": "在这个案例中，蜂蜜浅棕与细腻木质线索、侧面日光一起形成生活的温度，像一件熟悉的旧物。",
+          "suggestion": "材质会参与情感联想。观察时区分色彩与纹理的作用，不把熟悉感完全归因于棕色。",
+          "question": "哪一种颜色和材料会让你想到熟悉的地方？",
+          "prompt": "蜂蜜浅棕色星球小屋内部，简洁木纹平台和圆润窗洞，一束柔和侧光，温暖、熟悉、日常记忆，少量整洁细节，无文字。",
+          "image": {
+            "key": "brown-honey",
+            "path": "emotion-cases/brown-honey.webp",
+            "thumbnail": "emotion-cases/brown-honey-thumb.webp",
+            "status": "placeholder",
+            "alt": "蜂蜜浅棕的抽象星球情感表达案例",
+            "caption": "蜂蜜浅棕：一次关于温暖与熟悉的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "brown-earth",
+          "name": "深土棕",
+          "emotion": "朴实与安定",
+          "hex": "#654B3B",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "明度较低、较厚重的棕色。",
+          "scene": "在这个案例中，深土棕与低重心的大形体、稳定构图共同表达朴实和安定，像可以落脚的一片土地。",
+          "suggestion": "用少量浅色区分结构，避免暗部糊成一块；沉稳也可以通过形体重心表达。",
+          "question": "你希望这片土地承载什么？",
+          "prompt": "深土棕色星球地景，厚实低矮的大块地层、稳定的几何平台，柔和局部照明，朴实、安定、可靠，非荒凉废墟。",
+          "image": {
+            "key": "brown-earth",
+            "path": "emotion-cases/brown-earth.webp",
+            "thumbnail": "emotion-cases/brown-earth-thumb.webp",
+            "status": "placeholder",
+            "alt": "深土棕的抽象星球情感表达案例",
+            "caption": "深土棕：一次关于朴实与安定的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        }
+      ]
+    },
+    {
+      "id": "neutral",
+      "name": "黑白灰色系",
+      "theme": "比较留白、秩序与深色舞台",
+      "legacyIds": [
+        "C10",
+        "C11",
+        "C12"
+      ],
+      "cases": [
+        {
+          "id": "neutral-ivory",
+          "name": "暖白",
+          "emotion": "轻盈与开放",
+          "hex": "#F3EFE5",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "接近白色，略偏暖的浅色。",
+          "scene": "在这个案例中，暖白与有意保留的空白、柔和光线一起形成开放和轻盈，也为观看者留下补充故事的空间。",
+          "suggestion": "留白不是缺少设计。安排清楚的轮廓与文字对比，让空白服务于内容。",
+          "question": "你希望这片空白承载内容，还是留给想象？",
+          "prompt": "暖白色星球开放空间，简洁弧形墙、大片留白和少量浅色形体，柔和日光，开放、轻盈、可以停留，边缘清晰。",
+          "image": {
+            "key": "neutral-ivory",
+            "path": "emotion-cases/neutral-ivory.webp",
+            "thumbnail": "emotion-cases/neutral-ivory-thumb.webp",
+            "status": "placeholder",
+            "alt": "暖白的抽象星球情感表达案例",
+            "caption": "暖白：一次关于轻盈与开放的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "neutral-gray",
+          "name": "中性灰",
+          "emotion": "克制与秩序",
+          "hex": "#96999E",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "处于黑与白之间的灰色。",
+          "scene": "在这个案例中，灰色与有节奏的几何排列、细小明暗变化一起形成克制与秩序，强调安排本身的表达。",
+          "suggestion": "先用灰色区分主次，再决定是否需要彩色点缀。彩色不是画面成立的必要条件。",
+          "question": "如果只能改变一个位置的颜色，你会改变哪里？",
+          "prompt": "中性灰色星球几何庭院，清楚有节奏的方形与弧形，细腻明暗层次，克制、秩序、安静，无工业脏污感。",
+          "image": {
+            "key": "neutral-gray",
+            "path": "emotion-cases/neutral-gray.webp",
+            "thumbnail": "emotion-cases/neutral-gray-thumb.webp",
+            "status": "placeholder",
+            "alt": "中性灰的抽象星球情感表达案例",
+            "caption": "中性灰：一次关于克制与秩序的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        },
+        {
+          "id": "neutral-charcoal",
+          "name": "炭黑",
+          "emotion": "庄严与凝聚",
+          "hex": "#252830",
+          "relatedKnowledge": [
+            "K02",
+            "K03",
+            "K08"
+          ],
+          "observation": "接近黑色的深色，保留少量可辨识层次。",
+          "scene": "在这个案例中，炭黑与稳定的大形体、集中的微光共同形成庄严感，让视线凝聚到一个重要位置。",
+          "suggestion": "黑色主题不等于全部变黑。用深浅区别和少量亮点，让空间与作品入口仍然清楚。",
+          "question": "你会让哪一处光成为这颗星球的中心？",
+          "prompt": "炭黑色星球静谧舞台，稳定大块形体围合一处柔和暖光，暗部清晰，庄严、凝聚、深邃，无恐怖元素。",
+          "image": {
+            "key": "neutral-charcoal",
+            "path": "emotion-cases/neutral-charcoal.webp",
+            "thumbnail": "emotion-cases/neutral-charcoal-thumb.webp",
+            "status": "placeholder",
+            "alt": "炭黑的抽象星球情感表达案例",
+            "caption": "炭黑：一次关于庄严与凝聚的表达尝试。",
+            "source": "待制作的AI辅助教学配图，非学生作品"
+          }
+        }
+      ]
+    }
+  ]
+}

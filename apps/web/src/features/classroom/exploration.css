@@ -1358,3 +1358,114 @@
 .mystery-card-grid {
   align-items: start;
 }
+.color-case-detail-browser > .emotion-atlas > .emotion-families,
+.color-case-detail-browser > .emotion-atlas > p {
+  display: none;
+}
+/* Let the artwork lead: compact chrome, narrower side notes, and social-sized messages. */
+.immersive-layout {
+  grid-template-columns: minmax(150px, 12fr) minmax(0, 76fr) minmax(160px, 12fr);
+  gap: 18px;
+  margin-top: 0;
+}
+.competition-app.exploring .competition-main {
+  max-width: none;
+  padding: 12px 22px;
+}
+.compact-room-heading {
+  margin: 0 0 12px !important;
+  min-height: 36px;
+  justify-content: space-between;
+}
+.scene-work-directory button {
+  font-family: inherit;
+  letter-spacing: 0;
+}
+.scene-work-directory strong {
+  font-weight: 400;
+  font-size: 12px;
+}
+.scene-work-directory li button {
+  padding: 12px 0;
+}
+.planet-story,
+.scene-work-directory {
+  padding-top: 20px;
+}
+.scene-work-directory .eyebrow {
+  font-size: 9px;
+}
+.cloud-gallery.scene-exploring .cloud-room-heading > div > h2 {
+  display: none;
+}
+.cloud-messages {
+  max-width: 1000px;
+  padding: 8px 0 25px;
+  margin: 0 auto;
+}
+.cloud-messages .cloud-message-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 11px 0;
+  border: 0;
+  border-bottom: 1px solid #78959e22;
+  min-height: 0;
+  background: none;
+}
+.cloud-messages .cloud-message-row p {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 12px !important;
+  line-height: 1.8 !important;
+  flex: 1;
+  min-width: 180px;
+}
+.cloud-message-row p strong {
+  font-weight: 500;
+  color: #bcd3d1;
+  margin-right: 9px;
+}
+.cloud-messages .message-time {
+  margin: 0;
+  font-size: 10px;
+}
+.cloud-messages .cloud-message-row button {
+  font-size: 10px;
+  min-height: 24px;
+  padding: 2px 6px;
+}
+.cloud-messages > h3 {
+  font-size: 14px;
+  font-weight: 400;
+  margin: 18px 0 10px;
+}
+.planet-quick-message {
+  max-width: 1000px;
+  margin: 16px auto !important;
+  box-sizing: border-box;
+  padding: 12px !important;
+}
+.online-classroom-entry {
+  font-size: 12px;
+  color: #e0edb9;
+  border: 1px solid #8baba155;
+  border-radius: 8px;
+  padding: 10px 15px;
+  text-decoration: none;
+}
+@media (max-width: 760px) {
+  .immersive-layout {
+    display: flex;
+  }
+  .competition-app.exploring .competition-main {
+    padding: 10px;
+  }
+  .planet-quick-message,
+  .cloud-messages {
+    max-width: 100%;
+  }
+}

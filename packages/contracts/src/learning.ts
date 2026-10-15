@@ -16,6 +16,7 @@ export const MoodChoices = [
   "怀旧",
 ] as const;
 export const LearningIntentSchema = z.strictObject({
+  referenceCaseId: z.string().max(80).optional(),
   intendedMoods: z.array(z.enum(MoodChoices)).max(3).default([]),
   customMood: z.string().trim().max(30).default(""),
   paletteColors: z

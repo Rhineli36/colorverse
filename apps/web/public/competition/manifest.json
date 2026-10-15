@@ -58,7 +58,8 @@
               "author": "顾静怡（演示账号）"
             }
           ],
-          "color": "#DD985F"
+          "color": "#DD985F",
+          "exampleDate": "2026-10-05T07:07:00.000Z"
         },
         {
           "id": "demo-1-work-2",
@@ -76,7 +77,8 @@
           "createdAt": "2026-10-14T09:55:12.127378+00:00",
           "description": "",
           "interactions": [],
-          "color": "#A2E172"
+          "color": "#A2E172",
+          "exampleDate": "2026-10-06T07:16:00.000Z"
         },
         {
           "id": "demo-1-work-3",
@@ -94,7 +96,8 @@
           "createdAt": "2026-10-14T09:55:21.583252+00:00",
           "description": "",
           "interactions": [],
-          "color": "#85E5C7"
+          "color": "#85E5C7",
+          "exampleDate": "2026-10-07T07:25:00.000Z"
         },
         {
           "id": "demo-1-work-4",
@@ -112,7 +115,8 @@
           "createdAt": "2026-10-14T09:55:30.722401+00:00",
           "description": "同色系配色。",
           "interactions": [],
-          "color": "#5F78DD"
+          "color": "#5F78DD",
+          "exampleDate": "2026-10-08T07:34:00.000Z"
         },
         {
           "id": "demo-1-work-5",
@@ -146,7 +150,8 @@
               "author": "顾静怡（演示账号）"
             }
           ],
-          "color": "#D872E1"
+          "color": "#D872E1",
+          "exampleDate": "2026-10-09T07:43:00.000Z"
         }
       ],
       "exterior": "case-1-exterior.webp",
@@ -157,12 +162,12 @@
       "planetInteractions": [
         {
           "kind": "comment",
-          "content": "演示留言：红蓝之间的冷暖对比很有力量，眼睛会先停在人物附近。想看看减少一点背景亮色后会怎样。",
+          "content": "这颗星球的红蓝也太酷了吧，路过都想多看两眼。",
           "author": "顾静怡（演示账号）"
         },
         {
           "kind": "comment",
-          "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+          "content": "来踩一下！收藏这片宇宙，下次带着新作品来串门～",
           "author": "顾静怡（演示账号）"
         },
         {
@@ -244,7 +249,8 @@
               "author": "马彦文（演示账号）"
             }
           ],
-          "color": "#5F9FDD"
+          "color": "#5F9FDD",
+          "exampleDate": "2026-10-05T08:07:00.000Z"
         },
         {
           "id": "demo-2-work-2",
@@ -262,7 +268,8 @@
           "createdAt": "2026-10-14T09:56:11.425871+00:00",
           "description": "红与蓝撞色形成强烈的视觉冲击，浅米色作为过渡色，缓和红蓝之间的冲突，让整体配色更协调，强化复古质感。用绿色和黑色点缀，增加神秘感。",
           "interactions": [],
-          "color": "#B672E1"
+          "color": "#B672E1",
+          "exampleDate": "2026-10-06T08:16:00.000Z"
         },
         {
           "id": "demo-2-work-3",
@@ -280,7 +287,8 @@
           "createdAt": "2026-10-14T09:56:20.493479+00:00",
           "description": "粉色和淡紫色让画面更温柔梦幻；暖黄色的星光与狐狸的橙色形成同色系呼应，强化温暖感。",
           "interactions": [],
-          "color": "#E5859F"
+          "color": "#E5859F",
+          "exampleDate": "2026-10-07T08:25:00.000Z"
         },
         {
           "id": "demo-2-work-4",
@@ -298,7 +306,8 @@
           "createdAt": "2026-10-14T09:56:28.993644+00:00",
           "description": "彩妆广告海报的中差色配色练习。",
           "interactions": [],
-          "color": "#DDC95F"
+          "color": "#DDC95F",
+          "exampleDate": "2026-10-08T08:34:00.000Z"
         },
         {
           "id": "demo-2-work-5",
@@ -316,7 +325,8 @@
           "createdAt": "2026-10-14T09:56:37.671464+00:00",
           "description": "运动饮料包装的互补色配色练习。",
           "interactions": [],
-          "color": "#77E172"
+          "color": "#77E172",
+          "exampleDate": "2026-10-09T08:43:00.000Z"
         }
       ],
       "exterior": "case-2-exterior.webp",
@@ -327,12 +337,12 @@
       "planetInteractions": [
         {
           "kind": "comment",
-          "content": "演示留言：橙粉色像一封傍晚的信，暖色里留出的浅色区域很舒服。也许可以再试一点冷色的远景。",
+          "content": "被这片落日色留住了，感觉整个人都慢下来了。",
           "author": "马彦文（演示账号）"
         },
         {
           "kind": "comment",
-          "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+          "content": "来拜访一下大神的星球，这里的配色好有生活的温度。",
           "author": "马彦文（演示账号）"
         },
         {
@@ -404,7 +414,8 @@
               "author": "孙瑞迎（演示账号）"
             }
           ],
-          "color": "#5FDDAD"
+          "color": "#5FDDAD",
+          "exampleDate": "2026-10-05T09:07:00.000Z"
         },
         {
           "id": "demo-3-work-2",
@@ -438,7 +449,8 @@
               "author": "孙瑞迎（演示账号）"
             }
           ],
-          "color": "#728FE1"
+          "color": "#728FE1",
+          "exampleDate": "2026-10-06T09:16:00.000Z"
         },
         {
           "id": "demo-3-work-3",
@@ -456,7 +468,8 @@
           "createdAt": "2026-10-14T09:57:16.32827+00:00",
           "description": "插画配色设计。",
           "interactions": [],
-          "color": "#D785E5"
+          "color": "#D785E5",
+          "exampleDate": "2026-10-07T09:25:00.000Z"
         },
         {
           "id": "demo-3-work-4",
@@ -474,7 +487,8 @@
           "createdAt": "2026-10-14T09:57:26.217204+00:00",
           "description": "潮玩盲盒的冲突配色设计。",
           "interactions": [],
-          "color": "#DD5F63"
+          "color": "#DD5F63",
+          "exampleDate": "2026-10-08T09:34:00.000Z"
         },
         {
           "id": "demo-3-work-5",
@@ -492,7 +506,8 @@
           "createdAt": "2026-10-14T09:57:35.499609+00:00",
           "description": "节气海报的同色系配色设计。",
           "interactions": [],
-          "color": "#D8E172"
+          "color": "#D8E172",
+          "exampleDate": "2026-10-09T09:43:00.000Z"
         }
       ],
       "exterior": "case-3-exterior.webp",
@@ -503,12 +518,12 @@
       "planetInteractions": [
         {
           "kind": "comment",
-          "content": "演示留言：绿色和粉紫色放在一起很有生长感，重复的小图形也有节奏。很想看看局部放大的细节。",
+          "content": "好像钻进了一座会做梦的花园，绿色真的好舒服。",
           "author": "孙瑞迎（演示账号）"
         },
         {
           "kind": "comment",
-          "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+          "content": "留个脚印！下课来这里逛一圈，发现今天也有新东西长出来。",
           "author": "孙瑞迎（演示账号）"
         },
         {
@@ -580,7 +595,8 @@
               "author": "张陈曦（演示账号）"
             }
           ],
-          "color": "#995FDD"
+          "color": "#995FDD",
+          "exampleDate": "2026-10-05T10:07:00.000Z"
         },
         {
           "id": "demo-4-work-2",
@@ -598,7 +614,8 @@
           "createdAt": "2026-10-14T09:58:06.801003+00:00",
           "description": "以中黄为主色，蓝色作为对比色，区分上下身。利用饱和度形成对比，外套与内搭的饱和度都不高。加入内搭花纹和裙摆线条，减少纯色带来的单调感。",
           "interactions": [],
-          "color": "#E172A1"
+          "color": "#E172A1",
+          "exampleDate": "2026-10-06T10:16:00.000Z"
         },
         {
           "id": "demo-4-work-3",
@@ -632,7 +649,8 @@
               "author": "张陈曦（演示账号）"
             }
           ],
-          "color": "#E5C885"
+          "color": "#E5C885",
+          "exampleDate": "2026-10-07T10:25:00.000Z"
         },
         {
           "id": "demo-4-work-4",
@@ -650,7 +668,8 @@
           "createdAt": "2026-10-14T09:58:24.810492+00:00",
           "description": "借用圣罗兰气垫的造型，采用左右分割的形式：左侧为镂空线条，右侧为实体，进行无彩色配色练习。",
           "interactions": [],
-          "color": "#77DD5F"
+          "color": "#77DD5F",
+          "exampleDate": "2026-10-08T10:34:00.000Z"
         },
         {
           "id": "demo-4-work-5",
@@ -679,7 +698,8 @@
               "author": "顾静怡（演示账号）"
             }
           ],
-          "color": "#72E1D9"
+          "color": "#72E1D9",
+          "exampleDate": "2026-10-09T10:43:00.000Z"
         }
       ],
       "exterior": "case-4-exterior.webp",
@@ -690,12 +710,12 @@
       "planetInteractions": [
         {
           "kind": "comment",
-          "content": "演示留言：云层的蓝紫色很安静，暖黄色的小亮点让画面更有方向。远近的明暗变化很值得学习。",
+          "content": "这颗星球的颜色好像软软的云，想在这里发会儿呆。",
           "author": "张陈曦（演示账号）"
         },
         {
           "kind": "comment",
-          "content": "演示留言：这件作品的色彩层次很丰富，想听听你的配色思路。",
+          "content": "宇宙散步打卡！这片粉紫色，今天份的好心情收到了。",
           "author": "孙瑞迎（演示账号）"
         },
         {
@@ -705,7 +725,7 @@
         },
         {
           "kind": "comment",
-          "content": "演示留言：这件作品的色彩层次很丰富，想听听你的配色思路。",
+          "content": "这颗星球的颜色好像软软的云，想在这里发会儿呆。",
           "author": "马彦文（演示账号）"
         },
         {
@@ -715,7 +735,7 @@
         },
         {
           "kind": "comment",
-          "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+          "content": "宇宙散步打卡！这片粉紫色，今天份的好心情收到了。",
           "author": "张陈曦（演示账号）"
         },
         {
@@ -787,7 +807,8 @@
               "author": "李欣怡（演示账号）"
             }
           ],
-          "color": "#DDB85F"
+          "color": "#DDB85F",
+          "exampleDate": "2026-10-05T11:07:00.000Z"
         },
         {
           "id": "demo-5-work-2",
@@ -805,7 +826,8 @@
           "createdAt": "2026-10-14T09:59:06.603661+00:00",
           "description": "",
           "interactions": [],
-          "color": "#86E172"
+          "color": "#86E172",
+          "exampleDate": "2026-10-06T11:16:00.000Z"
         },
         {
           "id": "demo-5-work-3",
@@ -823,7 +845,8 @@
           "createdAt": "2026-10-14T09:59:14.679704+00:00",
           "description": "",
           "interactions": [],
-          "color": "#85E5DF"
+          "color": "#85E5DF",
+          "exampleDate": "2026-10-07T11:25:00.000Z"
         },
         {
           "id": "demo-5-work-4",
@@ -857,7 +880,8 @@
               "author": "李欣怡（演示账号）"
             }
           ],
-          "color": "#665FDD"
+          "color": "#665FDD",
+          "exampleDate": "2026-10-08T11:34:00.000Z"
         },
         {
           "id": "demo-5-work-5",
@@ -875,7 +899,8 @@
           "createdAt": "2026-10-14T09:59:32.125892+00:00",
           "description": "同色系配色。",
           "interactions": [],
-          "color": "#E172CE"
+          "color": "#E172CE",
+          "exampleDate": "2026-10-09T11:43:00.000Z"
         }
       ],
       "exterior": "case-5-exterior.webp",
@@ -886,12 +911,12 @@
       "planetInteractions": [
         {
           "kind": "comment",
-          "content": "演示留言：月白和淡紫让几何纹样显得很轻，留白也很干净。可以试试让一组图形稍微打破对称。",
+          "content": "月白配浅紫好干净，像在宇宙里找到了一座小展馆。",
           "author": "李欣怡（演示账号）"
         },
         {
           "kind": "comment",
-          "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+          "content": "我来串门啦～这个星球很有自己的节奏，喜欢！",
           "author": "李欣怡（演示账号）"
         },
         {

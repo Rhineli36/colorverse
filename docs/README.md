@@ -10,48 +10,48 @@
 
 ## 阅读导航
 
-| 文档 | 内容 |
-| --- | --- |
-| [01-requirements.md](01-requirements.md) | 完整需求映射、角色、阶段边界、假设与风险 |
-| [02-architecture.md](02-architecture.md) | 技术选型、模块边界、统一渲染、未来目录结构与演进 |
-| [03-data-model.md](03-data-model.md) | 实体关系、字段、约束、提交状态、权限与数据生命周期 |
-| [04-asset-package-protocol.md](04-asset-package-protocol.md) | 场景文档、素材、ZIP、版本迁移与恢复协议 |
-| [05-services-and-growth.md](05-services-and-growth.md) | Repository / Service、HTTP 草案、AI 生长与事务 |
-| [06-development-plan.md](06-development-plan.md) | 分阶段任务、依赖、验收、估时与退出条件 |
-| [07-feasibility-deployment-cost.md](07-feasibility-deployment-cost.md) | 三阶段可行性、部署、40 人三年容量与费用模型 |
-| [08-quality-and-decisions.md](08-quality-and-decisions.md) | 测试矩阵、性能预算、架构决策与优先风险 |
-| [09-document-validation.md](09-document-validation.md) | 本轮文档和协议草案的实际验证范围与结果 |
-| [10-implementation-progress.md](10-implementation-progress.md) | 第一阶段模块实现、测试结果、限制和下一步 |
-| [11-universe-motion-and-camera.md](11-universe-motion-and-camera.md) | 独立轨迹、全景/局部/聚焦镜头、状态边界和24颗验证 |
-| [12-space-exploration-and-layout.md](12-space-exploration-and-layout.md) | 深空主视觉、任意区域探索、学生/教师拖拽权限与数据库升级 |
-| [13-optional-planet-decorations.md](13-optional-planet-decorations.md) | 学生可选粒子/光影/光环/卫星、跟随主体协议、进入内部和测试 |
-| [14-planet-motion-controls-plan.md](14-planet-motion-controls-plan.md) | 星球静止/慢速/快速、预设轨迹、本人/教师控制的原设计与验收计划 |
-| [15-universe-atmosphere.md](15-universe-atmosphere.md) | 星云/黑洞/低频流星、小星星游移、背景同步相机与资源预算 |
-| [16-image-editing-and-scene-recovery.md](16-image-editing-and-scene-recovery.md) | 图片缩放/拉伸/裁剪、外观蒙版、分区上传、图层删除与独立复位 |
-| [17-studio-tools-and-planet-size.md](17-studio-tools-and-planet-size.md) | 顶部导入/图层、就近操作、重叠选项卡与0.8–1.2倍展示尺寸 |
-| [18-fixed-planet-frame-and-image-fit.md](18-fixed-planet-frame-and-image-fit.md) | 固定圆形轮廓、图片自动适应、透明度下限与选项卡配色 |
-| [19-student-edit-entry-and-persistent-layers.md](19-student-edit-entry-and-persistent-layers.md) | 学生欣赏/编辑与演示提交入口、独立常驻图层栏 |
-| [20-gentle-focus-and-artwork-resolution.md](20-gentle-focus-and-artwork-resolution.md) | 38%适度聚焦、平缓过渡与选中主体按需展示图 |
-| [21-github-deployment-and-handoff.md](21-github-deployment-and-handoff.md) | GitHub Pages部署、数据迁移边界和明天接续记录 |
-| [22-course-submission-first-slice.md](22-course-submission-first-slice.md) | 作业草稿/不可变提交、教师评阅、本机API、权限与上线边界 |
-| [23-showcase-upload-and-growth-direction.md](23-showcase-upload-and-growth-direction.md) | 自选展示作品的用途调整、预制/模型方案比较与成长交互建议 |
-| [24-showcase-growth-first-slice.md](24-showcase-growth-first-slice.md) | 自选作品上传、规则成长、事务与ZIP来源验证、约30种/API后续计划 |
-| [25-growth-library-and-experience.md](25-growth-library-and-experience.md) | 8种成长元素登记、造型/预览保存、上传与分页优化、后续体验优先级 |
-| [26-planet-motion-first-slice.md](26-planet-motion-first-slice.md) | 单颗运动入口、四种受控轨迹、布局1.1.0迁移/冲突/备份与测试 |
-| [27-visual-direction-and-student-playtest.md](27-visual-direction-and-student-playtest.md) | 宇宙/星球/工坊视觉参考与提案、学生体验测试、分步美化与验收 |
-| [28-element-focused-editor-plan.md](28-element-focused-editor-plan.md) | 提交后出现元素、点选专用编辑、元素库/细节/确认分区与画面拖动 |
-| [29-automatic-growth-and-element-editor.md](29-automatic-growth-and-element-editor.md) | 自动小元素、独立编辑会话、拖拽/撤销、动态粒子、权限和测试 |
-| [30-default-art-and-student-entry.md](30-default-art-and-student-entry.md) | 六颗球面默认素材、单张全景、旧作品安全升级、首次创建和后续编辑 |
-| [31-classroom-space-and-boundaries.md](31-classroom-space-and-boundaries.md) | 满屏班级星域、外围背景、带轨迹余量的部署边界与旧布局兼容 |
-| [32-artwork-first-and-growth-birth.md](32-artwork-first-and-growth-birth.md) | 点击元素先欣赏原作、明确编辑入口、约4秒新生动效与验证 |
-| [33-upload-login-and-file-readiness.md](33-upload-login-and-file-readiness.md) | 文件生命周期、登录/密码现状、正式上线阻塞项与下一轮验证 |
-| [34-universe-landmarks.md](34-universe-landmarks.md) | 分散恒星/黑洞、同步世界相机、共享纹理/粒子预算与验证 |
-| [35-classroom-interaction-and-daily-stars.md](35-classroom-interaction-and-daily-stars.md) | 每周展示/全班浏览/互动任务、每日精选、关注与去重统计的待实施建议 |
-| [36-cloud-auth-and-cloudflare-pilot.md](36-cloud-auth-and-cloudflare-pilot.md) | 邮箱登录/退出、Workers服务端验证、部署配置与正式班级接入边界 |
-| [37-cloud-classroom-identity.md](37-cloud-classroom-identity.md) | 私有班级成员表、受限读取角色、Hyperdrive证书连接与真实教师登录 |
-| [38-cloud-teacher-dashboard-and-student-pilot.md](38-cloud-teacher-dashboard-and-student-pilot.md) | 云端教师统计、学生私有上传/原图、班级互动与30种成长造型 |
-| [schemas/growth-event.schema.json](schemas/growth-event.schema.json) | 成长事件 v1 机器可读协议草案 |
-| [examples/growth-event.accepted.json](examples/growth-event.accepted.json) | 学生确认后的模拟成长事件示例 |
+| 文档                                                                                               | 内容                                                             |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [01-requirements.md](01-requirements.md)                                                           | 完整需求映射、角色、阶段边界、假设与风险                         |
+| [02-architecture.md](02-architecture.md)                                                           | 技术选型、模块边界、统一渲染、未来目录结构与演进                 |
+| [03-data-model.md](03-data-model.md)                                                               | 实体关系、字段、约束、提交状态、权限与数据生命周期               |
+| [04-asset-package-protocol.md](04-asset-package-protocol.md)                                       | 场景文档、素材、ZIP、版本迁移与恢复协议                          |
+| [05-services-and-growth.md](05-services-and-growth.md)                                             | Repository / Service、HTTP 草案、AI 生长与事务                   |
+| [06-development-plan.md](06-development-plan.md)                                                   | 分阶段任务、依赖、验收、估时与退出条件                           |
+| [07-feasibility-deployment-cost.md](07-feasibility-deployment-cost.md)                             | 三阶段可行性、部署、40 人三年容量与费用模型                      |
+| [08-quality-and-decisions.md](08-quality-and-decisions.md)                                         | 测试矩阵、性能预算、架构决策与优先风险                           |
+| [09-document-validation.md](09-document-validation.md)                                             | 本轮文档和协议草案的实际验证范围与结果                           |
+| [10-implementation-progress.md](10-implementation-progress.md)                                     | 第一阶段模块实现、测试结果、限制和下一步                         |
+| [11-universe-motion-and-camera.md](11-universe-motion-and-camera.md)                               | 独立轨迹、全景/局部/聚焦镜头、状态边界和24颗验证                 |
+| [12-space-exploration-and-layout.md](12-space-exploration-and-layout.md)                           | 深空主视觉、任意区域探索、学生/教师拖拽权限与数据库升级          |
+| [13-optional-planet-decorations.md](13-optional-planet-decorations.md)                             | 学生可选粒子/光影/光环/卫星、跟随主体协议、进入内部和测试        |
+| [14-planet-motion-controls-plan.md](14-planet-motion-controls-plan.md)                             | 星球静止/慢速/快速、预设轨迹、本人/教师控制的原设计与验收计划    |
+| [15-universe-atmosphere.md](15-universe-atmosphere.md)                                             | 星云/黑洞/低频流星、小星星游移、背景同步相机与资源预算           |
+| [16-image-editing-and-scene-recovery.md](16-image-editing-and-scene-recovery.md)                   | 图片缩放/拉伸/裁剪、外观蒙版、分区上传、图层删除与独立复位       |
+| [17-studio-tools-and-planet-size.md](17-studio-tools-and-planet-size.md)                           | 顶部导入/图层、就近操作、重叠选项卡与0.8–1.2倍展示尺寸           |
+| [18-fixed-planet-frame-and-image-fit.md](18-fixed-planet-frame-and-image-fit.md)                   | 固定圆形轮廓、图片自动适应、透明度下限与选项卡配色               |
+| [19-student-edit-entry-and-persistent-layers.md](19-student-edit-entry-and-persistent-layers.md)   | 学生欣赏/编辑与演示提交入口、独立常驻图层栏                      |
+| [20-gentle-focus-and-artwork-resolution.md](20-gentle-focus-and-artwork-resolution.md)             | 38%适度聚焦、平缓过渡与选中主体按需展示图                        |
+| [21-github-deployment-and-handoff.md](21-github-deployment-and-handoff.md)                         | GitHub Pages部署、数据迁移边界和明天接续记录                     |
+| [22-course-submission-first-slice.md](22-course-submission-first-slice.md)                         | 作业草稿/不可变提交、教师评阅、本机API、权限与上线边界           |
+| [23-showcase-upload-and-growth-direction.md](23-showcase-upload-and-growth-direction.md)           | 自选展示作品的用途调整、预制/模型方案比较与成长交互建议          |
+| [24-showcase-growth-first-slice.md](24-showcase-growth-first-slice.md)                             | 自选作品上传、规则成长、事务与ZIP来源验证、约30种/API后续计划    |
+| [25-growth-library-and-experience.md](25-growth-library-and-experience.md)                         | 8种成长元素登记、造型/预览保存、上传与分页优化、后续体验优先级   |
+| [26-planet-motion-first-slice.md](26-planet-motion-first-slice.md)                                 | 单颗运动入口、四种受控轨迹、布局1.1.0迁移/冲突/备份与测试        |
+| [27-visual-direction-and-student-playtest.md](27-visual-direction-and-student-playtest.md)         | 宇宙/星球/工坊视觉参考与提案、学生体验测试、分步美化与验收       |
+| [28-element-focused-editor-plan.md](28-element-focused-editor-plan.md)                             | 提交后出现元素、点选专用编辑、元素库/细节/确认分区与画面拖动     |
+| [29-automatic-growth-and-element-editor.md](29-automatic-growth-and-element-editor.md)             | 自动小元素、独立编辑会话、拖拽/撤销、动态粒子、权限和测试        |
+| [30-default-art-and-student-entry.md](30-default-art-and-student-entry.md)                         | 六颗球面默认素材、单张全景、旧作品安全升级、首次创建和后续编辑   |
+| [31-classroom-space-and-boundaries.md](31-classroom-space-and-boundaries.md)                       | 满屏班级星域、外围背景、带轨迹余量的部署边界与旧布局兼容         |
+| [32-artwork-first-and-growth-birth.md](32-artwork-first-and-growth-birth.md)                       | 点击元素先欣赏原作、明确编辑入口、约4秒新生动效与验证            |
+| [33-upload-login-and-file-readiness.md](33-upload-login-and-file-readiness.md)                     | 文件生命周期、登录/密码现状、正式上线阻塞项与下一轮验证          |
+| [34-universe-landmarks.md](34-universe-landmarks.md)                                               | 分散恒星/黑洞、同步世界相机、共享纹理/粒子预算与验证             |
+| [35-classroom-interaction-and-daily-stars.md](35-classroom-interaction-and-daily-stars.md)         | 每周展示/全班浏览/互动任务、每日精选、关注与去重统计的待实施建议 |
+| [36-cloud-auth-and-cloudflare-pilot.md](36-cloud-auth-and-cloudflare-pilot.md)                     | 邮箱登录/退出、Workers服务端验证、部署配置与正式班级接入边界     |
+| [37-cloud-classroom-identity.md](37-cloud-classroom-identity.md)                                   | 私有班级成员表、受限读取角色、Hyperdrive证书连接与真实教师登录   |
+| [38-cloud-teacher-dashboard-and-student-pilot.md](38-cloud-teacher-dashboard-and-student-pilot.md) | 云端教师统计、学生私有上传/原图、班级互动与30种成长造型          |
+| [schemas/growth-event.schema.json](schemas/growth-event.schema.json)                               | 成长事件 v1 机器可读协议草案                                     |
+| [examples/growth-event.accepted.json](examples/growth-event.accepted.json)                         | 学生确认后的模拟成长事件示例                                     |
 
 ## 推荐基线
 
@@ -93,3 +93,5 @@
 - [49 · 统一云端大宇宙与实名案例](49-unified-cloud-universe.md)
 
 - [50 · 参赛展示界面精修与实测](50-presentation-refinement.md)
+
+- [51 · 八色系情感案例与离线身份体验](51-emotion-offline-experience.md)

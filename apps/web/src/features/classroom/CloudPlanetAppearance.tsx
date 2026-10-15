@@ -151,6 +151,7 @@ export function CloudPlanetAppearance({
   onClose,
   onDirtyChange,
   initialSection = "exterior",
+  initialColorCase,
 }: {
   classId: string;
   id: string;
@@ -161,14 +162,16 @@ export function CloudPlanetAppearance({
   onClose: () => void;
   onDirtyChange?: (dirty: boolean) => void;
   initialSection?: AppearanceSection;
+  initialColorCase?: import("@colorverse/contracts").EmotionCase;
 }) {
   const [section, setSection] = useState(initialSection);
   const [name, setName] = useState(document.metadata.name),
     [skin, setSkin] = useState(document.skin),
-    [color, setColor] = useState(document.color);
-  const [learningIntent, setLearningIntent] = useState(
-    document.learningIntent ?? blankIntent(),
-  );
+    [color, setColor] = useState(initialColorCase?.hex ?? document.color);
+  const [learningIntent, setLearningIntent] = useState({
+    ...(document.learningIntent ?? blankIntent()),
+    ...(initialColorCase ? { referenceCaseId: initialColorCase.id } : {}),
+  });
   const [summary, setSummary] = useState(document.metadata.summary),
     [reflection, setReflection] = useState(document.metadata.reflection ?? ""),
     [courseNotes, setCourseNotes] = useState(

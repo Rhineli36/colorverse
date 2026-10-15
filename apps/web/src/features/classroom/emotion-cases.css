@@ -1,0 +1,239 @@
+.emotion-families {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 28px 0;
+}
+.emotion-families article {
+  padding: 25px;
+  border: 1px solid #809fa744;
+  border-radius: 16px;
+  background: #102231;
+}
+.emotion-families header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.emotion-families h3 {
+  font-size: 19px;
+  font-weight: 400;
+  margin: 0;
+}
+.emotion-families header > span,
+.emotion-families article > p,
+.emotion-notice {
+  font-size: 12px;
+  color: #a8bfc9;
+  line-height: 1.9;
+}
+.emotion-variants {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+}
+.emotion-variants button {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 8px;
+  background: #0b1a26;
+  border: 1px solid #84999c33;
+  border-radius: 9px;
+  color: #dbe7df;
+  font-size: 12px;
+  text-align: left;
+}
+.emotion-variants i,
+.emotion-detail-swatches i {
+  display: inline-block;
+  width: 27px;
+  height: 27px;
+  flex: none;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px #ffffff33;
+}
+.emotion-variants small {
+  display: block;
+  font-size: 10px;
+  color: #94aebb;
+  margin-top: 5px;
+}
+.emotion-detail {
+  width: min(980px, 93vw);
+  max-height: 92dvh;
+  overflow: auto;
+  box-sizing: border-box;
+  background: #0d1d2a;
+  color: #e1e9dc;
+  border: 1px solid #90a9ad77;
+  border-radius: 18px;
+  padding: 35px;
+  z-index: 100;
+}
+.emotion-detail::backdrop {
+  background: #020710cf;
+  backdrop-filter: blur(7px);
+}
+.emotion-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  color: #d5e6df;
+  background: #142f3c;
+  border: 1px solid #86a3a744;
+}
+.emotion-detail-swatches {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+.emotion-detail-swatches button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #879fa344;
+  border-radius: 25px;
+  background: #122b38;
+  color: #d7e6df;
+  font-size: 12px;
+}
+.emotion-detail-swatches button[aria-pressed="true"] {
+  outline: 2px solid #dce4ad;
+  outline-offset: 2px;
+}
+.emotion-detail h2 {
+  font-size: 29px;
+  font-weight: 400;
+}
+.emotion-detail h2 span {
+  font-size: 14px;
+  color: #9eb9be;
+  margin-left: 18px;
+}
+.emotion-image {
+  display: block;
+  border: 0;
+  background: #07121d;
+  padding: 0;
+  margin-top: 22px;
+  width: 100%;
+  cursor: zoom-in;
+}
+.emotion-image img {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+.emotion-image.expanded img {
+  max-height: none;
+}
+.emotion-image-placeholder {
+  margin-top: 22px;
+  aspect-ratio: 4/3;
+  background: radial-gradient(
+    ellipse at 30% 30%,
+    color-mix(in srgb, var(--case-color), #fff 20%),
+    var(--case-color) 50%,
+    #142332
+  );
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 30px;
+  box-sizing: border-box;
+  color: #fff;
+  text-shadow: 0 1px 4px #000;
+}
+.emotion-image-placeholder > span {
+  font-size: 26px;
+}
+.emotion-image-placeholder p {
+  font-size: 12px;
+  background: #06131ecf;
+  padding: 14px;
+  border-radius: 10px;
+  max-width: 440px;
+  line-height: 1.9;
+}
+.emotion-caption {
+  font-size: 11px;
+  color: #a3bcc2;
+}
+.emotion-case-prose {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+}
+.emotion-case-prose h3 {
+  font-size: 14px;
+  color: #dce5bc;
+}
+.emotion-case-prose p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #c4d6d9;
+}
+.emotion-detail blockquote {
+  font-size: 15px;
+  border-left: 2px solid #dce5bc;
+  padding: 14px 20px;
+  margin: 20px 0;
+  background: #132b38;
+}
+.emotion-detail > button:not(.emotion-close) {
+  padding: 13px 20px;
+  margin-right: 12px;
+  border-radius: 10px;
+  border: 1px solid #79989a66;
+  background: #1c3845;
+  color: #e1edcc;
+}
+.emotion-detail > button.primary {
+  background: #dce9b2;
+  color: #122534;
+}
+.color-case-chooser details {
+  margin: 10px 0;
+}
+.color-case-chooser summary {
+  cursor: pointer;
+  font-size: 13px;
+  padding: 12px;
+  background: #0d2130;
+  border-radius: 9px;
+}
+.color-case-chooser .emotion-variants {
+  margin: 12px 0;
+}
+.color-case-chooser button[aria-pressed="true"] {
+  outline: 2px solid #e2e8b9;
+}
+.emotion-image-placeholder:empty {
+  min-height: 250px;
+}
+@media (max-width: 700px) {
+  .emotion-families {
+    grid-template-columns: 1fr;
+  }
+  .emotion-case-prose {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .emotion-detail {
+    padding: 22px;
+  }
+  .emotion-detail h2 span {
+    display: block;
+    margin: 10px 0;
+  }
+  .emotion-variants {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
