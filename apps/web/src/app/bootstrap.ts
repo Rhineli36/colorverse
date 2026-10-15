@@ -44,7 +44,9 @@ export function demoBodyRecord(index: number): AssetRecord {
   };
 }
 async function fetchDemo(path: string) {
-  const response = await fetch(`${import.meta.env.BASE_URL}demo/${path}`);
+  const response = await fetch(`${import.meta.env.BASE_URL}demo/${path}`, {
+    signal: AbortSignal.timeout(10000),
+  });
   if (!response.ok) throw new Error("演示素材加载失败");
   return response.blob();
 }
@@ -139,8 +141,15 @@ export async function bootstrap(store: LocalWorkspace) {
     if (!(e instanceof Error) || !("code" in e) || e.code !== "NOT_FOUND")
       throw e;
   }
-  const loaded = await Promise.all(demoSpecs.map((_, i) => loadDemoPlanet(i))),
-    planets = loaded.map((item) => item.planet),
+  // Keep room for Auth requests on browsers with a small per-origin connection pool.
+  const loaded: Awaited<ReturnType<typeof loadDemoPlanet>>[] = [];
+  for (let i = 0; i < demoSpecs.length; i += 2)
+    loaded.push(
+      ...(await Promise.all(
+        demoSpecs.slice(i, i + 2).map((_, j) => loadDemoPlanet(i + j)),
+      )),
+    );
+  const planets = loaded.map((item) => item.planet),
     files = new Map<string, Blob>();
   for (const item of loaded)
     for (const [path, blob] of item.files) files.set(path, blob);

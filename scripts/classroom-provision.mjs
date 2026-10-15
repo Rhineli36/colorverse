@@ -154,6 +154,16 @@ try {
     await client.query(
       "GRANT SELECT,INSERT ON colorverse.showcase_reviews TO colorverse_classroom_writer",
     );
+  if (
+    (
+      await client.query(
+        "SELECT to_regclass('colorverse.learning_task_settings') AS name",
+      )
+    ).rows[0].name
+  )
+    await client.query(
+      "GRANT SELECT,INSERT,UPDATE ON colorverse.learning_task_settings TO colorverse_classroom_writer",
+    );
   console.log(
     JSON.stringify({
       status: "student_test_and_private_storage_ready",

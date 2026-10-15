@@ -55,6 +55,7 @@ export function SceneCanvas({
   callbacks.current = options;
   const [error, setError] = useState("");
   useEffect(() => {
+    let active = true;
     const r = new SceneRenderer(assets, {
       onSelect: (id) => callbacks.current.onSelect?.(id),
       onHover: (id) => callbacks.current.onHover?.(id),
@@ -73,9 +74,17 @@ export function SceneCanvas({
     renderer.current = r;
     if (positionReader) positionReader.current = (id) => r.planetPosition(id);
     ready.current = r.mount(host.current!).catch((e) => {
-      setError(e instanceof Error ? e.message : "WebGL 不可用");
+      if (active && renderer.current === r) {
+        // A failed mount is not a ready renderer. Deferred view updates must
+        // never reach Pixi's canvas getter before its renderer exists.
+        renderer.current = null;
+        if (positionReader) positionReader.current = null;
+        setError(e instanceof Error ? e.message : "WebGL 不可用");
+      }
+      r.dispose();
     });
     return () => {
+      active = false;
       renderer.current = null;
       if (positionReader) positionReader.current = null;
       r.dispose();

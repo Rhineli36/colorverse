@@ -1653,3 +1653,94 @@
     padding: 16px;
   }
 }
+.cloud-orb-status {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  width: 100%;
+  color: #edf4ff;
+  background: #0c182bdd;
+  border-radius: 9px;
+  font-size: 10px;
+  text-align: center;
+  padding: 3px 0;
+  pointer-events: none;
+}
+.learning-panel {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid #8baeba38;
+  background: #13232e80;
+  border-radius: 14px;
+  line-height: 1.65;
+}
+.learning-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #cbe3d8;
+}
+.learning-panel label {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+}
+.learning-panel fieldset {
+  border: 1px solid #8baeba38;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 12px 0;
+}
+.learning-panel textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 70px;
+  resize: vertical;
+}
+.learning-panel .learning-moods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+.learning-panel .learning-moods label,
+.learning-panel fieldset > label:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.learning-panel input[type="checkbox"] {
+  width: 16px;
+  min-height: 16px;
+}
+.learning-panel input[type="color"] {
+  width: 42px;
+  height: 38px;
+  padding: 3px;
+}
+.learning-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.learning-cards > details {
+  padding: 12px;
+  background: #091724;
+  border-radius: 10px;
+}
+.learning-swatch {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  margin: 4px;
+  border: 1px solid #ffffff55;
+  vertical-align: middle;
+}
+.learning-palettes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.learning-palettes button {
+  padding: 6px;
+  font-size: 12px;
+}

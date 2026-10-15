@@ -38,6 +38,7 @@ function run(args, env) {
     );
   });
 }
+let phase = "account_check";
 try {
   let credentials = {};
   if (command !== "dry-run") {
@@ -84,8 +85,11 @@ try {
       VITE_EXHIBITION_MODE: "false",
       VITE_USE_AUTH_PROXY: "true",
     };
+    phase = "static_build";
     await run(["build:competition"], env);
+    phase = "classroom_build";
     await run(["build"], env);
+    phase = "copy_static_assets";
     await cp(
       resolve(root, "work/competition-site"),
       resolve(root, "apps/web/dist/exhibition"),
@@ -114,6 +118,7 @@ try {
       if (!/^[a-f0-9]{32}$/i.test(id ?? ""))
         throw new Error("Invalid Hyperdrive binding configuration");
       if (command === "deploy") {
+        phase = "reader_binding_check";
         const response = await fetch(
           `https://api.cloudflare.com/client/v4/accounts/${credentials.CLOUDFLARE_ACCOUNT_ID}/hyperdrive/configs/${id}`,
           {
@@ -156,6 +161,7 @@ try {
       if (!/^[a-f0-9]{32}$/i.test(id ?? ""))
         throw new Error("Invalid Hyperdrive binding configuration");
       if (command === "deploy") {
+        phase = "writer_binding_check";
         const response = await fetch(
           `https://api.cloudflare.com/client/v4/accounts/${credentials.CLOUDFLARE_ACCOUNT_ID}/hyperdrive/configs/${id}`,
           {
@@ -185,8 +191,10 @@ try {
       ];
       config.images = { binding: "IMAGES" };
     }
+    phase = "write_deploy_config";
     const configPath = resolve(root, "work/wrangler.cloudflare.json");
     await writeFile(configPath, JSON.stringify(config, null, 2));
+    phase = "worker_publish";
     await run(
       [
         "exec",
@@ -217,7 +225,7 @@ try {
     error instanceof Error &&
       safeMessages.some((text) => error.message.startsWith(text))
       ? error.message
-      : "Cloudflare operation failed; credentials were not printed.",
+      : `Cloudflare operation failed at ${phase}; credentials were not printed.`,
   );
   process.exitCode = 1;
 }

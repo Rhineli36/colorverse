@@ -1,3 +1,4 @@
+import { TaskSettings } from "./LearningPanels";
 import { useEffect, useState } from "react";
 import {
   ClassroomOverviewSchema,
@@ -111,6 +112,12 @@ export function CloudClassroomView({
     (data?.students ?? []).reduce((n, s) => n + count(s, key), 0);
   return (
     <main className="classroom-main">
+      <TaskSettings
+        key={`${session?.identity.id}:${classId}`}
+        classId={classId}
+        onTasks={() => {}}
+        onPendingChange={onPendingChange ?? (() => {})}
+      />
       <header className="classroom-heading">
         <div>
           <p className="eyebrow">CLASSROOM OBSERVATORY · 教师管理</p>

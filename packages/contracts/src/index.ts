@@ -420,3 +420,4 @@ export * from "./classroom";
 export * from "./cloud-planet";
 
 export * from "./motion";
+export * from './learning';

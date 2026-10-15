@@ -1,6 +1,6 @@
 # COLORVERSE · 色彩宇宙
 
-面向《设计色彩》课程的本地优先星球创作与展示应用。当前版本完成第一阶段的核心闭环，架构继续遵循 docs/；第一阶段完整验收与机房性能验证仍在推进。
+面向《设计色彩》课程的星球创作与课堂反馈应用。当前有真实云端课堂、本机创作及独立课程开发模块、静态参赛备用展示三种模式。参赛功能范围、联网依赖与准确启动方式以 [参赛运行与打包说明](docs/47-competition-run-and-package.md) 为准；下方早期阶段说明保留为迭代记录。
 
 ## 本机启动
 
@@ -25,9 +25,9 @@ pnpm dev
 
 前端workspace已安装`@supabase/supabase-js`，公开配置模板位于[apps/web/.env.example](apps/web/.env.example)，复制为同目录`.env.local`后填写项目URL与Publishable key。模板不包含真实项目配置，`.env.local`由Git忽略。`VITE_*`只用于可公开的前端值，数据库密码、连接字符串与高权限Secret key须另存于后端私密配置。
 
-新增邮箱密码登录、退出和服务端身份验证，配置 `VITE_ENABLE_CLOUD_AUTH=true` 后显示登录入口。当前为登录测试阶段，验证后显示待加入班级；星球/作品仍保存在本机，不授予云端教师权限或自动上传。GitHub Pages 默认保留本机演示、关闭云端登录模块。
+新增邮箱密码登录、退出和服务端身份验证，配置 `VITE_ENABLE_CLOUD_AUTH=true` 后显示登录入口。当前云端版本从数据库核对班级与角色，支持私有作品上传、教学模板与配色说明、规则成长、教师评分、同伴反馈。上传仅发生在真实云端课堂入口，本机草稿不会自动上传。GitHub Pages 默认保留本机演示、关闭云端登录模块，其 exhibition 子目录是匿名静态快照。
 
-Cloudflare 使用独立 Fetch Worker 与 Static Assets，`pnpm cloud:check` 验证本机帐户配置，`pnpm cloud:dry-run` 构建预检，`pnpm cloud:deploy` 发布测试版。令牌与 Account ID 保存在根目录 Git 忽略的 `.env.cloudflare.local`，不放入 `VITE_*`。真实班级授权、私有 R2、Hyperdrive 与云星球仍待接入。配置、验证范围与上线门槛见[36](docs/36-cloud-auth-and-cloudflare-pilot.md)。
+Cloudflare 使用独立 Fetch Worker 与 Static Assets，`pnpm cloud:check` 验证本机帐户配置，`pnpm cloud:dry-run` 构建预检，`pnpm cloud:deploy` 发布测试版。令牌与 Account ID 保存在根目录 Git 忽略的 `.env.cloudflare.local`，不放入 `VITE_*`。真实班级授权、Hyperdrive 与云星球已接入；上传使用 Supabase 私有 Storage，未接入 R2。配置、验证范围与上线门槛见[36](docs/36-cloud-auth-and-cloudflare-pilot.md)。
 
 ## 作业提交系统：本机测试（扩建暂缓）
 

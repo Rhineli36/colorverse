@@ -25,6 +25,7 @@ with sync_playwright()as p:
   path=route.request.url.split('/api/v1/cloud/')[1].split('?')[0];method=route.request.method
   if path=='session':route.fulfill(json={'identity':{'id':subject,'email':user['email']},'access':'active','database':'connected','cloudWrites':True,'memberships':[{'enrollmentId':actor,'classId':cls,'title':'点评演示班','timezone':'Asia/Shanghai','role':state['role']}]})
   elif path.endswith('/planets'):route.fulfill(json={'actorId':actor,'planets':[{'id':planet,'owner_enrollment_id':owner,'display_name':'演示学生 01','document':{'metadata':{'name':'点评演示星球'},'color':'#efa568','skin':0},'works':[{'id':workid,'title':'蓝红人物配色','description':'隔离测试作品，原图与教师反馈分开保存。','presetId':'color-fan','color':'#efa568','createdAt':'2026-10-14T01:00:00Z','params':{},'revision':0}]}]})
+  elif path.endswith('/learning-tasks'):route.fulfill(json={'tasks':[]})
   elif path.endswith('/guide'):route.fulfill(json={'completed':[],'hasPeers':True})
   elif path.endswith('/interactions'):
    if method=='POST':state['requests'].append({'kind':'social',**json.loads(route.request.post_data)})

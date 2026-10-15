@@ -34,7 +34,16 @@
           "image": "student-1-work-1.webp",
           "presetId": "glow-flower",
           "score": 91,
-          "comment": "蓝与红形成鲜明的冷暖对比，人物主体有清晰的视觉焦点。建议控制背景的高饱和色面积，让脸部与服饰层次更加集中。"
+          "comment": "蓝与红形成鲜明的冷暖对比，人物主体有清晰的视觉焦点。建议控制背景的高饱和色面积，让脸部与服饰层次更加集中。",
+          "params": {
+            "x": 0.18,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:51:01.034Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-1-work-2",
@@ -42,7 +51,16 @@
           "image": "student-1-work-2.webp",
           "presetId": "crystal",
           "score": 88,
-          "comment": "暖金色纹样与灰底形成明度对比，装饰节奏较统一。建议比较图案大小与间距的变化，避免重复部分过于平均。"
+          "comment": "暖金色纹样与灰底形成明度对比，装饰节奏较统一。建议比较图案大小与间距的变化，避免重复部分过于平均。",
+          "params": {
+            "x": 0.38,
+            "y": 0.62,
+            "size": 0.9,
+            "motion": "breathe"
+          },
+          "createdAt": "2026-10-14T09:55:12.127Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-1-work-3",
@@ -50,7 +68,16 @@
           "image": "student-1-work-3.webp",
           "presetId": "luminous-leaf",
           "score": 89,
-          "comment": "红、黄与深色搭配使服饰配色很有辨识度。建议适当减小亮色面积，让主色、辅助色和点缀色的比例更明确。"
+          "comment": "红、黄与深色搭配使服饰配色很有辨识度。建议适当减小亮色面积，让主色、辅助色和点缀色的比例更明确。",
+          "params": {
+            "x": 0.6,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "rotate"
+          },
+          "createdAt": "2026-10-14T09:55:21.583Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-1-work-4",
@@ -58,7 +85,16 @@
           "image": "student-1-work-4.webp",
           "presetId": "moon-mushroom",
           "score": 90,
-          "comment": "红色彩妆与同色系文字建立了统一的广告气氛，产品信息较突出。建议进一步拉开标题、说明文字与背景的明度差。"
+          "comment": "红色彩妆与同色系文字建立了统一的广告气氛，产品信息较突出。建议进一步拉开标题、说明文字与背景的明度差。",
+          "params": {
+            "x": 0.8,
+            "y": 0.65,
+            "size": 0.9,
+            "motion": "still"
+          },
+          "createdAt": "2026-10-14T09:55:30.722Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-1-work-5",
@@ -66,7 +102,32 @@
           "image": "student-1-work-5.webp",
           "presetId": "color-fan",
           "score": 87,
-          "comment": "角色插画中的浅绿色营造了轻快的气氛，造型与色彩较协调。建议增加一处深色或暖色点缀，强化角色的视觉中心。"
+          "comment": "角色插画中的浅绿色营造了轻快的气氛，造型与色彩较协调。建议增加一处深色或暖色点缀，强化角色的视觉中心。",
+          "params": {
+            "x": 0.5,
+            "y": 0.8,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:55:41.467Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": [
+            {
+              "kind": "like",
+              "content": "",
+              "author": "演示学生 05"
+            },
+            {
+              "kind": "emoji",
+              "content": "🌈",
+              "author": "演示学生 05"
+            },
+            {
+              "kind": "comment",
+              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+              "author": "演示学生 05"
+            }
+          ]
         }
       ],
       "exterior": "case-1-exterior.webp",
@@ -106,7 +167,32 @@
           "image": "student-2-work-1.webp",
           "presetId": "floating-island",
           "score": 93,
-          "comment": "橙色与青蓝色的对比让敦煌风纹样显得明快，暖色主调鲜明。建议检查局部亮黄色的分布，避免多个区域同时抢占焦点。"
+          "comment": "橙色与青蓝色的对比让敦煌风纹样显得明快，暖色主调鲜明。建议检查局部亮黄色的分布，避免多个区域同时抢占焦点。",
+          "params": {
+            "x": 0.18,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:56:02.773Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": [
+            {
+              "kind": "like",
+              "content": "",
+              "author": "演示学生 01"
+            },
+            {
+              "kind": "emoji",
+              "content": "✨",
+              "author": "演示学生 01"
+            },
+            {
+              "kind": "comment",
+              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+              "author": "演示学生 01"
+            }
+          ]
         },
         {
           "id": "demo-2-work-2",
@@ -114,7 +200,16 @@
           "image": "student-2-work-2.webp",
           "presetId": "star-seed",
           "score": 89,
-          "comment": "红、黄、蓝服饰配色鲜明，复古装饰风格较统一。建议通过面积比例降低三种亮色的竞争，让主色更突出。"
+          "comment": "红、黄、蓝服饰配色鲜明，复古装饰风格较统一。建议通过面积比例降低三种亮色的竞争，让主色更突出。",
+          "params": {
+            "x": 0.38,
+            "y": 0.62,
+            "size": 0.9,
+            "motion": "breathe"
+          },
+          "createdAt": "2026-10-14T09:56:11.425Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-2-work-3",
@@ -122,7 +217,16 @@
           "image": "student-2-work-3.webp",
           "presetId": "orbit-stone",
           "score": 92,
-          "comment": "狐狸的暖橙色与粉紫色星光环境形成了有趣的温度差，画面气氛完整。建议适当强化主体边缘的明度对比，让狐狸更容易被看见。"
+          "comment": "狐狸的暖橙色与粉紫色星光环境形成了有趣的温度差，画面气氛完整。建议适当强化主体边缘的明度对比，让狐狸更容易被看见。",
+          "params": {
+            "x": 0.6,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "rotate"
+          },
+          "createdAt": "2026-10-14T09:56:20.493Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-2-work-4",
@@ -130,7 +234,16 @@
           "image": "student-2-work-4.webp",
           "presetId": "aurora-jelly",
           "score": 90,
-          "comment": "彩妆海报的红与粉紫色维持了统一的产品情绪，配色呼应较好。建议调整文字区域的留白，提高小字号信息的阅读效率。"
+          "comment": "彩妆海报的红与粉紫色维持了统一的产品情绪，配色呼应较好。建议调整文字区域的留白，提高小字号信息的阅读效率。",
+          "params": {
+            "x": 0.8,
+            "y": 0.65,
+            "size": 0.9,
+            "motion": "still"
+          },
+          "createdAt": "2026-10-14T09:56:28.993Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-2-work-5",
@@ -138,7 +251,16 @@
           "image": "student-2-work-5.webp",
           "presetId": "moon-bloom",
           "score": 91,
-          "comment": "绿与红的互补关系增强了运动饮料包装的活力，闪电图形强化了速度感。建议减少次要图形的高饱和度，使品牌和产品成为第一视觉焦点。"
+          "comment": "绿与红的互补关系增强了运动饮料包装的活力，闪电图形强化了速度感。建议减少次要图形的高饱和度，使品牌和产品成为第一视觉焦点。",
+          "params": {
+            "x": 0.5,
+            "y": 0.8,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:56:37.671Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         }
       ],
       "exterior": "case-2-exterior.webp",
@@ -178,7 +300,16 @@
           "image": "student-3-work-1.webp",
           "presetId": "coral-fan",
           "score": 90,
-          "comment": "青色纹样保持了清晰的冷色基调，重复图形带来良好的装饰节奏。建议增加局部深浅变化，使平铺图案更有层次。"
+          "comment": "青色纹样保持了清晰的冷色基调，重复图形带来良好的装饰节奏。建议增加局部深浅变化，使平铺图案更有层次。",
+          "params": {
+            "x": 0.18,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:56:58.956Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-3-work-2",
@@ -186,7 +317,32 @@
           "image": "student-3-work-2.webp",
           "presetId": "comet",
           "score": 89,
-          "comment": "薄荷绿与服饰造型相互协调，整体色调轻盈。建议加强衣褶和结构处的明度变化，让同色系之间的层次更明显。"
+          "comment": "薄荷绿与服饰造型相互协调，整体色调轻盈。建议加强衣褶和结构处的明度变化，让同色系之间的层次更明显。",
+          "params": {
+            "x": 0.38,
+            "y": 0.62,
+            "size": 0.9,
+            "motion": "breathe"
+          },
+          "createdAt": "2026-10-14T09:57:07.584Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": [
+            {
+              "kind": "like",
+              "content": "",
+              "author": "演示学生 02"
+            },
+            {
+              "kind": "emoji",
+              "content": "💙",
+              "author": "演示学生 02"
+            },
+            {
+              "kind": "comment",
+              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+              "author": "演示学生 02"
+            }
+          ]
         },
         {
           "id": "demo-3-work-3",
@@ -194,7 +350,16 @@
           "image": "student-3-work-3.webp",
           "presetId": "butterfly",
           "score": 92,
-          "comment": "粉紫色花园与人物形成柔和的整体氛围，花朵与背景的色彩呼应较丰富。建议稍微降低背景局部饱和度，突出人物与前景。"
+          "comment": "粉紫色花园与人物形成柔和的整体氛围，花朵与背景的色彩呼应较丰富。建议稍微降低背景局部饱和度，突出人物与前景。",
+          "params": {
+            "x": 0.6,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "rotate"
+          },
+          "createdAt": "2026-10-14T09:57:16.328Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-3-work-4",
@@ -202,7 +367,16 @@
           "image": "student-3-work-4.webp",
           "presetId": "ice-spire",
           "score": 88,
-          "comment": "角色练习的暖色搭配活泼，人物轮廓容易辨认。建议统一光源方向，并通过阴影色区分皮肤与服饰的材质。"
+          "comment": "角色练习的暖色搭配活泼，人物轮廓容易辨认。建议统一光源方向，并通过阴影色区分皮肤与服饰的材质。",
+          "params": {
+            "x": 0.8,
+            "y": 0.65,
+            "size": 0.9,
+            "motion": "still"
+          },
+          "createdAt": "2026-10-14T09:57:26.217Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-3-work-5",
@@ -210,7 +384,16 @@
           "image": "student-3-work-5.webp",
           "presetId": "sun-disc",
           "score": 93,
-          "comment": "绿色山水与雨意契合清明主题，留白与淡色层次营造了安静的节气气氛。建议检查题字的大小与位置，让文字与画面留白形成更清楚的呼应。"
+          "comment": "绿色山水与雨意契合清明主题，留白与淡色层次营造了安静的节气气氛。建议检查题字的大小与位置，让文字与画面留白形成更清楚的呼应。",
+          "params": {
+            "x": 0.5,
+            "y": 0.8,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:57:35.499Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         }
       ],
       "exterior": "case-3-exterior.webp",
@@ -250,7 +433,16 @@
           "image": "student-4-work-1.webp",
           "presetId": "rain-drop",
           "score": 89,
-          "comment": "柔和的浅色纹样有统一的装饰气氛，色彩过渡较舒适。建议增加少量深色细节，以避免浅色之间缺少辨识度。"
+          "comment": "柔和的浅色纹样有统一的装饰气氛，色彩过渡较舒适。建议增加少量深色细节，以避免浅色之间缺少辨识度。",
+          "params": {
+            "x": 0.18,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:57:58.290Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-4-work-2",
@@ -258,7 +450,16 @@
           "image": "student-4-work-2.webp",
           "presetId": "satellite",
           "score": 90,
-          "comment": "黄色、蓝色和粉色的服饰搭配富有活力，撞色效果鲜明。建议明确主色面积，让点缀色更集中在关键结构。"
+          "comment": "黄色、蓝色和粉色的服饰搭配富有活力，撞色效果鲜明。建议明确主色面积，让点缀色更集中在关键结构。",
+          "params": {
+            "x": 0.38,
+            "y": 0.62,
+            "size": 0.9,
+            "motion": "breathe"
+          },
+          "createdAt": "2026-10-14T09:58:06.801Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-4-work-3",
@@ -266,7 +467,32 @@
           "image": "student-4-work-3.webp",
           "presetId": "nebula-shell",
           "score": 92,
-          "comment": "粉色云端环境营造了梦境感，整体色彩气氛连贯。建议用明度差或一处互补点缀强调画面的主要叙事对象。"
+          "comment": "粉色云端环境营造了梦境感，整体色彩气氛连贯。建议用明度差或一处互补点缀强调画面的主要叙事对象。",
+          "params": {
+            "x": 0.6,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "rotate"
+          },
+          "createdAt": "2026-10-14T09:58:15.242Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": [
+            {
+              "kind": "like",
+              "content": "",
+              "author": "演示学生 03"
+            },
+            {
+              "kind": "emoji",
+              "content": "👏",
+              "author": "演示学生 03"
+            },
+            {
+              "kind": "comment",
+              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+              "author": "演示学生 03"
+            }
+          ]
         },
         {
           "id": "demo-4-work-4",
@@ -274,7 +500,16 @@
           "image": "student-4-work-4.webp",
           "presetId": "little-tree",
           "score": 91,
-          "comment": "黑与金色的搭配体现了香水广告的精致感，产品气质较明确。建议检查暗部细节与小字的对比度，使深色背景仍保留足够的信息层次。"
+          "comment": "黑与金色的搭配体现了香水广告的精致感，产品气质较明确。建议检查暗部细节与小字的对比度，使深色背景仍保留足够的信息层次。",
+          "params": {
+            "x": 0.8,
+            "y": 0.65,
+            "size": 0.9,
+            "motion": "still"
+          },
+          "createdAt": "2026-10-14T09:58:24.810Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-4-work-5",
@@ -282,7 +517,27 @@
           "image": "student-4-work-5.webp",
           "presetId": "glass-lantern",
           "score": 92,
-          "comment": "蓝色天空与红色气球构成清楚的冷暖对比，气球作为点缀形成了视觉焦点。建议微调气球与留白的比例，加强画面轻盈的空间感。"
+          "comment": "蓝色天空与红色气球构成清楚的冷暖对比，气球作为点缀形成了视觉焦点。建议微调气球与留白的比例，加强画面轻盈的空间感。",
+          "params": {
+            "x": 0.5,
+            "y": 0.8,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:58:34.963Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": [
+            {
+              "kind": "emoji",
+              "content": "🌈",
+              "author": "演示学生 05"
+            },
+            {
+              "kind": "comment",
+              "content": "演示留言：这件作品的色彩层次很丰富，想听听你的配色思路。",
+              "author": "演示学生 05"
+            }
+          ]
         }
       ],
       "exterior": "case-4-exterior.webp",
@@ -322,7 +577,16 @@
           "image": "student-5-work-1.webp",
           "presetId": "meteor-cluster",
           "score": 88,
-          "comment": "青苹果图形与绿黄色搭配建立了明确的主题关联，色彩气氛清新。建议调整图形疏密与大小，使重复排列更有节奏。"
+          "comment": "青苹果图形与绿黄色搭配建立了明确的主题关联，色彩气氛清新。建议调整图形疏密与大小，使重复排列更有节奏。",
+          "params": {
+            "x": 0.18,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:58:58.223Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-5-work-2",
@@ -330,7 +594,16 @@
           "image": "student-5-work-2.webp",
           "presetId": "light-lantern",
           "score": 91,
-          "comment": "紫与绿的对比使纹样富有辨识度，色彩组合具有张力。建议适当控制亮绿色的面积，让紫色与绿色形成更稳定的主次关系。"
+          "comment": "紫与绿的对比使纹样富有辨识度，色彩组合具有张力。建议适当控制亮绿色的面积，让紫色与绿色形成更稳定的主次关系。",
+          "params": {
+            "x": 0.38,
+            "y": 0.62,
+            "size": 0.9,
+            "motion": "breathe"
+          },
+          "createdAt": "2026-10-14T09:59:06.603Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-5-work-3",
@@ -338,7 +611,16 @@
           "image": "student-5-work-3.webp",
           "presetId": "rainbow-arch",
           "score": 89,
-          "comment": "角色服饰中的粉红、红与浅色搭配较协调，人物形象清楚。建议进一步区分头发、肤色和服饰的明度层级，避免相邻色块混在一起。"
+          "comment": "角色服饰中的粉红、红与浅色搭配较协调，人物形象清楚。建议进一步区分头发、肤色和服饰的明度层级，避免相邻色块混在一起。",
+          "params": {
+            "x": 0.6,
+            "y": 0.36,
+            "size": 0.9,
+            "motion": "rotate"
+          },
+          "createdAt": "2026-10-14T09:59:14.679Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         },
         {
           "id": "demo-5-work-4",
@@ -346,7 +628,32 @@
           "image": "student-5-work-4.webp",
           "presetId": "cosmic-eye",
           "score": 90,
-          "comment": "灰度海报尝试用明暗代替色相建立秩序，主题表达较集中。建议继续拉开关键文字和背景的灰度差，检验缩小尺寸后的可读性。"
+          "comment": "灰度海报尝试用明暗代替色相建立秩序，主题表达较集中。建议继续拉开关键文字和背景的灰度差，检验缩小尺寸后的可读性。",
+          "params": {
+            "x": 0.8,
+            "y": 0.65,
+            "size": 0.9,
+            "motion": "still"
+          },
+          "createdAt": "2026-10-14T09:59:24.618Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": [
+            {
+              "kind": "like",
+              "content": "",
+              "author": "演示学生 04"
+            },
+            {
+              "kind": "emoji",
+              "content": "🔥",
+              "author": "演示学生 04"
+            },
+            {
+              "kind": "comment",
+              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
+              "author": "演示学生 04"
+            }
+          ]
         },
         {
           "id": "demo-5-work-5",
@@ -354,7 +661,16 @@
           "image": "student-5-work-5.webp",
           "presetId": "snow-flake",
           "score": 92,
-          "comment": "粉色果汁包装的同色系配色呼应了草莓主题，图形与产品信息较统一。建议减少装饰与文字之间的竞争，让品牌、口味和主体图像形成清晰层级。"
+          "comment": "粉色果汁包装的同色系配色呼应了草莓主题，图形与产品信息较统一。建议减少装饰与文字之间的竞争，让品牌、口味和主体图像形成清晰层级。",
+          "params": {
+            "x": 0.5,
+            "y": 0.8,
+            "size": 0.9,
+            "motion": "float"
+          },
+          "createdAt": "2026-10-14T09:59:32.125Z",
+          "description": "往届《设计色彩》作业预览，仅供展示。预置配色说明与点评示例不代表原作者意图或原课程成绩。",
+          "interactions": []
         }
       ],
       "exterior": "case-5-exterior.webp",

@@ -182,12 +182,13 @@ export class SceneRenderer {
     this.deploymentBoundary.visible = false;
     this.drawSpace();
     this.observer = new ResizeObserver(() => {
+      if (this.disposed || !this.app.renderer) return;
       this.app.renderer.resize(host.clientWidth, host.clientHeight);
       this.layout();
     });
     this.observer.observe(host);
     this.app.ticker.add((ticker) => {
-      if (document.hidden) return;
+      if (this.disposed || document.hidden) return;
       const seconds = Math.min(ticker.deltaMS, 50) / 1000;
       if (!this.motionPaused && !this.options.reducedMotion) {
         this.elapsed += seconds;
@@ -830,8 +831,9 @@ export class SceneRenderer {
       this.cache.set(
         key,
         (async () => {
-          const blob = await this.assets.resolve(record, variant),
-            url = URL.createObjectURL(blob);
+          const blob = await this.assets.resolve(record, variant);
+          if (this.disposed) throw new Error("Renderer disposed");
+          const url = URL.createObjectURL(blob);
           this.urls.push(url);
           const image = new Image();
           image.src = url;
@@ -1523,6 +1525,7 @@ export class SceneRenderer {
     });
   }
   dispose() {
+    if (this.disposed) return;
     this.disposed = true;
     this.generation++;
     this.observer?.disconnect();

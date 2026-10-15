@@ -1,3 +1,5 @@
+import { ColorCardPicker } from "./ColorCardPicker";
+import { IntentFields, KnowledgePanel, blankIntent } from "./LearningPanels";
 import { CloudMotionPreview } from "./CloudMotionPreview";
 import { useEffect, useState } from "react";
 import { z } from "zod";
@@ -7,6 +9,16 @@ import {
 } from "@colorverse/contracts";
 import { CloudAtmosphere } from "./CloudStudentGuide";
 import { classroomRequest } from "./CloudClassroomView";
+import {
+  acquirePrivateImage,
+  clearPrivateImages,
+} from "./private-image-resource";
+
+let imageActor = "",
+  authWatch = false;
+export function retryPlanetImages() {
+  window.dispatchEvent(new Event("colorverse:retry-private-images"));
+}
 
 type PlanetDocument = z.infer<typeof CloudPlanetDocumentSchema>;
 export function usePlanetImage(
@@ -15,28 +27,66 @@ export function usePlanetImage(
   kind: "exterior" | "interior",
   mediaId?: string,
 ) {
-  const [image, setImage] = useState({ url: "", error: false });
+  return usePrivateImage(
+    `classes/${classId}/planets/${planetId}/${kind}`,
+    mediaId,
+  );
+}
+export function usePrivateImage(resource: string, mediaId?: string) {
+  const [image, setImage] = useState({
+    url: "",
+    error: false,
+    loading: Boolean(mediaId),
+  });
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const retry = () => setAttempt((n) => n + 1);
+    window.addEventListener("colorverse:retry-private-images", retry);
+    return () =>
+      window.removeEventListener("colorverse:retry-private-images", retry);
+  }, []);
   useEffect(() => {
     let active = true,
-      objectUrl = "";
-    setImage({ url: "", error: false });
+      release: (() => void) | undefined;
+    setImage({ url: "", error: false, loading: Boolean(mediaId) });
     if (mediaId)
-      void classroomRequest(`classes/${classId}/planets/${planetId}/${kind}`)
-        .then((r) => r.blob())
-        .then((blob) => {
-          if (active) {
-            objectUrl = URL.createObjectURL(blob);
-            setImage({ url: objectUrl, error: false });
+      void import("../auth/auth-client")
+        .then(async ({ getAuthClient }) => {
+          const client = getAuthClient();
+          if (!authWatch && client) {
+            authWatch = true;
+            client.auth.onAuthStateChange((event, session) => {
+              const actor = session?.user.id ?? "";
+              if (event === "SIGNED_OUT" || actor !== imageActor)
+                clearPrivateImages();
+              imageActor = actor;
+            });
           }
+          const actor = (await client?.auth.getSession())?.data.session?.user
+            .id;
+          if (!active) return;
+          if (!actor) throw new Error("登录身份已失效");
+          if (actor !== imageActor) {
+            clearPrivateImages();
+            imageActor = actor;
+          }
+          const lease = acquirePrivateImage(
+            `${actor}/${resource}/${mediaId}`,
+            (signal) =>
+              classroomRequest(resource, { signal }).then((r) => r.blob()),
+          );
+          release = lease.release;
+          const url = await lease.ready;
+          if (active) setImage({ url, error: false, loading: false });
         })
         .catch(() => {
-          if (active) setImage({ url: "", error: true });
+          if (active) setImage({ url: "", error: true, loading: false });
         });
     return () => {
       active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      release?.();
     };
-  }, [classId, planetId, kind, mediaId]);
+  }, [resource, mediaId, attempt]);
   return image;
 }
 export function CloudPlanetOrb({
@@ -70,6 +120,14 @@ export function CloudPlanetOrb({
           `${import.meta.env.BASE_URL}demo/v2/body-${document.skin}.webp`
         }
       />
+      {!previewImage && image.loading && (
+        <small className="cloud-orb-status">正在读取外貌</small>
+      )}
+      {!previewImage && image.error && (
+        <small className="cloud-orb-status" role="status">
+          外貌读取失败
+        </small>
+      )}
     </span>
   );
 }
@@ -108,6 +166,9 @@ export function CloudPlanetAppearance({
   const [name, setName] = useState(document.metadata.name),
     [skin, setSkin] = useState(document.skin),
     [color, setColor] = useState(document.color);
+  const [learningIntent, setLearningIntent] = useState(
+    document.learningIntent ?? blankIntent(),
+  );
   const [summary, setSummary] = useState(document.metadata.summary),
     [atmosphere, setAtmosphere] = useState(document.atmosphere),
     [halo, setHalo] = useState(document.halo);
@@ -119,6 +180,8 @@ export function CloudPlanetAppearance({
   const [status, setStatus] = useState("");
   const [motion, setMotion] = useState(document.motion);
   const dirty =
+    JSON.stringify(learningIntent) !==
+      JSON.stringify(document.learningIntent ?? blankIntent()) ||
     name !== document.metadata.name ||
     summary !== document.metadata.summary ||
     skin !== document.skin ||
@@ -153,14 +216,20 @@ export function CloudPlanetAppearance({
       setStatus("");
       const changes =
         section === "summary"
-          ? { summary }
+          ? { summary, learningIntent }
           : section === "motion"
             ? { motion }
             : section === "atmosphere"
-              ? { atmosphere, halo }
+              ? { atmosphere }
               : section === "tone"
-                ? { color, brightness, saturation, practice: "tone" }
-                : { skin };
+                ? {
+                    color,
+                    learningIntent,
+                    brightness,
+                    saturation,
+                    practice: "tone",
+                  }
+                : { skin, halo };
       try {
         await classroomRequest(`classes/${classId}/planets/${id}/appearance`, {
           method: "PUT",
@@ -338,7 +407,7 @@ export function CloudPlanetAppearance({
           </div>
         </>
       )}
-      {section === "atmosphere" && (
+      {section === "exterior" && (
         <>
           <h3>星球外部光晕</h3>
           <p>光晕围绕整颗星球显示；粒子出现在内部场景，两种效果可以组合。</p>
@@ -388,16 +457,34 @@ export function CloudPlanetAppearance({
           <p>
             亮度和饱和度影响内部背景，成长元素保留自己的颜色。调整时可在上方预览中观察，保存后应用到内部场景。
           </p>
-          <label>
-            环境色调
-            <input
-              aria-label="星球环境色调"
-              type="color"
-              value={color}
-              disabled={busy}
-              onChange={(e) => setColor(e.target.value)}
+          <ColorCardPicker
+            color={color}
+            onColor={(v) => {
+              setColor(v);
+              setLearningIntent((i) => ({
+                ...i,
+                paletteColors: [v, ...i.paletteColors.slice(1)],
+              }));
+            }}
+            mood={learningIntent.customMood}
+            onMood={(customMood) =>
+              setLearningIntent((i) => ({ ...i, customMood }))
+            }
+            disabled={busy}
+          />
+          <div
+            className="color-orb-preview"
+            aria-label="主色调实时预览"
+            data-color={color}
+            style={{ "--preview-color": color } as React.CSSProperties}
+          >
+            <CloudPlanetOrb
+              classId={classId}
+              id={id}
+              document={{ ...document, color, halo }}
             />
-          </label>
+            <p>主色调用于环境光与装饰，不染色上传原图。</p>
+          </div>
           <label>
             背景亮度 · {Math.round(brightness * 100)}%
             <input
@@ -536,6 +623,12 @@ export function CloudPlanetAppearance({
             />
           </label>
           <small>{summary.length}/1000</small>
+          <IntentFields
+            value={learningIntent}
+            onChange={setLearningIntent}
+            disabled={busy}
+          />
+          <KnowledgePanel />
         </>
       )}
       {section !== "interior" && (

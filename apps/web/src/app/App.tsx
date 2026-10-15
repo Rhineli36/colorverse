@@ -207,7 +207,8 @@ export function App() {
     [motionPaused, setMotionPaused] = useState(false),
     [layoutRole, setLayoutRole] = useState<LayoutActor["role"]>("student"),
     [ownership, setOwnership] = useState<Record<string, string>>({}),
-    [fatal, setFatal] = useState("");
+    [fatal, setFatal] = useState(""),
+    [bootAttempt, setBootAttempt] = useState(0);
   const editor = useEditor(),
     saveLock = useRef<Promise<void> | null>(null),
     importInput = useRef<HTMLInputElement>(null);
@@ -237,10 +238,17 @@ export function App() {
     setOwnership(owners);
   }, []);
   useEffect(() => {
+    let active = true;
+    setFatal("");
     bootstrap(workspace)
-      .then(refresh)
-      .catch((e) => setFatal(e.message));
-  }, [refresh]);
+      .then(() => (active ? refresh() : undefined))
+      .catch((e) => {
+        if (active) setFatal(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [refresh, bootAttempt]);
   useEffect(() => {
     const listener = (e: BeforeUnloadEvent) => {
       if (
@@ -783,18 +791,24 @@ export function App() {
       throw error;
     }
   };
-  if (fatal)
+  if (!cloudAuthEnabled && !universe)
     return (
-      <div className="loading" role="alert">
-        初始化失败：{fatal}
-        <p>请检查浏览器是否允许 IndexedDB，并通过本地服务器打开。</p>
-      </div>
-    );
-  if (!universe)
-    return (
-      <div className="loading">
-        <div className="loading-orbit" />
-        正在点亮你的色彩宇宙…
+      <div className="loading" role={fatal ? "alert" : "status"}>
+        {fatal ? (
+          <>
+            <h1>本机演示暂时无法加载</h1>
+            <p>{fatal}</p>
+            <p>请检查素材连接和浏览器本地存储权限。</p>
+            <button onClick={() => setBootAttempt((n) => n + 1)}>
+              重新加载本机演示
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="loading-orbit" />
+            正在点亮你的色彩宇宙…
+          </>
+        )}
       </div>
     );
   return (
@@ -1042,7 +1056,23 @@ export function App() {
             <h1>请先登录课堂账户</h1>
           </main>
         ))}
-      {route === "universe" && (
+      {route === "universe" && !universe && (
+        <main className="loading">
+          <h1>色彩星球课堂</h1>
+          <p>使用右上角「登录」进入班级。云端课堂可以独立使用。</p>
+          {fatal ? (
+            <div role="alert">
+              <p>本机视觉演示素材暂时无法加载：{fatal}</p>
+              <button onClick={() => setBootAttempt((n) => n + 1)}>
+                重新加载本机演示
+              </button>
+            </div>
+          ) : (
+            <p role="status">正在加载本机视觉演示…</p>
+          )}
+        </main>
+      )}
+      {route === "universe" && universe && (
         <UniverseView
           canUseTeacherTools={canUseTeacherTools}
           workspace={workspace}
@@ -1225,7 +1255,7 @@ export function App() {
             })
           }
           addEffect={addEffect}
-          universeEntry={universe.entries.find(
+          universeEntry={universe?.entries.find(
             (e) => e.planetId === doc.planetId,
           )}
           canEditMotion={
@@ -1237,7 +1267,7 @@ export function App() {
           }
         />
       )}
-      {route === "teacher" && canUseTeacherTools && (
+      {route === "teacher" && canUseTeacherTools && universe && (
         <TeacherView
           workspace={workspace}
           planets={planets}

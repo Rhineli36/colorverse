@@ -1,8 +1,25 @@
+import { PlanetExplorer } from "./PlanetExplorer";
+import {
+  KnowledgePanel,
+  IntentFields,
+  TaskPrompt,
+  TaskSettings,
+  WorkIntentView,
+  ObservationFields,
+  blankIntent,
+  blankObservation,
+  validObservation,
+} from "./LearningPanels";
 import { CloudUniverse } from "./CloudUniverse";
 import { CloudWorkReview } from "./CloudWorkReview";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
+  LearningTaskSettingSchema,
+  WorkLearningSchema,
+  type LearningTaskSetting,
+  type LearningIntent,
+  type PeerObservation,
   GrowthPresetIds,
   GrowthPresets,
   CloudPlanetDocumentSchema,
@@ -19,6 +36,8 @@ import {
   CloudPlanetAppearance,
   CloudPlanetOrb,
   usePlanetImage,
+  usePrivateImage,
+  retryPlanetImages,
   type AppearanceSection,
 } from "./CloudPlanetAppearance";
 import { CloudStudentGuide, CloudAtmosphere } from "./CloudStudentGuide";
@@ -30,6 +49,7 @@ const Params = z.object({
 });
 const Work = z.object({
   id: z.uuid(),
+  learning: WorkLearningSchema.nullable().optional(),
   title: z.string(),
   description: z.string(),
   presetId: z.enum(GrowthPresetIds),
@@ -57,34 +77,29 @@ const Planet = z.object({
 const Gallery = z.object({ actorId: z.uuid(), planets: z.array(Planet) });
 type WorkData = z.infer<typeof Work>;
 function PrivateImage({ classId, id }: { classId: string; id: string }) {
-  const [url, setUrl] = useState(""),
-    [error, setError] = useState(false);
-  useEffect(() => {
-    let active = true,
-      objectUrl = "";
-    setUrl("");
-    setError(false);
-    void classroomRequest(`classes/${classId}/works/${id}/image`)
-      .then((r) => r.blob())
-      .then((blob) => {
-        if (active) {
-          objectUrl = URL.createObjectURL(blob);
-          setUrl(objectUrl);
-        }
-      })
-      .catch(() => {
-        if (active) setError(true);
-      });
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [classId, id]);
-  return url ? (
-    <img src={url} alt="提交的展示作品" />
+  const image = usePrivateImage(`classes/${classId}/works/${id}/image`, id);
+  const [zoom, setZoom] = useState(false);
+  useEffect(() => setZoom(false), [id]);
+  return image.url ? (
+    <button
+      className={`work-image-button ${zoom ? "zoomed" : ""}`}
+      aria-label={zoom ? "还原作品图片" : "放大作品图片"}
+      onClick={() => setZoom((v) => !v)}
+    >
+      <img src={image.url} alt="提交的展示作品" />
+    </button>
   ) : (
     <p className="cloud-image-loading">
-      {error ? "图片读取失败，请重新打开作品" : "正在读取作品…"}
+      {image.error ? (
+        <>
+          图片读取失败{" "}
+          <button type="button" onClick={retryPlanetImages}>
+            重新读取作品图片
+          </button>
+        </>
+      ) : (
+        "正在读取作品…"
+      )}
     </p>
   );
 }
@@ -117,6 +132,8 @@ export function CloudGallery({
     ),
     [data, setData] = useState<z.infer<typeof Gallery> | null>(null),
     [planetId, setPlanetId] = useState(initialPlanetId ?? ""),
+    [exploring, setExploring] = useState(Boolean(initialPlanetId)),
+    [mysteryOpen, setMysteryOpen] = useState(false),
     [work, setWork] = useState<WorkData | null>(null),
     [confirmation, setConfirmation] = useState<{
       kind: "work" | "interaction";
@@ -131,6 +148,13 @@ export function CloudGallery({
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [uploadOpen, setUploadOpen] = useState(false),
+    [tasks, setTasks] = useState<LearningTaskSetting[]>([]),
+    [taskPending, setTaskPending] = useState(false),
+    [taskId, setTaskId] = useState(""),
+    [intent, setIntent] = useState<LearningIntent>(blankIntent),
+    [comparisonGroup, setComparisonGroup] = useState(""),
+    [variantLabel, setVariantLabel] = useState(""),
+    [observation, setObservation] = useState<PeerObservation>(blankObservation),
     [title, setTitle] = useState(""),
     [description, setDescription] = useState(""),
     [settingsOpen, setSettingsOpen] = useState(false),
@@ -149,18 +173,50 @@ export function CloudGallery({
         id: string;
         kind: string;
         content: string;
+        learning_feedback?: PeerObservation | null;
         display_name: string;
         work_id: string | null;
         own?: boolean;
         can_remove?: boolean;
       }[]
     >([]);
+  const detailVisible = Boolean(work && !editing);
+  useEffect(() => {
+    if (!detailVisible) return;
+    const previous = document.activeElement as HTMLElement | null,
+      x = window.scrollX,
+      y = window.scrollY;
+    const dialog = document.querySelector<HTMLElement>(
+      '[aria-label="云端作品展示"]',
+    );
+    const frame = requestAnimationFrame(() =>
+      dialog
+        ?.querySelector<HTMLButtonElement>("button")
+        ?.focus({ preventScroll: true }),
+    );
+    return () => {
+      cancelAnimationFrame(frame);
+      requestAnimationFrame(() => {
+        if (previous?.isConnected) {
+          previous.focus({ preventScroll: true });
+          window.scrollTo(x, y);
+        }
+      });
+    };
+  }, [detailVisible]);
   const generation = useRef(0),
     requestId = useRef(crypto.randomUUID()),
     stage = useRef<HTMLDivElement>(null),
     settings = useRef<HTMLDivElement>(null),
     social = useRef<HTMLElement>(null);
   const pending =
+    taskPending ||
+    Boolean(
+      observation.visualEvidence ||
+      observation.suggestion ||
+      observation.customMood ||
+      observation.perceivedMoods.length,
+    ) ||
     busy ||
     editing ||
     uploadOpen ||
@@ -177,8 +233,18 @@ export function CloudGallery({
       await (await classroomRequest(`classes/${classId}/planets`)).json(),
     );
     setData(result);
-    if (select) setPlanetId(select);
-    else
+    try {
+      const v = await (
+        await classroomRequest(`classes/${classId}/learning-tasks`)
+      ).json();
+      setTasks(v.tasks.map((t: unknown) => LearningTaskSettingSchema.parse(t)));
+    } catch {
+      /* Free exhibition remains available; submit rechecks the selected task on the server. */
+    }
+    if (select) {
+      setPlanetId(select);
+      setExploring(true);
+    } else
       setPlanetId((current) =>
         result.planets.some((p) => p.id === current)
           ? current
@@ -199,6 +265,12 @@ export function CloudGallery({
     setGuide(null);
     setGuideError(false);
     setWork(null);
+    setTasks([]);
+    setTaskId("");
+    setIntent(blankIntent());
+    setComparisonGroup("");
+    setVariantLabel("");
+    setObservation(blankObservation());
     setSettingsOpen(false);
     setPlanetBirth("");
     setNotice("");
@@ -209,6 +281,11 @@ export function CloudGallery({
         if (active && current === generation.current) {
           const result = Gallery.parse(value);
           setData(result);
+          setExploring(
+            Boolean(initialPlanetId) ||
+              memberships.find((m) => m.classId === classId)?.role ===
+                "student",
+          );
           setPlanetId(
             initialPlanetId ??
               result.planets.find(
@@ -233,6 +310,23 @@ export function CloudGallery({
       generation.current++;
     };
   }, [classId, session.identity.id, initialPlanetId]);
+  useEffect(() => {
+    let active = true;
+    void classroomRequest(`classes/${classId}/learning-tasks`)
+      .then((r) => r.json())
+      .then((v) => {
+        if (active)
+          setTasks(
+            v.tasks.map((t: unknown) => LearningTaskSettingSchema.parse(t)),
+          );
+      })
+      .catch((e) => {
+        if (active) setNotice(`教学任务暂不可用：${e.message}；仍可自由展示。`);
+      });
+    return () => {
+      active = false;
+    };
+  }, [classId, session.identity.id]);
   const selected = data?.planets.find((p) => p.id === planetId),
     owned =
       selected?.owner_enrollment_id === data?.actorId &&
@@ -336,7 +430,10 @@ export function CloudGallery({
       if (event.key !== "Escape" || busy || reviewPending) return;
       if (confirmation) setConfirmation(null);
       else if (uploadOpen) setUploadOpen(false);
-      else if (work && !editing) setWork(null);
+      else if (work && !editing) {
+        setWork(null);
+        setObservation(blankObservation());
+      }
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -353,7 +450,11 @@ export function CloudGallery({
       setBusy(false);
     }
   };
-  const interact = (kind: "like" | "emoji" | "comment", content: string) =>
+  const interact = (
+    kind: "like" | "emoji" | "comment",
+    content: string,
+    observation?: PeerObservation,
+  ) =>
     void perform(async () => {
       if (!selected) return;
       await classroomRequest(`classes/${classId}/interactions`, {
@@ -364,6 +465,7 @@ export function CloudGallery({
           workId: work?.id ?? null,
           kind,
           content,
+          ...(observation ? { observation } : {}),
           requestId: crypto.randomUUID(),
         }),
       });
@@ -371,6 +473,7 @@ export function CloudGallery({
         `classes/${classId}/interactions?planetId=${planetId}`,
       );
       setInteractions((await response.json()).interactions);
+      if (observation) setObservation(blankObservation());
       if (kind === "comment")
         setComment((current) =>
           current.trim() === content.trim() ? "" : current,
@@ -410,6 +513,26 @@ export function CloudGallery({
       <p>
         <strong>{i.display_name}</strong>{" "}
         {i.kind === "like" ? `♡ 点赞了${subject}` : i.content}
+        {i.learning_feedback && (
+          <>
+            <br />
+            感受：
+            {[
+              ...i.learning_feedback.perceivedMoods,
+              i.learning_feedback.customMood,
+            ]
+              .filter(Boolean)
+              .join("、")}
+            <br />
+            画面依据：{i.learning_feedback.visualEvidence}
+            {i.learning_feedback.suggestion && (
+              <>
+                <br />
+                建议：{i.learning_feedback.suggestion}
+              </>
+            )}
+          </>
+        )}
       </p>
       {i.can_remove && (
         <button
@@ -473,6 +596,7 @@ export function CloudGallery({
           : data?.planets.find((p) => p.owner_enrollment_id !== data.actorId);
       if (!peer) return;
       setPlanetId(peer.id);
+      setExploring(true);
       requestAnimationFrame(() => {
         (id === "visit" ? stage.current : social.current)?.scrollIntoView({
           behavior: "smooth",
@@ -486,6 +610,7 @@ export function CloudGallery({
       return;
     }
     setPlanetId(myPlanet.id);
+    setExploring(true);
     if (id === "work") {
       requestId.current = crypto.randomUUID();
       setTitle("");
@@ -517,7 +642,9 @@ export function CloudGallery({
     }
   };
   return (
-    <main className="classroom-main cloud-gallery">
+    <main
+      className={`classroom-main cloud-gallery ${exploring ? "scene-exploring" : ""}`}
+    >
       <header className="classroom-heading">
         <div>
           <p className="eyebrow">COLORVERSE · CLASSROOM GALLERY</p>
@@ -562,10 +689,28 @@ export function CloudGallery({
           </button>
         </div>
       </header>
+      <button className="mystery-entry" onClick={() => setMysteryOpen(true)}>
+        色彩的奥秘 ✧
+      </button>
+      {staff && (
+        <TaskSettings
+          key={`${session.identity.id}:${classId}`}
+          classId={classId}
+          onTasks={setTasks}
+          onPendingChange={setTaskPending}
+        />
+      )}
       {notice && (
         <p role="status" className="cloud-notice">
           {notice}
         </p>
+      )}
+      {data?.planets.some(
+        (p) => p.document.media.exterior || p.document.media.interior,
+      ) && (
+        <button className="small" onClick={retryPlanetImages}>
+          重新读取星球图片
+        </button>
       )}
       {student && data && !myPlanet && (
         <section className="cloud-create">
@@ -652,6 +797,8 @@ export function CloudGallery({
                     aria-label={`查看互动亮点：${p.display_name}`}
                     onClick={() => {
                       setPlanetId(p.id);
+                      setExploring(true);
+                      setExploring(true);
                       setSettingsOpen(false);
                       requestAnimationFrame(() =>
                         stage.current?.scrollIntoView({
@@ -689,6 +836,7 @@ export function CloudGallery({
           onSelect={(id) => {
             if (pending) return;
             setPlanetId(id);
+            setExploring(true);
             setWork(null);
             setSettingsOpen(false);
             requestAnimationFrame(() =>
@@ -725,9 +873,19 @@ export function CloudGallery({
           </button>
         ))}
       </div>
-      {selected && (
+      {selected && exploring && (
         <>
           <div className="cloud-room-heading">
+            <div className="row-buttons">
+              <button disabled={pending} onClick={() => setExploring(false)}>
+                ← 返回班级宇宙
+              </button>
+              {onBack && (
+                <button disabled={pending} onClick={onBack}>
+                  返回班级统计
+                </button>
+              )}
+            </div>
             <div>
               <h2>{selected.document.metadata.name}</h2>
               {selected.document.metadata.summary && (
@@ -834,157 +992,175 @@ export function CloudGallery({
               />
             </div>
           )}
+          {background.loading && <p role="status">正在读取星球内部背景…</p>}
           {background.error && (
-            <p role="status">内部背景读取失败，请刷新作品重试。</p>
+            <p role="status">
+              内部背景读取失败，请点击「重新读取星球图片」重试。
+            </p>
           )}
-          <div
-            className={`cloud-room ${planetBirth === selected.id ? "planet-born" : ""}`}
-            ref={stage}
-            aria-label="云端星球内部"
-            style={{ backgroundColor: selected.document.color }}
+          <PlanetExplorer
+            sceneId={`${session.identity.id}:${selected.id}`}
+            disabled={editing}
           >
             <div
-              className="cloud-room-scenery"
-              style={{
-                filter: `brightness(${selected.document.brightness}) saturate(${selected.document.saturation})`,
-              }}
+              className={`cloud-room ${planetBirth === selected.id ? "planet-born" : ""}`}
+              ref={stage}
+              aria-label="云端星球内部"
+              style={{ backgroundColor: selected.document.color }}
             >
-              {background.url ? (
-                <img
-                  className="cloud-room-background"
-                  src={background.url}
-                  alt="星球内部背景"
-                />
-              ) : (
-                <>
-                  <div className="cloud-room-moon" />
-                  <div className="cloud-room-land" />
-                </>
-              )}
               <div
-                className="cloud-room-tint"
-                style={{ backgroundColor: selected.document.color }}
-              />
-            </div>
-            <CloudAtmosphere kind={selected.document.atmosphere} />
-            {planetBirth === selected.id && (
-              <div className="cloud-planet-birth" role="status">
-                <CloudPlanetOrb
-                  classId={classId}
-                  id={selected.id}
-                  document={selected.document}
+                className="cloud-room-scenery"
+                style={{
+                  filter: `brightness(${selected.document.brightness}) saturate(${selected.document.saturation})`,
+                }}
+              >
+                {background.url ? (
+                  <img
+                    className="cloud-room-background"
+                    src={background.url}
+                    alt="星球内部背景"
+                  />
+                ) : (
+                  <>
+                    <div className="cloud-room-moon" />
+                    <div className="cloud-room-land" />
+                  </>
+                )}
+                <div
+                  className="cloud-room-tint"
+                  style={{ backgroundColor: selected.document.color }}
                 />
-                <h3>{selected.document.metadata.name} · 为你诞生</h3>
-                <p>从这里开始，留下你的色彩。</p>
               </div>
-            )}
-            {selected.works
-              .filter((w) => !w.withdrawn)
-              .map((w, index) => {
-                const current = editing && draft?.id === w.id ? draft : w;
-                return (
-                  <button
-                    key={w.id}
-                    className={`cloud-growth ${birth === w.id ? "born" : ""} motion-${current.params.motion} ${editing && draft?.id === w.id ? "editing" : ""}`}
-                    aria-label={`查看作品 ${w.title}`}
-                    style={{
-                      left: `${current.params.x * 100}%`,
-                      top: `${current.params.y * 100}%`,
-                      width: 110 * current.params.size,
-                      height: 110 * current.params.size,
-                      animationDelay:
-                        birth === w.id ? "0s" : `${index * 0.13}s`,
-                    }}
-                    onClick={() => {
-                      if (editing) return;
-                      setWork(w);
-                      setDraft(null);
-                    }}
-                    onPointerDown={(e) => {
-                      if (!editing || draft?.id !== w.id || busy) return;
-                      e.currentTarget.setPointerCapture(e.pointerId);
-                    }}
-                    onPointerMove={(e) => {
-                      if (
-                        !editing ||
-                        draft?.id !== w.id ||
-                        !e.currentTarget.hasPointerCapture(e.pointerId)
-                      )
-                        return;
-                      const bounds = stage.current?.getBoundingClientRect();
-                      if (bounds)
-                        setDraft({
-                          ...draft,
-                          params: {
-                            ...draft.params,
-                            x: Math.max(
-                              0.05,
-                              Math.min(
-                                0.95,
-                                (e.clientX - bounds.left) / bounds.width,
-                              ),
-                            ),
-                            y: Math.max(
-                              0.1,
-                              Math.min(
-                                0.9,
-                                (e.clientY - bounds.top) / bounds.height,
-                              ),
-                            ),
-                          },
-                        });
-                    }}
-                    onKeyDown={(e) => {
-                      if (!editing || draft?.id !== w.id) return;
-                      const d = {
-                        ArrowLeft: [-0.01, 0],
-                        ArrowRight: [0.01, 0],
-                        ArrowUp: [0, -0.01],
-                        ArrowDown: [0, 0.01],
-                      }[e.key];
-                      if (d) {
-                        e.preventDefault();
-                        setDraft({
-                          ...draft,
-                          params: {
-                            ...draft.params,
-                            x: Math.max(
-                              0.05,
-                              Math.min(0.95, draft.params.x + d[0]),
-                            ),
-                            y: Math.max(
-                              0.1,
-                              Math.min(0.9, draft.params.y + d[1]),
-                            ),
-                          },
-                        });
-                      }
-                    }}
-                  >
-                    <GrowthPresetPreview
-                      id={current.presetId}
-                      color={current.color}
-                    />
-                    <span>{w.title}</span>
-                  </button>
-                );
-              })}
-            {!selected.works.some((w) => !w.withdrawn) && (
-              <div className="cloud-room-empty">
-                ✧
-                <p>
+              {!selected.document.media.interior && !background.loading && (
+                <span className="scene-default-note">
+                  默认内部场景
                   {owned
-                    ? "上传第一件作品，让星球开始生长。"
-                    : "这颗星球正在等待第一件作品。"}
-                </p>
-              </div>
-            )}
-            {birth && (
-              <div className="cloud-birth-caption">
-                一件作品，长成了一束新的光。
-              </div>
-            )}
-          </div>
+                    ? " · 在「编辑星球外貌与背景」中上传自己的背景"
+                    : " · 作者尚未设置背景"}
+                </span>
+              )}
+              <CloudAtmosphere kind={selected.document.atmosphere} />
+              {planetBirth === selected.id && (
+                <div className="cloud-planet-birth" role="status">
+                  <CloudPlanetOrb
+                    classId={classId}
+                    id={selected.id}
+                    document={selected.document}
+                  />
+                  <h3>{selected.document.metadata.name} · 为你诞生</h3>
+                  <p>从这里开始，留下你的色彩。</p>
+                </div>
+              )}
+              {selected.works
+                .filter((w) => !w.withdrawn)
+                .map((w, index) => {
+                  const current = editing && draft?.id === w.id ? draft : w;
+                  return (
+                    <button
+                      key={w.id}
+                      className={`cloud-growth ${birth === w.id ? "born" : ""} motion-${current.params.motion} ${editing && draft?.id === w.id ? "editing" : ""}`}
+                      data-work-id={w.id}
+                      title={w.title}
+                      aria-label={`查看作品 ${w.title}`}
+                      style={{
+                        left: `${current.params.x * 100}%`,
+                        top: `${current.params.y * 100}%`,
+                        width: 110 * current.params.size,
+                        height: 110 * current.params.size,
+                        animationDelay:
+                          birth === w.id ? "0s" : `${index * 0.13}s`,
+                      }}
+                      onClick={() => {
+                        if (editing) return;
+                        setWork(w);
+                        setDraft(null);
+                      }}
+                      onPointerDown={(e) => {
+                        if (!editing || draft?.id !== w.id || busy) return;
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                      }}
+                      onPointerMove={(e) => {
+                        if (
+                          !editing ||
+                          draft?.id !== w.id ||
+                          !e.currentTarget.hasPointerCapture(e.pointerId)
+                        )
+                          return;
+                        const bounds = stage.current?.getBoundingClientRect();
+                        if (bounds)
+                          setDraft({
+                            ...draft,
+                            params: {
+                              ...draft.params,
+                              x: Math.max(
+                                0.05,
+                                Math.min(
+                                  0.95,
+                                  (e.clientX - bounds.left) / bounds.width,
+                                ),
+                              ),
+                              y: Math.max(
+                                0.1,
+                                Math.min(
+                                  0.9,
+                                  (e.clientY - bounds.top) / bounds.height,
+                                ),
+                              ),
+                            },
+                          });
+                      }}
+                      onKeyDown={(e) => {
+                        if (!editing || draft?.id !== w.id) return;
+                        const d = {
+                          ArrowLeft: [-0.01, 0],
+                          ArrowRight: [0.01, 0],
+                          ArrowUp: [0, -0.01],
+                          ArrowDown: [0, 0.01],
+                        }[e.key];
+                        if (d) {
+                          e.preventDefault();
+                          setDraft({
+                            ...draft,
+                            params: {
+                              ...draft.params,
+                              x: Math.max(
+                                0.05,
+                                Math.min(0.95, draft.params.x + d[0]),
+                              ),
+                              y: Math.max(
+                                0.1,
+                                Math.min(0.9, draft.params.y + d[1]),
+                              ),
+                            },
+                          });
+                        }
+                      }}
+                    >
+                      <GrowthPresetPreview
+                        id={current.presetId}
+                        color={current.color}
+                      />
+                      <span>{w.title}</span>
+                    </button>
+                  );
+                })}
+              {!selected.works.some((w) => !w.withdrawn) && (
+                <div className="cloud-room-empty">
+                  ✧
+                  <p>
+                    {owned
+                      ? "上传第一件作品，让星球开始生长。"
+                      : "这颗星球正在等待第一件作品。"}
+                  </p>
+                </div>
+              )}
+              {birth && (
+                <div className="cloud-birth-caption">
+                  一件作品，长成了一束新的光。
+                </div>
+              )}
+            </div>
+          </PlanetExplorer>
           {!owned && !work && (
             <section className="cloud-social" ref={social}>
               <strong>为这颗星球留下回应</strong>
@@ -1024,24 +1200,29 @@ export function CloudGallery({
               </button>
             </section>
           )}
-          <section className="cloud-work-list" aria-label="云端展示作品">
-            {selected.works
-              .filter((w) => !w.withdrawn)
-              .map((w) => (
-                <button
-                  key={w.id}
-                  onClick={() => {
-                    if (!editing) setWork(w);
-                  }}
-                >
-                  <GrowthPresetPreview id={w.presetId} color={w.color} />
-                  <strong>{w.title}</strong>
-                  <small>
-                    {new Date(w.createdAt).toLocaleDateString("zh-CN")}
-                  </small>
-                </button>
-              ))}
-          </section>
+          <details className="cloud-work-list-collapsed">
+            <summary>
+              作品目录 · {selected.works.filter((w) => !w.withdrawn).length} 件
+            </summary>
+            <section className="cloud-work-list" aria-label="云端展示作品">
+              {selected.works
+                .filter((w) => !w.withdrawn)
+                .map((w) => (
+                  <button
+                    key={w.id}
+                    onClick={() => {
+                      if (!editing) setWork(w);
+                    }}
+                  >
+                    <GrowthPresetPreview id={w.presetId} color={w.color} />
+                    <strong>{w.title}</strong>
+                    <small>
+                      {new Date(w.createdAt).toLocaleDateString("zh-CN")}
+                    </small>
+                  </button>
+                ))}
+            </section>
+          </details>
           {(owned || staff) && selected.works.some((w) => w.withdrawn) && (
             <details className="cloud-withdrawn-list">
               <summary>
@@ -1182,6 +1363,33 @@ export function CloudGallery({
                 {notice}
               </p>
             )}
+            <label>
+              选择教学任务
+              <select
+                aria-label="选择教学任务"
+                disabled={busy}
+                value={taskId}
+                onChange={(e) => {
+                  setTaskId(e.target.value);
+                  setComparisonGroup("");
+                }}
+              >
+                <option value="">自由展示</option>
+                {tasks
+                  .filter((t) => t.published)
+                  .map((t) => (
+                    <option key={t.taskId} value={t.taskId}>
+                      {t.taskId} ·{" "}
+                      {t.taskId === "T01"
+                        ? "一颗星球，两种心情"
+                        : t.taskId === "T02"
+                          ? "相近与对比"
+                          : "给星球换一个季节"}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <TaskPrompt id={taskId} />
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1190,15 +1398,31 @@ export function CloudGallery({
                   if (file.size > 8388608) throw new Error("图片最多 8 MB");
                   const query = new URLSearchParams({
                     requestId: requestId.current,
-                    title,
-                    description,
                   });
+                  const form = new FormData();
+                  form.set("image", file);
+                  const groupId = taskId
+                    ? comparisonGroup || crypto.randomUUID()
+                    : null;
+                  if (groupId && !comparisonGroup) setComparisonGroup(groupId);
+                  form.set(
+                    "metadata",
+                    JSON.stringify({
+                      title,
+                      description,
+                      learning: {
+                        ...intent,
+                        taskId: taskId || null,
+                        comparisonGroupId: groupId,
+                        variantLabel,
+                      },
+                    }),
+                  );
                   const response = await classroomRequest(
                     `classes/${classId}/works?${query}`,
                     {
                       method: "POST",
-                      body: file,
-                      headers: { "Content-Type": file.type },
+                      body: form,
                     },
                   );
                   const result = await response.json();
@@ -1240,6 +1464,61 @@ export function CloudGallery({
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </label>
+              <IntentFields
+                value={intent}
+                onChange={setIntent}
+                disabled={busy}
+              />
+              {taskId && (
+                <>
+                  <label>
+                    比较组
+                    <select
+                      aria-label="比较组"
+                      value={comparisonGroup}
+                      disabled={busy}
+                      onChange={(e) => setComparisonGroup(e.target.value)}
+                    >
+                      <option value="">新建比较组</option>
+                      {Array.from(
+                        new Set(
+                          myPlanet?.works
+                            .filter((w) => w.learning?.taskId === taskId)
+                            .map((w) => w.learning?.comparisonGroupId)
+                            .filter((x): x is string => Boolean(x)) ?? [],
+                        ),
+                      ).map((id) => (
+                        <option key={id} value={id}>
+                          关联：
+                          {
+                            myPlanet?.works.find(
+                              (w) => w.learning?.comparisonGroupId === id,
+                            )?.title
+                          }
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    版本标记
+                    <input
+                      maxLength={40}
+                      value={variantLabel}
+                      disabled={busy}
+                      onChange={(e) => setVariantLabel(e.target.value)}
+                      placeholder="例如：宁静版 / 活跃版"
+                    />
+                  </label>
+                  <p className="muted">
+                    {tasks.find((t) => t.taskId === taskId)?.requireExplanation
+                      ? "本任务要求氛围与理由。"
+                      : "说明可选。"}{" "}
+                    {tasks.find((t) => t.taskId === taskId)?.showIntentToPeers
+                      ? "同伴可查看作者意图。"
+                      : "同伴先观察，作者意图仅本人和教师可见。"}
+                  </p>
+                </>
+              )}
               <button
                 className="primary"
                 disabled={busy || !file || !title.trim()}
@@ -1264,6 +1543,7 @@ export function CloudGallery({
               onClick={() => {
                 setWork(null);
                 setComment("");
+                setObservation(blankObservation());
               }}
             >
               ×
@@ -1271,6 +1551,31 @@ export function CloudGallery({
             <PrivateImage classId={classId} id={work.id} />
             <h2>{work.title}</h2>
             <p>{work.description}</p>
+            <WorkIntentView learning={work.learning} />
+            {work.learning?.comparisonGroupId && (
+              <div className="row-buttons">
+                {selected?.works
+                  .filter(
+                    (w) =>
+                      !w.withdrawn &&
+                      w.learning?.comparisonGroupId ===
+                        work.learning?.comparisonGroupId &&
+                      w.id !== work.id,
+                  )
+                  .map((w) => (
+                    <button
+                      key={w.id}
+                      disabled={busy || reviewPending}
+                      onClick={() => {
+                        setWork(w);
+                        setObservation(blankObservation());
+                      }}
+                    >
+                      查看同组：{w.learning?.variantLabel || w.title}
+                    </button>
+                  ))}
+              </div>
+            )}
             <p className="muted">
               {selected?.display_name} ·{" "}
               {new Date(work.createdAt).toLocaleDateString("zh-CN")}
@@ -1342,7 +1647,14 @@ export function CloudGallery({
               )}
             </div>
             {!owned && !work.withdrawn && (
-              <section className="cloud-social">
+              <section
+                className="cloud-social work-community"
+                aria-label="同学互动"
+              >
+                <h3>点赞、表情与留言</h3>
+                <p className="muted">
+                  以下互动保存在当前班级，作者和同学可重新打开查看。
+                </p>
                 <button
                   disabled={busy}
                   onClick={() => toggleReaction("like", "")}
@@ -1365,13 +1677,40 @@ export function CloudGallery({
                     {emoji}
                   </button>
                 ))}
-                <input
-                  aria-label="作品留言"
-                  value={comment}
-                  maxLength={500}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="这件作品让你想到了什么？"
-                />
+                {student && work.learning?.policy.allowPeerReview !== false && (
+                  <details className="guided-peer-feedback">
+                    <summary>写一条有依据的配色反馈（可选）</summary>
+                    <ObservationFields
+                      value={observation}
+                      onChange={setObservation}
+                      disabled={busy}
+                    />
+                    <button
+                      disabled={busy || !validObservation(observation)}
+                      onClick={() =>
+                        interact("comment", "教学观察反馈", observation)
+                      }
+                    >
+                      提交观察反馈
+                    </button>
+                    <button
+                      disabled={busy}
+                      onClick={() => setObservation(blankObservation())}
+                    >
+                      清除反馈草稿
+                    </button>
+                  </details>
+                )}
+                <label className="quick-peer-comment">
+                  写下你的感受
+                  <input
+                    aria-label="作品留言"
+                    value={comment}
+                    maxLength={500}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="这件作品让你想到了什么？"
+                  />
+                </label>
                 <button
                   disabled={busy || !comment.trim()}
                   onClick={() => interact("comment", comment)}
@@ -1380,9 +1719,35 @@ export function CloudGallery({
                 </button>
               </section>
             )}
-            {interactions
-              .filter((i) => i.work_id === work.id)
-              .map((i) => interactionRow(i, "作品"))}
+            <section className="work-community" aria-label="作品互动记录">
+              <h3>这件作品收到的回应</h3>
+              {!interactions.some((i) => i.work_id === work.id) && (
+                <p>还没有回应。邀请同学进入这颗星球，留下他们的观察。</p>
+              )}
+              {interactions
+                .filter((i) => i.work_id === work.id)
+                .map((i) => interactionRow(i, "作品"))}
+            </section>
+          </section>
+        </div>
+      )}
+      {mysteryOpen && (
+        <div className="cloud-modal-backdrop">
+          <section
+            className="cloud-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="色彩的奥秘"
+          >
+            <button
+              className="modal-close"
+              aria-label="关闭色彩的奥秘"
+              onClick={() => setMysteryOpen(false)}
+            >
+              ×
+            </button>
+            <h2>色彩的奥秘</h2>
+            <KnowledgePanel expanded />
           </section>
         </div>
       )}

@@ -23,9 +23,9 @@ export function CloudStudentGuide({
   const [expanded, setExpanded] = useState(false);
   const [open, setOpen] = useState(() => {
     try {
-      return localStorage.getItem(storageKey) !== "closed";
+      return localStorage.getItem(storageKey) === "open";
     } catch {
-      return true;
+      return false;
     }
   });
   const lastRequest = useRef(openRequest);

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MotionSchema } from "./motion";
+import { LearningIntentSchema } from "./learning";
 
 export const DefaultCloudMotion = {
   version: "1.0.0",
@@ -19,6 +20,7 @@ export const CloudPlanetPresets = [
 ] as const;
 
 export const CloudPlanetAppearanceInput = z.strictObject({
+  learningIntent: LearningIntentSchema.optional(),
   name: z.string().trim().min(1).max(60),
   color: z.string().regex(/^#[a-f0-9]{6}$/i),
   skin: z.number().int().min(0).max(5).default(0),
@@ -31,6 +33,7 @@ export const CloudPlanetAppearanceInput = z.strictObject({
   practice: z.literal("tone").optional(),
 });
 export const CloudPlanetDocumentSchema = z.object({
+  learningIntent: LearningIntentSchema.nullable().optional(),
   metadata: z.object({ name: z.string(), summary: z.string().default("") }),
   color: z.string().default("#82c9c7"),
   skin: z.number().int().min(0).max(5).default(0),

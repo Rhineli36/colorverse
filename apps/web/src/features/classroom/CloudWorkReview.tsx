@@ -153,6 +153,7 @@ export function CloudWorkReview({
       )}
       {staff && ready && (
         <div className="cloud-review-form">
+          <p className="muted">教学参考：色彩关系的理解、氛围表达、说明依据、比较与反思。总分仍为 100 分，系统不自动评分。</p>
           <label>
             教师评分（100 分制，可留空）
             <input

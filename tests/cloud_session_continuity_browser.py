@@ -72,6 +72,8 @@ with sync_playwright() as p:
                     'skin': 0, 'revision': 0, 'media': {}}, 'works': [{'id': work_id,
                     'title': '续期测试作品', 'description': '', 'presetId': 'crystal', 'color': '#82c9c7',
                     'createdAt': '2026-10-12T00:00:00Z', 'params': {}, 'revision': 0}]}]})
+        elif url.endswith('/learning-tasks'):
+            route.fulfill(json={'tasks': []})
         elif url.endswith('/guide'):
             route.fulfill(json={'completed': ['work'], 'hasPeers': False})
         elif '/interactions?' in url:

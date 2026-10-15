@@ -1,5 +1,7 @@
 # COLORVERSE（色彩宇宙）设计文档
 
+当前参赛版本请优先阅读 [47 参赛运行与打包说明](47-competition-run-and-package.md)。以下阶段规划和验收记录按当时版本理解，不能用旧的“待接入”描述判断现在的实现状态。
+
 版本：0.1 设计基线 · 日期：2026-10-09 · 当前状态：P1a核心已实现、P2作业本机闭环已完成；正式在线课堂、P0实样/设备及P1完整验收待完成。
 
 实施更新：2026-10-09 已开始并完成 P1a 核心闭环实现；以下规划记录作为设计历史保留，当前功能与实际测试结果请读 [10-implementation-progress.md](10-implementation-progress.md)。
@@ -83,3 +85,7 @@
 - [45 · 班级演示与真实云端运行](45-classroom-demo-and-shared-motion.md)
 
 - [46 · 云端教师作品点评与评分](46-cloud-showcase-teacher-reviews.md)
+
+- [47 · 参赛运行方式与打包边界](47-competition-run-and-package.md)
+
+- [48 · 沉浸式星球与情感色卡验收](48-immersive-scenes-and-emotion-colors.md)

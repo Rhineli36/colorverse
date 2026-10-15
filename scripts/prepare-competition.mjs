@@ -1,3 +1,4 @@
+import { nextGrowthPlacement } from "@colorverse/domain";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
@@ -53,6 +54,10 @@ try {
       await writeFile(`${destination}/${image}`, preview);
       bytes += preview.length;
       works.push({
+        params: nextGrowthPlacement(
+          works.map((w) => w.params),
+          i + 1,
+        ),
         id: `demo-${i + 1}-work-${j + 1}`,
         title: work.title,
         image,

@@ -53,6 +53,9 @@ beforeAll(async () => {
   await db.exec(
     await readFile("apps/api/migrations/005-showcase-reviews.sql", "utf8"),
   );
+  await db.exec(
+    await readFile("apps/api/migrations/006-learning-context.sql", "utf8"),
+  );
   for (const id of ids.slice(0, 4))
     await db.query(
       "INSERT INTO users VALUES($1::uuid,$2,$1::uuid::text,'测试用户','active')",
@@ -1363,6 +1366,215 @@ describe("cloud teacher showcase reviews", () => {
       ).rejects.toThrow(/permission denied/i);
     } finally {
       await db.exec(`DROP OWNED BY ${role}; DROP ROLE ${role}`);
+    }
+  });
+});
+
+describe("cloud learning templates and evidence-based feedback", () => {
+  it("persists task association and intent, restricts editing and peer visibility, preserves real grading", async () => {
+    const call = async (
+      resource: string,
+      body: unknown,
+      user = ids[0],
+      method = "PUT",
+      cls = ids[5],
+    ) =>
+      handleShowcaseCloud(
+        request(resource, body, method),
+        env,
+        identity(user),
+        cls,
+        resource,
+        clientFactory,
+      );
+    const setting = {
+      taskId: "T01",
+      published: true,
+      requireExplanation: true,
+      allowPeerReview: true,
+      showIntentToPeers: false,
+      revision: 0,
+    };
+    await expect(call("learning-tasks", setting, ids[1])).rejects.toMatchObject(
+      { status: 403 },
+    );
+    await expect(call("learning-tasks", setting, ids[3])).rejects.toMatchObject(
+      { status: 403 },
+    );
+    expect(
+      (await (await call("learning-tasks", setting)).json()).tasks[0],
+    ).toMatchObject({ revision: 1, published: true });
+    await expect(call("learning-tasks", setting)).rejects.toMatchObject({
+      status: 409,
+    });
+    const bytes = await readFile("apps/web/public/demo/body-0.png");
+    const stored = vi.fn(async () => new Response("{}"));
+    vi.stubGlobal("fetch", stored);
+    const imageEnv = {
+      ...env,
+      IMAGES: {
+        input: () => ({
+          transform: () => ({
+            output: async () => ({ response: () => new Response(bytes) }),
+          }),
+        }),
+      },
+    };
+    const group = randomUUID();
+    const learning = {
+      taskId: "T01",
+      comparisonGroupId: group,
+      variantLabel: "宁静版",
+      intendedMoods: ["宁静"],
+      customMood: "",
+      paletteColors: ["#789abc"],
+      colorRationale: "蓝灰大面积与小面积暖色对照",
+    };
+    const upload = async (
+      learning: unknown,
+      user = ids[1],
+      req = randomUUID(),
+    ) => {
+      const form = new FormData();
+      form.set("image", new Blob([bytes], { type: "image/png" }), "demo.png");
+      form.set(
+        "metadata",
+        JSON.stringify({
+          title: "教学测试",
+          description: "隔离测试",
+          learning,
+        }),
+      );
+      return handleShowcaseCloud(
+        new Request(`https://app.test/works?requestId=${req}`, {
+          method: "POST",
+          body: form,
+        }),
+        imageEnv,
+        identity(user),
+        ids[5],
+        "works",
+        clientFactory,
+      );
+    };
+    let workId = "";
+    try {
+      await expect(
+        upload({ ...learning, colorRationale: "" }),
+      ).rejects.toMatchObject({ status: 400 });
+      expect(stored).not.toHaveBeenCalled();
+      const req = randomUUID(),
+        saved = await (await upload(learning, ids[1], req)).json();
+      workId = saved.id;
+      expect(saved.created).toBe(true);
+      expect((await (await upload(learning, ids[1], req)).json()).created).toBe(
+        false,
+      );
+      const gallery = async (user: string) =>
+        await (
+          await handleShowcaseCloud(
+            new Request("https://app.test/planets"),
+            env,
+            identity(user),
+            ids[5],
+            "planets",
+            clientFactory,
+          )
+        ).json();
+      const mine = (await gallery(ids[1])).planets
+        .find((p: { id: string }) => p.id === ids[11])
+        .works.find((w: { id: string }) => w.id === workId);
+      expect(mine.learning).toMatchObject(learning);
+      expect(GrowthPresetIds).toContain(mine.presetId);
+      const peer = (await gallery(ids[2])).planets
+        .find((p: { id: string }) => p.id === ids[11])
+        .works.find((w: { id: string }) => w.id === workId);
+      expect(peer.learning).toMatchObject({
+        intentHidden: true,
+        colorRationale: "",
+        intendedMoods: [],
+        paletteColors: [],
+      });
+      const teacher = (await gallery(ids[0])).planets
+        .find((p: { id: string }) => p.id === ids[11])
+        .works.find((w: { id: string }) => w.id === workId);
+      expect(teacher.learning.colorRationale).toBe(learning.colorRationale);
+      const observation = {
+        perceivedMoods: ["宁静"],
+        customMood: "",
+        visualEvidence: "大面积蓝灰，边缘明度低",
+        suggestion: "暖色点缀可以再集中",
+      };
+      const feedback = {
+        planetId: ids[11],
+        workId,
+        kind: "comment",
+        content: "教学观察反馈",
+        observation,
+        requestId: randomUUID(),
+      };
+      await call("interactions", feedback, ids[2], "POST");
+      await call("interactions", feedback, ids[2], "POST");
+      await expect(
+        call(
+          "interactions",
+          { ...feedback, requestId: randomUUID() },
+          ids[1],
+          "POST",
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      const comments = (
+        await (
+          await handleShowcaseCloud(
+            new Request(`https://app.test/interactions?planetId=${ids[11]}`),
+            env,
+            identity(ids[1]),
+            ids[5],
+            "interactions",
+            clientFactory,
+          )
+        ).json()
+      ).interactions.filter((i: { work_id: string }) => i.work_id === workId);
+      expect(comments).toHaveLength(1);
+      expect(comments[0].learning_feedback).toEqual(observation);
+      const resource = `works/${workId}/review`,
+        review = {
+          score: 86,
+          comment: "色彩依据清楚，可以继续比较点缀色位置",
+          revision: 0,
+          requestId: randomUUID(),
+        };
+      await expect(
+        call(resource, review, ids[2], "POST"),
+      ).rejects.toMatchObject({ status: 403 });
+      await call(resource, review, ids[0], "POST");
+      const result = await (
+        await handleShowcaseCloud(
+          new Request(`https://app.test/${resource}`),
+          env,
+          identity(ids[1]),
+          ids[5],
+          resource,
+          clientFactory,
+        )
+      ).json();
+      expect(result.review).toMatchObject({
+        score: 86,
+        comment: review.comment,
+        source: "teacher",
+      });
+      await db.query(
+        "INSERT INTO planets(id,owner_enrollment_id,document) VALUES($1,$2,$3)",
+        [ids[14], ids[9], JSON.stringify({ metadata: { name: "组权限测试" } })],
+      );
+      await expect(upload(learning, ids[2])).rejects.toMatchObject({
+        status: 403,
+      });
+    } finally {
+      // This entire isolated test database is closed by afterAll; immutable reviews stay intact.
+      await db.query("DELETE FROM planets WHERE id=$1", [ids[14]]);
+      await db.query("DELETE FROM learning_task_settings", []);
+      vi.unstubAllGlobals();
     }
   });
 });

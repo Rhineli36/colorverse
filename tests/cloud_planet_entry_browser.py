@@ -76,7 +76,8 @@ with sync_playwright() as p:
                 route.fulfill(json={'saved': True, 'id': doc['media'][kind]['id']})
             else:
                 route.fulfill(body=(ROOT / 'apps/web/public/demo/v2/body-2.webp').read_bytes(), content_type='image/webp')
-        elif path.endswith('/guide'):
+        elif path.endswith('/learning-tasks'):route.fulfill(json={'tasks':[]})
+  elif path.endswith('/guide'):
             if route.request.method == 'POST':
                 assert json.loads(route.request.post_data)['planetId'] == peer
                 state['visited'] = True

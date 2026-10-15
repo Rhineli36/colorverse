@@ -1,3 +1,4 @@
+import { ColorCardPicker } from "../classroom/ColorCardPicker";
 import {
   DecorationGroups,
   composeDecorationTransform,
@@ -432,7 +433,9 @@ export function StudioView({
             tabs={[
               { value: "info", label: "星球信息" },
               { value: "decorations", label: "装饰" },
-              { value: "motion", label: "运动" },
+              ...(sceneKind === "exterior"
+                ? [{ value: "motion", label: "星球运行" }]
+                : []),
             ]}
           />
           <div className="studio-side-details" ref={leftPanel}>
@@ -442,7 +445,7 @@ export function StudioView({
               aria-labelledby="studio-left-motion-tab"
               hidden={leftTab !== "motion"}
             >
-              {universeEntry && (
+              {sceneKind === "exterior" && universeEntry && (
                 <MotionControls
                   key={`${doc.planetId}-${universeEntry.layoutRevision ?? 0}`}
                   entry={universeEntry}
@@ -541,24 +544,44 @@ export function StudioView({
                 星球装饰 <span>02</span>
               </div>
               <p className="hint">
-                自由叠加粒子、光影与卫星；每项都是可调整、隐藏或移除的独立图层。
+                {sceneKind === "exterior"
+                  ? "为外观叠加粒子、光影与卫星。"
+                  : "为内部场景添加粒子、雾气与光线。"}
               </p>
-              {DecorationGroups.map((group) => (
-                <div key={group.name} className="decoration-group">
-                  <h4>{group.name}</h4>
-                  <div className="effect-grid">
-                    {group.ids.map((id) => (
-                      <button key={id} onClick={() => addEffect(id)}>
-                        {effectNames[id]}
-                      </button>
-                    ))}
+              {DecorationGroups.map((group) => ({
+                ...group,
+                ids: group.ids.filter(
+                  (id) =>
+                    sceneKind === "exterior" ||
+                    ![
+                      "ring",
+                      "halo",
+                      "satellite",
+                      "rim-light",
+                      "outer-glow",
+                    ].includes(id),
+                ),
+              }))
+                .filter((group) => group.ids.length)
+                .map((group) => (
+                  <div key={group.name} className="decoration-group">
+                    <h4>{group.name}</h4>
+                    <div className="effect-grid">
+                      {group.ids.map((id) => (
+                        <button key={id} onClick={() => addEffect(id)}>
+                          {effectNames[id]}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </aside>
-        <section className="editor-center">
+        <section
+          className="editor-center"
+          style={{ borderTop: `2px solid ${doc.metadata.palette.primary}` }}
+        >
           <div className="scene-tabs">
             <button
               className="scene-reset"
@@ -766,6 +789,44 @@ export function StudioView({
         </section>
         <aside className="panel right-panel">
           <div className="panel-title">主题色与画面编辑</div>
+          <details className="studio-emotion-colors">
+            <summary>用色彩表达情感</summary>
+            <ColorCardPicker
+              color={doc.metadata.palette.primary}
+              onColor={(v) =>
+                patch((p) => {
+                  p.metadata.palette.primary = v;
+                })
+              }
+              mood={doc.metadata.emotionTags.join("、")}
+              onMood={(v) =>
+                patch((p) => {
+                  p.metadata.emotionTags = v ? [v.slice(0, 24)] : [];
+                })
+              }
+            />
+            <div
+              className="color-orb-preview"
+              aria-label="本机主色调实时预览"
+              data-color={doc.metadata.palette.primary}
+              style={
+                {
+                  "--preview-color": doc.metadata.palette.primary,
+                } as React.CSSProperties
+              }
+            >
+              <span
+                style={{
+                  width: 95,
+                  height: 95,
+                  borderRadius: "50%",
+                  background: `radial-gradient(circle at 30% 25%,#fff,${doc.metadata.palette.primary} 45%,#091523)`,
+                  boxShadow: `0 0 30px ${doc.metadata.palette.primary}`,
+                }}
+              />
+              <small>主色与环境光参考 · 原图保持原样</small>
+            </div>
+          </details>
           <div className="palette-edit">
             {(["primary", "secondary", "accent"] as const).map((k, i) => (
               <Field key={k} label={["主色", "辅助色", "点缀色"][i]}>

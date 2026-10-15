@@ -15,6 +15,8 @@ await new Promise((ok, bad) => {
       ...process.env,
       VITE_EXHIBITION_MODE: "true",
       VITE_ENABLE_CLOUD_AUTH: "false",
+      VITE_SUPABASE_URL: "",
+      VITE_SUPABASE_PUBLISHABLE_KEY: "",
       VITE_USE_AUTH_PROXY: "false",
       VITE_BASE_PATH: "./",
     },

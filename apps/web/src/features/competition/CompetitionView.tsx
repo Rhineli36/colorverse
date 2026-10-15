@@ -1,9 +1,13 @@
+import { PlanetExplorer } from "../classroom/PlanetExplorer";
+import { KnowledgePanel } from "../classroom/LearningPanels";
+import { nextGrowthPlacement } from "@colorverse/domain";
+import { TaskPrompt } from "../classroom/LearningPanels";
+import { LearningContent } from "@colorverse/contracts";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
   CloudPlanetDocumentSchema,
   GrowthPresetIds,
-  GrowthPresets,
 } from "@colorverse/contracts";
 import { CloudUniverse } from "../classroom/CloudUniverse";
 import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
@@ -12,6 +16,25 @@ import "../classroom/classroom.css";
 import "./competition.css";
 const Work = z.strictObject({
   id: z.string(),
+  params: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+      size: z.number(),
+      motion: z.string(),
+    })
+    .optional(),
+  createdAt: z.string().nullable().optional(),
+  description: z.string().optional(),
+  interactions: z
+    .array(
+      z.object({
+        kind: z.enum(["like", "emoji", "comment"]),
+        content: z.string(),
+        author: z.string(),
+      }),
+    )
+    .optional(),
   title: z.string(),
   image: z.string().regex(/^[a-z0-9-]+\.webp$/),
   presetId: z.enum(GrowthPresetIds),
@@ -57,13 +80,43 @@ type Artwork = z.infer<typeof Work>;
 const root = `${import.meta.env.BASE_URL}competition/`;
 export function CompetitionView() {
   const dialog = useRef<HTMLDialogElement>(null);
+  const detailReturn = useRef<{
+    x: number;
+    y: number;
+    focus: HTMLElement | null;
+  } | null>(null);
+  const openWork = (w: Artwork) => {
+    detailReturn.current = {
+      x: scrollX,
+      y: scrollY,
+      focus: document.activeElement as HTMLElement,
+    };
+    setWork(w);
+  };
+  const closeWork = () => {
+    setWork(null);
+    requestAnimationFrame(() => {
+      const v = detailReturn.current;
+      if (v) {
+        v.focus?.focus({ preventScroll: true });
+        scrollTo(v.x, v.y);
+      }
+    });
+  };
   const [data, setData] = useState<Data | null>(null),
     [error, setError] = useState(false),
     [retry, setRetry] = useState(0),
     [tab, setTab] = useState("universe"),
+    [taskId, setTaskId] = useState("T01"),
     [selected, setSelected] = useState(""),
     [work, setWork] = useState<Artwork | null>(null),
     [birth, setBirth] = useState(false),
+    [listOpen, setListOpen] = useState(false),
+    [imageZoom, setImageZoom] = useState(false),
+    [imageFailed, setImageFailed] = useState(false),
+    [imageRetry, setImageRetry] = useState(0),
+    [sceneFailed, setSceneFailed] = useState(false),
+    [sceneRetry, setSceneRetry] = useState(0),
     [liked, setLiked] = useState<Record<string, boolean>>({});
   useEffect(() => {
     let active = true;
@@ -96,10 +149,20 @@ export function CompetitionView() {
     if (work && dialog.current && !dialog.current.open)
       dialog.current.showModal();
   }, [work]);
+  useEffect(() => {
+    setImageZoom(false);
+    setImageFailed(false);
+    setImageRetry(0);
+  }, [work?.id]);
+  useEffect(() => {
+    setListOpen(false);
+    setSceneFailed(false);
+    setSceneRetry(0);
+  }, [selected]);
   const student = data?.students.find((s) => s.id === selected);
   const defaultPlanet = data?.defaults.find((s) => s.id === selected);
   return (
-    <div className="competition-app">
+    <div className={`competition-app ${tab === "gallery" ? "exploring" : ""}`}>
       <header className="competition-header">
         <button
           className="competition-brand"
@@ -113,8 +176,9 @@ export function CompetitionView() {
         <nav aria-label="比赛展示导航">
           {[
             ["universe", "探索宇宙"],
-            ["gallery", "作品展览"],
+            ["gallery", "星球内部"],
             ["teacher", "教师视角"],
+            ["learning", "色彩的奥秘"],
           ].map(([id, title]) => (
             <button
               key={id}
@@ -153,6 +217,35 @@ export function CompetitionView() {
         {!data && !error && <p role="status">正在展开色彩宇宙…</p>}
         {data && (
           <>
+            {tab === "learning" && (
+              <section className="learning-panel" aria-label="色彩的奥秘">
+                <div className="mystery-intro">
+                  <p className="eyebrow">THE SECRETS OF COLOR</p>
+                  <h2>色彩的奥秘</h2>
+                  <p>{LearningContent.introduction}</p>
+                  <p>{LearningContent.notice}</p>
+                </div>
+                <KnowledgePanel />
+                <h3>试着为星球讲一个色彩故事</h3>
+                <p>
+                  这里可以浏览模板与知识卡片。静态备用版不记录任务提交、互评或成绩；真实教学流程在登录后的云端课堂中完成。
+                </p>
+                <label>
+                  练习模板
+                  <select
+                    value={taskId}
+                    onChange={(e) => setTaskId(e.target.value)}
+                  >
+                    {LearningContent.tasks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <TaskPrompt id={taskId} />
+              </section>
+            )}
             {tab === "universe" && (
               <CloudUniverse
                 exhibition
@@ -294,104 +387,182 @@ export function CompetitionView() {
                     </button>
                   ))}
                 </div>
-                <div
-                  className="competition-room"
-                  style={
-                    {
-                      "--room-color": student.document.color,
-                      ...(student.interior
-                        ? {
-                            backgroundImage: `linear-gradient(#07121e55,#07121e33),url(${root + student.interior})`,
-                          }
-                        : {}),
-                    } as React.CSSProperties
-                  }
-                >
-                  <CloudAtmosphere kind={student.document.atmosphere} />
-                  <div className="competition-room-heading">
-                    {student.exterior && (
-                      <img
-                        className="competition-room-portrait"
-                        src={root + student.exterior}
-                        alt="作品风格星球外貌"
-                      />
-                    )}
-                    <div>
-                      <p className="eyebrow">A WORLD OF CREATIVE GROWTH</p>
-                      <h2>{student.document.metadata.name}</h2>
-                      {student.style && (
-                        <p className="competition-style-label">
-                          作品风格：{student.style}
-                        </p>
-                      )}
-                      <p>点击成长元素，欣赏它所收藏的作品。</p>
-                    </div>
+                <div className="competition-room-heading">
+                  <button onClick={() => setTab("universe")}>← 返回宇宙</button>
+                  <div>
+                    <p className="eyebrow">
+                      {student.display_name} · {student.style}
+                    </p>
+                    <h2>{student.document.metadata.name}</h2>
+                    <p className="scene-invitation">
+                      寻找微光，走近这颗星球收藏的作品。
+                    </p>
+                  </div>
+                  <div className="row-buttons">
+                    <button
+                      onClick={() => setListOpen((v) => !v)}
+                      aria-expanded={listOpen}
+                    >
+                      作品目录 · {student.works.length}
+                    </button>
                     <button disabled={birth} onClick={() => setBirth(true)}>
                       {birth ? "新元素正在生长…" : "回看元素生长 ✦"}
                     </button>
                   </div>
-                  <div className="competition-elements">
-                    {student.works.map((w, i) => (
-                      <button
-                        key={w.id}
-                        className={`competition-element ${birth && i === 0 ? "born" : ""}`}
-                        aria-label={`欣赏作品：${w.title}`}
-                        onClick={() => setWork(w)}
-                      >
-                        <GrowthPresetPreview
-                          id={w.presetId}
-                          color={student.document.color}
-                        />
-                        <span>{GrowthPresets[w.presetId].name}</span>
+                </div>
+                {listOpen && (
+                  <section
+                    className="cloud-work-list"
+                    aria-label="星球作品目录"
+                  >
+                    {student.works.map((w) => (
+                      <button key={w.id} onClick={() => openWork(w)}>
+                        {w.title}
                       </button>
                     ))}
-                  </div>
-                </div>
-                <div className="competition-work-grid">
-                  {student.works.map((w) => (
-                    <button key={w.id} onClick={() => setWork(w)}>
+                  </section>
+                )}
+                <PlanetExplorer sceneId={student.id}>
+                  <div
+                    className="competition-room"
+                    data-planet-id={student.id}
+                    style={
+                      {
+                        "--room-color": student.document.color,
+                      } as React.CSSProperties
+                    }
+                  >
+                    {student.interior ? (
                       <img
-                        src={root + w.image}
-                        alt={w.title}
-                        loading="lazy"
-                        decoding="async"
-                        width="400"
-                        height="400"
+                        key={sceneRetry}
+                        className="scene-saved-background"
+                        src={
+                          root +
+                          student.interior +
+                          (sceneRetry ? `?retry=${sceneRetry}` : "")
+                        }
+                        alt={`${student.display_name}保存的内部背景`}
+                        onError={() => setSceneFailed(true)}
+                        onLoad={() => setSceneFailed(false)}
                       />
-                      <strong>{w.title}</strong>
-                      <small>打开作品 · 查看点评 ↗</small>
-                    </button>
-                  ))}
-                </div>
+                    ) : (
+                      <span className="scene-default-note">
+                        默认内部背景 · 真实课堂可由学生自行设置
+                      </span>
+                    )}
+                    {sceneFailed && (
+                      <div className="scene-image-error" role="status">
+                        <p>内部背景暂时无法读取，作品元素仍可打开。</p>
+                        <button
+                          onClick={() => {
+                            setSceneFailed(false);
+                            setSceneRetry((n) => n + 1);
+                          }}
+                        >
+                          重新读取背景
+                        </button>
+                      </div>
+                    )}
+                    <CloudAtmosphere kind={student.document.atmosphere} />
+                    {student.works.map((w, i) => {
+                      const params =
+                        w.params ??
+                        nextGrowthPlacement(
+                          student.works
+                            .slice(0, i)
+                            .map(
+                              (p, j) =>
+                                p.params ?? { x: 0.16 + j * 0.16, y: 0.6 },
+                            ),
+                          i,
+                        );
+                      return (
+                        <button
+                          key={w.id}
+                          className={`scene-growth ${birth && i === 0 ? "born" : ""}`}
+                          data-work-id={w.id}
+                          aria-label={`欣赏作品：${w.title}`}
+                          title={w.title}
+                          style={{
+                            left: `${params.x * 100}%`,
+                            top: `${params.y * 100}%`,
+                          }}
+                          onClick={() => openWork(w)}
+                        >
+                          <GrowthPresetPreview
+                            id={w.presetId}
+                            color={student.document.color}
+                          />
+                          <span>{w.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PlanetExplorer>
               </section>
             )}
           </>
         )}
         <footer className="competition-footer">
           往届设计色彩课程作品的演示预览 · 学生身份匿名展示 ·
-          不包含真实账号、密码或班级成绩
+          不包含真实账号、密码或班级成绩 · 星球外貌与场景为 AI 辅助素材
         </footer>
       </main>
       {work && (
         <dialog
           ref={dialog}
           aria-label="比赛作品展示"
-          onCancel={() => setWork(null)}
+          onCancel={() => closeWork()}
           className="competition-backdrop"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setWork(null);
+            if (e.target === e.currentTarget) closeWork();
           }}
         >
           <section className="competition-modal">
             <button
               className="modal-close"
               aria-label="关闭作品"
-              onClick={() => setWork(null)}
+              onClick={() => closeWork()}
             >
               ×
             </button>
-            <img src={root + work.image} alt={work.title} />
+            {imageFailed ? (
+              <div role="status">
+                <p>作品图片读取失败。</p>
+                <button
+                  onClick={() => {
+                    setImageFailed(false);
+                    setImageRetry((n) => n + 1);
+                  }}
+                >
+                  重新读取作品图片
+                </button>
+              </div>
+            ) : (
+              <button
+                className={`work-image-button ${imageZoom ? "zoomed" : ""}`}
+                aria-label={imageZoom ? "还原作品图片" : "放大作品图片"}
+                onClick={() => setImageZoom((v) => !v)}
+              >
+                <img
+                  src={
+                    root +
+                    work.image +
+                    (imageRetry ? `?retry=${imageRetry}` : "")
+                  }
+                  alt={work.title}
+                  onError={() => setImageFailed(true)}
+                />
+              </button>
+            )}
+            <p className="muted">
+              点击图片可放大 · {student?.display_name} ·{" "}
+              {work.createdAt
+                ? `演示入库时间：${new Date(work.createdAt).toLocaleString("zh-CN")}`
+                : "历史作业预览，原提交时间未记录"}
+            </p>
             <h2>{work.title}</h2>
+            {work.description && <p>{work.description}</p>}
             <section className="cloud-work-review" aria-label="演示教师点评">
               <div className="cloud-review-heading">
                 <h3>教师点评示例</h3>
@@ -402,6 +573,30 @@ export function CompetitionView() {
                 <small> / 100 · 建议分</small>
               </strong>
               <p>{work.comment}</p>
+            </section>
+            <section className="work-community" aria-label="同学互动">
+              <h3>同学的回应</h3>
+              <p>
+                当前为只读展示快照。真实点赞、表情和留言请登录云端课堂，记录会保存到后端。
+              </p>
+              {work.interactions?.length ? (
+                work.interactions.map((i, n) => (
+                  <p className="peer-message" key={n}>
+                    <strong>{i.author}</strong> ·{" "}
+                    {i.kind === "like" ? "♡ 点赞了这件作品" : i.content}
+                  </p>
+                ))
+              ) : (
+                <p className="muted">本快照尚未收录这件作品的同伴留言。</p>
+              )}
+              <a
+                className="community-login"
+                href="https://colorverse-dev.2999346.workers.dev/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                进入真实课堂，留下你的回应 ↗
+              </a>
             </section>
             <button
               aria-pressed={Boolean(liked[work.id])}

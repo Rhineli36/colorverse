@@ -88,7 +88,7 @@ export function createPortableServer(
         res.end();
         return;
       }
-      if (Number(req.headers["content-length"]) > 8388608) {
+      if (Number(req.headers["content-length"]) > 8388608 + 16384) {
         res.writeHead(413);
         res.end();
         return;

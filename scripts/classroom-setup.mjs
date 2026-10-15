@@ -111,6 +111,43 @@ try {
       "GRANT SELECT,INSERT ON colorverse.showcase_reviews TO colorverse_classroom_writer",
     );
   await client.query("COMMIT");
+  const learning = await readFile(
+      "apps/api/migrations/006-learning-context.sql",
+      "utf8",
+    ),
+    learningHash = createHash("sha256").update(learning).digest("hex");
+  await client.query("BEGIN");
+  await client.query("SELECT pg_advisory_xact_lock(7301941)");
+  await client.query("SET LOCAL search_path=colorverse,pg_catalog");
+  const sixth = await client.query(
+    "SELECT sha256 FROM course_migrations WHERE version=6",
+  );
+  if (sixth.rows.length && sixth.rows[0].sha256 !== learningHash)
+    throw new Error("MIGRATION_HASH_MISMATCH");
+  if (!sixth.rows.length) {
+    await client.query(learning);
+    await client.query(
+      "INSERT INTO course_migrations(version,sha256) VALUES(6,$1)",
+      [learningHash],
+    );
+  }
+  await client.query(
+    "REVOKE ALL ON colorverse.learning_task_settings FROM PUBLIC,anon,authenticated",
+  );
+  await client.query(
+    "GRANT SELECT ON colorverse.learning_task_settings TO colorverse_identity_reader",
+  );
+  if (
+    (
+      await client.query(
+        "SELECT 1 FROM pg_roles WHERE rolname='colorverse_classroom_writer'",
+      )
+    ).rows.length
+  )
+    await client.query(
+      "GRANT SELECT,INSERT,UPDATE ON colorverse.learning_task_settings TO colorverse_classroom_writer",
+    );
+  await client.query("COMMIT");
   const studentCounts = await client.query(
     "SELECT count(*)::int AS students FROM colorverse.enrollments WHERE role='student' AND status='active'",
   );

@@ -10,7 +10,9 @@ export async function classroomRequest(path: string, init: RequestInit = {}) {
       Authorization: `Bearer ${session.access_token}`,
     },
     cache: "no-store",
-    signal: AbortSignal.timeout(25000),
+    signal: init.signal
+      ? AbortSignal.any([init.signal, AbortSignal.timeout(25000)])
+      : AbortSignal.timeout(25000),
   });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
