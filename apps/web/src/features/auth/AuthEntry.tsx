@@ -217,7 +217,7 @@ export function AuthEntry({
             {selectedMembership && onEnter && (
               <button
                 className="primary auth-enter"
-                disabled={busy || checking || entering}
+                disabled={busy || checking || entering || hasPendingChanges}
                 onClick={() => void enter()}
               >
                 {entering

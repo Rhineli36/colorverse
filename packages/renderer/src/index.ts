@@ -55,6 +55,7 @@ export interface Camera {
 }
 export interface RendererOptions {
   onSelect?: (id: string) => void;
+  onDoubleSelect?: (id: string) => void;
   onHover?: (id: string | null) => void;
   onHotspot?: (h: Hotspot) => void;
   onCamera?: (c: Camera) => void;
@@ -1027,9 +1028,21 @@ export class SceneRenderer {
       node.cursor = this.movable.has(p.planetId) ? "grab" : "pointer";
       node.on("pointerover", () => this.options.onHover?.(p.planetId));
       node.on("pointerout", () => this.options.onHover?.(null));
+      let previousTap = 0;
       node.on("pointertap", () => {
-        if (!this.moved && !this.areaSelection)
+        if (this.moved || this.areaSelection) return;
+        const now = performance.now();
+        if (
+          this.options.onDoubleSelect &&
+          previousTap > 0 &&
+          now - previousTap < 400
+        ) {
+          previousTap = 0;
+          this.options.onDoubleSelect(p.planetId);
+        } else {
+          previousTap = now;
           this.options.onSelect?.(p.planetId);
+        }
       });
       this.stage.addChild(node);
       this.orbitNodes.push({

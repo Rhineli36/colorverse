@@ -80,7 +80,7 @@ backup["colorverse-static/启动展示.cmd"] = strToU8(
   '@echo off\r\ncd /d "%~dp0"\r\nwhere node >nul 2>nul\r\nif errorlevel 1 (echo Please install Node.js first. & pause & exit /b 1)\r\nstart "" "http://127.0.0.1:5198"\r\nnode serve.mjs\r\npause\r\n',
 );
 backup["colorverse-static/运行说明.md"] = strToU8(
-  "# 色彩星球静态展示备用版\n\n请预装 Node.js。解压后在本目录运行 `node serve.mjs`，或在 Windows 双击“启动展示.cmd”。打开 http://127.0.0.1:5198。无需安装依赖。不要直接双击 index.html。\n\n包含五个匿名作品风格案例、五个默认星球、二十五幅作品预览、教学卡片、三个模板、演示点评和成长播放。全部展示素材在包内；关闭互联网仍可浏览。参考资料的外部链接除外。\n\n这是静态快照，没有真实登录、上传、云数据库写入、评分或互评。点赞只在当前页面生效，刷新不保存。预置建议分不代表原课程成绩。星球外貌和场景为 AI 辅助素材；历史作业预览由负责人授权用于演示。\n\n真实教学入口与账号由负责人另行提供。完整源码包的 docs/47-competition-run-and-package.md 说明三种运行模式及外部依赖。\n",
+  "# 色彩星球静态展示备用版\n\n请预装 Node.js。解压后在本目录运行 `node serve.mjs`，或在 Windows 双击“启动展示.cmd”。打开 http://127.0.0.1:5198。无需安装依赖。不要直接双击 index.html。\n\n包含五个实名署名的往届作品风格案例、五个默认星球、二十五幅作品预览、教学卡片、三个模板、演示点评和成长播放。全部展示素材在包内；关闭互联网仍可浏览。参考资料的外部链接除外。\n\n这是静态快照，没有真实登录、上传、云数据库写入、评分或互评。点赞只在当前页面生效，刷新不保存。预置建议分不代表原课程成绩。星球外貌和场景为 AI 辅助素材；历史作业预览由负责人授权用于演示。\n\n真实教学入口与账号由负责人另行提供。完整源码包的 docs/47-competition-run-and-package.md 说明三种运行模式及外部依赖。\n",
 );
 const secrets = [];
 for (const f of [

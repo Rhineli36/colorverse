@@ -1,6 +1,18 @@
 import { expect, it } from "vitest";
-import { nextGrowthPlacement } from "@colorverse/domain";
+import { nextGrowthPlacement, growthElementColor } from "@colorverse/domain";
 import { LearningContent } from "@colorverse/contracts";
+it("assigns distinct stable colors to five new elements without randomizing saved colors", () => {
+  for (const primary of ["#5A9DDE", "#EFA568", "#888888"]) {
+    const colors = Array.from({ length: 5 }, (_, i) =>
+      growthElementColor(primary, i),
+    );
+    expect(new Set(colors).size).toBe(5);
+    expect(colors).toEqual(
+      Array.from({ length: 5 }, (_, i) => growthElementColor(primary, i)),
+    );
+    colors.forEach((c) => expect(c).toMatch(/^#[A-F0-9]{6}$/));
+  }
+});
 it("places five visible growth entries apart, deterministically and without moving earlier works", () => {
   const points: ReturnType<typeof nextGrowthPlacement>[] = [];
   for (let i = 0; i < 5; i++) {

@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 云端课堂 | 真实邮箱登录、班级权限、星球设计、教学模板、作品上传与说明、规则成长、教师评分、同伴反馈 | Worker、Hyperdrive、Supabase Auth/PostgreSQL/私有 Storage 均需可访问；不是离线服务 |
 | 本机源码默认启动 | 本机创作、导入导出、预制星球、规则成长；另启课程 API 可演示任务发布、退回重交和版本历史 | 浏览器 IndexedDB；课程 API 用本机 PGlite 与私有文件目录。开发身份不能公开部署 |
-| 静态备用包 | 5 个匿名作品风格案例、5 个默认星球、25 幅预览、演示点评、成长播放、即时点赞、教学卡片和模板浏览 | 自带全部运行素材；本机 HTTP 服务启动后不需要云服务。没有真实上传、登录、写入评分或互评；点赞不持久保存 |
+| 静态备用包 | 5 个实名署名的往届作品风格案例、5 个默认星球、25 幅预览、演示点评、成长播放、即时点赞、教学卡片和模板浏览 | 自带全部运行素材；本机 HTTP 服务启动后不需要云服务。没有真实上传、登录、写入评分或互评；点赞不持久保存 |
 
 线上主演示地址由负责人单独提供。现有 workers.dev 和 GitHub Pages 地址不能保证中国大陆所有网络可访问，联网演示必须提前在比赛现场网络验证。静态包用于断网时展示外观与教学设计，不作为真实保存功能的验收证据。
 
@@ -16,7 +16,7 @@
 
 Node.js ≥22.12，建议 Node.js 24；pnpm 11.25.0；现代 Chrome/Edge。React 19、TypeScript 5、Vite 7、PixiJS 8；Worker 使用 Fetch API、pg 和 Cloudflare Images，Node 可移植服务器使用 sharp。Windows 与 Linux 均有启动代码，Docker 方案主要面向 Linux。
 
-源码包保留 apps/web、apps/worker、apps/server、apps/api、packages、scripts、tests、docs、deploy、依赖清单和锁文件。apps/web/public 是匿名预览与系统素材；生产数据库与私有上传文件不在源码包内。migration 001～006 必须保持原文件，已应用迁移用 SHA256 校验，不能修改后覆盖旧库。
+源码包保留 apps/web、apps/worker、apps/server、apps/api、packages、scripts、tests、docs、deploy、依赖清单和锁文件。apps/web/public 是署名预览与系统素材；生产数据库与私有上传文件不在源码包内。migration 001～006 必须保持原文件，已应用迁移用 SHA256 校验，不能修改后覆盖旧库。
 
 安装和前端启动：
 
@@ -93,4 +93,4 @@ scripts/learning-demo.mjs 管理一个独立演示班、一名教师、两名学
 
 ## 源包排除与校验
 
-排除 node_modules、.git、work、outputs、缓存、日志、.env.local 等真实配置、数据库/证书凭据、账号密码、原学生文件夹和私有数据库备份。保留 .env.example 模板和匿名压缩预览。源包包含更新后源码与全部迁移；静态包包含构建产物、匿名预览、无依赖 HTTP 启动器和说明。两包分别列出 SHA256 与文件数，体积以打包结果为准，不以“源码能压缩”代替运行验证。
+排除 node_modules、.git、work、outputs、缓存、日志、.env.local 等真实配置、数据库/证书凭据、账号密码、原学生文件夹和私有数据库备份。保留 .env.example 模板和负责人要求署名的压缩预览。源包包含更新后源码与全部迁移；静态包包含构建产物、署名预览、无依赖 HTTP 启动器和说明。两包分别列出 SHA256 与文件数，体积以打包结果为准，不以“源码能压缩”代替运行验证。

@@ -558,3 +558,324 @@
 .work-community > button {
   font-size: 14px;
 }
+.cloud-gallery.cloud-main-universe {
+  max-width: none;
+  padding: 0;
+}
+.cloud-main-universe > .classroom-heading,
+.cloud-main-universe > .cloud-highlights,
+.cloud-main-universe > .cloud-planets,
+.cloud-main-universe > .mystery-entry,
+.cloud-main-universe > .small,
+.cloud-main-universe > .learning-panel,
+.cloud-main-universe > .cloud-student-guide {
+  display: none;
+}
+.cloud-observatory {
+  height: calc(100dvh - 72px);
+  min-height: 540px;
+  position: relative;
+  overflow: hidden;
+}
+.cloud-observatory .canvas-host {
+  position: absolute;
+  inset: 0;
+}
+.cloud-observatory .universe-intro h1 {
+  font-size: 22px;
+}
+.cloud-observatory .universe-intro p {
+  font-size: 12px;
+}
+.cloud-observatory .view-switcher {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cloud-observatory button {
+  font-size: 12px;
+}
+.cloud-observatory .planet-peek {
+  top: 150px;
+  max-width: 230px;
+  padding: 20px;
+}
+.cloud-observatory .planet-peek h2 {
+  font-size: 19px;
+}
+.cloud-observatory .universe-toolbar {
+  gap: 18px;
+}
+.cloud-observatory input {
+  background: transparent;
+  color: #dbe8e1;
+  border: 0;
+  min-height: 38px;
+}
+.observatory-directory {
+  max-height: 230px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+}
+.cloud-observatory .universe-toolbar details[open] {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: #102030f2;
+  border: 1px solid #7b989255;
+  border-radius: 14px;
+  min-width: 240px;
+}
+.cloud-observatory .universe-toolbar summary {
+  padding: 12px;
+  cursor: pointer;
+}
+.observatory-image-notice {
+  position: absolute;
+  left: 30px;
+  bottom: 125px;
+  padding: 10px;
+  background: #0b1b2dde;
+  color: #e1e5bf;
+  max-width: 400px;
+  font-size: 12px;
+}
+.editing-launch
+  > :not(.own-planet-launch):not(.cloud-notice):not(.cloud-create) {
+  display: none;
+}
+.own-planet-launch {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  background: radial-gradient(ellipse at center, #173348, #0a1420 70%);
+  border: 1px solid #809daa44;
+  border-radius: 24px;
+}
+.own-planet-launch h1 {
+  font-size: 24px;
+  margin: 0;
+}
+.own-planet-launch p {
+  font-size: 13px;
+  color: #afc4ca;
+}
+.own-planet-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  background: none !important;
+  border: 0 !important;
+  padding: 36px !important;
+}
+.own-planet-preview .cloud-planet-orb {
+  width: 180px;
+  height: 180px;
+}
+.own-planet-preview strong {
+  font-size: 17px;
+}
+.own-planet-preview small {
+  color: #a8bccb;
+  font-size: 12px;
+}
+.cloud-gallery.scene-exploring {
+  max-width: none;
+  padding: 12px 22px 30px;
+}
+.cloud-gallery.scene-exploring .cloud-room-heading {
+  margin: 0 0 12px;
+  padding: 0;
+}
+.cloud-gallery.scene-exploring .cloud-room-heading h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.cloud-gallery.scene-exploring .cloud-room-heading .cloud-planet-summary,
+.cloud-gallery.scene-exploring .cloud-room-heading > div > p.muted {
+  display: none;
+}
+.cloud-gallery.scene-exploring .explorer-viewport {
+  height: calc(100dvh - 206px);
+  min-height: 480px;
+}
+.cloud-gallery.scene-exploring .planet-explorer {
+  margin: 0;
+}
+.cloud-gallery.scene-exploring .cloud-room-background {
+  object-fit: contain;
+}
+.scene-description {
+  position: absolute;
+  bottom: 20px;
+  left: 22px;
+  max-width: 330px;
+  color: #edf4ec;
+  pointer-events: none;
+  padding: 18px 22px;
+  background: linear-gradient(110deg, #081322dc, #08132200);
+  border-left: 1px solid #dce9cb77;
+}
+.scene-description span {
+  color: #b4c9cc;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.scene-description h3 {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 7px 0;
+}
+.scene-description p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 0;
+}
+.competition-app,
+.cloud-gallery {
+  font-size: 14px;
+}
+.competition-modal h2,
+.cloud-modal h2 {
+  font-size: 21px;
+  font-weight: 500;
+}
+.competition-modal h3,
+.cloud-modal h3 {
+  font-size: 16px;
+}
+.competition-modal p,
+.cloud-modal p {
+  font-size: 14px;
+  line-height: 1.8;
+}
+.cloud-review-record > p,
+.competition-modal .cloud-work-review > p {
+  font-size: 14px !important;
+}
+.cloud-review-score {
+  font-size: 28px !important;
+}
+.cloud-review-score small,
+.cloud-review-heading span {
+  font-size: 11px;
+}
+.competition-room-heading h2 {
+  font-size: 25px;
+  font-weight: 500;
+}
+.competition-modal p.muted,
+.cloud-modal p.muted {
+  font-size: 11px;
+}
+.competition-topbar button,
+.topbar nav button {
+  font-size: 12px;
+}
+@media (max-width: 650px) {
+  .cloud-observatory .universe-intro {
+    top: 18px;
+    left: 18px;
+  }
+  .cloud-observatory .view-switcher {
+    top: 115px;
+    right: 12px;
+    left: 12px;
+  }
+  .cloud-observatory .planet-peek {
+    top: 180px;
+    right: 14px;
+    max-width: 175px;
+    padding: 12px;
+  }
+  .cloud-observatory .universe-toolbar {
+    left: 10px;
+    right: 10px;
+    bottom: 14px;
+    padding: 10px;
+  }
+  .cloud-observatory .universe-toolbar input {
+    width: 45%;
+  }
+  .cloud-gallery.scene-exploring {
+    padding: 10px;
+  }
+  .scene-description {
+    left: 12px;
+    bottom: 12px;
+    padding: 10px 12px;
+    max-width: 230px;
+  }
+  .scene-description h3 {
+    font-size: 16px;
+  }
+  .scene-description p {
+    font-size: 11px;
+  }
+  .cloud-gallery.scene-exploring .explorer-viewport {
+    min-height: 450px;
+  }
+}
+.competition-app.universe-active .competition-intro {
+  display: none;
+}
+.competition-app.universe-active .competition-main {
+  padding: 0;
+  max-width: none;
+}
+.competition-app.universe-active .cloud-observatory {
+  height: calc(100dvh - 98px);
+}
+.cloud-observatory .planet-peek {
+  bottom: auto;
+  min-height: 0;
+}
+.competition-intro h1 {
+  font-size: 30px;
+}
+.observatory-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.observatory-labels > div {
+  position: absolute;
+  left: 0;
+  top: 0;
+  text-align: center;
+  max-width: 210px;
+  white-space: nowrap;
+  line-height: 1.6;
+  will-change: transform;
+  text-shadow: 0 1px 6px #000;
+}
+.observatory-labels strong {
+  display: block;
+  font-size: 12px;
+  color: #e0eae1;
+  font-weight: 500;
+}
+.observatory-labels small {
+  display: block;
+  font-size: 10px;
+  color: #acc3ca;
+}
+@media (max-width: 650px) {
+  .observatory-labels strong {
+    font-size: 10px;
+  }
+  .observatory-labels small {
+    font-size: 9px;
+  }
+}

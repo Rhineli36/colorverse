@@ -1,4 +1,4 @@
-import { nextGrowthPlacement } from "@colorverse/domain";
+import { nextGrowthPlacement, growthElementColor } from "@colorverse/domain";
 import { Client } from "pg";
 import { databaseClient, type DatabaseBinding } from "./database-client";
 import { z } from "zod";
@@ -769,7 +769,7 @@ export async function handleShowcaseCloud(
         (b) => b.toString(16).padStart(2, "0"),
       ).join("");
       await client.query(
-        "INSERT INTO colorverse.showcase_works(id,planet_id,title,description,storage_key,byte_size,preset_id,request_id,original_storage_key,original_byte_size,original_mime,original_sha256,element_params,learning_context) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)",
+        "INSERT INTO colorverse.showcase_works(id,planet_id,title,description,storage_key,byte_size,preset_id,request_id,original_storage_key,original_byte_size,original_mime,original_sha256,element_params,learning_context,color) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
         [
           id,
           planet.id,
@@ -785,6 +785,7 @@ export async function handleShowcaseCloud(
           digest,
           JSON.stringify(placement),
           learning ? JSON.stringify(learning) : null,
+          growthElementColor(planet.document.color, occupied.length),
         ],
       );
       commitAttempted = true;

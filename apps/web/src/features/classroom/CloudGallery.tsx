@@ -10,9 +10,9 @@ import {
   blankObservation,
   validObservation,
 } from "./LearningPanels";
-import { CloudUniverse } from "./CloudUniverse";
+import { CloudObservatory, type ObservatoryPlanet } from "./CloudObservatory";
 import { CloudWorkReview } from "./CloudWorkReview";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
   LearningTaskSettingSchema,
@@ -111,6 +111,7 @@ export function CloudGallery({
   onPendingChange,
   onGuideProgress,
   guideOpenRequest = 0,
+  navigation,
 }: {
   session: CloudSession;
   initialPlanetId?: string;
@@ -123,6 +124,10 @@ export function CloudGallery({
     completed: number | null;
   }) => void;
   guideOpenRequest?: number;
+  navigation?: {
+    action: "universe" | "room" | "edit" | "knowledge";
+    sequence: number;
+  };
 }) {
   const memberships = session.access === "active" ? session.memberships : [],
     [classId, setClassId] = useState(
@@ -134,6 +139,9 @@ export function CloudGallery({
     [planetId, setPlanetId] = useState(initialPlanetId ?? ""),
     [exploring, setExploring] = useState(Boolean(initialPlanetId)),
     [mysteryOpen, setMysteryOpen] = useState(false),
+    [editLaunch, setEditLaunch] = useState(false),
+    [samples, setSamples] = useState<ObservatoryPlanet[]>([]),
+    [sample, setSample] = useState<ObservatoryPlanet | null>(null),
     [work, setWork] = useState<WorkData | null>(null),
     [confirmation, setConfirmation] = useState<{
       kind: "work" | "interaction";
@@ -181,6 +189,36 @@ export function CloudGallery({
       }[]
     >([]);
   const detailVisible = Boolean(work && !editing);
+  const observatoryPlanets = useMemo(
+    () => [...(data?.planets ?? []), ...samples],
+    [data, samples],
+  );
+  useEffect(() => {
+    let active = true;
+    void fetch(`${import.meta.env.BASE_URL}competition/manifest.json`)
+      .then((r) => {
+        if (!r.ok) throw new Error("样本暂不可用");
+        return r.json();
+      })
+      .then((v) => {
+        const defaults = z
+          .array(
+            z.object({
+              id: z.string(),
+              display_name: z.string(),
+              document: CloudPlanetDocumentSchema,
+            }),
+          )
+          .max(5)
+          .parse(v.defaults);
+        if (active)
+          setSamples(defaults.map((p) => ({ ...p, sample: true, works: [] })));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   useEffect(() => {
     if (!detailVisible) return;
     const previous = document.activeElement as HTMLElement | null,
@@ -336,6 +374,31 @@ export function CloudGallery({
     ),
     student =
       memberships.find((m) => m.classId === classId)?.role === "student";
+  const handledNavigation = useRef(-1);
+  useEffect(() => {
+    if (
+      !navigation ||
+      !data ||
+      handledNavigation.current === navigation.sequence
+    )
+      return;
+    handledNavigation.current = navigation.sequence;
+    setWork(null);
+    setEditing(false);
+    setSettingsOpen(false);
+    setSample(null);
+    if (navigation.action === "knowledge") {
+      setMysteryOpen(true);
+      return;
+    }
+    setEditLaunch(navigation.action === "edit");
+    if (navigation.action === "universe") {
+      setExploring(false);
+      return;
+    }
+    if (myPlanet) setPlanetId(myPlanet.id);
+    setExploring(navigation.action === "room");
+  }, [navigation, data, myPlanet]);
   useEffect(() => {
     let active = true;
     if (!student || !myPlanet) return;
@@ -643,7 +706,7 @@ export function CloudGallery({
   };
   return (
     <main
-      className={`classroom-main cloud-gallery ${exploring ? "scene-exploring" : ""}`}
+      className={`classroom-main cloud-gallery ${exploring ? "scene-exploring" : editLaunch ? "editing-launch" : "cloud-main-universe"}`}
     >
       <header className="classroom-heading">
         <div>
@@ -825,16 +888,58 @@ export function CloudGallery({
             </div>
           </section>
         )}
-      {data && data.planets.length > 0 && (
-        <CloudUniverse
+      {editLaunch && (
+        <section className="own-planet-launch" aria-label="编辑我的星球入口">
+          <p className="eyebrow">MY PLANET · YOUR DESIGN</p>
+          <h1>编辑我的星球</h1>
+          {myPlanet ? (
+            <>
+              <p>双击自己的星球，修改外貌、内部背景和色彩细节。</p>
+              <button
+                className="own-planet-preview"
+                aria-label="双击编辑我的星球"
+                onDoubleClick={() => {
+                  setEditLaunch(false);
+                  setExploring(true);
+                  setSettingsOpen(true);
+                }}
+              >
+                <CloudPlanetOrb
+                  classId={classId}
+                  id={myPlanet.id}
+                  document={myPlanet.document}
+                />
+                <strong>{myPlanet.document.metadata.name}</strong>
+                <small>{myPlanet.display_name}</small>
+              </button>
+              <button
+                onClick={() => {
+                  setEditLaunch(false);
+                  setExploring(true);
+                  setSettingsOpen(true);
+                }}
+              >
+                打开星球编辑器 ↗
+              </button>
+            </>
+          ) : (
+            <p>当前账户尚未创建自己的星球。教师可通过教师管理查看学生作品。</p>
+          )}
+        </section>
+      )}
+      {data && !exploring && !editLaunch && (
+        <CloudObservatory
           classId={classId}
-          planets={data.planets}
-          actorId={data.actorId}
+          planets={observatoryPlanets}
+          ownId={myPlanet?.id}
           selectedId={planetId}
-          disabled={pending}
-          teacher={!student}
-          onSelect={(id) => {
+          onEnter={(id) => {
             if (pending) return;
+            const style = samples.find((p) => p.id === id);
+            if (style) {
+              setSample(style);
+              return;
+            }
             setPlanetId(id);
             setExploring(true);
             setWork(null);
@@ -848,31 +953,6 @@ export function CloudGallery({
           }}
         />
       )}
-      <div className="cloud-planets" aria-label="班级云端星球">
-        {data?.planets.map((p) => (
-          <button
-            key={p.id}
-            disabled={pending}
-            aria-pressed={planetId === p.id}
-            onClick={() => {
-              setPlanetId(p.id);
-              setWork(null);
-              setEditing(false);
-              setSettingsOpen(false);
-            }}
-          >
-            <CloudPlanetOrb classId={classId} id={p.id} document={p.document} />
-            <span>
-              <strong>{p.document.metadata.name}</strong>
-              <small>
-                {p.display_name} · {p.works.filter((w) => !w.withdrawn).length}{" "}
-                件作品
-                {p.owner_enrollment_id === data.actorId ? " · 我的星球" : ""}
-              </small>
-            </span>
-          </button>
-        ))}
-      </div>
       {selected && exploring && (
         <>
           <div className="cloud-room-heading">
@@ -931,14 +1011,6 @@ export function CloudGallery({
             {owned && (
               <div className="row-buttons">
                 <button
-                  disabled={
-                    busy || editing || appearanceDirty || Boolean(planetBirth)
-                  }
-                  onClick={() => setSettingsOpen((v) => !v)}
-                >
-                  编辑星球外貌与背景
-                </button>
-                <button
                   className="primary"
                   disabled={
                     busy || editing || appearanceDirty || Boolean(planetBirth)
@@ -951,7 +1023,7 @@ export function CloudGallery({
                     setUploadOpen(true);
                   }}
                 >
-                  ＋ 上传展示作品
+                  ＋ 上传作品 · 点亮新元素
                 </button>
               </div>
             )}
@@ -1040,6 +1112,14 @@ export function CloudGallery({
                 </span>
               )}
               <CloudAtmosphere kind={selected.document.atmosphere} />
+              <div className="scene-description">
+                <span>{selected.display_name}</span>
+                <h3>{selected.document.metadata.name}</h3>
+                <p>
+                  {selected.document.metadata.summary ||
+                    "在微光之间，发现这个色彩世界的作品。"}
+                </p>
+              </div>
               {planetBirth === selected.id && (
                 <div className="cloud-planet-birth" role="status">
                   <CloudPlanetOrb
@@ -1340,6 +1420,30 @@ export function CloudGallery({
               .map((i) => interactionRow(i, "这颗星球"))}
           </section>
         </>
+      )}
+      {sample && (
+        <div className="cloud-modal-backdrop">
+          <section
+            className="cloud-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="默认星球风格"
+          >
+            <button className="modal-close" onClick={() => setSample(null)}>
+              ×
+            </button>
+            <p className="eyebrow">PLANET STYLE · INSPIRATION</p>
+            <h2>{sample.document.metadata.name}</h2>
+            <CloudPlanetOrb
+              classId={classId}
+              id={sample.id}
+              document={sample.document}
+            />
+            <p>
+              这是默认外貌风格样本，没有学生作业。可在「编辑我的星球」中选择风格并上传自己的外貌和内部背景。
+            </p>
+          </section>
+        </div>
       )}
       {uploadOpen && (
         <div className="cloud-modal-backdrop">

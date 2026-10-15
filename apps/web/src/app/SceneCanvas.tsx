@@ -58,6 +58,7 @@ export function SceneCanvas({
     let active = true;
     const r = new SceneRenderer(assets, {
       onSelect: (id) => callbacks.current.onSelect?.(id),
+      onDoubleSelect: (id) => callbacks.current.onDoubleSelect?.(id),
       onHover: (id) => callbacks.current.onHover?.(id),
       onHotspot: (h) => callbacks.current.onHotspot?.(h),
       onCamera: (c) => callbacks.current.onCamera?.(c),

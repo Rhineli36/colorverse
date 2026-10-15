@@ -11,7 +11,7 @@ journal = json.loads((ROOT / 'work/learning-demo-accounts.json').read_text(encod
 assert journal['marker'] == 'colorverse-learning-demo-2026-10-14'
 actor = journal['accounts'][2]
 assert actor['role'] == 'student' and actor['email'].startswith('learning-')
-title = '沉浸式新增元素验收（演示）'
+title = '统一宇宙新增元素验收（演示）'
 checks, errors = [], []
 
 def passed(message):
@@ -20,21 +20,23 @@ def passed(message):
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, channel='chrome' if os.name == 'nt' else None,
-        proxy={'server': 'http://127.0.0.1:7892'},
+        proxy={'server': os.environ.get('COLORVERSE_TEST_PROXY','http://127.0.0.1:18081')},
         args=['--disable-http2', '--disable-quic', '--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width': 1440, 'height': 1050})
     page = context.new_page()
+    page.set_default_timeout(60000)
     page.on('pageerror', lambda error: errors.append(error.message))
     def guard(request):
         if request.method in ['POST', 'PUT', 'DELETE'] and '/api/v1/cloud/classes/' in request.url:
             assert '/classes/' + journal['classId'] + '/' in request.url
     page.on('request', guard)
-    page.goto('https://colorverse-dev.2999346.workers.dev/', wait_until='domcontentloaded', timeout=60000)
+    page.goto('https://colorverse-dev.2999346.workers.dev/', wait_until='networkidle', timeout=60000)
     page.get_by_role('button', name='登录', exact=True).click()
     page.get_by_label('课堂邮箱').fill(actor['email'])
     page.get_by_label('密码', exact=True).fill(actor['password'])
     page.get_by_role('dialog').get_by_role('button', name='登录', exact=True).click()
     page.get_by_role('button', name='进入我的星球 →', exact=True).click()
+    page.get_by_role('navigation', name='主导航').get_by_role('button', name='星球内部', exact=True).click()
     expect(page.locator('.cloud-room')).to_be_visible()
     def placements():
         return page.locator('.cloud-growth').evaluate_all('(items)=>Object.fromEntries(items.map(e=>[e.dataset.workId,{left:e.style.left,top:e.style.top}]))')
@@ -42,7 +44,7 @@ with sync_playwright() as p:
     entry = page.get_by_role('button', name='查看作品 ' + title, exact=True)
     uploaded = entry.count() == 0
     if uploaded:
-        page.get_by_role('button', name='＋ 上传展示作品', exact=True).click()
+        page.get_by_role('button', name='＋ 上传作品 · 点亮新元素', exact=True).click()
         dialog = page.get_by_role('dialog', name='上传云端展示作品')
         dialog.get_by_label('选择教学任务').select_option('T01')
         dialog.get_by_label('作品名称', exact=True).fill(title)
@@ -76,6 +78,7 @@ with sync_playwright() as p:
     page.reload(wait_until='domcontentloaded')
     page.get_by_role('button', name='我的云端账户', exact=True).click()
     page.get_by_role('button', name='进入我的星球 →', exact=True).click()
+    page.get_by_role('navigation', name='主导航').get_by_role('button', name='星球内部', exact=True).click()
     expect(page.get_by_role('button', name='查看作品 ' + title, exact=True)).to_be_visible()
     assert placements() == after
     passed('unique normalized work placements and existing positions persist after reload, with the correct private image and author rationale')

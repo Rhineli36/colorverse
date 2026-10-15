@@ -1,6 +1,7 @@
 import { PlanetExplorer } from "../classroom/PlanetExplorer";
 import { KnowledgePanel } from "../classroom/LearningPanels";
-import { nextGrowthPlacement } from "@colorverse/domain";
+import { nextGrowthPlacement, growthElementColor } from "@colorverse/domain";
+import { CloudObservatory } from "../classroom/CloudObservatory";
 import { TaskPrompt } from "../classroom/LearningPanels";
 import { LearningContent } from "@colorverse/contracts";
 import { useEffect, useRef, useState } from "react";
@@ -9,12 +10,12 @@ import {
   CloudPlanetDocumentSchema,
   GrowthPresetIds,
 } from "@colorverse/contracts";
-import { CloudUniverse } from "../classroom/CloudUniverse";
 import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
 import { CloudAtmosphere } from "../classroom/CloudStudentGuide";
 import "../classroom/classroom.css";
 import "./competition.css";
 const Work = z.strictObject({
+  color: z.string().optional(),
   id: z.string(),
   params: z
     .object({
@@ -48,6 +49,8 @@ const Snapshot = z.strictObject({
       z.strictObject({
         id: z.string(),
         display_name: z.string(),
+        realName: z.string().optional(),
+        studentNumber: z.string().optional(),
         document: CloudPlanetDocumentSchema,
         exterior: z
           .string()
@@ -162,7 +165,9 @@ export function CompetitionView() {
   const student = data?.students.find((s) => s.id === selected);
   const defaultPlanet = data?.defaults.find((s) => s.id === selected);
   return (
-    <div className={`competition-app ${tab === "gallery" ? "exploring" : ""}`}>
+    <div
+      className={`competition-app ${tab === "universe" ? "universe-active" : ""} ${tab === "gallery" ? "exploring" : ""}`}
+    >
       <header className="competition-header">
         <button
           className="competition-brand"
@@ -247,13 +252,9 @@ export function CompetitionView() {
               </section>
             )}
             {tab === "universe" && (
-              <CloudUniverse
-                exhibition
+              <CloudObservatory
                 classId="competition"
-                actorId="visitor"
                 selectedId={selected}
-                disabled={false}
-                teacher
                 planets={[
                   ...data.students.map((s) => ({
                     ...s,
@@ -269,7 +270,7 @@ export function CompetitionView() {
                     works: [],
                   })),
                 ]}
-                onSelect={(id) => {
+                onEnter={(id) => {
                   setSelected(id);
                   setTab("gallery");
                 }}
@@ -491,7 +492,10 @@ export function CompetitionView() {
                         >
                           <GrowthPresetPreview
                             id={w.presetId}
-                            color={student.document.color}
+                            color={
+                              w.color ??
+                              growthElementColor(student.document.color, i)
+                            }
                           />
                           <span>{w.title}</span>
                         </button>

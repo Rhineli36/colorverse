@@ -1,4 +1,4 @@
-import { nextGrowthPlacement } from "@colorverse/domain";
+import { nextGrowthPlacement, growthElementColor } from "@colorverse/domain";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
@@ -59,6 +59,10 @@ try {
           i + 1,
         ),
         id: `demo-${i + 1}-work-${j + 1}`,
+        color: growthElementColor(
+          ["#efa568", "#5a9dde", "#82c9ae", "#b397d4", "#c5bdaa"][i],
+          j,
+        ),
         title: work.title,
         image,
         presetId: journal.students[i].works[j].presetId,
@@ -69,7 +73,7 @@ try {
     const [name, skin, color, halo, atmosphere, mode, trajectory] = styles[i];
     students.push({
       id: `demo-${i + 1}`,
-      display_name: `演示学生 0${i + 1}`,
+      display_name: journal.students[i].displayName,
       exterior: `case-${i + 1}-exterior.webp`,
       interior: `case-${i + 1}-interior.webp`,
       style: [

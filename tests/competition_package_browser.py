@@ -29,7 +29,7 @@ try:
         raise RuntimeError('Packaged preview did not start')
     blocked, errors = [], []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, channel='chrome' if os.name == 'nt' else None)
+        browser = p.chromium.launch(headless=True, channel='chrome' if os.name == 'nt' else None, args=['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
         page = browser.new_page(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
         def local_only(route):
             if urlparse(route.request.url).hostname in ['127.0.0.1', 'localhost']:
@@ -40,8 +40,11 @@ try:
         page.route('**/*', local_only)
         page.on('pageerror', lambda error: errors.append(error.message))
         page.goto('http://127.0.0.1:5198/', wait_until='networkidle')
-        expect(page.locator('.cloud-universe-node')).to_have_count(10)
+        page.wait_for_selector('canvas[data-scene-ready="true"]')
+        expect(page.locator('.observatory-directory button')).to_have_count(10)
+        page.locator('.cloud-observatory .universe-toolbar summary').click()
         page.locator('[data-planet-id="demo-1"]').click()
+        page.get_by_role('button', name='进入星球内部 ↗', exact=True).click()
         expect(page.locator('.scene-growth')).to_have_count(5)
         page.wait_for_function("()=>{const i=document.querySelector('.scene-saved-background');return i.complete&&i.naturalWidth>0}")
         page.locator('.scene-growth').first.click()
@@ -50,7 +53,7 @@ try:
         expect(dialog).to_contain_text('只读展示快照')
         dialog.get_by_role('button', name='关闭作品', exact=True).click()
         page.locator('.explorer-viewport').screenshot(path=str(ROOT/'outputs/exploration-packaged-scene.png'))
-        page.get_by_role('button', name='演示学生 02', exact=True).click()
+        page.locator('.competition-planets button').nth(1).click()
         expect(page.locator('.scene-saved-background')).to_have_attribute('src', './competition/case-2-interior.webp')
         assert not errors, errors
         assert not blocked, 'Unexpected external requests during the tested browsing route'

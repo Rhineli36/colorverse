@@ -119,6 +119,10 @@ export function App() {
     [],
   );
   const [cloudEntry, setCloudEntry] = useState({ classId: "", sequence: 0 });
+  const [cloudNavigation, setCloudNavigation] = useState<{
+    action: "universe" | "room" | "edit" | "knowledge";
+    sequence: number;
+  }>({ action: "universe", sequence: 0 });
   const [cloudPending, setCloudPending] = useState(false);
   const cloudStudent =
     cloudSession?.access === "active" &&
@@ -179,7 +183,12 @@ export function App() {
       | "element"
       | "classroom"
       | "cloudworks"
-    >("universe"),
+    >(
+      cloudAuthEnabled &&
+        localStorage.getItem("colorverse-entered-cloud") === "1"
+        ? "cloudworks"
+        : "universe",
+    ),
     [activeId, setActiveId] = useState<string | null>(null),
     [hover, setHover] = useState<string | null>(null),
     [query, setQuery] = useState(""),
@@ -335,6 +344,12 @@ export function App() {
       setRoute("universe");
       setProposal(null);
       await refresh();
+    });
+  const navigateCloud = (next: "universe" | "room" | "edit" | "knowledge") =>
+    action(async () => {
+      await flush();
+      setCloudNavigation((v) => ({ action: next, sequence: v.sequence + 1 }));
+      setRoute("cloudworks");
     });
   const patch = (fn: (p: PlanetDocument) => void) => editor.change(fn);
   const currentScene = doc
@@ -816,7 +831,11 @@ export function App() {
       <header className="topbar">
         <button
           className="brand"
-          onClick={() => void back()}
+          onClick={() =>
+            void (cloudSession?.access === "active"
+              ? navigateCloud("universe")
+              : back())
+          }
           aria-label="返回宇宙总览"
         >
           <span className="brand-mark">◉</span>
@@ -825,6 +844,28 @@ export function App() {
           </span>
         </button>
         <nav aria-label="主导航">
+          {cloudSession?.access === "active" && (
+            <>
+              <button
+                disabled={cloudPending}
+                onClick={() => void navigateCloud("knowledge")}
+              >
+                色彩的奥秘
+              </button>
+              <button
+                disabled={cloudPending}
+                onClick={() => void navigateCloud("universe")}
+              >
+                探索宇宙
+              </button>
+              <button
+                disabled={cloudPending}
+                onClick={() => void navigateCloud("edit")}
+              >
+                编辑我的星球
+              </button>
+            </>
+          )}
           {cloudStudent &&
             cloudGuideProgress?.identityId === cloudSession?.identity.id && (
               <button
@@ -866,14 +907,20 @@ export function App() {
           {cloudSession?.access === "active" && (
             <button
               className={route === "cloudworks" ? "active" : ""}
+              disabled={cloudPending}
               onClick={() =>
                 void action(async () => {
                   await flush();
+                  setCloudNavigation((v) => ({
+                    action: "room",
+                    sequence: v.sequence + 1,
+                  }));
+                  localStorage.setItem("colorverse-entered-cloud", "1");
                   setRoute("cloudworks");
                 })
               }
             >
-              {cloudStudent ? "我的星球与作品" : "课堂作品"}
+              星球内部
             </button>
           )}
           {cloudSession?.access === "active" &&
@@ -889,16 +936,18 @@ export function App() {
                   })
                 }
               >
-                班级管理
+                教师管理
               </button>
             )}
-          <button
-            className={route === "universe" ? "active" : ""}
-            onClick={() => void back()}
-          >
-            {cloudStudent ? "宇宙演示" : "宇宙展览"}
-          </button>
-          {myPlanet && !cloudStudent && (
+          {cloudSession?.access !== "active" && (
+            <button
+              className={route === "universe" ? "active" : ""}
+              onClick={() => void back()}
+            >
+              {cloudStudent ? "宇宙演示" : "宇宙展览"}
+            </button>
+          )}
+          {myPlanet && !cloudStudent && cloudSession?.access !== "active" && (
             <button
               className={route === "studio" ? "active" : ""}
               disabled={busy}
@@ -912,7 +961,7 @@ export function App() {
               编辑你的星球
             </button>
           )}
-          {canUseTeacherTools && (
+          {canUseTeacherTools && cloudSession?.access !== "active" && (
             <button
               className={route === "teacher" ? "active" : ""}
               onClick={() =>
@@ -925,7 +974,7 @@ export function App() {
               教师演示
             </button>
           )}
-          {!cloudStudent && (
+          {!cloudStudent && cloudSession?.access !== "active" && (
             <button
               className={route === "course" ? "active" : ""}
               onClick={() =>
@@ -962,9 +1011,12 @@ export function App() {
                     classId: membership.classId,
                     sequence: entry.sequence + 1,
                   }));
-                  setRoute(
-                    membership.role === "student" ? "cloudworks" : "classroom",
-                  );
+                  setCloudNavigation((v) => ({
+                    action: "universe",
+                    sequence: v.sequence + 1,
+                  }));
+                  localStorage.setItem("colorverse-entered-cloud", "1");
+                  setRoute("cloudworks");
                   return true;
                 }}
               />
@@ -1040,6 +1092,7 @@ export function App() {
             <CloudGallery
               key={`${cloudSession.identity.id}-${cloudEntry.sequence}`}
               session={cloudSession}
+              navigation={cloudNavigation}
               onPendingChange={setCloudPending}
               onGuideProgress={reportGuideProgress}
               guideOpenRequest={guideOpenRequest}
