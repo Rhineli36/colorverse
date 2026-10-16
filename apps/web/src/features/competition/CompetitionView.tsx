@@ -209,7 +209,8 @@ export function CompetitionView() {
     setTab("universe");
     setNotice("");
     setEditTarget(undefined);
-    if (r === "student" && !state.ownPlanet) setEditTarget(null);
+    if (r === "student" && colorCase) setEditTarget(state.ownPlanet ?? null);
+    else if (r === "student" && !state.ownPlanet) setEditTarget(null);
     else if (r === "student" && state.ownPlanet) {
       setSelected(state.ownPlanet.id);
       setFocusRequest({ id: state.ownPlanet.id, sequence: Date.now() });
@@ -575,11 +576,15 @@ export function CompetitionView() {
             onDirtyChange={(dirty) => {
               editorDirty.current = dirty;
             }}
-            onClose={() => setEditTarget(undefined)}
+            onClose={() => {
+              setEditTarget(undefined);
+              setColorCase(undefined);
+            }}
             onSave={async (p, m) => {
               await run(async () => {
                 await savePlanet(p, m);
                 setEditTarget(undefined);
+                setColorCase(undefined);
                 setSelected(p.id);
                 setTab("universe");
                 setFocusRequest({ id: p.id, sequence: Date.now() });
@@ -589,15 +594,15 @@ export function CompetitionView() {
         ) : tab === "learning" ? (
           <KnowledgePanel
             expanded
+            onBack={() => setTab("universe")}
             onApplyColor={(c) => {
-              if (!role || role === "guest") {
+              setColorCase(c);
+              if (role !== "student") {
                 setNotice("请选择学生身份，开启自己的创作。");
+                setLoginOpen(true);
                 return;
               }
-              setColorCase(c);
-              setEditTarget(
-                role === "student" ? state.ownPlanet : (planet ?? examples[0]),
-              );
+              setEditTarget(state.ownPlanet ?? null);
             }}
           />
         ) : tab === "teacher" ? (

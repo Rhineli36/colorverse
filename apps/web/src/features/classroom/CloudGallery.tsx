@@ -802,13 +802,14 @@ export function CloudGallery({
               : {
                   skin: creationSkin,
                   name: preset.name,
-                  color: preset.color,
+                  color: colorCase?.hex ?? preset.color,
                   summary: preset.summary,
                   reflection: preset.reflection,
                   learningIntent: {
                     ...blankIntent(),
+                    ...(colorCase ? { referenceCaseId: colorCase.id } : {}),
                     customMood: preset.mood,
-                    paletteColors: [preset.color],
+                    paletteColors: [colorCase?.hex ?? preset.color],
                   },
                 },
           ),
@@ -2070,26 +2071,41 @@ export function CloudGallery({
             </button>
             <KnowledgePanel
               expanded
-              onApplyColor={(c) => {
-                if (!myPlanet) {
-                  setNotice("请先创建自己的星球，再把颜色带回创作。");
-                  return;
-                }
-                if (
-                  appearanceDirty &&
-                  !window.confirm(
-                    "应用案例色会更新主色调。是否保留其他编辑并继续？",
-                  )
-                )
-                  return;
-                setColorCase(c);
-                setMysteryOpen(false);
-                setPlanetId(myPlanet.id);
-                setEditLaunch(false);
-                setExploring(true);
-                setSettingsSection("tone");
-                setSettingsOpen(true);
-              }}
+              onBack={() => setMysteryOpen(false)}
+              backLabel={exploring ? "返回星球" : "返回宇宙"}
+              onApplyColor={
+                student || myPlanet
+                  ? (c) => {
+                      if (!myPlanet) {
+                        if (!student) {
+                          setNotice("请使用学生账户，把颜色带回自己的星球。");
+                          return;
+                        }
+                        setColorCase(c);
+                        setMysteryOpen(false);
+                        setExploring(false);
+                        setNotice(
+                          `已选中${c.name}，创建自己的星球后即可继续设计。`,
+                        );
+                        return;
+                      }
+                      if (
+                        appearanceDirty &&
+                        !window.confirm(
+                          "应用案例色会更新主色调。是否保留其他编辑并继续？",
+                        )
+                      )
+                        return;
+                      setColorCase(c);
+                      setMysteryOpen(false);
+                      setPlanetId(myPlanet.id);
+                      setEditLaunch(false);
+                      setExploring(true);
+                      setSettingsSection("tone");
+                      setSettingsOpen(true);
+                    }
+                  : undefined
+              }
             />
           </section>
         </div>

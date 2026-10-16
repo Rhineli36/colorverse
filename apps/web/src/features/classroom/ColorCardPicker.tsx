@@ -1,5 +1,5 @@
-import { EmotionCases } from "./EmotionCases";
-import { useState, useEffect } from "react";
+import { ColorMystery } from "./ColorMystery";
+import { useState, useEffect, useRef } from "react";
 import { EmotionContent, findEmotionCase } from "@colorverse/contracts";
 import "./exploration.css";
 export function ColorCardPicker({
@@ -92,27 +92,17 @@ export function ColorCardPicker({
         </article>
       )}
       {explore > 0 && card && (
-        <div className="color-case-detail-browser">
-          <EmotionCases
-            key={explore}
-            initialCaseId={card.id}
-            onApply={(c) => {
-              if (
-                color.toUpperCase() !== c.hex.toUpperCase() &&
-                !window.confirm(
-                  "将主色调调整为" +
-                    c.hex +
-                    "？只改变颜色，不重置背景、作品或元素位置。",
-                )
-              )
-                return;
-              setSelected(c.id);
-              setHex(null);
-              onColor(c.hex);
-              onReference?.(c.id);
-            }}
-          />
-        </div>
+        <EditorKnowledge
+          initialCaseId={card.id}
+          onClose={() => setExplore(0)}
+          onApply={(c) => {
+            setSelected(c.id);
+            setHex(null);
+            onColor(c.hex);
+            onReference?.(c.id);
+            setExplore(0);
+          }}
+        />
       )}
       <div className="color-fine-tune">
         <label>
@@ -150,5 +140,38 @@ export function ColorCardPicker({
       </div>
       <p className="muted">{EmotionContent.notice}</p>
     </section>
+  );
+}
+
+function EditorKnowledge({
+  initialCaseId,
+  onClose,
+  onApply,
+}: {
+  initialCaseId: string;
+  onClose: () => void;
+  onApply: (c: import("@colorverse/contracts").EmotionCase) => void;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    dialog.current?.showModal();
+  }, []);
+  return (
+    <dialog
+      ref={dialog}
+      className="study-from-editor"
+      aria-label="色彩的奥秘"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+    >
+      <ColorMystery
+        initialCaseId={initialCaseId}
+        onBack={onClose}
+        backLabel="返回星球编辑"
+        onApplyColor={onApply}
+      />
+    </dialog>
   );
 }

@@ -1,6 +1,6 @@
 # 色彩星球 / COLORVERSE 设计文档
 
-2026-10-16 最新修改与验收请阅读 [53 双场景编辑与课堂信息](53-design-editor-and-classroom-mail.md)。
+2026-10-16 最新本地学习页改版请阅读 [55 色彩的奥秘改版与验收](55-color-mystery-redesign.md)。已上线的连续拖动、留言顺序与爱心修复见 [54 修复记录](54-repeat-drag-and-discussion.md)；双场景编辑与课堂信息见 [53 验收记录](53-design-editor-and-classroom-mail.md)。
 
 当前参赛版本请优先阅读 [47 参赛运行与打包说明](47-competition-run-and-package.md)。以下阶段规划和验收记录按当时版本理解，不能用旧的“待接入”描述判断现在的实现状态。
 
@@ -99,3 +99,9 @@
 - [51 · 八色系情感案例与离线身份体验](51-emotion-offline-experience.md)
 
 - [52 · 创建模板、星球拖拽与默认场景](52-planet-templates-and-placement.md)
+
+- [53 · 双场景编辑与课堂信息](53-design-editor-and-classroom-mail.md)
+
+- [54 · 连续拖动与留言区修复](54-repeat-drag-and-discussion.md)
+
+- [55 · 色彩的奥秘改版与验收](55-color-mystery-redesign.md)

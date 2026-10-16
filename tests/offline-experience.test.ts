@@ -25,6 +25,28 @@ const planet = () => ({
   works: [],
 });
 describe("offline experience isolation and content", () => {
+  it("keeps teacher and student likes separate when toggled and reopened", async () => {
+    await deleteDB(OFFLINE_DB_NAME);
+    let store = new OfflineExperienceStore();
+    const value = {
+      planetId: "demo-1",
+      workId: null,
+      kind: "like" as const,
+      content: "",
+    };
+    let s = await store.interact(0, "student", value);
+    s = await store.interact(s.revision, "teacher", value);
+    expect(s.interactions).toHaveLength(2);
+    s = await store.interact(s.revision, "student", value);
+    expect(s.interactions.map((i) => i.author)).toEqual(["体验教师"]);
+    await store.close();
+    store = new OfflineExperienceStore();
+    expect((await store.load()).interactions.map((i) => i.author)).toEqual([
+      "体验教师",
+    ]);
+    await store.close();
+    await deleteDB(OFFLINE_DB_NAME);
+  });
   it("preserves media and interactions after reopen and atomically resets only this database", async () => {
     await deleteDB(OFFLINE_DB_NAME);
     const other = await openDB("colorverse-unrelated-sentinel", 1, {
