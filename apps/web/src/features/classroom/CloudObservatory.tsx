@@ -28,7 +28,7 @@ export type ObservatoryPlanet = {
 /** A presentation adapter only: it never imports cloud documents into local IndexedDB. */
 export function CloudObservatory({
   classId,
-  planets,
+  planets: suppliedPlanets,
   onEnter,
   selectedId,
   ownId,
@@ -49,6 +49,10 @@ export function CloudObservatory({
   ) => Promise<void>;
   onEnter: (id: string) => void;
 }) {
+  // Callers may rebuild the array for a toast or other unrelated UI update.
+  // Keep the asset adapter (and active pointer capture) until scene data changes.
+  const sourceSignature = JSON.stringify(suppliedPlanets);
+  const planets = useMemo(() => suppliedPlanets, [sourceSignature]);
   const host = useRef<HTMLElement>(null);
   const labels = useRef(new Map<string, HTMLDivElement>());
   const positions = useRef<
