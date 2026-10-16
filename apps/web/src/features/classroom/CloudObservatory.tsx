@@ -15,6 +15,7 @@ import {
 import { SceneCanvas } from "../../app/SceneCanvas";
 import { classroomRequest } from "./cloud-request";
 import { presentationName } from "./presentation-name";
+import { distantPlanetField } from "./distant-planets";
 
 export type ObservatoryPlanet = {
   id: string;
@@ -55,6 +56,7 @@ export function CloudObservatory({
   const planets = useMemo(() => suppliedPlanets, [sourceSignature]);
   const host = useRef<HTMLElement>(null);
   const labels = useRef(new Map<string, HTMLDivElement>());
+  const scenery = useRef<HTMLDivElement>(null);
   const positions = useRef<
     ((id: string) => { x: number; y: number } | null) | null
   >(null);
@@ -311,14 +313,22 @@ export function CloudObservatory({
       last = 0;
     const update = (now: number) => {
       frame = requestAnimationFrame(update);
-      if (now - last < 32 || document.hidden) return;
-      last = now;
+      if (document.hidden) return;
       const canvas = host.current?.querySelector("canvas");
       if (!canvas?.dataset.camera) return;
       const camera = JSON.parse(canvas.dataset.camera),
         w = canvas.clientWidth,
         h = canvas.clientHeight,
         scale = Math.min(w / 1600, h / 900);
+      // Read the displayed camera, including its smooth transitions. Scenery
+      // stays in world space through zoom, pan, focus and viewport resizing.
+      if (scenery.current) {
+        const zoom = scale * camera.zoom;
+        scenery.current.style.transform = `translate(${w / 2 - 800 * zoom + camera.x * scale}px, ${h / 2 - 450 * zoom + camera.y * scale}px) scale(${zoom})`;
+        scenery.current.style.visibility = "visible";
+      }
+      if (now - last < 32) return;
+      last = now;
       for (const p of visible) {
         const label = labels.current.get(p.id),
           point = positions.current?.(p.id);
@@ -426,31 +436,33 @@ export function CloudObservatory({
           </div>
         ))}
       </div>
-      {mode === "overview" && (
-        <div className="distant-planets" aria-hidden="true">
-          {Array.from({ length: 14 }, (_, i) => (
+      <div className="distant-planets" aria-hidden="true">
+        <div ref={scenery} className="distant-planets-world">
+          {distantPlanetField.map((p, i) => (
             <img
               key={i}
-              src={`${import.meta.env.BASE_URL}demo/v2/body-${i % 6}.webp`}
+              src={`${import.meta.env.BASE_URL}demo/v2/body-${p.skin}.webp`}
               alt=""
+              draggable={false}
               style={{
-                left: `${4 + ((i * 29) % 91)}%`,
-                top: `${10 + ((i * 23) % 74)}%`,
-                width: 18 + (i % 4) * 7,
-                height: 18 + (i % 4) * 7,
+                left: p.x - p.diameter / 2,
+                top: p.y - p.diameter / 2,
+                width: p.diameter,
+                height: p.diameter,
               }}
             />
           ))}
         </div>
-      )}
+      </div>
       <div className="universe-intro">
         <p className="eyebrow">COLORVERSE · OBSERVATORY</p>
         <h1>
           设计色彩 · <span>云端宇宙</span>
         </h1>
-        <p className="intro-copy">在不同的色彩世界中，发现彼此的作品。</p>
-        <p className="muted">
-          {planets.length} 颗星球 · 双击聚焦，再次双击进入内部
+        <p className="intro-copy">
+          让心绪成为色彩，让想象长成星球。
+          <br />
+          循着微光，遇见彼此心中的世界。
         </p>
       </div>
       <div className="view-switcher">

@@ -1622,12 +1622,20 @@
   inset: 0;
   pointer-events: none;
   z-index: 1;
+  overflow: hidden;
+}
+.distant-planets-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  visibility: hidden;
 }
 .distant-planets img {
   position: absolute;
   border-radius: 50%;
-  opacity: 0.6;
-  filter: drop-shadow(0 0 7px #a0bce777);
+  opacity: 0.48;
+  filter: drop-shadow(0 0 35px #a0bce744);
 }
 @media (max-width: 760px) {
   .topbar .brand,
