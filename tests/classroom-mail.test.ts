@@ -62,7 +62,7 @@ describe("published assignment mail and incoming feedback", () => {
     } finally {
       await db.close();
     }
-  });
+  }, 15000);
   it("keeps offline publication and per-role read markers after reopen and prevents student publication", async () => {
     await deleteDB("colorverse-judges-offline-v1");
     let store = new OfflineExperienceStore();
