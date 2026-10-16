@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type {
   CloudSession,
   ClassroomNotification,
+  AssignmentDefinition,
 } from "@colorverse/contracts";
 import { ClassroomInbox, AssignmentMail } from "./ClassroomMail";
 import { classroomRequest } from "./cloud-request";
@@ -20,7 +21,11 @@ export function CloudInbox({
       (ClassroomNotification & { classId: string })[]
     >([]),
     [read, setRead] = useState<string[]>([]),
-    [task, setTask] = useState<{ classId: string; taskId: string }>();
+    [task, setTask] = useState<{
+      classId: string;
+      taskId: string;
+      definition?: AssignmentDefinition;
+    }>();
   const key = `colorverse.inbox.read.${session.identity.id}`;
   const [status, setStatus] = useState("");
   const refreshRef = useRef<() => void>(() => {});
@@ -100,7 +105,12 @@ export function CloudInbox({
         }}
         onAssignment={(taskId, notification) => {
           const item = items.find((n) => n.id === notification.id);
-          if (item) setTask({ classId: item.classId, taskId });
+          if (item)
+            setTask({
+              classId: item.classId,
+              taskId,
+              definition: item.assignment,
+            });
         }}
         onReaction={(n) => {
           const item = items.find((i) => i.id === n.id);
@@ -110,6 +120,7 @@ export function CloudInbox({
       {task && (
         <AssignmentMail
           taskId={task.taskId}
+          definition={task.definition}
           onClose={() => setTask(undefined)}
           onSubmit={
             session.access === "active" &&

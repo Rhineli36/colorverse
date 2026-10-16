@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  LearningTaskIdSchema,
+  AssignmentDefinitionSchema,
+} from "./classroom-mail";
 export { default as LearningContent } from "./learning-content.json";
 export const LearningTaskIds = ["T01", "T02", "T03"] as const;
 export const MoodChoices = [
@@ -31,16 +35,18 @@ export const LearningPolicySchema = z.strictObject({
   showIntentToPeers: z.boolean(),
 });
 export const LearningTaskSettingSchema = LearningPolicySchema.extend({
-  taskId: z.enum(LearningTaskIds),
+  taskId: LearningTaskIdSchema,
+  definition: AssignmentDefinitionSchema.optional(),
   published: z.boolean(),
   revision: z.number().int().nonnegative(),
 });
 export const WorkLearningInput = LearningIntentSchema.extend({
-  taskId: z.enum(LearningTaskIds).nullable().default(null),
+  taskId: LearningTaskIdSchema.nullable().default(null),
   comparisonGroupId: z.uuid().nullable().default(null),
   variantLabel: z.string().trim().max(40).default(""),
 });
 export const WorkLearningSchema = WorkLearningInput.extend({
+  taskTitle: z.string().max(120).optional(),
   policy: LearningPolicySchema,
   intentHidden: z.boolean().optional(),
 });

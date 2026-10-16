@@ -1,5 +1,6 @@
 import {
   AssignmentCatalog,
+  AssignmentDefinitionSchema,
   type ClassroomNotification,
 } from "@colorverse/contracts";
 import type { EnrollmentSql } from "./enrollment";
@@ -10,7 +11,7 @@ export async function classroomNotifications(
 ) {
   const tasks = (
     await sql.query(
-      "SELECT task_id,revision,updated_at FROM colorverse.learning_task_settings WHERE class_id=$1 AND published=true",
+      "SELECT task_id,revision,updated_at,definition FROM colorverse.learning_task_settings WHERE class_id=$1 AND published=true",
       [classId],
     )
   ).rows;
@@ -25,7 +26,10 @@ export async function classroomNotifications(
       id: `assignment:${classId}:${r.task_id}:${r.revision}`,
       kind: "assignment" as const,
       taskId: String(r.task_id),
-      title: `老师发布了作业：${AssignmentCatalog.find((t) => t.id === r.task_id)?.title ?? r.task_id}`,
+      assignment: r.definition
+        ? AssignmentDefinitionSchema.parse(r.definition)
+        : undefined,
+      title: `老师发布了作业：${(r.definition as { title?: string } | null)?.title ?? AssignmentCatalog.find((t) => t.id === r.task_id)?.title ?? r.task_id}`,
       createdAt: new Date(r.updated_at as string).toISOString(),
     })),
     ...reactions.map((r) => ({

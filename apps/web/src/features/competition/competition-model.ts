@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   CloudPlanetDocumentSchema,
   GrowthPresetIds,
+  LearningTaskIdSchema,
 } from "@colorverse/contracts";
 const SnapshotInteraction = z.object({
   kind: z.enum(["like", "emoji", "comment"]),
@@ -9,7 +10,7 @@ const SnapshotInteraction = z.object({
   author: z.string(),
 });
 export const Work = z.strictObject({
-  taskId: z.enum(["T01", "T02", "T03"]).nullable().optional(),
+  taskId: LearningTaskIdSchema.nullable().optional(),
   color: z.string().optional(),
   id: z.string(),
   params: z

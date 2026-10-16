@@ -56,6 +56,9 @@ beforeAll(async () => {
   await db.exec(
     await readFile("apps/api/migrations/006-learning-context.sql", "utf8"),
   );
+  await db.exec(
+    await readFile("apps/api/migrations/007-custom-assignments.sql", "utf8"),
+  );
   for (const id of ids.slice(0, 4))
     await db.query(
       "INSERT INTO users VALUES($1::uuid,$2,$1::uuid::text,'测试用户','active')",
@@ -1574,6 +1577,135 @@ describe("cloud learning templates and evidence-based feedback", () => {
       // This entire isolated test database is closed by afterAll; immutable reviews stay intact.
       await db.query("DELETE FROM planets WHERE id=$1", [ids[14]]);
       await db.query("DELETE FROM learning_task_settings", []);
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe("teacher-authored assignments", () => {
+  it("persists custom text and private images, rejects student creation, deduplicates retries and binds submissions", async () => {
+    const bytes = await readFile("apps/web/public/assignments/two-moods.webp");
+    const req = randomUUID();
+    const definition = {
+      title: "自定义 · 颜色日记",
+      description: "保留生活中的一种颜色。",
+      steps: ["观察颜色", "记录心情"],
+      deliverables: "一张图与说明",
+      inspiration: "色彩的奥秘",
+      exampleObservation: "比较明暗",
+    };
+    const body = () => {
+      const form = new FormData();
+      form.set("metadata", JSON.stringify({ requestId: req, definition }));
+      form.set(
+        "image",
+        new Blob([bytes], { type: "image/webp" }),
+        "example.webp",
+      );
+      return new Request("https://app.test", { method: "POST", body: form });
+    };
+    await expect(
+      handleShowcaseCloud(
+        body(),
+        env,
+        identity(ids[1]),
+        ids[5],
+        "learning-tasks",
+        clientFactory,
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    const stored = vi.fn(
+      async () =>
+        new Response(bytes, { headers: { "Content-Type": "image/webp" } }),
+    );
+    vi.stubGlobal("fetch", stored);
+    const imageEnv = {
+      ...env,
+      IMAGES: {
+        input: () => ({
+          transform: () => ({
+            output: async () => ({ response: () => new Response(bytes) }),
+          }),
+        }),
+      },
+    };
+    try {
+      const first = await handleShowcaseCloud(
+        body(),
+        imageEnv,
+        identity(ids[0]),
+        ids[5],
+        "learning-tasks",
+        clientFactory,
+      );
+      expect(first.status).toBe(201);
+      const result = await first.json();
+      const id = result.taskId;
+      expect(
+        result.tasks.find((t: { taskId: string }) => t.taskId === id)
+          .definition,
+      ).toMatchObject({
+        ...definition,
+        image: `private:classes/${ids[5]}/learning-tasks/${id}/image`,
+      });
+      expect(
+        (
+          await handleShowcaseCloud(
+            body(),
+            imageEnv,
+            identity(ids[0]),
+            ids[5],
+            "learning-tasks",
+            clientFactory,
+          )
+        ).status,
+      ).toBe(200);
+      expect(stored).toHaveBeenCalledTimes(1);
+      const requestImage = () =>
+        new Request("https://app.test", { method: "GET" });
+      expect(
+        (
+          await handleShowcaseCloud(
+            requestImage(),
+            imageEnv,
+            identity(ids[1]),
+            ids[5],
+            `learning-tasks/${id}/image`,
+            clientFactory,
+          )
+        ).status,
+      ).toBe(200);
+      await expect(
+        handleShowcaseCloud(
+          requestImage(),
+          imageEnv,
+          identity(ids[3]),
+          ids[5],
+          `learning-tasks/${id}/image`,
+          clientFactory,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      const { classroomNotifications } =
+        await import("../apps/worker/src/notifications");
+      const incoming = await classroomNotifications(
+        sql,
+        { id: ids[8] },
+        ids[5],
+      );
+      expect(
+        incoming.notifications.find((n) => n.taskId === id)?.assignment?.title,
+      ).toBe(definition.title);
+      const { validateWorkLearning } =
+        await import("../apps/worker/src/learning");
+      const learning = await validateWorkLearning(
+        sql,
+        { id: ids[8], role: "student" },
+        ids[5],
+        { taskId: id, customMood: "期待", colorRationale: "明亮的黄色" },
+      );
+      expect(learning?.taskId).toBe(id);
+      expect(learning?.taskTitle).toBe(definition.title);
+    } finally {
       vi.unstubAllGlobals();
     }
   });

@@ -77,6 +77,7 @@ export function CompetitionView() {
     [imageZoom, setImageZoom] = useState(false),
     [grade, setGrade] = useState(""),
     [review, setReview] = useState("");
+  const assignmentCatalog = [...AssignmentCatalog, ...state.customTasks];
   const [mailTask, setMailTask] = useState<string>(),
     [uploadTaskId, setUploadTaskId] = useState("");
   const [sceneFailed, setSceneFailed] = useState(false),
@@ -439,7 +440,7 @@ export function CompetitionView() {
       id: a.id,
       kind: "assignment" as const,
       taskId: a.taskId,
-      title: `老师发布了作业：${AssignmentCatalog.find((t) => t.id === a.taskId)?.title}`,
+      title: `老师发布了作业：${assignmentCatalog.find((t) => t.id === a.taskId)?.title}`,
       createdAt: a.publishedAt,
     })),
     ...state.interactions
@@ -611,6 +612,30 @@ export function CompetitionView() {
             <h1>班级的色彩轨迹</h1>
             <AssignmentPublisher
               disabled={busy}
+              catalog={assignmentCatalog}
+              onCreate={async (draft, image, requestId) => {
+                let dataUrl = "";
+                if (image) {
+                  const prepared = await importOfflineImage(image);
+                  dataUrl = await new Promise<string>((ok, bad) => {
+                    const reader = new FileReader();
+                    reader.onload = () => ok(String(reader.result));
+                    reader.onerror = () => bad(Error("无法读取示范图片"));
+                    reader.readAsDataURL(prepared.blob);
+                  });
+                  if (dataUrl.length > 2000000)
+                    throw Error("请缩小示范图片后重试");
+                }
+                setState(
+                  await store.current!.createAssignment(
+                    state.revision,
+                    role,
+                    draft,
+                    dataUrl,
+                    requestId,
+                  ),
+                );
+              }}
               onPublish={async (id) =>
                 setState(
                   await store.current!.publishAssignment(
@@ -951,9 +976,7 @@ export function CompetitionView() {
                   id = crypto.randomUUID(),
                   i = planet.works.length,
                   w: Artwork = {
-                    taskId: uploadTaskId
-                      ? (uploadTaskId as "T01" | "T02" | "T03")
-                      : null,
+                    taskId: uploadTaskId || null,
                     id,
                     title: workTitle.trim(),
                     description: rationale.trim(),
@@ -987,23 +1010,25 @@ export function CompetitionView() {
                 onChange={(e) => setUploadTaskId(e.target.value)}
               >
                 <option value="">自由展示</option>
-                {AssignmentCatalog.filter((t) =>
-                  state.assignments.some((a) => a.taskId === t.id),
-                ).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
-                ))}
+                {assignmentCatalog
+                  .filter((t) =>
+                    state.assignments.some((a) => a.taskId === t.id),
+                  )
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
               </select>
             </label>
-            {AssignmentCatalog.filter((task) => task.id === uploadTaskId).map(
-              (task) => (
+            {assignmentCatalog
+              .filter((task) => task.id === uploadTaskId)
+              .map((task) => (
                 <details key={task.id} className="submission-assignment-brief">
                   <summary>查看作业要求与范例</summary>
                   <AssignmentBrief task={task} />
                 </details>
-              ),
-            )}
+              ))}
             <label>
               作品名称
               <input
@@ -1053,6 +1078,7 @@ export function CompetitionView() {
       {mailTask && (
         <AssignmentMail
           taskId={mailTask}
+          definition={state.customTasks.find((t) => t.id === mailTask)}
           onClose={() => setMailTask(undefined)}
           onSubmit={
             role === "student"

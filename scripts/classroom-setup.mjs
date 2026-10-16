@@ -148,6 +148,27 @@ try {
       "GRANT SELECT,INSERT,UPDATE ON colorverse.learning_task_settings TO colorverse_classroom_writer",
     );
   await client.query("COMMIT");
+  const customTasks = await readFile(
+    "apps/api/migrations/007-custom-assignments.sql",
+    "utf8",
+  );
+  const customHash = createHash("sha256").update(customTasks).digest("hex");
+  await client.query("BEGIN");
+  await client.query("SELECT pg_advisory_xact_lock(7301941)");
+  await client.query("SET LOCAL search_path=colorverse,pg_catalog");
+  const seventh = await client.query(
+    "SELECT sha256 FROM course_migrations WHERE version=7",
+  );
+  if (seventh.rows.length && seventh.rows[0].sha256 !== customHash)
+    throw Error("MIGRATION_HASH_MISMATCH");
+  if (!seventh.rows.length) {
+    await client.query(customTasks);
+    await client.query(
+      "INSERT INTO course_migrations(version,sha256) VALUES(7,$1)",
+      [customHash],
+    );
+  }
+  await client.query("COMMIT");
   const studentCounts = await client.query(
     "SELECT count(*)::int AS students FROM colorverse.enrollments WHERE role='student' AND status='active'",
   );

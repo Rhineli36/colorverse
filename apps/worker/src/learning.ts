@@ -1,5 +1,6 @@
 import {
   LearningTaskIds,
+  AssignmentCatalog,
   LearningTaskSettingSchema,
   WorkLearningInput,
   WorkLearningSchema,
@@ -53,22 +54,31 @@ export async function learningTasks(
     throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
   const rows = (
     await sql.query(
-      `SELECT task_id "taskId",published,require_explanation "requireExplanation",allow_peer_review "allowPeerReview",show_intent_to_peers "showIntentToPeers",revision FROM colorverse.learning_task_settings WHERE class_id=$1`,
+      `SELECT task_id "taskId",published,require_explanation "requireExplanation",allow_peer_review "allowPeerReview",show_intent_to_peers "showIntentToPeers",revision,definition FROM colorverse.learning_task_settings WHERE class_id=$1`,
       [classId],
     )
   ).rows;
   return {
-    tasks: LearningTaskIds.map(
-      (taskId) =>
-        rows.find((r) => r.taskId === taskId) ?? {
-          taskId,
-          published: false,
-          requireExplanation: true,
-          allowPeerReview: true,
-          showIntentToPeers: true,
-          revision: 0,
-        },
-    ),
+    tasks: [
+      ...LearningTaskIds,
+      ...rows
+        .filter((r) => String(r.taskId).startsWith("custom-"))
+        .map((r) => String(r.taskId)),
+    ].map((taskId) => {
+      const row = rows.find((r) => r.taskId === taskId);
+      return LearningTaskSettingSchema.parse(
+        row
+          ? { ...row, definition: row.definition ?? undefined }
+          : {
+              taskId,
+              published: false,
+              requireExplanation: true,
+              allowPeerReview: true,
+              showIntentToPeers: true,
+              revision: 0,
+            },
+      );
+    }),
   };
 }
 export async function validateWorkLearning(
@@ -84,6 +94,7 @@ export async function validateWorkLearning(
     allowPeerReview: true,
     showIntentToPeers: true,
   };
+  let taskTitle: string | undefined;
   if (v.taskId) {
     const task = (await learningTasks(sql, actor, classId, "GET")).tasks.find(
       (t) => t.taskId === v.taskId,
@@ -94,6 +105,9 @@ export async function validateWorkLearning(
         "TASK_UNAVAILABLE",
         "此教学模板尚未启用或已关闭，请重新选择",
       );
+    taskTitle =
+      task.definition?.title ??
+      AssignmentCatalog.find((t) => t.id === v.taskId)?.title;
     policy = {
       requireExplanation: task.requireExplanation as boolean,
       allowPeerReview: task.allowPeerReview as boolean,
@@ -131,7 +145,7 @@ export async function validateWorkLearning(
         "比较组只能关联自己的同一任务作品",
       );
   }
-  return { ...v, policy };
+  return { ...v, policy, ...(taskTitle ? { taskTitle } : {}) };
 }
 export function visibleLearning(input: unknown, canSeeIntent: boolean) {
   if (input == null) return null;

@@ -1,5 +1,9 @@
 import { AssignmentPublisher } from "./ClassroomMail";
-import { LearningTaskSettingSchema } from "@colorverse/contracts";
+import {
+  LearningTaskSettingSchema,
+  AssignmentCatalog,
+  type AssignmentDefinition,
+} from "@colorverse/contracts";
 import { TaskSettings } from "./LearningPanels";
 import { presentationName } from "./presentation-name";
 import { useEffect, useState } from "react";
@@ -38,6 +42,30 @@ export function CloudClassroomView({
     [sort, setSort] = useState("name"),
     [weekly, setWeekly] = useState(true);
   const signature = memberships.map((m) => m.classId).join();
+  const [catalog, setCatalog] =
+    useState<AssignmentDefinition[]>(AssignmentCatalog);
+  useEffect(() => {
+    let active = true;
+    setCatalog(AssignmentCatalog);
+    if (classId)
+      void classroomRequest(`classes/${classId}/learning-tasks`)
+        .then((r) => r.json())
+        .then((v) => {
+          if (active)
+            setCatalog([
+              ...AssignmentCatalog,
+              ...v.tasks
+                .map((t: unknown) => LearningTaskSettingSchema.parse(t))
+                .flatMap((t: { definition?: AssignmentDefinition }) =>
+                  t.definition ? [t.definition] : [],
+                ),
+            ]);
+        })
+        .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [classId, refresh, session?.identity.id]);
   useEffect(() => {
     setClassId(
       memberships.find((m) => m.classId === initialClassId)?.classId ??
@@ -154,7 +182,18 @@ export function CloudClassroomView({
       )}
       <section className="classroom-publish">
         <AssignmentPublisher
+          catalog={catalog}
           disabled={loading || !classId}
+          onCreate={async (definition, image, requestId) => {
+            const body = new FormData();
+            body.set("metadata", JSON.stringify({ requestId, definition }));
+            if (image) body.set("image", image);
+            await classroomRequest(`classes/${classId}/learning-tasks`, {
+              method: "POST",
+              body,
+            });
+            setRefresh((v) => v + 1);
+          }}
           onPublish={async (taskId) => {
             const r = await classroomRequest(
               `classes/${classId}/learning-tasks`,

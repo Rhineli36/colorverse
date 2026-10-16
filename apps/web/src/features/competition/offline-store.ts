@@ -1,6 +1,12 @@
 import { openDB, type DBSchema } from "idb";
 import { z } from "zod";
 import {
+  LearningTaskIdSchema,
+  AssignmentDefinitionSchema,
+  CustomAssignmentFields,
+  type CustomAssignmentDraft,
+} from "@colorverse/contracts";
+import {
   ExperiencePlanet,
   type ExperiencePlanetData,
 } from "./competition-model";
@@ -25,13 +31,14 @@ export const ExperienceState = z.object({
     .array(
       z.object({
         id: z.uuid(),
-        taskId: z.enum(["T01", "T02", "T03"]),
+        taskId: LearningTaskIdSchema,
         publishedAt: z.string(),
       }),
     )
     .max(100)
     .default([]),
   readNotifications: z.array(z.string()).max(500).default([]),
+  customTasks: z.array(AssignmentDefinitionSchema).max(50).default([]),
 });
 export type OfflineState = z.infer<typeof ExperienceState>;
 export const blankExperience = (revision = 0): OfflineState => ({
@@ -42,6 +49,7 @@ export const blankExperience = (revision = 0): OfflineState => ({
   interactions: [],
   assignments: [],
   readNotifications: [],
+  customTasks: [],
 });
 interface OfflineDB extends DBSchema {
   state: { key: string; value: OfflineState };
@@ -190,18 +198,51 @@ export class OfflineExperienceStore {
     taskId: string,
   ) {
     if (role !== "teacher") throw Error("只有教师可以发布作业。");
-    const id = z.enum(["T01", "T02", "T03"]).parse(taskId);
-    return this.commit(expected, role, (s) => ({
-      ...s,
-      assignments: [
-        ...s.assignments,
-        {
-          id: crypto.randomUUID(),
-          taskId: id,
-          publishedAt: new Date().toISOString(),
-        },
-      ].slice(-100),
-    }));
+    const id = LearningTaskIdSchema.parse(taskId);
+    return this.commit(expected, role, (s) => {
+      if (id.startsWith("custom-") && !s.customTasks.some((t) => t.id === id))
+        throw Error("此作业不存在");
+      return {
+        ...s,
+        assignments: [
+          ...s.assignments,
+          {
+            id: crypto.randomUUID(),
+            taskId: id,
+            publishedAt: new Date().toISOString(),
+          },
+        ].slice(-100),
+      };
+    });
+  }
+  async createAssignment(
+    expected: number,
+    role: ExperienceRole,
+    draft: CustomAssignmentDraft,
+    image: string,
+    requestId: string,
+  ) {
+    if (role !== "teacher") throw Error("只有教师可以新增作业。");
+    z.uuid().parse(requestId);
+    const definition = AssignmentDefinitionSchema.parse({
+      ...CustomAssignmentFields.parse(draft),
+      id: `custom-${requestId}`,
+      image,
+    });
+    if (image && !/^data:image\/webp;base64,[a-zA-Z0-9+/=]+$/.test(image))
+      throw Error("示范图片无效");
+    return this.commit(expected, role, (s) => {
+      if (s.customTasks.some((t) => t.id === definition.id)) return s;
+      if (s.customTasks.length >= 50) throw Error("最多新增50份作业");
+      s.customTasks.push(definition);
+      s.assignments.push({
+        id: crypto.randomUUID(),
+        taskId: definition.id,
+        publishedAt: new Date().toISOString(),
+      });
+      s.assignments = s.assignments.slice(-100);
+      return s;
+    });
   }
   async readNotification(expected: number, role: ExperienceRole, id: string) {
     return this.commit(expected, role, (s) => ({

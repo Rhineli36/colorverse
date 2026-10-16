@@ -14,6 +14,8 @@ import {
   CloudPlanetPositionInput,
   DefaultCloudMotion,
   PeerObservationSchema,
+  CustomAssignmentFields,
+  AssignmentDefinitionSchema,
 } from "@colorverse/contracts";
 import {
   learningTasks,
@@ -162,6 +164,177 @@ export async function handleShowcaseCloud(
     await client.connect();
     await client.query("BEGIN");
     const actor = await classroomActor(client, identity, classId);
+    const assignmentImage =
+      /^learning-tasks\/(custom-[a-f0-9-]{36})\/image$/.exec(resource);
+    if (assignmentImage && request.method === "GET") {
+      const row = (
+        await client.query(
+          "SELECT image_storage_key,published FROM colorverse.learning_task_settings WHERE class_id=$1 AND task_id=$2",
+          [classId, assignmentImage[1]],
+        )
+      ).rows[0];
+      if (
+        !row?.image_storage_key ||
+        (!row.published &&
+          !["teacher", "assistant"].includes(String(actor.role)))
+      )
+        throw new ClassroomFailure(404, "NOT_FOUND", "作业示范图片不存在");
+      await client.query("COMMIT");
+      const image = await storage(
+        env,
+        `colorverse-classroom/${row.image_storage_key}`,
+      );
+      return new Response(image.body, {
+        headers: {
+          "Content-Type": "image/webp",
+          "Cache-Control": "private, no-store",
+        },
+      });
+    }
+    if (resource === "learning-tasks" && request.method === "POST") {
+      if (!["teacher", "assistant"].includes(String(actor.role)))
+        throw new ClassroomFailure(
+          403,
+          "TEACHER_REQUIRED",
+          "只有本班教师可以新增作业",
+        );
+      if (
+        !request.headers.get("Content-Type")?.startsWith("multipart/form-data")
+      )
+        throw new ClassroomFailure(
+          400,
+          "INVALID_UPLOAD",
+          "请上传作业说明与示范图片",
+        );
+      const envelope = await readLimited(request, 8388608 + 50000);
+      const form = await new Request("https://upload.invalid", {
+        method: "POST",
+        headers: { "Content-Type": request.headers.get("Content-Type") ?? "" },
+        body: envelope as BodyInit,
+      }).formData();
+      if (
+        [...form.keys()].some((k) => !["metadata", "image"].includes(k)) ||
+        form.getAll("metadata").length !== 1 ||
+        form.getAll("image").length > 1
+      )
+        throw new ClassroomFailure(
+          400,
+          "INVALID_UPLOAD",
+          "请提交作业说明与一张示范图片",
+        );
+      const metadata = form.get("metadata");
+      if (
+        typeof metadata !== "string" ||
+        new TextEncoder().encode(metadata).length > 42000
+      )
+        throw new ClassroomFailure(400, "INVALID_INPUT", "作业说明过长");
+      const input = z
+        .strictObject({
+          requestId: z.uuid(),
+          definition: CustomAssignmentFields,
+        })
+        .parse(JSON.parse(metadata));
+      const taskId = `custom-${input.requestId}`;
+      await client.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1,7301948))",
+        [classId],
+      );
+      const existing = (
+        await client.query(
+          "SELECT task_id FROM colorverse.learning_task_settings WHERE class_id=$1 AND task_id=$2",
+          [classId, taskId],
+        )
+      ).rows[0];
+      if (existing) {
+        const result = await learningTasks(client, actor, classId, "GET");
+        await client.query("COMMIT");
+        return Response.json({ ...result, taskId });
+      }
+      const count = (
+        await client.query(
+          "SELECT count(*)::int count FROM colorverse.learning_task_settings WHERE class_id=$1 AND definition IS NOT NULL",
+          [classId],
+        )
+      ).rows[0];
+      if (Number(count.count) >= 50)
+        throw new ClassroomFailure(
+          409,
+          "TASK_LIMIT",
+          "当前班级最多新增50份作业",
+        );
+      let imageKey: string | null = null;
+      const file = form.get("image");
+      if (file !== null) {
+        if (!(file instanceof Blob) || file.size > 8388608)
+          throw new ClassroomFailure(
+            400,
+            "INVALID_IMAGE",
+            "请选择8MB以内的示范图片",
+          );
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        let info;
+        try {
+          info = imageInfo(bytes);
+        } catch {
+          throw new ClassroomFailure(
+            400,
+            "INVALID_IMAGE",
+            "请选择有效的PNG、JPEG或WebP图片",
+          );
+        }
+        if (info.width * info.height > 16000000)
+          throw new ClassroomFailure(
+            400,
+            "IMAGE_DIMENSIONS",
+            "图片请控制在1600万像素以内",
+          );
+        let display: Uint8Array;
+        try {
+          const output = await env
+            .IMAGES!.input(new Blob([bytes as BlobPart]).stream())
+            .transform({ width: 2048, height: 2048, fit: "scale-down" })
+            .output({ format: "image/webp", quality: 88, anim: false });
+          display = new Uint8Array(await output.response().arrayBuffer());
+        } catch {
+          throw new ClassroomFailure(
+            400,
+            "IMAGE_DECODE_FAILED",
+            "示范图片无法完整读取，请重新选择",
+          );
+        }
+        if (display.length > 2097152)
+          throw new ClassroomFailure(
+            400,
+            "IMAGE_TOO_LARGE",
+            "请缩小示范图片后重试",
+          );
+        imageKey = `${identity.subject}/assignment-${input.requestId}.webp`;
+        uploadedKeys.push(imageKey);
+        await storage(
+          env,
+          `colorverse-classroom/${imageKey}`,
+          "POST",
+          display,
+          "image/webp",
+        );
+      }
+      const definition = AssignmentDefinitionSchema.parse({
+        ...input.definition,
+        id: taskId,
+        image: imageKey
+          ? `private:classes/${classId}/learning-tasks/${taskId}/image`
+          : "",
+      });
+      await client.query(
+        "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,require_explanation,allow_peer_review,show_intent_to_peers,revision,definition,image_storage_key) VALUES($1,$2,true,true,true,true,1,$3,$4)",
+        [classId, taskId, JSON.stringify(definition), imageKey],
+      );
+      const result = await learningTasks(client, actor, classId, "GET");
+      commitAttempted = true;
+      await client.query("COMMIT");
+      uploadedKeys.length = 0;
+      return Response.json({ ...result, taskId }, { status: 201 });
+    }
     if (resource === "notifications") {
       if (request.method !== "GET")
         throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
@@ -177,7 +350,7 @@ export async function handleShowcaseCloud(
         request.method,
         request.method === "PUT"
           ? JSON.parse(
-              new TextDecoder().decode(await readLimited(request, 4096)),
+              new TextDecoder().decode(await readLimited(request, 48000)),
             )
           : undefined,
       );

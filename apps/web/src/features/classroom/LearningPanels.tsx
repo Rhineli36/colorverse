@@ -1,6 +1,7 @@
 import { ColorMystery } from "./ColorMystery";
 import { AssignmentBrief } from "./AssignmentBrief";
 import type { EmotionCase } from "@colorverse/contracts";
+import type { AssignmentDefinition } from "@colorverse/contracts";
 import { useEffect, useRef, useState } from "react";
 import {
   LearningContent,
@@ -183,8 +184,14 @@ export function IntentFields({
     </section>
   );
 }
-export function TaskPrompt({ id }: { id: string }) {
-  const t = LearningContent.tasks.find((t) => t.id === id);
+export function TaskPrompt({
+  id,
+  definition,
+}: {
+  id: string;
+  definition?: AssignmentDefinition;
+}) {
+  const t = definition ?? LearningContent.tasks.find((t) => t.id === id);
   return t ? (
     <section className="learning-panel">
       <AssignmentBrief task={t} showTitle />
@@ -274,7 +281,8 @@ export function TaskSettings({
       {tasks.map((t) => (
         <fieldset key={t.taskId} disabled={busy}>
           <legend>
-            {LearningContent.tasks.find((x) => x.id === t.taskId)?.title}
+            {t.definition?.title ??
+              LearningContent.tasks.find((x) => x.id === t.taskId)?.title}
           </legend>
           {(
             [
@@ -313,7 +321,8 @@ export function WorkIntentView({
     <details className="learning-panel">
       <summary>教学任务与作者说明</summary>
       <p>
-        {LearningContent.tasks.find((t) => t.id === learning.taskId)?.title ??
+        {learning.taskTitle ??
+          LearningContent.tasks.find((t) => t.id === learning.taskId)?.title ??
           "自由展示"}
         {learning.variantLabel ? ` · ${learning.variantLabel}` : ""}
       </p>

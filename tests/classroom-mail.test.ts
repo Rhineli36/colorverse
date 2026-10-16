@@ -14,7 +14,7 @@ describe("published assignment mail and incoming feedback", () => {
     );
     try {
       await db.exec(
-        `CREATE SCHEMA colorverse;CREATE TABLE colorverse.learning_task_settings(class_id uuid,task_id text,published boolean,require_explanation boolean,allow_peer_review boolean,show_intent_to_peers boolean,revision int,updated_at timestamptz DEFAULT now(),PRIMARY KEY(class_id,task_id));CREATE TABLE colorverse.users(id uuid,display_name text);CREATE TABLE colorverse.enrollments(id uuid,user_id uuid,class_id uuid,status text);CREATE TABLE colorverse.planets(id uuid,owner_enrollment_id uuid,document jsonb);CREATE TABLE colorverse.showcase_works(id uuid,title text,withdrawn_at timestamptz);CREATE TABLE colorverse.classroom_interactions(id uuid,planet_id uuid,actor_enrollment_id uuid,work_id uuid,kind text,content text,created_at timestamptz DEFAULT now());`,
+        `CREATE SCHEMA colorverse;CREATE TABLE colorverse.learning_task_settings(class_id uuid,task_id text,published boolean,require_explanation boolean,allow_peer_review boolean,show_intent_to_peers boolean,revision int,definition jsonb,image_storage_key text,updated_at timestamptz DEFAULT now(),PRIMARY KEY(class_id,task_id));CREATE TABLE colorverse.users(id uuid,display_name text);CREATE TABLE colorverse.enrollments(id uuid,user_id uuid,class_id uuid,status text);CREATE TABLE colorverse.planets(id uuid,owner_enrollment_id uuid,document jsonb);CREATE TABLE colorverse.showcase_works(id uuid,title text,withdrawn_at timestamptz);CREATE TABLE colorverse.classroom_interactions(id uuid,planet_id uuid,actor_enrollment_id uuid,work_id uuid,kind text,content text,created_at timestamptz DEFAULT now());`,
       );
       await db.query("INSERT INTO colorverse.users VALUES($1,'同伴')", [peer]);
       await db.query(
@@ -78,6 +78,29 @@ describe("published assignment mail and incoming feedback", () => {
     expect(s.assignments[0].taskId).toBe("T01");
     expect(s.readNotifications).toContain("teacher:" + id);
     expect(s.readNotifications).not.toContain("student:" + id);
+    await store.close();
+    await deleteDB("colorverse-judges-offline-v1");
+  });
+  it("retains teacher-authored offline assignments after reopen and rejects student creation", async () => {
+    await deleteDB("colorverse-judges-offline-v1");
+    let store = new OfflineExperienceStore();
+    const draft = {
+        title: "颜色日记",
+        description: "记录一种颜色",
+        steps: ["选择", "表达"],
+        deliverables: "一张图",
+        inspiration: "",
+        exampleObservation: "",
+      },
+      id = randomUUID();
+    await expect(
+      store.createAssignment(0, "student", draft, "", id),
+    ).rejects.toThrow("教师");
+    const state = await store.createAssignment(0, "teacher", draft, "", id);
+    expect(state.customTasks[0].id).toBe(`custom-${id}`);
+    await store.close();
+    store = new OfflineExperienceStore();
+    expect((await store.load()).customTasks[0].title).toBe(draft.title);
     await store.close();
     await deleteDB("colorverse-judges-offline-v1");
   });

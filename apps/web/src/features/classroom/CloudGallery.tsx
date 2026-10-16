@@ -1667,13 +1667,18 @@ export function CloudGallery({
                   .filter((t) => t.published)
                   .map((t) => (
                     <option key={t.taskId} value={t.taskId}>
-                      {AssignmentCatalog.find((task) => task.id === t.taskId)
-                        ?.title ?? t.taskId}
+                      {t.definition?.title ??
+                        AssignmentCatalog.find((task) => task.id === t.taskId)
+                          ?.title ??
+                        t.taskId}
                     </option>
                   ))}
               </select>
             </label>
-            <TaskPrompt id={taskId} />
+            <TaskPrompt
+              id={taskId}
+              definition={tasks.find((t) => t.taskId === taskId)?.definition}
+            />
             <form
               onSubmit={(e) => {
                 e.preventDefault();
