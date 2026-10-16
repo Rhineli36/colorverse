@@ -1,13 +1,8 @@
-import { ColorCardPicker } from "./ColorCardPicker";
-import { IntentFields, KnowledgePanel, blankIntent } from "./LearningPanels";
-import { CloudMotionPreview } from "./CloudMotionPreview";
-import { useEffect, useState } from "react";
+import { PlanetDesignEditor, type DesignElement } from "./PlanetDesignEditor";
+import { blankIntent } from "./LearningPanels";
+import { useEffect, useState, useRef } from "react";
 import { z } from "zod";
-import {
-  CloudPlanetDocumentSchema,
-  CloudPlanetPresets,
-} from "@colorverse/contracts";
-import { CloudAtmosphere } from "./CloudStudentGuide";
+import { CloudPlanetDocumentSchema } from "@colorverse/contracts";
 import { classroomRequest } from "./CloudClassroomView";
 import {
   acquirePrivateImage,
@@ -104,12 +99,18 @@ export function CloudPlanetOrb({
     classId,
     id,
     "exterior",
-    document.media.exterior?.id,
+    document.useDefaultExterior ? undefined : document.media.exterior?.id,
   );
   return (
     <span
       className={`cloud-orb-frame halo-${document.halo}`}
-      style={{ "--halo-color": document.color } as React.CSSProperties}
+      style={
+        {
+          "--halo-color": document.color,
+          opacity: 1,
+          filter: `drop-shadow(0 0 ${document.haloIntensity * 24}px ${document.color})`,
+        } as React.CSSProperties
+      }
     >
       <img
         className="student-orb cloud-planet-orb"
@@ -131,20 +132,14 @@ export function CloudPlanetOrb({
     </span>
   );
 }
+
 export type AppearanceSection =
   "exterior" | "atmosphere" | "interior" | "tone" | "summary" | "motion";
-const sections: { id: AppearanceSection; title: string }[] = [
-  { id: "exterior", title: "外貌" },
-  { id: "atmosphere", title: "粒子氛围" },
-  { id: "motion", title: "星球运行" },
-  { id: "interior", title: "内部背景" },
-  { id: "tone", title: "色调细节" },
-  { id: "summary", title: "星球介绍" },
-];
 export function CloudPlanetAppearance({
   classId,
   id,
   document,
+  works = [],
   busy,
   run,
   onSaved,
@@ -156,6 +151,7 @@ export function CloudPlanetAppearance({
   classId: string;
   id: string;
   document: PlanetDocument;
+  works?: DesignElement[];
   busy: boolean;
   run: (fn: () => Promise<void>) => Promise<void>;
   onSaved: () => Promise<unknown>;
@@ -164,536 +160,173 @@ export function CloudPlanetAppearance({
   initialSection?: AppearanceSection;
   initialColorCase?: import("@colorverse/contracts").EmotionCase;
 }) {
-  const [section, setSection] = useState(initialSection);
-  const [name, setName] = useState(document.metadata.name),
-    [skin, setSkin] = useState(document.skin),
-    [color, setColor] = useState(initialColorCase?.hex ?? document.color);
-  const [learningIntent, setLearningIntent] = useState({
-    ...(document.learningIntent ?? blankIntent()),
-    ...(initialColorCase ? { referenceCaseId: initialColorCase.id } : {}),
-  });
-  const [summary, setSummary] = useState(document.metadata.summary),
-    [reflection, setReflection] = useState(document.metadata.reflection ?? ""),
-    [courseNotes, setCourseNotes] = useState(
-      document.metadata.courseNotes ?? "",
+  const [draft, setDraft] = useState(() => ({
+      ...document,
+      ...(initialColorCase
+        ? {
+            color: initialColorCase.hex,
+            learningIntent: {
+              ...(document.learningIntent ?? blankIntent()),
+              referenceCaseId: initialColorCase.id,
+            },
+          }
+        : {}),
+    })),
+    [elements, setElements] = useState(works),
+    [files, setFiles] = useState<
+      Partial<Record<"exterior" | "interior", File>>
+    >({}),
+    [urls, setUrls] = useState<
+      Partial<Record<"exterior" | "interior", string>>
+    >({}),
+    [status, setStatus] = useState("");
+  const revision = useRef(document.revision);
+  const savedElements = useRef(new Map(works.map((w) => [w.id, w])));
+  const exterior = usePlanetImage(
+      classId,
+      id,
+      "exterior",
+      document.media.exterior?.id,
     ),
-    [atmosphere, setAtmosphere] = useState(document.atmosphere),
-    [halo, setHalo] = useState(document.halo);
-  const [brightness, setBrightness] = useState(document.brightness),
-    [saturation, setSaturation] = useState(document.saturation);
-  const [files, setFiles] = useState<
-    Partial<Record<"exterior" | "interior", File>>
-  >({});
-  const [status, setStatus] = useState("");
-  const [motion, setMotion] = useState(document.motion);
+    interior = usePlanetImage(
+      classId,
+      id,
+      "interior",
+      document.media.interior?.id,
+    );
   const dirty =
-    JSON.stringify(learningIntent) !==
-      JSON.stringify(document.learningIntent ?? blankIntent()) ||
-    name !== document.metadata.name ||
-    summary !== document.metadata.summary ||
-    reflection !== (document.metadata.reflection ?? "") ||
-    courseNotes !== (document.metadata.courseNotes ?? "") ||
-    skin !== document.skin ||
-    color !== document.color ||
-    atmosphere !== document.atmosphere ||
-    halo !== document.halo ||
-    JSON.stringify(motion) !== JSON.stringify(document.motion) ||
-    brightness !== document.brightness ||
-    saturation !== document.saturation ||
-    Boolean(files.exterior || files.interior);
+    JSON.stringify(draft) !== JSON.stringify(document) ||
+    Object.keys(files).length > 0 ||
+    JSON.stringify(elements) !== JSON.stringify(works);
   useEffect(() => {
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
   useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
-  const [requests, setRequests] = useState({
-    exterior: crypto.randomUUID(),
-    interior: crypto.randomUUID(),
-  });
   useEffect(() => {
-    setSection(initialSection);
-    setStatus("");
-  }, [initialSection]);
-  const background = usePlanetImage(
-    classId,
-    id,
-    "interior",
-    document.media.interior?.id,
-  );
-  // Save only this section: uploading an image must not accidentally save drafts in other tabs.
+    const next: Partial<Record<"exterior" | "interior", string>> = {};
+    for (const kind of ["exterior", "interior"] as const)
+      if (files[kind]) next[kind] = URL.createObjectURL(files[kind]);
+    setUrls(next);
+    return () => Object.values(next).forEach(URL.revokeObjectURL);
+  }, [files]);
   const save = () =>
     void run(async () => {
       setStatus("");
-      const changes =
-        section === "summary"
-          ? {
-              summary,
-              reflection,
-              courseNotes,
-              learningIntent,
-              demoWriting: false,
-            }
-          : section === "motion"
-            ? { motion }
-            : section === "atmosphere"
-              ? { atmosphere }
-              : section === "tone"
-                ? {
-                    color,
-                    learningIntent,
-                    brightness,
-                    saturation,
-                    practice: "tone",
-                  }
-                : { skin, halo };
+      let partial = false;
       try {
+        const metadata = draft.metadata;
+        const appearance: Record<string, unknown> = {
+          ...draft,
+          learningIntent: draft.learningIntent ?? blankIntent(),
+        };
+        for (const key of ["metadata", "media", "revision", "position"])
+          delete appearance[key];
         await classroomRequest(`classes/${classId}/planets/${id}/appearance`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: section === "summary" ? name : document.metadata.name,
-            color: document.color,
-            skin: document.skin,
-            ...changes,
-            revision: document.revision,
+            ...appearance,
+            ...metadata,
+            revision: revision.current,
           }),
         });
+        revision.current++;
+        partial = true;
+        for (const kind of ["exterior", "interior"] as const) {
+          const file = files[kind];
+          if (!file) continue;
+          await classroomRequest(
+            `classes/${classId}/planets/${id}/${kind}?requestId=${crypto.randomUUID()}&revision=${revision.current}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": file.type },
+              body: file,
+            },
+          );
+          revision.current++;
+          setFiles((v) => {
+            const n = { ...v };
+            delete n[kind];
+            return n;
+          });
+        }
+        for (const e of elements) {
+          const old = savedElements.current.get(e.id);
+          if (
+            !old ||
+            JSON.stringify({ ...old, revision: undefined }) ===
+              JSON.stringify({ ...e, revision: undefined })
+          )
+            continue;
+          await classroomRequest(`classes/${classId}/works/${e.id}/element`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              presetId: e.presetId,
+              color: e.color ?? draft.color,
+              ...e.params,
+              revision: old.revision,
+            }),
+          });
+          savedElements.current.set(e.id, {
+            ...e,
+            revision: (old.revision ?? 0) + 1,
+          });
+        }
         await onSaved();
-        setStatus("星球设置已保存到云端，任务进度已更新。");
+        onClose();
       } catch (e) {
-        setStatus(e instanceof Error ? e.message : "保存失败，请重试");
-      }
-    });
-  const upload = (kind: "exterior" | "interior") =>
-    void run(async () => {
-      setStatus("");
-      const file = files[kind];
-      if (!file) return;
-      if (file.size > 8388608) {
-        setStatus("图片最多 8 MB，请先缩小图片。");
-        return;
-      }
-      try {
-        await classroomRequest(
-          `classes/${classId}/planets/${id}/${kind}?requestId=${requests[kind]}&revision=${document.revision}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": file.type },
-            body: file,
-          },
-        );
-        await onSaved();
-        setFiles((f) => ({ ...f, [kind]: undefined }));
         setStatus(
-          `${kind === "exterior" ? "星球外貌" : "内部背景"}已上传并保存到云端。`,
+          (partial ? "部分设置已保存；未完成的修改仍保留。" : "") +
+            (e instanceof Error ? e.message : "保存失败，请重试。"),
         );
-      } catch (e) {
-        setStatus(e instanceof Error ? e.message : "上传失败，请重试");
       }
     });
   return (
-    <section className="cloud-appearance" aria-label="云端星球设置">
-      <div className="cloud-room-heading">
-        <div>
-          <p className="eyebrow">MAKE IT YOURS</p>
-          <h2>让这颗星球成为你的作品</h2>
-        </div>
-        <button
-          disabled={busy}
-          onClick={() => {
-            if (dirty)
-              setStatus(
-                "还有未保存的修改。请逐项保存，或点击「放弃未保存修改」。",
-              );
-            else onClose();
-          }}
-        >
-          完成设置
-        </button>
-      </div>
-      {dirty && (
-        <div className="row-buttons">
-          <p className="muted">当前有未保存的修改，切换分类会保留这些内容。</p>
-          <button disabled={busy} className="outline" onClick={onClose}>
-            放弃未保存修改
-          </button>
-        </div>
-      )}
-      <div className="cloud-settings-tabs" aria-label="星球设置分类">
-        {sections.map((s) => (
-          <button
-            key={s.id}
-            disabled={busy}
-            aria-pressed={section === s.id}
-            onClick={() => {
-              setSection(s.id);
-              setStatus("");
-            }}
-          >
-            {s.title}
-          </button>
-        ))}
-      </div>
-      {(section === "exterior" || section === "interior") && (
-        <div className="cloud-image-settings">
-          <div>
-            <h3>{section === "exterior" ? "星球外貌" : "内部背景"}</h3>
-            <p>
-              {document.media[section]
-                ? "已上传，可随时替换。"
-                : section === "exterior"
-                  ? "上传自己的设计。建议正方形图片，将自动裁成圆形。"
-                  : "建议横向场景图，作为作品的展示空间。"}
-            </p>
-            <input
-              aria-label={
-                section === "exterior" ? "星球外貌图片" : "星球内部背景图片"
-              }
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={busy}
-              onChange={(e) => {
-                const kind = section;
-                setFiles((f) => ({ ...f, [kind]: e.target.files?.[0] }));
-                setRequests((r) => ({ ...r, [kind]: crypto.randomUUID() }));
-                setStatus("");
-              }}
-            />
-            <button
-              className="primary"
-              disabled={busy || !files[section]}
-              onClick={() => upload(section)}
-            >
-              {busy
-                ? "正在上传…"
-                : section === "exterior"
-                  ? "上传星球外貌"
-                  : "上传内部背景"}
-            </button>
-          </div>
-        </div>
-      )}
-      {section === "exterior" && (
-        <>
-          <p className="muted">
-            还没准备好图片？可以先选择默认外观。上传的图片会优先显示。
-          </p>
-          <div className="cloud-skins" aria-label="默认星球外观">
-            {CloudPlanetPresets.map((preset, index) => (
-              <button
-                key={preset.name}
-                disabled={busy}
-                aria-label={`选择${preset.name}`}
-                aria-pressed={skin === index}
-                onClick={() => setSkin(index)}
-              >
-                <img
-                  src={`${import.meta.env.BASE_URL}demo/v2/body-${index}.webp`}
-                  alt=""
-                />
-                <span>{preset.name}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      {section === "atmosphere" && (
-        <>
-          <h3>一点光，让空间活起来</h3>
-          <p>
-            粒子出现在星球内部，作为作品周围的氛围。成长元素的运动可以在上传作业后单独设置。
-          </p>
-          <div className="row-buttons">
-            {(
-              [
-                ["none", "静谧无粒子"],
-                ["stardust", "漂浮星尘"],
-                ["fireflies", "萤火微光"],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                disabled={busy}
-                aria-pressed={atmosphere === value}
-                onClick={() => setAtmosphere(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      {section === "exterior" && (
-        <>
-          <h3>星球外部光晕</h3>
-          <p>光晕围绕整颗星球显示；粒子出现在内部场景，两种效果可以组合。</p>
-          <div className="row-buttons">
-            {(
-              [
-                ["none", "无光晕"],
-                ["soft", "柔光光晕"],
-                ["ring", "霓虹光环"],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                disabled={busy}
-                aria-pressed={halo === value}
-                onClick={() => setHalo(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      {(section === "atmosphere" || section === "tone") && (
-        <div className="cloud-effect-preview" aria-label="星球效果即时预览">
-          <div
-            className="cloud-preview-backdrop"
-            style={{
-              backgroundColor: color,
-              filter: `brightness(${brightness}) saturate(${saturation})`,
-            }}
-          >
-            {background.url && <img src={background.url} alt="" />}
-          </div>
-          <CloudAtmosphere kind={atmosphere} />
-          <CloudPlanetOrb
-            classId={classId}
-            id={id}
-            document={{ ...document, halo, color }}
-          />
-          <small>即时预览 · 点击保存后应用到云端星球</small>
-        </div>
-      )}
-      {section === "tone" && (
-        <>
-          <h3>调整场景的色彩层次</h3>
-          <p>
-            亮度和饱和度影响内部背景，成长元素保留自己的颜色。调整时可在上方预览中观察，保存后应用到内部场景。
-          </p>
-          <ColorCardPicker
-            color={color}
-            onColor={(v) => {
-              setColor(v);
-              setLearningIntent((i) => ({
-                ...i,
-                paletteColors: [v, ...i.paletteColors.slice(1)],
-              }));
-            }}
-            mood={learningIntent.customMood}
-            onMood={(customMood) =>
-              setLearningIntent((i) => ({ ...i, customMood }))
-            }
-            disabled={busy}
-          />
-          <div
-            className="color-orb-preview"
-            aria-label="主色调实时预览"
-            data-color={color}
-            style={{ "--preview-color": color } as React.CSSProperties}
-          >
-            <CloudPlanetOrb
-              classId={classId}
-              id={id}
-              document={{ ...document, color, halo }}
-            />
-            <p>主色调用于环境光与装饰，不染色上传原图。</p>
-          </div>
-          <label>
-            背景亮度 · {Math.round(brightness * 100)}%
-            <input
-              aria-label="背景亮度"
-              type="range"
-              min="0.5"
-              max="1.5"
-              step="0.05"
-              value={brightness}
-              disabled={busy}
-              onChange={(e) => setBrightness(Number(e.target.value))}
-            />
-          </label>
-          <label>
-            背景饱和度 · {Math.round(saturation * 100)}%
-            <input
-              aria-label="背景饱和度"
-              type="range"
-              min="0"
-              max="2"
-              step="0.05"
-              value={saturation}
-              disabled={busy}
-              onChange={(e) => setSaturation(Number(e.target.value))}
-            />
-          </label>
-        </>
-      )}
-      {section === "motion" && (
-        <div className="cloud-motion-controls">
-          <h3>整颗星球在班级宇宙中的运动</h3>
-          <p>
-            控制这颗星球的绕行，不控制内部成长元素。保存后可在上方班级宇宙观察。
-          </p>
-          <div className="row-buttons">
-            {(
-              [
-                ["stationary", "静止"],
-                ["slow", "慢速"],
-                ["fast", "快速"],
-              ] as const
-            ).map(([mode, label]) => (
-              <button
-                key={mode}
-                disabled={busy}
-                aria-pressed={motion.mode === mode}
-                onClick={() => setMotion({ ...motion, mode })}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <label>
-            云端运行轨迹
-            <select
-              aria-label="云端运行轨迹"
-              value={motion.trajectory}
-              disabled={busy}
-              onChange={(e) =>
-                setMotion({
-                  ...motion,
-                  trajectory: e.target.value as typeof motion.trajectory,
-                })
-              }
-            >
-              <option value="circle">圆形绕行</option>
-              <option value="ellipse">椭圆绕行</option>
-              <option value="figure-eight">八字漫游</option>
-              <option value="drift">轻柔往返</option>
-            </select>
-          </label>
-          <label>
-            云端活动范围
-            <select
-              aria-label="云端活动范围"
-              value={motion.range}
-              disabled={busy}
-              onChange={(e) =>
-                setMotion({
-                  ...motion,
-                  range: e.target.value as typeof motion.range,
-                })
-              }
-            >
-              <option value="compact">紧凑</option>
-              <option value="regular">常规</option>
-              <option value="wide">开阔</option>
-            </select>
-          </label>
-          <label>
-            云端运行方向
-            <select
-              aria-label="云端运行方向"
-              value={motion.direction}
-              disabled={busy}
-              onChange={(e) =>
-                setMotion({
-                  ...motion,
-                  direction: e.target.value as typeof motion.direction,
-                })
-              }
-            >
-              <option value="forward">正向</option>
-              <option value="reverse">反向</option>
-            </select>
-          </label>
-          <CloudMotionPreview motion={motion} />
-          <p className="muted">
-            慢速约 45–75 秒一圈；快速约 12–20
-            秒一圈。未保存的调整仅在预览中显示。
-          </p>
-        </div>
-      )}
-      {section === "summary" && (
-        <>
-          <label>
-            星球名称
-            <input
-              aria-label="云端星球名称"
-              value={name}
-              maxLength={60}
-              disabled={busy}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
-          <label>
-            写给这颗星球的寄语
-            <textarea
-              aria-label="星球介绍"
-              value={summary}
-              maxLength={1000}
-              rows={4}
-              placeholder="这颗星球的色彩灵感是什么？你希望同学在这里看到什么？"
-              disabled={busy}
-              onChange={(e) => setSummary(e.target.value)}
-            />
-          </label>
-          <small>{summary.length}/1000</small>
-          <label>
-            创作碎碎念
-            <textarea
-              aria-label="创作碎碎念"
-              rows={5}
-              maxLength={1500}
-              value={reflection}
-              disabled={busy}
-              onChange={(e) => setReflection(e.target.value)}
-              placeholder="记录一次配色尝试、灵感，或者创作中遇到的小问题。"
-            />
-          </label>
-          <label>
-            关于这堂色彩课
-            <textarea
-              aria-label="课程感受"
-              rows={3}
-              maxLength={1000}
-              value={courseNotes}
-              disabled={busy}
-              onChange={(e) => setCourseNotes(e.target.value)}
-              placeholder="有什么新的发现？还有什么想试一试？"
-            />
-          </label>
-          <IntentFields
-            value={learningIntent}
-            onChange={setLearningIntent}
-            disabled={busy}
-          />
-          <KnowledgePanel />
-        </>
-      )}
-      {section !== "interior" && (
-        <button
-          className="primary"
-          disabled={busy || !name.trim()}
-          onClick={save}
-        >
-          {busy
-            ? "正在保存…"
-            : section === "exterior"
-              ? "保存默认外观"
-              : "保存星球设置"}
-        </button>
-      )}
-      {(section === "exterior" || section === "interior") && (
-        <small>
-          PNG / JPEG / WebP，每张最多 8 MB、1600
-          万像素。图片仅对班级成员开放；外貌和背景会保存为优化后的图片。
-        </small>
-      )}
-      {status && (
-        <p role="status" className="cloud-notice">
-          {status}
-        </p>
-      )}
-    </section>
+    <PlanetDesignEditor
+      document={draft}
+      onChange={setDraft}
+      elements={elements}
+      onElementChange={(e) =>
+        setElements((v) => v.map((w) => (w.id === e.id ? e : w)))
+      }
+      exterior={
+        urls.exterior ||
+        (!draft.useDefaultExterior && exterior.url) ||
+        `${import.meta.env.BASE_URL}demo/v2/body-${draft.skin}.webp`
+      }
+      interior={
+        urls.interior ||
+        interior.url ||
+        `${import.meta.env.BASE_URL}demo/room-${draft.skin}.png`
+      }
+      onFile={(kind, file) => {
+        if (file.size > 8388608) {
+          setStatus("图片最多 8 MB");
+          return;
+        }
+        setFiles((v) => ({ ...v, [kind]: file }));
+        if (kind === "exterior")
+          setDraft((d) => ({ ...d, useDefaultExterior: false }));
+      }}
+      onTemplate={(skin) => {
+        setDraft((d) => ({ ...d, skin, useDefaultExterior: true }));
+        setFiles((v) => {
+          const n = { ...v };
+          delete n.exterior;
+          return n;
+        });
+      }}
+      onSave={save}
+      onClose={onClose}
+      busy={busy}
+      dirty={dirty}
+      status={status}
+      initialTab={
+        initialSection === "interior" || initialSection === "atmosphere"
+          ? "interior"
+          : "exterior"
+      }
+    />
   );
 }

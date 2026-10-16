@@ -3,6 +3,8 @@ import {
   GrowthPresetIds,
   GrowthPresets,
   type EmotionCase,
+  AssignmentCatalog,
+  type ClassroomNotification,
 } from "@colorverse/contracts";
 import { nextGrowthPlacement, growthElementColor } from "@colorverse/domain";
 import {
@@ -18,6 +20,11 @@ import {
   type ExperienceRole,
 } from "./offline-store";
 import { OfflinePlanetEditor, importOfflineImage } from "./OfflinePlanetEditor";
+import {
+  AssignmentPublisher,
+  AssignmentMail,
+  ClassroomInbox,
+} from "../classroom/ClassroomMail";
 import { CloudObservatory } from "../classroom/CloudObservatory";
 import { presentationName } from "../classroom/presentation-name";
 import { PlanetExplorer } from "../classroom/PlanetExplorer";
@@ -69,6 +76,8 @@ export function CompetitionView() {
     [imageZoom, setImageZoom] = useState(false),
     [grade, setGrade] = useState(""),
     [review, setReview] = useState("");
+  const [mailTask, setMailTask] = useState<string>(),
+    [uploadTaskId, setUploadTaskId] = useState("");
   const [sceneFailed, setSceneFailed] = useState(false),
     [workFailed, setWorkFailed] = useState(false),
     [imageRetry, setImageRetry] = useState(0);
@@ -294,11 +303,17 @@ export function CompetitionView() {
       }
       aria-label={workId ? "作品交流" : "星球留言"}
     >
-      <h3>{workId ? "同学的回应" : "来这颗星球坐坐"}</h3>
+      <h3>
+        {workId ? "同学的回应" : "来这颗星球坐坐"}{" "}
+        <small>
+          ♡ {records(workId).filter((r) => r.kind === "like").length}
+        </small>
+      </h3>
       {role && role !== "guest" && (
         <div className="offline-comment-composer">
           <button disabled={busy} onClick={() => interact("like", "", workId)}>
-            ♡ {workId ? "喜欢作品" : "喜欢这颗星球"}
+            ♡ {workId ? "喜欢作品" : "喜欢这颗星球"} ·{" "}
+            {records(workId).filter((r) => r.kind === "like").length}
           </button>
           {["✨", "💙", "👏", "🔥", "🌈"].map((e) => (
             <button
@@ -371,6 +386,31 @@ export function CompetitionView() {
     );
   if (!ready || !data) return <p role="status">正在展开色彩宇宙…</p>;
   const visible = planets.filter((p) => p.visible || role === "teacher");
+  const notifications: ClassroomNotification[] = [
+    ...state.assignments.map((a) => ({
+      id: a.id,
+      kind: "assignment" as const,
+      taskId: a.taskId,
+      title: `老师发布了作业：${AssignmentCatalog.find((t) => t.id === a.taskId)?.title}`,
+      createdAt: a.publishedAt,
+    })),
+    ...state.interactions
+      .filter(
+        (i) =>
+          role === "student" &&
+          i.planetId === state.ownPlanet?.id &&
+          i.author !== "体验同学",
+      )
+      .map((i) => ({
+        id: i.id,
+        kind: i.kind,
+        title: `${i.author}${i.kind === "like" ? "点赞了" : "回应了"}你的${i.workId ? "作品" : "星球"}`,
+        createdAt: i.createdAt,
+        content: i.content,
+        planetId: i.planetId,
+        workId: i.workId,
+      })),
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return (
     <div
       className={`competition-app offline-app ${tab === "universe" && editTarget === undefined ? "universe-active" : ""} ${tab === "gallery" ? "exploring" : ""}`}
@@ -384,7 +424,7 @@ export function CompetitionView() {
             setEditTarget(undefined);
           }}
         >
-          ◉ COLORVERSE <span>色 彩 宇 宙</span>
+          ◉ COLORVERSE <span>色 彩 星 球</span>
         </button>
         <nav aria-label="主导航">
           <button
@@ -430,6 +470,35 @@ export function CompetitionView() {
           )}
         </nav>
         <div className="offline-account-controls">
+          {role !== "guest" && (
+            <ClassroomInbox
+              notifications={notifications}
+              readIds={state.readNotifications
+                .filter((id) => id.startsWith(role + ":"))
+                .map((id) => id.slice(role.length + 1))}
+              onRead={(id) =>
+                void run(async () =>
+                  setState(
+                    await store.current!.readNotification(
+                      state.revision,
+                      role,
+                      id,
+                    ),
+                  ),
+                )
+              }
+              onAssignment={setMailTask}
+              onReaction={(n) => {
+                if (!leaveEditor()) return;
+                const p = planets.find((p) => p.id === n.planetId);
+                if (p) {
+                  setSelected(p.id);
+                  setTab("gallery");
+                  setWork(p.works.find((w) => w.id === n.workId) ?? null);
+                }
+              }}
+            />
+          )}
           {role !== "guest" ? (
             <button onClick={logout} disabled={busy}>
               退出登录
@@ -488,6 +557,18 @@ export function CompetitionView() {
         ) : tab === "teacher" ? (
           <section className="offline-teacher" aria-label="教师管理">
             <h1>班级的色彩轨迹</h1>
+            <AssignmentPublisher
+              disabled={busy}
+              onPublish={async (id) =>
+                setState(
+                  await store.current!.publishAssignment(
+                    state.revision,
+                    role,
+                    id,
+                  ),
+                )
+              }
+            />
             <p>
               {planets.length} 颗星球 ·{" "}
               {planets.reduce((n, p) => n + p.works.length, 0)} 件作品
@@ -563,6 +644,7 @@ export function CompetitionView() {
                   <button
                     onClick={() => {
                       setUploadOpen(true);
+                      setUploadTaskId("");
                       setFile(null);
                       setWorkTitle("");
                       setRationale("");
@@ -598,6 +680,14 @@ export function CompetitionView() {
                     <img
                       key={imageRetry}
                       className="scene-saved-background"
+                      style={{
+                        objectFit: planet.document.interiorView.fit,
+                        visibility: planet.document.interiorView
+                          .backgroundVisible
+                          ? "visible"
+                          : "hidden",
+                        filter: `brightness(${planet.document.interiorView.brightness}) saturate(${planet.document.interiorView.saturation})`,
+                      }}
                       src={
                         image(planet.interior) ??
                         `${import.meta.env.BASE_URL}demo/room-${planet.document.skin}.png`
@@ -619,35 +709,48 @@ export function CompetitionView() {
                       </button>
                     </div>
                   )}
-                  <CloudAtmosphere kind={planet.document.atmosphere} />
-                  {planet.works.map((w, i) => (
-                    <button
-                      key={w.id}
-                      className={`scene-growth motion-${w.params?.motion ?? "float"} ${birth === w.id ? "born" : ""}`}
-                      data-work-id={w.id}
-                      style={{
-                        left: `${(w.params?.x ?? 0.2 + i * 0.12) * 100}%`,
-                        top: `${(w.params?.y ?? 0.5) * 100}%`,
-                        width: 86 * (w.params?.size ?? 0.9),
-                        height: 86 * (w.params?.size ?? 0.9),
-                      }}
-                      aria-label={`查看作品 ${w.title}`}
-                      title={w.title}
-                      onClick={() => {
-                        setWork(w);
-                        setElementDraft(null);
-                      }}
-                    >
-                      <GrowthPresetPreview
-                        id={w.presetId}
-                        color={
-                          w.color ??
-                          growthElementColor(planet.document.color, i)
-                        }
-                      />
-                      <span>{w.title}</span>
-                    </button>
-                  ))}
+                  <div
+                    className="design-ambient"
+                    style={
+                      {
+                        "--preview-color": planet.document.color,
+                        "--ambient-strength":
+                          planet.document.interiorView.environmentLight,
+                      } as React.CSSProperties
+                    }
+                  />
+                  {planet.document.interiorView.particlesVisible && (
+                    <CloudAtmosphere kind={planet.document.atmosphere} />
+                  )}
+                  {planet.document.interiorView.elementsVisible &&
+                    planet.works.map((w, i) => (
+                      <button
+                        key={w.id}
+                        className={`scene-growth motion-${w.params?.motion ?? "float"} ${birth === w.id ? "born" : ""}`}
+                        data-work-id={w.id}
+                        style={{
+                          left: `${(w.params?.x ?? 0.2 + i * 0.12) * 100}%`,
+                          top: `${(w.params?.y ?? 0.5) * 100}%`,
+                          width: 86 * (w.params?.size ?? 0.9),
+                          height: 86 * (w.params?.size ?? 0.9),
+                        }}
+                        aria-label={`查看作品 ${w.title}`}
+                        title={w.title}
+                        onClick={() => {
+                          setWork(w);
+                          setElementDraft(null);
+                        }}
+                      >
+                        <GrowthPresetPreview
+                          id={w.presetId}
+                          color={
+                            w.color ??
+                            growthElementColor(planet.document.color, i)
+                          }
+                        />
+                        <span>{w.title}</span>
+                      </button>
+                    ))}
                 </div>
               </PlanetExplorer>
             </SceneLayout>
@@ -796,6 +899,9 @@ export function CompetitionView() {
                   id = crypto.randomUUID(),
                   i = planet.works.length,
                   w: Artwork = {
+                    taskId: uploadTaskId
+                      ? (uploadTaskId as "T01" | "T02" | "T03")
+                      : null,
                     id,
                     title: workTitle.trim(),
                     description: rationale.trim(),
@@ -821,6 +927,23 @@ export function CompetitionView() {
             }}
           >
             <h2>让作品点亮这颗星球</h2>
+            <label>
+              选择教学任务
+              <select
+                aria-label="选择教学任务"
+                value={uploadTaskId}
+                onChange={(e) => setUploadTaskId(e.target.value)}
+              >
+                <option value="">自由展示</option>
+                {AssignmentCatalog.filter((t) =>
+                  state.assignments.some((a) => a.taskId === t.id),
+                ).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label>
               作品名称
               <input
@@ -866,6 +989,32 @@ export function CompetitionView() {
             </button>
           </form>
         </div>
+      )}
+      {mailTask && (
+        <AssignmentMail
+          taskId={mailTask}
+          onClose={() => setMailTask(undefined)}
+          onSubmit={
+            role === "student"
+              ? () => {
+                  if (!leaveEditor()) return;
+                  setMailTask(undefined);
+                  if (!state.ownPlanet) {
+                    setEditTarget(null);
+                    setNotice("先创建自己的星球，再提交作业。");
+                    return;
+                  }
+                  setSelected(state.ownPlanet.id);
+                  setTab("gallery");
+                  setUploadTaskId(mailTask);
+                  setWorkTitle("");
+                  setRationale("");
+                  setFile(null);
+                  setUploadOpen(true);
+                }
+              : undefined
+          }
+        />
       )}
       {work && planet && (
         <dialog

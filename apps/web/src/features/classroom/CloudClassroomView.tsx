@@ -1,3 +1,5 @@
+import { AssignmentPublisher } from "./ClassroomMail";
+import { LearningTaskSettingSchema } from "@colorverse/contracts";
 import { TaskSettings } from "./LearningPanels";
 import { presentationName } from "./presentation-name";
 import { useEffect, useState } from "react";
@@ -150,6 +152,29 @@ export function CloudClassroomView({
           {error}
         </p>
       )}
+      <section className="classroom-publish">
+        <AssignmentPublisher
+          disabled={loading || !classId}
+          onPublish={async (taskId) => {
+            const r = await classroomRequest(
+              `classes/${classId}/learning-tasks`,
+            );
+            const tasks = (await r.json()).tasks.map((v: unknown) =>
+              LearningTaskSettingSchema.parse(v),
+            );
+            const task = tasks.find(
+              (v: { taskId: string }) => v.taskId === taskId,
+            );
+            if (!task) throw Error("任务暂不可用");
+            await classroomRequest(`classes/${classId}/learning-tasks`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...task, published: true }),
+            });
+            setRefresh((v) => v + 1);
+          }}
+        />
+      </section>
       <section className="classroom-metrics" aria-label="班级总览">
         {[
           ["班级学生", data?.students.length ?? 0],

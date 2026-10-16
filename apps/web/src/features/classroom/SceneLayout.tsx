@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 type Story = {
   name: string;
@@ -24,29 +24,45 @@ export function SceneLayout({
   children: ReactNode;
 }) {
   const scene = useRef<HTMLDivElement>(null);
+  const [collapsed, setCollapsed] = useState(false);
   return (
-    <div className="immersive-layout">
+    <div
+      className={`immersive-layout story-overlay-layout ${collapsed ? "story-is-collapsed" : ""}`}
+    >
       <aside className="planet-story" aria-label="星球创作手记">
-        <p className="eyebrow">A WORLD IN MY COLORS</p>
-        <h2>{story.name}</h2>
-        <small>{author}</small>
-        <section>
-          <h3>写给这颗星球</h3>
-          <p>
-            {story.summary || "这里还没有写下寄语，先去看看微光里的作品吧。"}
-          </p>
-        </section>
-        {story.reflection && (
-          <section>
-            <h3>创作碎碎念</h3>
-            <p>{story.reflection}</p>
-          </section>
+        <button
+          className="story-collapse"
+          aria-label={collapsed ? "展开星球资料" : "收起星球资料"}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed((v) => !v)}
+        >
+          {collapsed ? "＋ 星球资料" : "‹ 收起"}
+        </button>
+        {!collapsed && (
+          <div className="planet-story-card">
+            <p className="eyebrow">A WORLD IN MY COLORS</p>
+            <h2>{story.name}</h2>
+            <small>{author}</small>
+            <section>
+              <h3>写给这颗星球</h3>
+              <p>
+                {story.summary ||
+                  "这里还没有写下寄语，先去看看微光里的作品吧。"}
+              </p>
+            </section>
+          </div>
         )}
-        {story.courseNotes && (
-          <section>
-            <h3>关于这堂色彩课</h3>
+        {!collapsed && story.reflection && (
+          <details>
+            <summary>创作碎碎念</summary>
+            <p>{story.reflection}</p>
+          </details>
+        )}
+        {!collapsed && story.courseNotes && (
+          <details>
+            <summary>关于这堂色彩课</summary>
             <p>{story.courseNotes}</p>
-          </section>
+          </details>
         )}
       </aside>
       <div className="immersive-center" ref={scene}>

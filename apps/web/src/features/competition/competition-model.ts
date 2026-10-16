@@ -9,6 +9,7 @@ const SnapshotInteraction = z.object({
   author: z.string(),
 });
 export const Work = z.strictObject({
+  taskId: z.enum(["T01", "T02", "T03"]).nullable().optional(),
   color: z.string().optional(),
   id: z.string(),
   params: z

@@ -53,9 +53,28 @@
               "author": "顾静怡（演示账号）"
             },
             {
+              "kind": "like",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "",
+              "source": "prepared"
+            },
+            {
               "kind": "comment",
-              "content": "演示留言：红蓝之间的冷暖对比很有力量，眼睛会先停在人物附近。想看看减少一点背景亮色后会怎样。",
-              "author": "顾静怡（演示账号）"
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "谢谢建议！我会再看看「蓝红人物配色」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#DD985F",
@@ -76,7 +95,32 @@
           },
           "createdAt": "2026-10-14T09:55:12.127378+00:00",
           "description": "",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "谢谢建议！我会再看看「暖金纹样」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#A2E172",
           "exampleDate": "2026-10-06T07:16:00.000Z"
         },
@@ -95,7 +139,32 @@
           },
           "createdAt": "2026-10-14T09:55:21.583252+00:00",
           "description": "",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "谢谢建议！我会再看看「服饰配色研究」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#85E5C7",
           "exampleDate": "2026-10-07T07:25:00.000Z"
         },
@@ -114,7 +183,32 @@
           },
           "createdAt": "2026-10-14T09:55:30.722401+00:00",
           "description": "同色系配色。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "谢谢建议！我会再看看「同色系彩妆海报」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#5F78DD",
           "exampleDate": "2026-10-08T07:34:00.000Z"
         },
@@ -135,11 +229,6 @@
           "description": "",
           "interactions": [
             {
-              "kind": "comment",
-              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
-              "author": "顾静怡（演示账号）"
-            },
-            {
               "kind": "emoji",
               "content": "🌈",
               "author": "顾静怡（演示账号）"
@@ -148,6 +237,30 @@
               "kind": "like",
               "content": "",
               "author": "顾静怡（演示账号）"
+            },
+            {
+              "kind": "like",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "谢谢建议！我会再看看「角色插画」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#D872E1",
@@ -161,16 +274,6 @@
       "studentNumber": "12250601",
       "planetInteractions": [
         {
-          "kind": "comment",
-          "content": "这颗星球的红蓝也太酷了吧，路过都想多看两眼。",
-          "author": "顾静怡（演示账号）"
-        },
-        {
-          "kind": "comment",
-          "content": "来踩一下！收藏这片宇宙，下次带着新作品来串门～",
-          "author": "顾静怡（演示账号）"
-        },
-        {
           "kind": "emoji",
           "content": "🌈",
           "author": "顾静怡（演示账号）"
@@ -179,6 +282,24 @@
           "kind": "like",
           "content": "",
           "author": "顾静怡（演示账号）"
+        },
+        {
+          "kind": "comment",
+          "author": "孙瑞迎 · 学号 12250603",
+          "content": "这片红蓝很酷，来踩踩！下次带新作品来串门。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "张陈曦 · 学号 12250606",
+          "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "马彦文 · 学号 12250601",
+          "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
+          "source": "prepared"
         }
       ]
     },
@@ -229,16 +350,6 @@
           "description": "采用敦煌风配色，橙色作为主色，突出画面的华丽感，营造热烈而神秘的气息。青色和蓝色作为辅助色，平衡视觉重心，金色与浅黄色线条点缀，让纹样细节更清晰。",
           "interactions": [
             {
-              "kind": "comment",
-              "content": "演示留言：橙粉色像一封傍晚的信，暖色里留出的浅色区域很舒服。也许可以再试一点冷色的远景。",
-              "author": "马彦文（演示账号）"
-            },
-            {
-              "kind": "comment",
-              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
-              "author": "马彦文（演示账号）"
-            },
-            {
               "kind": "emoji",
               "content": "✨",
               "author": "马彦文（演示账号）"
@@ -247,6 +358,30 @@
               "kind": "like",
               "content": "",
               "author": "马彦文（演示账号）"
+            },
+            {
+              "kind": "like",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "谢谢建议！我会再看看「敦煌风纹样」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#5F9FDD",
@@ -267,7 +402,32 @@
           },
           "createdAt": "2026-10-14T09:56:11.425871+00:00",
           "description": "红与蓝撞色形成强烈的视觉冲击，浅米色作为过渡色，缓和红蓝之间的冲突，让整体配色更协调，强化复古质感。用绿色和黑色点缀，增加神秘感。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "谢谢建议！我会再看看「复古服饰配色」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#B672E1",
           "exampleDate": "2026-10-06T08:16:00.000Z"
         },
@@ -286,7 +446,32 @@
           },
           "createdAt": "2026-10-14T09:56:20.493479+00:00",
           "description": "粉色和淡紫色让画面更温柔梦幻；暖黄色的星光与狐狸的橙色形成同色系呼应，强化温暖感。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "谢谢建议！我会再看看「星光与狐狸」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#E5859F",
           "exampleDate": "2026-10-07T08:25:00.000Z"
         },
@@ -305,7 +490,32 @@
           },
           "createdAt": "2026-10-14T09:56:28.993644+00:00",
           "description": "彩妆广告海报的中差色配色练习。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "谢谢建议！我会再看看「彩妆广告海报」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#DDC95F",
           "exampleDate": "2026-10-08T08:34:00.000Z"
         },
@@ -324,7 +534,32 @@
           },
           "createdAt": "2026-10-14T09:56:37.671464+00:00",
           "description": "运动饮料包装的互补色配色练习。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "谢谢建议！我会再看看「互补色运动饮料」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#77E172",
           "exampleDate": "2026-10-09T08:43:00.000Z"
         }
@@ -336,16 +571,6 @@
       "studentNumber": "12250603",
       "planetInteractions": [
         {
-          "kind": "comment",
-          "content": "被这片落日色留住了，感觉整个人都慢下来了。",
-          "author": "马彦文（演示账号）"
-        },
-        {
-          "kind": "comment",
-          "content": "来拜访一下大神的星球，这里的配色好有生活的温度。",
-          "author": "马彦文（演示账号）"
-        },
-        {
           "kind": "emoji",
           "content": "✨",
           "author": "马彦文（演示账号）"
@@ -354,6 +579,24 @@
           "kind": "like",
           "content": "",
           "author": "马彦文（演示账号）"
+        },
+        {
+          "kind": "comment",
+          "author": "张陈曦 · 学号 12250606",
+          "content": "被这片落日色留住了，想在这里多待一会儿。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "李欣怡 · 学号 12250608",
+          "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "孙瑞迎 · 学号 12250603",
+          "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
+          "source": "prepared"
         }
       ]
     },
@@ -409,9 +652,28 @@
               "author": "孙瑞迎（演示账号）"
             },
             {
+              "kind": "like",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "",
+              "source": "prepared"
+            },
+            {
               "kind": "comment",
-              "content": "演示留言：绿色和粉紫色放在一起很有生长感，重复的小图形也有节奏。很想看看局部放大的细节。",
-              "author": "孙瑞迎（演示账号）"
+              "author": "李欣怡 · 学号 12250608",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "谢谢建议！我会再看看「冷色纹样」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#5FDDAD",
@@ -434,11 +696,6 @@
           "description": "服装配色设计。",
           "interactions": [
             {
-              "kind": "comment",
-              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
-              "author": "孙瑞迎（演示账号）"
-            },
-            {
               "kind": "emoji",
               "content": "💙",
               "author": "孙瑞迎（演示账号）"
@@ -447,6 +704,30 @@
               "kind": "like",
               "content": "",
               "author": "孙瑞迎（演示账号）"
+            },
+            {
+              "kind": "like",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "谢谢建议！我会再看看「薄荷绿服饰」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#728FE1",
@@ -467,7 +748,32 @@
           },
           "createdAt": "2026-10-14T09:57:16.32827+00:00",
           "description": "插画配色设计。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "谢谢建议！我会再看看「花园插画」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#D785E5",
           "exampleDate": "2026-10-07T09:25:00.000Z"
         },
@@ -486,7 +792,32 @@
           },
           "createdAt": "2026-10-14T09:57:26.217204+00:00",
           "description": "潮玩盲盒的冲突配色设计。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "谢谢建议！我会再看看「角色色彩练习」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#DD5F63",
           "exampleDate": "2026-10-08T09:34:00.000Z"
         },
@@ -505,7 +836,32 @@
           },
           "createdAt": "2026-10-14T09:57:35.499609+00:00",
           "description": "节气海报的同色系配色设计。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "张陈曦 · 学号 12250606",
+              "content": "谢谢建议！我会再看看「清明节气海报」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#D8E172",
           "exampleDate": "2026-10-09T09:43:00.000Z"
         }
@@ -517,16 +873,6 @@
       "studentNumber": "12250606",
       "planetInteractions": [
         {
-          "kind": "comment",
-          "content": "好像钻进了一座会做梦的花园，绿色真的好舒服。",
-          "author": "孙瑞迎（演示账号）"
-        },
-        {
-          "kind": "comment",
-          "content": "留个脚印！下课来这里逛一圈，发现今天也有新东西长出来。",
-          "author": "孙瑞迎（演示账号）"
-        },
-        {
           "kind": "emoji",
           "content": "💙",
           "author": "孙瑞迎（演示账号）"
@@ -535,6 +881,24 @@
           "kind": "like",
           "content": "",
           "author": "孙瑞迎（演示账号）"
+        },
+        {
+          "kind": "comment",
+          "author": "李欣怡 · 学号 12250608",
+          "content": "这座小花园好治愈，路过也能收获一点好心情。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "顾静怡 · 学号 12250620",
+          "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "张陈曦 · 学号 12250606",
+          "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
+          "source": "prepared"
         }
       ]
     },
@@ -590,9 +954,28 @@
               "author": "张陈曦（演示账号）"
             },
             {
+              "kind": "like",
+              "author": "马彦文 · 学号 12250601",
+              "content": "",
+              "source": "prepared"
+            },
+            {
               "kind": "comment",
-              "content": "演示留言：云层的蓝紫色很安静，暖黄色的小亮点让画面更有方向。远近的明暗变化很值得学习。",
-              "author": "张陈曦（演示账号）"
+              "author": "顾静怡 · 学号 12250620",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "谢谢建议！我会再看看「柔彩纹样」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#995FDD",
@@ -613,7 +996,32 @@
           },
           "createdAt": "2026-10-14T09:58:06.801003+00:00",
           "description": "以中黄为主色，蓝色作为对比色，区分上下身。利用饱和度形成对比，外套与内搭的饱和度都不高。加入内搭花纹和裙摆线条，减少纯色带来的单调感。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "马彦文 · 学号 12250601",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "谢谢建议！我会再看看「撞色服饰」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#E172A1",
           "exampleDate": "2026-10-06T10:16:00.000Z"
         },
@@ -634,11 +1042,6 @@
           "description": "温柔和缓的配色让画面显得梦幻，带有前几年手绘壁纸的风格，灵感来自一个突然浮现的想法。",
           "interactions": [
             {
-              "kind": "comment",
-              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
-              "author": "张陈曦（演示账号）"
-            },
-            {
               "kind": "emoji",
               "content": "👏",
               "author": "张陈曦（演示账号）"
@@ -647,6 +1050,30 @@
               "kind": "like",
               "content": "",
               "author": "张陈曦（演示账号）"
+            },
+            {
+              "kind": "like",
+              "author": "马彦文 · 学号 12250601",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "谢谢建议！我会再看看「云端梦境」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#E5C885",
@@ -667,7 +1094,32 @@
           },
           "createdAt": "2026-10-14T09:58:24.810492+00:00",
           "description": "借用圣罗兰气垫的造型，采用左右分割的形式：左侧为镂空线条，右侧为实体，进行无彩色配色练习。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "马彦文 · 学号 12250601",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "谢谢建议！我会再看看「香水海报」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#77DD5F",
           "exampleDate": "2026-10-08T10:34:00.000Z"
         },
@@ -688,14 +1140,33 @@
           "description": "希望营造晴朗明媚、轻松愉快的氛围，以类似海报的形式表达个人情感，并尝试冲突配色。",
           "interactions": [
             {
-              "kind": "comment",
-              "content": "演示留言：这件作品的色彩层次很丰富，想听听你的配色思路。",
-              "author": "顾静怡（演示账号）"
-            },
-            {
               "kind": "emoji",
               "content": "🌈",
               "author": "顾静怡（演示账号）"
+            },
+            {
+              "kind": "like",
+              "author": "马彦文 · 学号 12250601",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "李欣怡 · 学号 12250608",
+              "content": "谢谢建议！我会再看看「天空与气球」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#72E1D9",
@@ -709,34 +1180,14 @@
       "studentNumber": "12250608",
       "planetInteractions": [
         {
-          "kind": "comment",
-          "content": "这颗星球的颜色好像软软的云，想在这里发会儿呆。",
-          "author": "张陈曦（演示账号）"
-        },
-        {
-          "kind": "comment",
-          "content": "宇宙散步打卡！这片粉紫色，今天份的好心情收到了。",
-          "author": "孙瑞迎（演示账号）"
-        },
-        {
           "kind": "emoji",
           "content": "🌈",
           "author": "孙瑞迎（演示账号）"
         },
         {
-          "kind": "comment",
-          "content": "这颗星球的颜色好像软软的云，想在这里发会儿呆。",
-          "author": "马彦文（演示账号）"
-        },
-        {
           "kind": "like",
           "content": "",
           "author": "马彦文（演示账号）"
-        },
-        {
-          "kind": "comment",
-          "content": "宇宙散步打卡！这片粉紫色，今天份的好心情收到了。",
-          "author": "张陈曦（演示账号）"
         },
         {
           "kind": "emoji",
@@ -747,6 +1198,24 @@
           "kind": "like",
           "content": "",
           "author": "张陈曦（演示账号）"
+        },
+        {
+          "kind": "comment",
+          "author": "顾静怡 · 学号 12250620",
+          "content": "粉紫色像软软的云，宇宙散步打卡成功。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "马彦文 · 学号 12250601",
+          "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "李欣怡 · 学号 12250608",
+          "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
+          "source": "prepared"
         }
       ]
     },
@@ -802,9 +1271,28 @@
               "author": "李欣怡（演示账号）"
             },
             {
+              "kind": "like",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "",
+              "source": "prepared"
+            },
+            {
               "kind": "comment",
-              "content": "演示留言：月白和淡紫让几何纹样显得很轻，留白也很干净。可以试试让一组图形稍微打破对称。",
-              "author": "李欣怡（演示账号）"
+              "author": "马彦文 · 学号 12250601",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "谢谢建议！我会再看看「青苹果图案」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#DDB85F",
@@ -825,7 +1313,32 @@
           },
           "createdAt": "2026-10-14T09:59:06.603661+00:00",
           "description": "",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "谢谢建议！我会再看看「紫绿纹样」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#86E172",
           "exampleDate": "2026-10-06T11:16:00.000Z"
         },
@@ -844,7 +1357,32 @@
           },
           "createdAt": "2026-10-14T09:59:14.679704+00:00",
           "description": "",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "谢谢建议！我会再看看「角色插画配色」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#85E5DF",
           "exampleDate": "2026-10-07T11:25:00.000Z"
         },
@@ -865,11 +1403,6 @@
           "description": "无彩色配色设计。",
           "interactions": [
             {
-              "kind": "comment",
-              "content": "演示留言：这组配色的冷暖关系很清楚，色彩和构图值得交流。",
-              "author": "李欣怡（演示账号）"
-            },
-            {
               "kind": "emoji",
               "content": "🔥",
               "author": "李欣怡（演示账号）"
@@ -878,6 +1411,30 @@
               "kind": "like",
               "content": "",
               "author": "李欣怡（演示账号）"
+            },
+            {
+              "kind": "like",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "谢谢建议！我会再看看「无色设计海报」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
             }
           ],
           "color": "#665FDD",
@@ -898,7 +1455,32 @@
           },
           "createdAt": "2026-10-14T09:59:32.125892+00:00",
           "description": "同色系配色。",
-          "interactions": [],
+          "interactions": [
+            {
+              "kind": "like",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "马彦文 · 学号 12250601",
+              "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "孙瑞迎 · 学号 12250603",
+              "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
+              "source": "prepared"
+            },
+            {
+              "kind": "comment",
+              "author": "顾静怡 · 学号 12250620",
+              "content": "谢谢建议！我会再看看「同色系果汁包装」的颜色面积和明暗关系，之后带着新想法回来。",
+              "source": "prepared"
+            }
+          ],
           "color": "#E172CE",
           "exampleDate": "2026-10-09T11:43:00.000Z"
         }
@@ -910,16 +1492,6 @@
       "studentNumber": "12250620",
       "planetInteractions": [
         {
-          "kind": "comment",
-          "content": "月白配浅紫好干净，像在宇宙里找到了一座小展馆。",
-          "author": "李欣怡（演示账号）"
-        },
-        {
-          "kind": "comment",
-          "content": "我来串门啦～这个星球很有自己的节奏，喜欢！",
-          "author": "李欣怡（演示账号）"
-        },
-        {
           "kind": "emoji",
           "content": "🔥",
           "author": "李欣怡（演示账号）"
@@ -928,6 +1500,24 @@
           "kind": "like",
           "content": "",
           "author": "李欣怡（演示账号）"
+        },
+        {
+          "kind": "comment",
+          "author": "马彦文 · 学号 12250601",
+          "content": "月白和浅紫好干净，找到了一座安静的小展馆。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "孙瑞迎 · 学号 12250603",
+          "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
+          "source": "prepared"
+        },
+        {
+          "kind": "comment",
+          "author": "顾静怡 · 学号 12250620",
+          "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
+          "source": "prepared"
         }
       ]
     }

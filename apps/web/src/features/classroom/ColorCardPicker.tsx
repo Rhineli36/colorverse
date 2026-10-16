@@ -1,5 +1,5 @@
 import { EmotionCases } from "./EmotionCases";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EmotionContent, findEmotionCase } from "@colorverse/contracts";
 import "./exploration.css";
 export function ColorCardPicker({
@@ -27,6 +27,12 @@ export function ColorCardPicker({
         "",
     ),
     [hex, setHex] = useState<string | null>(null);
+  useEffect(() => {
+    const exact = cards.find(
+      (c) => c.hex.toLowerCase() === color.toLowerCase(),
+    );
+    setSelected(exact?.id ?? referenceCaseId ?? "");
+  }, [color, referenceCaseId]);
   const card = findEmotionCase(selected);
   return (
     <section className="color-creation" aria-label="情感色卡创作">
@@ -50,39 +56,28 @@ export function ColorCardPicker({
         role="group"
         aria-label="选择主色色卡"
       >
-        {EmotionContent.groups.map((g) => (
-          <details
-            key={g.id}
-            open={g.cases.some((c) => c.id === selected) || undefined}
-          >
-            <summary>
-              {g.name} · {g.cases.length}种表达
-            </summary>
-            <div className="emotion-variants">
-              {g.cases.map((c) => (
-                <button
-                  type="button"
-                  key={c.id}
-                  disabled={disabled}
-                  aria-pressed={selected === c.id}
-                  aria-label={`选择${c.name}·${c.emotion}`}
-                  onClick={() => {
-                    setHex(null);
-                    setSelected(c.id);
-                    onColor(c.hex);
-                    onReference?.(c.id);
-                  }}
-                >
-                  <i style={{ background: c.hex }} />
-                  <span>
-                    {c.name}
-                    <small>{c.emotion}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </details>
-        ))}
+        <div className="flat-swatch-grid">
+          {cards.map((c) => (
+            <button
+              type="button"
+              key={c.id}
+              disabled={disabled}
+              aria-pressed={selected === c.id}
+              aria-label={`选择${c.name}·${c.emotion}`}
+              onClick={() => {
+                setHex(null);
+                setSelected(c.id);
+                onColor(c.hex);
+                onReference?.(c.id);
+              }}
+            >
+              <i style={{ background: c.hex }}>
+                {selected === c.id && <b>✓</b>}
+              </i>
+              <span>{c.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
       {card && (
         <article className="color-card-detail" aria-label="当前色卡详情">
@@ -91,9 +86,8 @@ export function ColorCardPicker({
           </h4>
           <code>{card.hex}</code>
           <p>{card.observation}</p>
-          <p>{card.suggestion}</p>
           <button type="button" onClick={() => setExplore((n) => n + 1)}>
-            探索这个颜色
+            走进色彩的奥秘 ↗
           </button>
         </article>
       )}

@@ -74,6 +74,19 @@ export const CloudPlanetPositionInput = z.strictObject({
 });
 
 export const CloudPlanetAppearanceInput = z.strictObject({
+  useDefaultExterior: z.boolean().optional(),
+  haloIntensity: z.number().min(0).max(1).optional(),
+  interiorView: z
+    .object({
+      fit: z.enum(["contain", "cover"]),
+      environmentLight: z.number().min(0).max(1),
+      brightness: z.number().min(0.5).max(1.5).default(1),
+      saturation: z.number().min(0).max(2).default(1),
+      backgroundVisible: z.boolean(),
+      particlesVisible: z.boolean(),
+      elementsVisible: z.boolean(),
+    })
+    .optional(),
   learningIntent: LearningIntentSchema.optional(),
   name: z.string().trim().min(1).max(60),
   color: z.string().regex(/^#[a-f0-9]{6}$/i),
@@ -90,6 +103,27 @@ export const CloudPlanetAppearanceInput = z.strictObject({
   practice: z.literal("tone").optional(),
 });
 export const CloudPlanetDocumentSchema = z.object({
+  useDefaultExterior: z.boolean().default(false),
+  haloIntensity: z.number().min(0).max(1).default(0.6),
+  interiorView: z
+    .object({
+      fit: z.enum(["contain", "cover"]).default("contain"),
+      environmentLight: z.number().min(0).max(1).default(0.2),
+      brightness: z.number().min(0.5).max(1.5).default(1),
+      saturation: z.number().min(0).max(2).default(1),
+      backgroundVisible: z.boolean().default(true),
+      particlesVisible: z.boolean().default(true),
+      elementsVisible: z.boolean().default(true),
+    })
+    .default({
+      fit: "contain",
+      environmentLight: 0.2,
+      brightness: 1,
+      saturation: 1,
+      backgroundVisible: true,
+      particlesVisible: true,
+      elementsVisible: true,
+    }),
   position: CloudPlanetPositionSchema.optional(),
   learningIntent: LearningIntentSchema.nullable().optional(),
   metadata: z.object({

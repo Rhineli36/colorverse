@@ -1,4 +1,6 @@
-# COLORVERSE（色彩宇宙）设计文档
+# 色彩星球 / COLORVERSE 设计文档
+
+2026-10-16 最新修改与验收请阅读 [53 双场景编辑与课堂信息](53-design-editor-and-classroom-mail.md)。
 
 当前参赛版本请优先阅读 [47 参赛运行与打包说明](47-competition-run-and-package.md)。以下阶段规划和验收记录按当时版本理解，不能用旧的“待接入”描述判断现在的实现状态。
 

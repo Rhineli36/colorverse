@@ -144,16 +144,17 @@ export function CloudObservatory({
       body.adjustments.brightness = p.document.brightness;
       body.adjustments.saturation = p.document.saturation;
       doc.exterior.scene.layers = [body];
-      if (p.document.halo !== "none")
-        doc.exterior.scene.layers.push(
-          createDecoration(
-            p.document.halo === "ring" ? "ring" : "outer-glow",
-            doc.exterior.scene,
-            p.document.color,
-            `${body.id}-halo`,
-            i + 1,
-          ),
+      if (p.document.halo !== "none") {
+        const halo = createDecoration(
+          p.document.halo === "ring" ? "ring" : "outer-glow",
+          doc.exterior.scene,
+          p.document.color,
+          `${body.id}-halo`,
+          i + 1,
         );
+        halo.opacity = p.document.haloIntensity;
+        doc.exterior.scene.layers.push(halo);
+      }
       if (p.document.atmosphere !== "none")
         doc.exterior.scene.layers.push(
           createDecoration(
@@ -165,10 +166,12 @@ export function CloudObservatory({
           ),
         );
       // Only previously authorized exhibition art with the exact current media version uses a public preview.
-      const approved = previews?.find(
-        (v) =>
-          v.planetId === p.id && v.mediaId === p.document.media.exterior?.id,
-      );
+      const approved =
+        !p.document.useDefaultExterior &&
+        previews?.find(
+          (v) =>
+            v.planetId === p.id && v.mediaId === p.document.media.exterior?.id,
+        );
       const preview =
         p.previewImage ??
         (approved
@@ -180,11 +183,14 @@ export function CloudObservatory({
       sources.set(path, {
         url:
           preview ??
-          (p.document.media.exterior
+          (p.document.media.exterior && !p.document.useDefaultExterior
             ? `classes/${classId}/planets/${p.id}/exterior`
             : `${import.meta.env.BASE_URL}demo/v2/body-${p.document.skin}.webp`),
         fallback: `${import.meta.env.BASE_URL}demo/v2/body-${p.document.skin}.webp`,
-        private: !preview && Boolean(p.document.media.exterior),
+        private:
+          !preview &&
+          Boolean(p.document.media.exterior) &&
+          !p.document.useDefaultExterior,
       });
       doc.assetRefs = [record];
       doc.archiveEntries = [];
@@ -285,8 +291,16 @@ export function CloudObservatory({
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (mode === "overview")
-      setCamera(overviewCamera(projection.universe.entries, 42, viewport));
+    if (mode === "overview") {
+      const view = overviewCamera(projection.universe.entries, 42, viewport),
+        zoom = Math.min(view.zoom, 0.11);
+      setCamera({
+        ...view,
+        x: (view.x * zoom) / view.zoom,
+        y: (view.y * zoom) / view.zoom,
+        zoom,
+      });
+    }
   }, [projection, viewport, mode]);
   useEffect(() => {
     let frame = 0,
@@ -408,6 +422,23 @@ export function CloudObservatory({
           </div>
         ))}
       </div>
+      {mode === "overview" && (
+        <div className="distant-planets" aria-hidden="true">
+          {Array.from({ length: 14 }, (_, i) => (
+            <img
+              key={i}
+              src={`${import.meta.env.BASE_URL}demo/v2/body-${i % 6}.webp`}
+              alt=""
+              style={{
+                left: `${4 + ((i * 29) % 91)}%`,
+                top: `${10 + ((i * 23) % 74)}%`,
+                width: 18 + (i % 4) * 7,
+                height: 18 + (i % 4) * 7,
+              }}
+            />
+          ))}
+        </div>
+      )}
       <div className="universe-intro">
         <p className="eyebrow">COLORVERSE · OBSERVATORY</p>
         <h1>

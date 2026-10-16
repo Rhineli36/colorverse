@@ -21,6 +21,17 @@ export const ExperienceState = z.object({
   ownPlanet: ExperiencePlanet.nullable(),
   overrides: z.record(z.string(), ExperiencePlanet),
   interactions: z.array(Interaction).max(3000),
+  assignments: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        taskId: z.enum(["T01", "T02", "T03"]),
+        publishedAt: z.string(),
+      }),
+    )
+    .max(100)
+    .default([]),
+  readNotifications: z.array(z.string()).max(500).default([]),
 });
 export type OfflineState = z.infer<typeof ExperienceState>;
 export const blankExperience = (revision = 0): OfflineState => ({
@@ -29,6 +40,8 @@ export const blankExperience = (revision = 0): OfflineState => ({
   ownPlanet: null,
   overrides: {},
   interactions: [],
+  assignments: [],
+  readNotifications: [],
 });
 interface OfflineDB extends DBSchema {
   state: { key: string; value: OfflineState };
@@ -169,6 +182,31 @@ export class OfflineExperienceStore {
       await tx.done.catch(() => {});
       throw e;
     }
+  }
+  async publishAssignment(
+    expected: number,
+    role: ExperienceRole,
+    taskId: string,
+  ) {
+    if (role !== "teacher") throw Error("只有教师可以发布作业。");
+    const id = z.enum(["T01", "T02", "T03"]).parse(taskId);
+    return this.commit(expected, role, (s) => ({
+      ...s,
+      assignments: [
+        ...s.assignments,
+        {
+          id: crypto.randomUUID(),
+          taskId: id,
+          publishedAt: new Date().toISOString(),
+        },
+      ].slice(-100),
+    }));
+  }
+  async readNotification(expected: number, role: ExperienceRole, id: string) {
+    return this.commit(expected, role, (s) => ({
+      ...s,
+      readNotifications: [...new Set([...s.readNotifications, `${role}:${id}`])].slice(-500),
+    }));
   }
   async close() {
     (await this.db).close();

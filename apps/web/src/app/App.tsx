@@ -1,3 +1,4 @@
+import { CloudInbox } from "../features/classroom/CloudInbox";
 import { showLearningGuide } from "../features/classroom/presentation-options";
 import { classroomRequest } from "../features/classroom/cloud-request";
 import { download } from "./download";
@@ -121,7 +122,10 @@ export function App() {
   );
   const [cloudEntry, setCloudEntry] = useState({ classId: "", sequence: 0 });
   const [cloudNavigation, setCloudNavigation] = useState<{
-    action: "universe" | "room" | "edit" | "knowledge";
+    action: "universe" | "room" | "edit" | "knowledge" | "submit" | "feedback";
+    taskId?: string;
+    planetId?: string;
+    workId?: string | null;
     sequence: number;
   }>({ action: "universe", sequence: 0 });
   const [cloudPending, setCloudPending] = useState(false);
@@ -841,7 +845,7 @@ export function App() {
         >
           <span className="brand-mark">◉</span>
           <span>
-            COLORVERSE<small>色 彩 宇 宙</small>
+            COLORVERSE<small>色 彩 星 球</small>
           </span>
         </button>
         <nav aria-label="主导航">
@@ -970,6 +974,39 @@ export function App() {
           )}
         </nav>
         <div className="header-right">
+          {cloudSession?.access === "active" && (
+            <CloudInbox
+              disabled={cloudPending}
+              session={cloudSession}
+              onSubmit={(classId, taskId) => {
+                if (cloudPending) {
+                  setNotice("请先保存或取消星球编辑，再打开作业提交。");
+                  return;
+                }
+                setCloudEntry((v) => ({ classId, sequence: v.sequence + 1 }));
+                setCloudNavigation((v) => ({
+                  action: "submit",
+                  taskId,
+                  sequence: v.sequence + 1,
+                }));
+                setRoute("cloudworks");
+              }}
+              onReaction={(classId, n) => {
+                if (cloudPending) {
+                  setNotice("请先保存或取消星球编辑，再查看互动。");
+                  return;
+                }
+                setCloudEntry((v) => ({ classId, sequence: v.sequence + 1 }));
+                setCloudNavigation((v) => ({
+                  action: "feedback",
+                  planetId: n.planetId,
+                  workId: n.workId,
+                  sequence: v.sequence + 1,
+                }));
+                setRoute("cloudworks");
+              }}
+            />
+          )}
           {cloudAuthEnabled && (
             <Suspense fallback={<span className="muted">连接账户…</span>}>
               <AuthEntry
@@ -997,7 +1034,9 @@ export function App() {
                     sequence: v.sequence + 1,
                   }));
                   localStorage.setItem("colorverse-entered-cloud", "1");
-                  setRoute("cloudworks");
+                  setRoute(
+                    membership.role === "student" ? "cloudworks" : "classroom",
+                  );
                   return true;
                 }}
               />

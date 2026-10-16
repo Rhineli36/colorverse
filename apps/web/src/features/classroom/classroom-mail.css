@@ -1,0 +1,109 @@
+.assignment-mail,
+.classroom-inbox {
+  position: fixed;
+  width: min(720px, 90vw);
+  max-height: 85dvh;
+  box-sizing: border-box;
+  overflow: auto;
+  background: #102431;
+  color: #e5ead9;
+  border: 1px solid #77999f77;
+  border-radius: 18px;
+  padding: 32px;
+  line-height: 1.8;
+}
+.assignment-mail::backdrop,
+.classroom-inbox::backdrop {
+  background: #020913bb;
+  backdrop-filter: blur(8px);
+}
+.assignment-mail h2,
+.classroom-inbox h2 {
+  font-size: 25px;
+  font-weight: 500;
+  padding-right: 30px;
+}
+.assignment-mail img {
+  max-width: 100%;
+  width: 100%;
+  max-height: 350px;
+  object-fit: contain;
+  background: #07121e;
+  border-radius: 10px;
+}
+.assignment-mail select {
+  width: 100%;
+  padding: 12px;
+  background: #091c2a;
+  color: #e3ecd9;
+  border: 1px solid #7b9a9b66;
+  border-radius: 7px;
+  font: inherit;
+}
+.assignment-mail button,
+.classroom-inbox button {
+  padding: 10px 16px;
+  border: 1px solid #76969566;
+  background: #17313c;
+  color: #e4eacc;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.assignment-mail button.primary {
+  background: #e0e8b7;
+  color: #1c3039;
+  margin-left: 15px;
+}
+.mail-close {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  font-size: 23px !important;
+  padding: 4px 10px !important;
+}
+.classroom-inbox .inbox-row {
+  width: 100%;
+  display: flex;
+  align-items: start;
+  text-align: left;
+  gap: 15px;
+  margin-bottom: 10px;
+  padding: 16px;
+  border: 0;
+  border-bottom: 1px solid #78939d33;
+  border-radius: 0;
+  background: transparent;
+}
+.inbox-row.read {
+  opacity: 0.7;
+}
+.inbox-row strong {
+  font-weight: 400;
+  font-size: 15px;
+}
+.inbox-row p,
+.inbox-row time {
+  font-size: 12px;
+  color: #a9c2ca;
+  margin: 5px 0;
+}
+.inbox-row i {
+  margin-left: auto;
+  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: #e5ebad;
+}
+.inbox-entry b {
+  font-size: 11px;
+  border-radius: 20px;
+  background: #e5eab9;
+  color: #1b3540;
+  padding: 2px 6px;
+  margin-left: 6px;
+}
+.assignment-mail li {
+  margin: 10px 0;
+}

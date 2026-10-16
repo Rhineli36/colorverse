@@ -1502,3 +1502,173 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+/* Stronger identity and navigation, shared by the live classroom and exhibition. */
+.topbar .brand,
+.competition-header .competition-brand {
+  font-size: 25px !important;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+.topbar .brand small,
+.competition-header .competition-brand span {
+  font-size: 13px !important;
+  letter-spacing: 0.34em;
+}
+.topbar nav button,
+.competition-header nav button {
+  font-size: 17px !important;
+  padding: 12px 17px !important;
+  font-weight: 500;
+}
+.header-right button,
+.offline-account-controls button {
+  font-size: 15px !important;
+  padding: 12px 16px !important;
+}
+.story-overlay-layout {
+  grid-template-columns: 180px minmax(0, 1fr) 180px !important;
+  gap: 16px !important;
+}
+.story-overlay-layout .planet-story {
+  position: relative;
+  z-index: 4;
+  padding: 0;
+  overflow: visible;
+}
+.planet-story-card {
+  box-sizing: border-box;
+  width: 360px;
+  max-height: 65vh;
+  overflow: auto;
+  border: 1px solid #87a6b677;
+  border-radius: 14px;
+  background: #102134c9;
+  backdrop-filter: blur(12px);
+  padding: 42px 22px 22px;
+  box-shadow: 0 12px 30px #0003;
+}
+.planet-story-card h2 {
+  font-size: 30px !important;
+  line-height: 1.3 !important;
+  margin: 12px 0 !important;
+}
+.planet-story-card p {
+  font-size: 16px !important;
+  line-height: 1.85 !important;
+}
+.planet-story-card small {
+  font-size: 14px !important;
+}
+.planet-story-card h3 {
+  font-size: 16px !important;
+}
+.story-collapse {
+  position: absolute;
+  z-index: 6;
+  top: 8px;
+  left: 12px;
+  background: #122a3bdd;
+  border: 1px solid #93acac55;
+  color: #e2e8c7;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.planet-story > details {
+  padding: 14px 4px;
+  border-bottom: 1px solid #8cabb333;
+  margin-top: 12px;
+  color: #dce5cb;
+  font-size: 15px;
+}
+.planet-story > details p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #b5cbd2;
+}
+.story-is-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr) 180px !important;
+}
+.story-is-collapsed .story-collapse {
+  width: 135px;
+  left: 8px;
+}
+.story-overlay-layout .scene-work-directory {
+  padding: 0 5px;
+}
+.story-overlay-layout .scene-work-directory strong {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+.story-overlay-layout .scene-work-directory time {
+  font-size: 12px !important;
+}
+.distant-planets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.distant-planets img {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.6;
+  filter: drop-shadow(0 0 7px #a0bce777);
+}
+@media (max-width: 760px) {
+  .topbar .brand,
+  .competition-header .competition-brand {
+    font-size: 20px !important;
+  }
+  .topbar nav button,
+  .competition-header nav button {
+    font-size: 14px !important;
+    padding: 9px 10px !important;
+  }
+  .story-overlay-layout,
+  .story-is-collapsed {
+    display: flex !important;
+    flex-direction: column;
+  }
+  .planet-story-card {
+    width: 100%;
+    max-height: 340px;
+  }
+  .story-overlay-layout .planet-story {
+    width: 100%;
+  }
+  .story-is-collapsed .planet-story {
+    height: 45px;
+  }
+  .story-overlay-layout .immersive-center {
+    width: 100%;
+  }
+  .immersive-layout .explorer-viewport {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .story-overlay-layout .scene-work-directory {
+    width: 100%;
+  }
+  .scene-work-directory ol {
+    display: flex;
+    overflow: auto;
+    gap: 12px;
+  }
+  .scene-work-directory li {
+    min-width: 160px;
+  }
+}
+.cloud-gallery:has(.planet-design-editor) .immersive-layout,
+.cloud-gallery:has(.planet-design-editor) > .cloud-messages,
+.cloud-gallery:has(.planet-design-editor) .cloud-room-heading,
+.cloud-gallery:has(.planet-design-editor) > .cloud-social {
+  display: none;
+}
+.cloud-gallery:has(.planet-design-editor) {
+  padding: 0 !important;
+}
+.cloud-gallery:has(.planet-design-editor) .planet-design-editor {
+  margin-top: 0;
+}

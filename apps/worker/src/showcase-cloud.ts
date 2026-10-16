@@ -25,6 +25,7 @@ import type { VerifiedIdentity } from "./auth";
 import type { AuthEnvironment } from "./auth";
 import { classroomActor, ClassroomFailure } from "./classroom";
 import { showcaseReview } from "./showcase-review";
+import { classroomNotifications } from "./notifications";
 interface ImagesBinding {
   input(stream: ReadableStream<Uint8Array>): {
     transform(options: Record<string, unknown>): {
@@ -161,6 +162,13 @@ export async function handleShowcaseCloud(
     await client.connect();
     await client.query("BEGIN");
     const actor = await classroomActor(client, identity, classId);
+    if (resource === "notifications") {
+      if (request.method !== "GET")
+        throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
+      const result = await classroomNotifications(client, actor, classId);
+      await client.query("COMMIT");
+      return Response.json(result);
+    }
     if (resource === "learning-tasks") {
       const result = await learningTasks(
         client,
@@ -459,6 +467,15 @@ export async function handleShowcaseCloud(
                   : {}),
               },
               color: input.color,
+              ...(input.useDefaultExterior !== undefined
+                ? { useDefaultExterior: input.useDefaultExterior }
+                : {}),
+              ...(input.haloIntensity !== undefined
+                ? { haloIntensity: input.haloIntensity }
+                : {}),
+              ...(input.interiorView !== undefined
+                ? { interiorView: input.interiorView }
+                : {}),
               skin: input.skin,
               ...(input.atmosphere !== undefined
                 ? { atmosphere: input.atmosphere }
@@ -904,7 +921,7 @@ export async function handleShowcaseCloud(
           ),
         );
       const result = await client.query(
-        "UPDATE colorverse.showcase_works w SET preset_id=$1,color=$2,element_params=$5,element_edited=true,revision=revision+1 FROM colorverse.planets p WHERE w.planet_id=p.id AND w.id=$3 AND p.owner_enrollment_id=$4 AND w.revision=$6 AND w.withdrawn_at IS NULL RETURNING w.id",
+        "UPDATE colorverse.showcase_works w SET preset_id=$1,color=$2,element_params=$5,element_edited=true,revision=revision+1 FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE w.planet_id=p.id AND w.id=$3 AND (p.owner_enrollment_id=$4 OR $8::boolean) AND e.class_id=$7 AND e.status='active' AND w.revision=$6 AND w.withdrawn_at IS NULL RETURNING w.id",
         [
           input.presetId,
           input.color,
@@ -917,6 +934,8 @@ export async function handleShowcaseCloud(
             motion: input.motion,
           }),
           input.revision,
+          classId,
+          actor.role === "teacher" || actor.role === "assistant",
         ],
       );
       if (!result.rows.length)
@@ -1011,8 +1030,8 @@ export async function handleShowcaseCloud(
         throw new ClassroomFailure(400, "INVALID_EMOJI", "请选择提供的表情");
       const target = (
         await client.query(
-          "SELECT p.id FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE p.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active' AND p.owner_enrollment_id<>$3",
-          [input.planetId, classId, actor.id],
+          "SELECT p.id,p.owner_enrollment_id FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE p.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active' AND (p.owner_enrollment_id<>$3 OR $4::boolean)",
+          [input.planetId, classId, actor.id, input.kind === "comment"],
         )
       ).rows[0];
       if (!target)
@@ -1020,6 +1039,12 @@ export async function handleShowcaseCloud(
           403,
           "OTHER_PLANET_REQUIRED",
           "请选择本班其他同学的星球",
+        );
+      if (input.observation && target.owner_enrollment_id === actor.id)
+        throw new ClassroomFailure(
+          403,
+          "OTHER_PLANET_REQUIRED",
+          "教学观察用于其他同学的课堂作品",
         );
       if (
         input.workId &&
@@ -1091,8 +1116,14 @@ export async function handleShowcaseCloud(
           actor.role === "teacher" || actor.role === "assistant",
         ],
       );
+      const counts = (
+        await client.query(
+          `SELECT i.work_id "workId",count(*) FILTER(WHERE i.kind='like')::int likes FROM colorverse.classroom_interactions i JOIN colorverse.planets p ON p.id=i.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id LEFT JOIN colorverse.showcase_works w ON w.id=i.work_id WHERE i.planet_id=$1 AND e.class_id=$2 AND e.status='active' AND (i.work_id IS NULL OR w.withdrawn_at IS NULL) GROUP BY i.work_id`,
+          [planetId, classId],
+        )
+      ).rows;
       await client.query("COMMIT");
-      return Response.json({ interactions: result.rows });
+      return Response.json({ interactions: result.rows, counts });
     }
     throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
   } catch (error) {
