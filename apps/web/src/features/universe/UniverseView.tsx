@@ -85,7 +85,6 @@ export function UniverseView({
   const main = useRef<HTMLElement>(null);
   const [viewport, setViewport] = useState({ width: 1600, height: 900 });
   const [areaSelection, setAreaSelection] = useState(false);
-  const [showOrbitGuides, setShowOrbitGuides] = useState(false);
   const [motionOpen, setMotionOpen] = useState(false);
   const positionReader = useRef<
     ((id: string) => { x: number; y: number } | null) | null
@@ -149,7 +148,6 @@ export function UniverseView({
         universe={view.universe!}
         camera={camera}
         motionPaused={motionPaused}
-        showOrbitGuides={showOrbitGuides}
         positionReader={positionReader}
         movablePlanetIds={filtered
           .filter((p) => canMovePlanet(actor, ownership[p.planetId] ?? null))
@@ -239,13 +237,6 @@ export function UniverseView({
           )}
       </div>
       <div className="universe-view-controls" aria-label="宇宙视角">
-        <button
-          className="motion-toggle"
-          aria-pressed={showOrbitGuides}
-          onClick={() => setShowOrbitGuides(!showOrbitGuides)}
-        >
-          {showOrbitGuides ? "隐藏运行轨迹" : "显示运行轨迹"}
-        </button>
         <div className="view-switch">
           <button aria-pressed={viewMode === "overview"} onClick={overview}>
             宇宙全景

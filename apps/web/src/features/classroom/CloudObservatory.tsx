@@ -65,8 +65,7 @@ export function CloudObservatory({
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 0.18 });
   const [mode, setMode] = useState("overview"),
     [selected, setSelected] = useState(selectedId ?? "");
-  const [paused, setPaused] = useState(false),
-    [guides, setGuides] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [moveNotice, setMoveNotice] = useState("");
   useEffect(() => {
     if (!moveNotice) return;
@@ -389,7 +388,6 @@ export function CloudObservatory({
           camera={camera}
           positionReader={positions}
           motionPaused={paused}
-          showOrbitGuides={guides}
           focusId={mode === "focus" ? selected : null}
           movablePlanetIds={onPlanetMove ? movablePlanetIds : []}
           options={{
@@ -487,9 +485,6 @@ export function CloudObservatory({
         <button onClick={() => setMode("overview")}>宇宙全景</button>
         <button disabled={!current} onClick={() => focus(selected)}>
           聚焦星球
-        </button>
-        <button onClick={() => setGuides((v) => !v)}>
-          {guides ? "隐藏运行轨迹" : "显示运行轨迹"}
         </button>
         <button onClick={() => setPaused((v) => !v)}>
           {paused ? "继续运行" : "暂停运行"}
