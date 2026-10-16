@@ -1469,3 +1469,36 @@
     max-width: 100%;
   }
 }
+
+.cloud-starter-picker {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.cloud-starter-picker button {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 10px;
+  border: 1px solid #91aca755;
+  border-radius: 12px;
+  background: #102330;
+  color: #d7e5dc;
+  font-size: 12px;
+}
+.cloud-starter-picker img {
+  width: 72px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+.cloud-starter-picker button[aria-pressed="true"] {
+  outline: 2px solid #dce9b6;
+  background: #203841;
+}
+@media (max-width: 700px) {
+  .cloud-starter-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

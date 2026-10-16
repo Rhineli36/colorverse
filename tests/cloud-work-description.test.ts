@@ -1,5 +1,7 @@
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
 import { randomUUID } from "node:crypto";
+import { CloudPlanetPresets, DefaultCloudMotion } from "@colorverse/contracts";
+import { isPlanetInsideClassroom } from "@colorverse/domain";
 import type { Client } from "pg";
 import {
   createCourseDatabase,
@@ -53,7 +55,7 @@ beforeAll(async () => {
  CREATE TABLE colorverse.users(id uuid PRIMARY KEY,auth_issuer text,auth_subject text,status text);
  CREATE TABLE colorverse.classes(id uuid PRIMARY KEY,title text,timezone text,archived_at timestamptz);
  CREATE TABLE colorverse.enrollments(id uuid PRIMARY KEY,user_id uuid,class_id uuid,role text,status text);
- CREATE TABLE colorverse.planets(id uuid PRIMARY KEY,owner_enrollment_id uuid,document jsonb);
+ CREATE TABLE colorverse.planets(id uuid PRIMARY KEY,owner_enrollment_id uuid UNIQUE,document jsonb);
  CREATE TABLE colorverse.showcase_works(id uuid PRIMARY KEY,planet_id uuid,description text,revision integer,withdrawn_at timestamptz);`);
   for (const id of [classId, otherClass])
     await db.query(
@@ -169,5 +171,102 @@ describe("cloud work description ownership and revisions", () => {
     await expect(request(owner, 1, "字".repeat(2001))).rejects.toMatchObject({
       status: 400,
     });
+  });
+  it("persists bounded planet moves without losing media, rejects peers and stale layouts", async () => {
+    const media = { interior: { id: randomUUID(), key: "private-original" } };
+    await db.query("UPDATE colorverse.planets SET document=$1 WHERE id=$2", [
+      JSON.stringify({
+        metadata: { name: "星球1" },
+        color: "#123456",
+        revision: 0,
+        media,
+      }),
+      planet,
+    ]);
+    const move = (actor: string, revision: number, x: number, y: number) =>
+      handleShowcaseCloud(
+        new Request("https://test.invalid", {
+          method: "PUT",
+          body: JSON.stringify({ position: { x, y }, revision }),
+        }),
+        env,
+        identity(actor),
+        classId,
+        `planets/${planet}/position`,
+        client,
+      );
+    await expect(move(peer, 0, 100, 200)).rejects.toMatchObject({
+      status: 403,
+    });
+    const first = await (await move(owner, 0, 100, 200)).json();
+    expect(first).toMatchObject({ position: { x: 100, y: 200 }, revision: 1 });
+    await expect(move(owner, 0, 900, 500)).rejects.toMatchObject({
+      status: 409,
+    });
+    await move(teacher, 1, 99999, -99999);
+    const saved = (
+      await db.query("SELECT document FROM colorverse.planets WHERE id=$1", [
+        planet,
+      ])
+    ).rows[0].document as {
+      position: { x: number; y: number };
+      revision: number;
+      media: unknown;
+    };
+    expect(
+      isPlanetInsideClassroom(
+        {
+          planetId: planet,
+          position: saved.position,
+          scale: 1,
+          motion: DefaultCloudMotion,
+        },
+        42,
+      ),
+    ).toBe(true);
+    expect(saved.media).toEqual(media);
+    expect(saved.revision).toBe(2);
+  });
+  it("creates a chosen template with stored starter writing and mood", async () => {
+    const creator = randomUUID(),
+      preset = CloudPlanetPresets[4];
+    await db.query("INSERT INTO colorverse.users VALUES($1,$2,$3,'active')", [
+      creator,
+      identity().issuer,
+      creator,
+    ]);
+    await db.query(
+      "INSERT INTO colorverse.enrollments VALUES($1,$1,$2,'student','active')",
+      [creator, classId],
+    );
+    const result = await handleShowcaseCloud(
+      new Request("https://test.invalid", {
+        method: "POST",
+        body: JSON.stringify({
+          skin: 4,
+          name: preset.name,
+          color: preset.color,
+        }),
+      }),
+      env,
+      identity(creator),
+      classId,
+      "planets",
+      client,
+    );
+    const { id } = (await result.json()) as { id: string };
+    const saved = (
+      await db.query("SELECT document FROM colorverse.planets WHERE id=$1", [
+        id,
+      ])
+    ).rows[0].document as {
+      metadata: { summary: string; reflection: string };
+      learningIntent: { customMood: string };
+      skin: number;
+    };
+    expect(saved.metadata.summary).toBe(preset.summary);
+    expect(saved.metadata.reflection).toBe(preset.reflection);
+    expect(saved.learningIntent.customMood).toBe(preset.mood);
+    expect(saved.skin).toBe(4);
   });
 });

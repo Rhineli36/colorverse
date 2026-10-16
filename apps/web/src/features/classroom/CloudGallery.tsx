@@ -26,6 +26,7 @@ import {
   GrowthPresetIds,
   GrowthPresets,
   CloudPlanetDocumentSchema,
+  CloudPlanetPresets,
   CloudGuideSchema,
   type CloudGuideStepId,
   type CloudSession,
@@ -145,6 +146,7 @@ export function CloudGallery({
     [exampleDates, setExampleDates] = useState<Record<string, string>>({}),
     [colorCase, setColorCase] =
       useState<import("@colorverse/contracts").EmotionCase>(),
+    [creationSkin, setCreationSkin] = useState(0),
     [focusRequest, setFocusRequest] = useState<{
       id: string;
       sequence: number;
@@ -736,6 +738,37 @@ export function CloudGallery({
       );
     }
   };
+  const createPlanet = (random = false) =>
+    void perform(async () => {
+      const preset = CloudPlanetPresets[creationSkin];
+      const result = await (
+        await classroomRequest(`classes/${classId}/planets`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            random
+              ? { random: true }
+              : {
+                  skin: creationSkin,
+                  name: preset.name,
+                  color: preset.color,
+                  summary: preset.summary,
+                  reflection: preset.reflection,
+                  learningIntent: {
+                    ...blankIntent(),
+                    customMood: preset.mood,
+                    paletteColors: [preset.color],
+                  },
+                },
+          ),
+        })
+      ).json();
+      await refresh(result.id);
+      if (result.created) {
+        setPlanetBirth(result.id);
+        setNotice("你的星球诞生了，随时可以继续编辑。");
+      }
+    });
   return (
     <main
       className={`classroom-main cloud-gallery ${exploring ? "scene-exploring" : editLaunch ? "editing-launch" : "cloud-main-universe"}`}
@@ -810,34 +843,44 @@ export function CloudGallery({
           <span>✧</span>
           <div>
             <p className="eyebrow">YOUR UNIVERSE STARTS HERE</p>
-            <h2>让宇宙为你诞生一颗星球</h2>
-            <p>
-              一键随机生成外观，之后自由改名和设计。每个班级只创建一颗属于你的星球。
-            </p>
-            <p>建议尽快上传自己的星球外貌和内部背景，让它拥有你的风格。</p>
+            <h2>选一个起点，让你的星球诞生</h2>
+            <p>先用模板的外观、寄语和场景，之后再上传图片，写下自己的故事。</p>
+            <div
+              className="cloud-starter-picker"
+              role="group"
+              aria-label="选择创建模板"
+            >
+              {CloudPlanetPresets.map((preset, i) => (
+                <button
+                  key={preset.name}
+                  disabled={busy}
+                  aria-pressed={creationSkin === i}
+                  aria-label={`创建模板 ${preset.name}`}
+                  onClick={() => setCreationSkin(i)}
+                >
+                  <img
+                    src={`${import.meta.env.BASE_URL}demo/v2/body-${i}.webp`}
+                    alt=""
+                  />
+                  <span>{preset.name}</span>
+                </button>
+              ))}
+            </div>
+            <h3>{CloudPlanetPresets[creationSkin].name}</h3>
+            <p>{CloudPlanetPresets[creationSkin].summary}</p>
+            <div className="row-buttons">
+              <button
+                className="primary"
+                disabled={busy}
+                onClick={() => createPlanet()}
+              >
+                {busy ? "正在创造…" : "用这个模板创建星球"}
+              </button>
+              <button disabled={busy} onClick={() => createPlanet(true)}>
+                随机选一颗
+              </button>
+            </div>
           </div>
-          <button
-            className="primary"
-            disabled={busy}
-            onClick={() =>
-              void perform(async () => {
-                const result = await (
-                  await classroomRequest(`classes/${classId}/planets`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ random: true }),
-                  })
-                ).json();
-                await refresh(result.id);
-                if (result.created) {
-                  setPlanetBirth(result.id);
-                  setNotice("你的星球诞生了。欣赏一下，再开始你的设计吧。");
-                }
-              })
-            }
-          >
-            {busy ? "正在召唤你的星球…" : "一键随机创建我的星球 ✦"}
-          </button>
         </section>
       )}
       {showLearningGuide && student && myPlanet && (guide || guideError) && (
@@ -959,6 +1002,27 @@ export function CloudGallery({
       )}
       {data && !exploring && !editLaunch && (
         <CloudObservatory
+          movablePlanetIds={
+            pending
+              ? []
+              : staff
+                ? data.planets.map((p) => p.id)
+                : student && myPlanet
+                  ? [myPlanet.id]
+                  : []
+          }
+          onPlanetMove={async (id, position, revision) => {
+            if (pending) throw Error("请先完成当前操作，再移动星球。");
+            await classroomRequest(
+              `classes/${classId}/planets/${id}/position`,
+              {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ position, revision }),
+              },
+            );
+            await refresh();
+          }}
           focusRequest={focusRequest}
           classId={classId}
           planets={observatoryPlanets}
@@ -1135,31 +1199,21 @@ export function CloudGallery({
                     filter: `brightness(${selected.document.brightness}) saturate(${selected.document.saturation})`,
                   }}
                 >
-                  {background.url ? (
+                  {
                     <img
                       className="cloud-room-background"
-                      src={background.url}
+                      src={
+                        background.url ||
+                        `${import.meta.env.BASE_URL}demo/room-${selected.document.skin}.png`
+                      }
                       alt="星球内部背景"
                     />
-                  ) : (
-                    <>
-                      <div className="cloud-room-moon" />
-                      <div className="cloud-room-land" />
-                    </>
-                  )}
+                  }
                   <div
                     className="cloud-room-tint"
                     style={{ backgroundColor: selected.document.color }}
                   />
                 </div>
-                {!selected.document.media.interior && !background.loading && (
-                  <span className="scene-default-note">
-                    默认内部场景
-                    {owned
-                      ? " · 在「编辑星球外貌与背景」中上传自己的背景"
-                      : " · 作者尚未设置背景"}
-                  </span>
-                )}
                 <CloudAtmosphere kind={selected.document.atmosphere} />
                 {planetBirth === selected.id && (
                   <div className="cloud-planet-birth" role="status">

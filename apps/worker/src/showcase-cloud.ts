@@ -1,4 +1,8 @@
-import { nextGrowthPlacement, growthElementColor } from "@colorverse/domain";
+import {
+  nextGrowthPlacement,
+  growthElementColor,
+  clampPlanetPosition,
+} from "@colorverse/domain";
 import { Client } from "pg";
 import { databaseClient, type DatabaseBinding } from "./database-client";
 import { z } from "zod";
@@ -6,6 +10,9 @@ import {
   GrowthPresetIds,
   CloudPlanetAppearanceInput,
   CloudPlanetPresets,
+  cloudPlanetFromPreset,
+  CloudPlanetPositionInput,
+  DefaultCloudMotion,
   PeerObservationSchema,
 } from "@colorverse/contracts";
 import {
@@ -317,14 +324,28 @@ export async function handleShowcaseCloud(
             CloudPlanetPresets.length
           : input.skin;
       const appearance = "random" in input ? CloudPlanetPresets[skin] : input;
+      const starter = cloudPlanetFromPreset(skin);
       const result = await client.query(
         "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,$3) ON CONFLICT(owner_enrollment_id) DO NOTHING RETURNING id",
         [
           crypto.randomUUID(),
           actor.id,
           JSON.stringify({
-            metadata: { name: appearance.name },
+            ...starter,
+            metadata: {
+              ...starter.metadata,
+              name: appearance.name,
+              ...(!("random" in input) && input.summary !== undefined
+                ? { summary: input.summary }
+                : {}),
+              ...(!("random" in input) && input.reflection !== undefined
+                ? { reflection: input.reflection }
+                : {}),
+            },
             color: appearance.color,
+            ...(!("random" in input) && input.learningIntent !== undefined
+              ? { learningIntent: input.learningIntent }
+              : {}),
             skin,
             revision: 0,
           }),
@@ -342,7 +363,9 @@ export async function handleShowcaseCloud(
       return Response.json({ created: result.rows.length > 0, id });
     }
     const planetMatch =
-      /^planets\/([a-f0-9-]+)\/(appearance|exterior|interior)$/.exec(resource);
+      /^planets\/([a-f0-9-]+)\/(appearance|exterior|interior|position)$/.exec(
+        resource,
+      );
     if (planetMatch) {
       const id = z.uuid().parse(planetMatch[1]),
         kind = planetMatch[2];
@@ -368,6 +391,40 @@ export async function handleShowcaseCloud(
         throw new ClassroomFailure(403, "OWNER_REQUIRED", "只能修改自己的星球");
       const document = row.document,
         revision = document.revision ?? 0;
+      if (kind === "position") {
+        if (request.method !== "PUT")
+          throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "不支持此操作");
+        const input = CloudPlanetPositionInput.parse(
+          JSON.parse(
+            new TextDecoder().decode(await readLimited(request, 4096)),
+          ),
+        );
+        if (input.revision !== revision)
+          throw new ClassroomFailure(
+            409,
+            "PLANET_CONFLICT",
+            "星球已更新，请刷新后再移动",
+          );
+        const position = clampPlanetPosition(
+          {
+            planetId: id,
+            position: input.position,
+            scale: 1,
+            motion: document.motion ?? DefaultCloudMotion,
+          },
+          42,
+          input.position,
+        );
+        await client.query(
+          "UPDATE colorverse.planets SET document=$1 WHERE id=$2",
+          [
+            JSON.stringify({ ...document, position, revision: revision + 1 }),
+            id,
+          ],
+        );
+        await client.query("COMMIT");
+        return Response.json({ saved: true, position, revision: revision + 1 });
+      }
       if (kind === "appearance" && request.method === "PUT") {
         const input = appearanceInput.parse(
           JSON.parse(

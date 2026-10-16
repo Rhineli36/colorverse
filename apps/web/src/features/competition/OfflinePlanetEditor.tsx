@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  CloudPlanetDocumentSchema,
+  cloudPlanetFromPreset,
+  CloudPlanetPresets,
   type EmotionCase,
 } from "@colorverse/contracts";
 import { ColorCardPicker } from "../classroom/ColorCardPicker";
@@ -41,10 +42,7 @@ export function OfflinePlanetEditor({
         planet ?? {
           id: "my-offline-planet",
           display_name: "我的创作",
-          document: CloudPlanetDocumentSchema.parse({
-            metadata: { name: "未命名的星球", summary: "" },
-            skin: 0,
-          }),
+          document: cloudPlanetFromPreset(0),
           sent: 0,
           received: 0,
           works: [],
@@ -180,7 +178,7 @@ export function OfflinePlanetEditor({
             />
           </label>
           <div className="default-skins" role="group" aria-label="选择默认星球">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
+            {CloudPlanetPresets.map((preset, i) => (
               <button
                 key={i}
                 aria-pressed={draft.document.skin === i && !draft.exterior}
@@ -189,7 +187,12 @@ export function OfflinePlanetEditor({
                   setDraft((d) => ({
                     ...d,
                     exterior: undefined,
-                    document: { ...d.document, skin: i },
+                    document: planet
+                      ? { ...d.document, skin: i }
+                      : {
+                          ...cloudPlanetFromPreset(i),
+                          revision: d.document.revision,
+                        },
                   }))
                 }
               >
@@ -197,6 +200,7 @@ export function OfflinePlanetEditor({
                   src={`${import.meta.env.BASE_URL}demo/v2/body-${i}.webp`}
                   alt={`默认星球 ${i + 1}`}
                 />
+                <span>{preset.name}</span>
               </button>
             ))}
           </div>
@@ -234,7 +238,7 @@ export function OfflinePlanetEditor({
                 }))
               }
             >
-              <option value="">星空</option>
+              <option value="">随模板的星空场景</option>
               {[1, 2, 3, 4, 5].map((i) => (
                 <option key={i} value={`case-${i}-interior.webp`}>
                   环境 {i}

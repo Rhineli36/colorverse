@@ -594,22 +594,18 @@ export function CompetitionView() {
                     } as React.CSSProperties
                   }
                 >
-                  {image(planet.interior) ? (
+                  {
                     <img
                       key={imageRetry}
                       className="scene-saved-background"
-                      src={image(planet.interior)}
+                      src={
+                        image(planet.interior) ??
+                        `${import.meta.env.BASE_URL}demo/room-${planet.document.skin}.png`
+                      }
                       alt={`${planet.document.metadata.name}的内部背景`}
                       onError={() => setSceneFailed(true)}
                     />
-                  ) : (
-                    <div
-                      className="offline-default-interior"
-                      style={{
-                        background: `radial-gradient(ellipse at 30% 10%,${planet.document.color}77,#101b2b 75%)`,
-                      }}
-                    />
-                  )}
+                  }
                   {sceneFailed && (
                     <div className="scene-image-error" role="alert">
                       <p>背景图暂时未能显示，仍可点击元素查看作品。</p>
@@ -663,6 +659,30 @@ export function CompetitionView() {
             ownId={state.ownPlanet?.id}
             selectedId={selected}
             focusRequest={focusRequest}
+            movablePlanetIds={
+              busy
+                ? []
+                : role === "teacher"
+                  ? visible.map((p) => p.id)
+                  : role === "student" && state.ownPlanet
+                    ? [state.ownPlanet.id]
+                    : []
+            }
+            onPlanetMove={
+              role === "guest"
+                ? undefined
+                : async (id, position, revision) => {
+                    const p = planets.find((p) => p.id === id);
+                    if (busy || !p || p.document.revision !== revision)
+                      throw Error("星球已更新，请刷新后再移动。");
+                    const next = await store.current!.savePlanet(
+                      state.revision,
+                      role,
+                      { ...p, document: { ...p.document, position } },
+                    );
+                    setState(next);
+                  }
+            }
             planets={[
               ...visible.map((p) => ({
                 ...p,

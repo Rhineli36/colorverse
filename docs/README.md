@@ -95,3 +95,5 @@
 - [50 · 参赛展示界面精修与实测](50-presentation-refinement.md)
 
 - [51 · 八色系情感案例与离线身份体验](51-emotion-offline-experience.md)
+
+- [52 · 创建模板、星球拖拽与默认场景](52-planet-templates-and-placement.md)

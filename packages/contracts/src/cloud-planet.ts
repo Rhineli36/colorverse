@@ -11,13 +11,67 @@ export const DefaultCloudMotion = {
 } as const;
 
 export const CloudPlanetPresets = [
-  { name: "流焰星", color: "#efa568" },
-  { name: "翡翠星", color: "#82c9ae" },
-  { name: "潮汐星", color: "#5a9dde" },
-  { name: "紫雾星", color: "#b397d4" },
-  { name: "霜蓝星", color: "#92c7df" },
-  { name: "月岩星", color: "#c5bdaa" },
+  {
+    name: "流焰星",
+    color: "#efa568",
+    mood: "温暖",
+    summary:
+      "把一小片落日留在宇宙里。希望来到这里的人，都能带走一点温暖和勇气。",
+    reflection: "想试着让橙色与暗红相遇，把明亮留给最想被看见的地方。",
+  },
+  {
+    name: "翡翠星",
+    color: "#82c9ae",
+    mood: "宁静",
+    summary: "这是一颗慢慢生长的星球。让绿色铺开，也给呼吸和想象留一点空白。",
+    reflection:
+      "从一片叶子的颜色出发，试试偏黄与偏蓝的绿色，会长出怎样不同的心情。",
+  },
+  {
+    name: "潮汐星",
+    color: "#5a9dde",
+    mood: "清凉",
+    summary:
+      "沿着蓝色的波纹去旅行。希望这片小小的海，让忙碌的心情也能安静下来。",
+    reflection:
+      "想用深浅不同的蓝色写出远近，再让一小点暖色像岸边的灯一样亮起来。",
+  },
+  {
+    name: "紫雾星",
+    color: "#b397d4",
+    mood: "神秘",
+    summary: "把没说完的想象藏进紫色的夜里。这颗星球，欢迎所有奇奇怪怪的梦。",
+    reflection:
+      "粉紫、蓝紫和暗色之间，会不会藏着一条通往梦境的小路？我想慢慢试出来。",
+  },
+  {
+    name: "霜蓝星",
+    color: "#92c7df",
+    mood: "轻盈",
+    summary:
+      "这里收藏清晨的微光与透明的风。愿每一次相遇，都像光穿过晶体一样清澈。",
+    reflection:
+      "先从浅蓝开始，比较一点灰、一点白和一点亮色，看看画面怎样变得通透。",
+  },
+  {
+    name: "月岩星",
+    color: "#c5bdaa",
+    mood: "宁静",
+    summary:
+      "在月光和灰色之间，给故事留一点安静的位置。这里不急着闪耀，也有自己的光。",
+    reflection:
+      "想看看不那么鲜艳的颜色，能不能用细微的明暗变化，讲出同样丰富的故事。",
+  },
 ] as const;
+
+export const CloudPlanetPositionSchema = z.object({
+  x: z.number().finite().min(-100000).max(100000),
+  y: z.number().finite().min(-100000).max(100000),
+});
+export const CloudPlanetPositionInput = z.strictObject({
+  position: CloudPlanetPositionSchema,
+  revision: z.number().int().nonnegative(),
+});
 
 export const CloudPlanetAppearanceInput = z.strictObject({
   learningIntent: LearningIntentSchema.optional(),
@@ -36,6 +90,7 @@ export const CloudPlanetAppearanceInput = z.strictObject({
   practice: z.literal("tone").optional(),
 });
 export const CloudPlanetDocumentSchema = z.object({
+  position: CloudPlanetPositionSchema.optional(),
   learningIntent: LearningIntentSchema.nullable().optional(),
   metadata: z.object({
     name: z.string(),
@@ -59,6 +114,23 @@ export const CloudPlanetDocumentSchema = z.object({
     })
     .default({}),
 });
+
+/** A complete starting point shared by the cloud and offline creation flows. */
+export function cloudPlanetFromPreset(skin: number) {
+  const preset = CloudPlanetPresets[skin] ?? CloudPlanetPresets[0];
+  const index = CloudPlanetPresets.indexOf(preset);
+  return CloudPlanetDocumentSchema.parse({
+    skin: index,
+    color: preset.color,
+    halo: "soft",
+    metadata: {
+      name: preset.name,
+      summary: preset.summary,
+      reflection: preset.reflection,
+    },
+    learningIntent: { customMood: preset.mood, paletteColors: [preset.color] },
+  });
+}
 
 export const CloudGuideSteps = [
   {

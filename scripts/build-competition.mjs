@@ -30,28 +30,19 @@ await new Promise((ok, bad) => {
 await rm(destination, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
 await cp(resolve(root, "apps/web/dist"), destination, { recursive: true });
-// The downloadable offline universe contains no live classroom IDs or real student identities.
+// Keep the five case authors credited as requested; live classroom IDs and credentials remain excluded.
 const manifestPath = resolve(destination, "competition/manifest.json");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-const identities = manifest.students.map((s) => ({
-  name: s.realName ?? s.display_name.split(" · ")[0],
-  number: s.studentNumber,
-  alias: "同学 " + String(manifest.students.indexOf(s) + 1).padStart(2, "0"),
-}));
 const sanitize = (text) => {
-  let value = text;
-  for (const p of identities) {
-    if (p.name) value = value.replaceAll(p.name, p.alias);
-    if (p.number) value = value.replaceAll(p.number, "");
-  }
-  return value
+  return text
     .replace(/（演示账号）/g, "")
     .replace(/^演示留言(?:（[^）]*）)?[：:]\s*/, "");
 };
-for (const [i, student] of manifest.students.entries()) {
-  student.display_name = identities[i].alias;
-  delete student.realName;
-  delete student.studentNumber;
+for (const student of manifest.students) {
+  student.display_name =
+    student.realName && student.studentNumber
+      ? `${student.realName} · 学号 ${student.studentNumber}`
+      : sanitize(student.display_name);
   student.document.metadata.demoWriting = false;
   for (const w of student.works) {
     if (w.description) w.description = sanitize(w.description);

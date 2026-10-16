@@ -33,12 +33,20 @@ export function CloudObservatory({
   selectedId,
   ownId,
   focusRequest,
+  movablePlanetIds = [],
+  onPlanetMove,
 }: {
   classId: string;
   planets: ObservatoryPlanet[];
   selectedId?: string;
   ownId?: string;
   focusRequest?: { id: string; sequence: number };
+  movablePlanetIds?: string[];
+  onPlanetMove?: (
+    id: string,
+    position: { x: number; y: number },
+    revision: number,
+  ) => Promise<void>;
   onEnter: (id: string) => void;
 }) {
   const host = useRef<HTMLElement>(null);
@@ -46,12 +54,19 @@ export function CloudObservatory({
   const positions = useRef<
     ((id: string) => { x: number; y: number } | null) | null
   >(null);
+  const consumedFocusRequest = useRef<typeof focusRequest>(undefined);
   const [viewport, setViewport] = useState({ width: 1600, height: 900 });
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 0.18 });
   const [mode, setMode] = useState("overview"),
     [selected, setSelected] = useState(selectedId ?? "");
   const [paused, setPaused] = useState(false),
     [guides, setGuides] = useState(false);
+  const [moveNotice, setMoveNotice] = useState("");
+  useEffect(() => {
+    if (!moveNotice) return;
+    const timer = setTimeout(() => setMoveNotice(""), 7000);
+    return () => clearTimeout(timer);
+  }, [moveNotice]);
   const [query, setQuery] = useState(""),
     [imageErrors, setImageErrors] = useState(0),
     [retry, setRetry] = useState(0);
@@ -106,7 +121,8 @@ export function CloudObservatory({
       string,
       { url: string; fallback: string; private: boolean }
     >();
-    const documents = visible.map((p, i) => {
+    const documents = visible.map((p) => {
+      const i = planets.findIndex((source) => source.id === p.id);
       const doc = fixturePlanet(i);
       doc.planetId = p.id;
       doc.revision = p.document.revision + retry;
@@ -177,25 +193,28 @@ export function CloudObservatory({
     });
     const universe = fixtureUniverse(documents);
     universe.universeId = classId;
-    universe.entries = documents.map((p, i) => ({
-      planetId: p.planetId,
-      visible: true,
-      scale: 1,
-      order: i,
-      layoutRevision: 0,
-      position: {
-        x:
-          800 +
-          [-2300, 900, 2700, -900, 1500, -2800, 0, 3200, -3500, 3500][i % 10],
-        y:
-          450 +
-          [-1100, -1400, -700, 200, 500, 1100, 1600, 1400, -200, -1600][
-            i % 10
-          ] +
-          Math.floor(i / 10) * 2600,
-      },
-      motion: visible[i].document.motion,
-    }));
+    universe.entries = documents.map((p, visibleIndex) => {
+      const i = planets.findIndex((source) => source.id === p.planetId);
+      return {
+        planetId: p.planetId,
+        visible: true,
+        scale: 1,
+        order: i,
+        layoutRevision: visible[visibleIndex].document.revision,
+        position: visible[visibleIndex].document.position ?? {
+          x:
+            800 +
+            [-2300, 900, 2700, -900, 1500, -2800, 0, 3200, -3500, 3500][i % 10],
+          y:
+            450 +
+            [-1100, -1400, -700, 200, 500, 1100, 1600, 1400, -200, -1600][
+              i % 10
+            ] +
+            Math.floor(i / 10) * 2600,
+        },
+        motion: visible[visibleIndex].document.motion,
+      };
+    });
     const cache = new Map<string, Promise<Blob>>();
     const read = (path: string) => {
       if (!cache.has(path))
@@ -249,7 +268,7 @@ export function CloudObservatory({
       },
     };
     return { documents, universe, assets };
-  }, [visible, classId, retry, previews]);
+  }, [visible, planets, classId, retry, previews]);
   useEffect(() => {
     if (!previews) return;
     void Promise.allSettled(
@@ -308,8 +327,14 @@ export function CloudObservatory({
   };
   useEffect(() => {
     if (!focusRequest) return;
+    if (
+      consumedFocusRequest.current?.id === focusRequest.id &&
+      consumedFocusRequest.current.sequence === focusRequest.sequence
+    )
+      return;
     const timer = window.setInterval(() => {
       if (positions.current?.(focusRequest.id)) {
+        consumedFocusRequest.current = focusRequest;
         focus(focusRequest.id);
         clearInterval(timer);
       }
@@ -338,9 +363,29 @@ export function CloudObservatory({
           motionPaused={paused}
           showOrbitGuides={guides}
           focusId={mode === "focus" ? selected : null}
+          movablePlanetIds={onPlanetMove ? movablePlanetIds : []}
           options={{
             onSelect: setSelected,
             onDoubleSelect: doubleSelect,
+            onMoveDenied: () => setMoveNotice("只能拖动自己有权编辑的星球。"),
+            onPlanetMove: async (move) => {
+              setMoveNotice("");
+              try {
+                if (!onPlanetMove) throw Error("请先登录后移动自己的星球。");
+                await onPlanetMove(
+                  move.planetId,
+                  move.position,
+                  move.expectedLayoutRevision,
+                );
+              } catch (e) {
+                setMoveNotice(
+                  e instanceof Error
+                    ? e.message
+                    : "位置未能保存，已恢复原位置。",
+                );
+                throw e;
+              }
+            },
             onCamera: (c) => {
               setMode("free");
               setCamera(c);
@@ -502,6 +547,11 @@ export function CloudObservatory({
           >
             重试图片
           </button>
+        </p>
+      )}
+      {moveNotice && (
+        <p className="observatory-image-notice" role="status">
+          {moveNotice}
         </p>
       )}
     </section>
