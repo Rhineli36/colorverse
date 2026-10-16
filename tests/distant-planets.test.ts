@@ -3,12 +3,12 @@ import { createDistantPlanetField } from "../apps/web/src/features/classroom/dis
 
 it("disperses stable scenery over the universe with space between planets", () => {
   const planets = createDistantPlanetField();
-  expect(planets).toHaveLength(28);
+  expect(planets).toHaveLength(12);
   expect(createDistantPlanetField()).toEqual(planets);
   for (const [i, p] of planets.entries()) {
     for (const other of planets.slice(i + 1))
       expect(Math.hypot(p.x - other.x, p.y - other.y)).toBeGreaterThanOrEqual(
-        1450,
+        2300,
       );
   }
   // Populate every quadrant, including well beyond the central student cluster.
