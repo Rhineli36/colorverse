@@ -7,6 +7,7 @@ import {
 import { EmotionCases } from "./EmotionCases";
 import { KnowledgeVisual, KnowledgeLabels } from "./KnowledgeVisual";
 import { KnowledgeExperiment } from "./KnowledgeExperiment";
+import { KnowledgeExampleImages } from "./knowledge-example-images";
 import { readStudyPreference, saveStudyPreference } from "./study-preferences";
 import "./color-mystery.css";
 export function ColorMystery({
@@ -47,6 +48,7 @@ export function ColorMystery({
     [tab, knowledge],
   );
   const card = LearningContent.knowledge.find((k) => k.id === knowledge)!;
+  const guidance = KnowledgeExampleImages[card.id];
   return (
     <section className="chromatic-study" aria-label="色彩知识与情感专题">
       <header className="study-heading">
@@ -115,7 +117,9 @@ export function ColorMystery({
                     </div>
                     <div>
                       <h3>{KnowledgeLabels[k.id]}</h3>
-                      <p>{k.summary}</p>
+                      <p>
+                        {KnowledgeExampleImages[k.id]?.summary ?? k.summary}
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -131,15 +135,15 @@ export function ColorMystery({
             <KnowledgeExperiment id={card.id} />
             <section>
               <h3>观察</h3>
-              <p>{card.summary}</p>
+              <p>{guidance?.observation ?? card.summary}</p>
             </section>
             <section>
-              <h3>理解</h3>
-              <p>{card.body}</p>
+              <h3>分析</h3>
+              <p>{guidance?.analysis ?? card.body}</p>
             </section>
             <section>
-              <h3>试一试</h3>
-              <p>{card.tryPrompt}</p>
+              <h3>创作启发</h3>
+              <p>{guidance?.prompt ?? card.tryPrompt}</p>
             </section>
             <details>
               <summary>继续了解</summary>

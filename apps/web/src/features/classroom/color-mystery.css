@@ -342,6 +342,30 @@
   aspect-ratio: 3 / 2;
   object-fit: contain;
 }
+.experiment-photo-frame {
+  position: relative;
+  min-width: 0;
+}
+.experiment-filter-defs {
+  position: absolute;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+.experiment-static-picture {
+  margin: 0;
+}
+.experiment-static-picture .experiment-sample-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 7px;
+}
+.experiment-dialog .experiment-static-picture {
+  max-width: 960px;
+  margin: 0 auto;
+}
 .experiment-comparison figcaption {
   margin-top: 5px;
   font-size: 13px;

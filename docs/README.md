@@ -115,3 +115,5 @@
 - [59 · 背景星球疏减与最终封装安排](59-scenery-density-and-final-package-timing.md)
 
 - [60 · 色相与明度样图实装](60-hue-and-lightness-supplied-images.md)
+
+- [61 · 四项滑竿与三项图例观察](61-four-controls-and-three-image-studies.md)

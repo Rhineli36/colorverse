@@ -20,5 +20,60 @@
     "thumbnailBytes": 33654,
     "source": "课程负责人提供",
     "sourceSha256": "933145ac1d7824688e55e30f7232d3aa6936b0a4ff895ad95976a6c51a45916b"
+  },
+  {
+    "id": "K03",
+    "image": "saturation-portrait.webp",
+    "thumbnail": "saturation-portrait-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 261966,
+    "thumbnailBytes": 27918,
+    "source": "课程负责人提供",
+    "sourceSha256": "53732981494279d1741aa1ef95ab3e049cdafeb77af2193ef0632e92b828b53a"
+  },
+  {
+    "id": "K04",
+    "image": "temperature-window.webp",
+    "thumbnail": "temperature-window-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 191236,
+    "thumbnailBytes": 37126,
+    "source": "课程负责人提供",
+    "sourceSha256": "5f896c900b5773f61129a490c68e585eac896e0c7f9bf83d83a2687f2abd4f65"
+  },
+  {
+    "id": "K05",
+    "image": "analogous-leaves.webp",
+    "thumbnail": "analogous-leaves-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 141752,
+    "thumbnailBytes": 24486,
+    "source": "课程负责人提供",
+    "sourceSha256": "ba7b419162394b6b1be4d4a530a7cb7d52680ff6ce4accd723486d82ad24bdfe"
+  },
+  {
+    "id": "K06",
+    "image": "contrast-bird.webp",
+    "thumbnail": "contrast-bird-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 415160,
+    "thumbnailBytes": 62286,
+    "source": "课程负责人提供",
+    "sourceSha256": "80469c4dfe5021eb66e9ff8e68265c37944c894896fe14186c29385df30671d6"
+  },
+  {
+    "id": "K07",
+    "image": "area-sailboat.webp",
+    "thumbnail": "area-sailboat-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 387356,
+    "thumbnailBytes": 44944,
+    "source": "课程负责人提供",
+    "sourceSha256": "9d687a84f3a8a302740e20443e5a1e2c7bf94b9d5c21af7eb0a4ae804edddd8e"
   }
 ]
