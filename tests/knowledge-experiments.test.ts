@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { knowledgeImageFilter } from "../apps/web/src/features/classroom/knowledge-example-images";
 import {
   experimentPalette,
   KnowledgeExperiments,
@@ -8,15 +9,27 @@ import {
 const components = (color: string) => color.match(/[\d.]+/g)!.map(Number);
 
 describe("knowledge experiments isolate the color relation being explored", () => {
-  it("changes hue, lightness and chroma independently while keeping the surrounding scene fixed", () => {
-    for (const [id, changed] of [
-      ["K01", 2],
-      ["K02", 0],
-      ["K03", 1],
-    ] as const) {
+  it("keeps supplied originals neutral and bounds the image controls", () => {
+    expect(
+      knowledgeImageFilter("K01", KnowledgeExperiments.K01.reference),
+    ).toBe("hue-rotate(0deg)");
+    expect(knowledgeImageFilter("K01", 360)).toBe(
+      knowledgeImageFilter("K01", 0),
+    );
+    expect(knowledgeImageFilter("K01", 180)).not.toBe(
+      knowledgeImageFilter("K01", 0),
+    );
+    expect(
+      knowledgeImageFilter("K02", KnowledgeExperiments.K02.reference),
+    ).toBe("brightness(1)");
+    expect(knowledgeImageFilter("K02", -100)).toBe("brightness(0.4)");
+    expect(knowledgeImageFilter("K02", 1000)).toBe("brightness(1.6)");
+  });
+  it("changes chroma independently while keeping the surrounding scene fixed", () => {
+    for (const [id, changed] of [["K03", 1]] as const) {
       const spec = KnowledgeExperiments[id];
       const a = experimentPalette(id, spec.min);
-      const b = experimentPalette(id, id === "K01" ? spec.max - 1 : spec.max);
+      const b = experimentPalette(id, spec.max);
       const first = components(a.orb),
         last = components(b.orb);
       for (let i = 0; i < 3; i++) {
@@ -25,7 +38,6 @@ describe("knowledge experiments isolate the color relation being explored", () =
       }
       expect({ ...a, orb: "" }).toEqual({ ...b, orb: "" });
     }
-    expect(experimentPalette("K01", 360)).toEqual(experimentPalette("K01", 0));
   });
   it("expands neighboring hues and changes target contrast without changing their lightness or chroma", () => {
     for (const id of ["K05", "K06"] as KnowledgeExperimentId[]) {

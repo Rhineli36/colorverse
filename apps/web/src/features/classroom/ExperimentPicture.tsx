@@ -1,5 +1,9 @@
 import { useId } from "react";
 import {
+  KnowledgeExampleImages,
+  knowledgeImageFilter,
+} from "./knowledge-example-images";
+import {
   experimentPalette,
   type KnowledgeExperimentId,
 } from "./knowledge-experiment-model";
@@ -15,6 +19,21 @@ export function ExperimentPicture({
 }) {
   const uid = useId(),
     c = experimentPalette(id, value);
+  const image = KnowledgeExampleImages[id];
+  if (image)
+    return (
+      <img
+        className="experiment-sample-image"
+        src={`${import.meta.env.BASE_URL}knowledge-examples/${image.file}.webp`}
+        alt={label}
+        title={image.description}
+        width={1536}
+        height={1024}
+        decoding="async"
+        data-scene-id={id}
+        style={{ filter: knowledgeImageFilter(id, value) }}
+      />
+    );
   const stars = (
     <g fill="#dde8ee" opacity=".7">
       {[
@@ -46,131 +65,6 @@ export function ExperimentPicture({
           <stop offset="1" stopColor="#87c6c5" stopOpacity=".02" />
         </linearGradient>
       </defs>
-      {id === "K01" && (
-        <>
-          <rect width="480" height="300" fill={"url(#" + uid + "sky)"} />
-          {stars}
-          <ellipse
-            cx="390"
-            cy="70"
-            rx="43"
-            ry="17"
-            fill="none"
-            stroke="#a0b6bb"
-            strokeWidth="3"
-            transform="rotate(-24 390 70)"
-          />
-          <circle cx="390" cy="70" r="24" fill="#647586" />
-          <path
-            d="M0 220L50 183L114 202L170 155L245 203L333 174L480 226V300H0Z"
-            fill="#213447"
-          />
-          <path d="M0 262Q118 208 253 252T480 244V300H0Z" fill="#152a3b" />
-          <ellipse cx="247" cy="255" rx="161" ry="20" fill="#081724" />
-          <path
-            d="M130 177A110 110 0 0 1 350 177Z"
-            data-color-target="orb"
-            fill={c.orb}
-          />
-          <path
-            d="M130 177A110 110 0 0 1 350 177M240 67V177M182 85Q160 130 169 177M298 85Q320 130 311 177"
-            fill="none"
-            stroke="#dce7e2"
-            strokeWidth="3"
-            opacity=".5"
-          />
-          <rect x="124" y="176" width="232" height="60" rx="8" fill="#425664" />
-          {[146, 184, 276, 314].map((x) => (
-            <rect
-              key={x}
-              x={x}
-              y="189"
-              width="20"
-              height="21"
-              rx="3"
-              fill="#a0c7cc"
-            />
-          ))}
-          <path d="M222 236V199A18 18 0 0 1 258 199V236" fill="#102535" />
-          <path
-            d="M212 238H268M204 245H276M196 252H284"
-            stroke="#7d929a"
-            strokeWidth="5"
-          />
-          <path
-            d="M108 220V139M108 139L89 151M108 139L126 151"
-            stroke="#8396a4"
-            strokeWidth="3"
-          />
-          <path
-            d="M343 222L386 194L402 208L361 235Z"
-            fill="#1c3848"
-            stroke="#7794a1"
-          />
-          <path d="M354 215L391 202M365 208L379 221" stroke="#7794a1" />
-        </>
-      )}
-      {id === "K02" && (
-        <>
-          <rect width="480" height="300" fill="#0a172b" />
-          {stars}
-          <circle cx="81" cy="58" r="28" fill="#b8c4d3" />
-          <circle cx="91" cy="51" r="25" fill="#0a172b" />
-          <path
-            d="M0 155L80 129L154 158L228 122L315 159L405 134L480 162V212H0Z"
-            fill="#253446"
-          />
-          <rect y="186" width="480" height="114" fill="#112d41" />
-          {[205, 222, 246, 273].map((y, i) => (
-            <path
-              key={y}
-              d={`M${12 + i * 17} ${y}H${130 + i * 14}M${259 - i * 9} ${y + 8}H${455 - i * 12}`}
-              stroke="#8298ae"
-              opacity=".25"
-              strokeWidth="2"
-            />
-          ))}
-          <path
-            d="M231 221L294 191L364 208L397 248L329 272L242 251Z"
-            fill="#182531"
-          />
-          <path d="M275 208L286 89H326L337 208Z" fill="#8a929e" />
-          <path d="M286 89H326L316 207H303Z" fill="#647181" />
-          <rect x="278" y="63" width="57" height="33" rx="3" fill="#263d52" />
-          <rect
-            x="285"
-            y="69"
-            width="43"
-            height="20"
-            rx="2"
-            data-color-target="orb"
-            fill={c.orb}
-          />
-          <path d="M273 64L306 41L341 64ZM270 96H342V103H270Z" fill="#48576a" />
-          <path
-            d="M306 43V31M278 99V116M334 99V116"
-            stroke="#b0b9c8"
-            strokeWidth="3"
-          />
-          <rect x="300" y="167" width="13" height="17" fill="#283c50" />
-          <path
-            d="M169 233L217 234L208 245H180ZM193 232V204L211 231Z"
-            fill="#6e8494"
-          />
-          <path
-            d="M291 229L317 229M285 241H326M296 252H320"
-            stroke={c.orb}
-            strokeWidth="3"
-            opacity=".55"
-          />
-          <path
-            d="M34 279L46 232L52 272L69 247L77 288M405 295L415 258L426 284L442 249L452 300"
-            stroke="#1d4152"
-            strokeWidth="7"
-            fill="none"
-          />
-        </>
-      )}
       {id === "K03" && (
         <>
           <rect width="480" height="300" fill={"url(#" + uid + "sky)"} />

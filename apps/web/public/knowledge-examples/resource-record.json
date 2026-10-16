@@ -1,0 +1,24 @@
+[
+  {
+    "id": "K01",
+    "image": "hue-ribbon.webp",
+    "thumbnail": "hue-ribbon-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 99262,
+    "thumbnailBytes": 18236,
+    "source": "课程负责人提供",
+    "sourceSha256": "acf49502ea4f56ed522883c352be3513083e6e24c91e96daf74584ed56b6b54c"
+  },
+  {
+    "id": "K02",
+    "image": "lightness-staircase.webp",
+    "thumbnail": "lightness-staircase-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "bytes": 346734,
+    "thumbnailBytes": 33654,
+    "source": "课程负责人提供",
+    "sourceSha256": "933145ac1d7824688e55e30f7232d3aa6936b0a4ff895ad95976a6c51a45916b"
+  }
+]

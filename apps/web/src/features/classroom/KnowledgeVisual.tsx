@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { KnowledgeExampleImages } from "./knowledge-example-images";
 export const KnowledgeLabels: Record<string, string> = {
   K01: "色相",
   K02: "明度",
@@ -16,35 +17,31 @@ export function KnowledgeVisual({
   large?: boolean;
 }) {
   const uid = useId().replace(/:/g, "");
-  if (id === "K01")
+  const image = KnowledgeExampleImages[id];
+  if (image)
     return (
-      <div
-        className="knowledge-color-wheel"
-        role="img"
-        aria-label="连续色相环，比较不同颜色类别"
-      >
-        <i />
-      </div>
+      <img
+        className="knowledge-topic-image"
+        src={`${import.meta.env.BASE_URL}knowledge-examples/${image.file}-thumb.webp`}
+        alt={image.description}
+        width={600}
+        height={400}
+        loading="lazy"
+        decoding="async"
+      />
     );
-  if (id === "K02" || id === "K03")
+  if (id === "K03")
     return (
       <div
         className="knowledge-steps"
         role="img"
-        aria-label={
-          id === "K02"
-            ? "同一紫色相由暗到亮的色阶"
-            : "接近同一明度，由中性灰到鲜艳紫色的彩度变化"
-        }
+        aria-label={"接近同一明度，由中性灰到鲜艳紫色的彩度变化"}
       >
         {Array.from({ length: 7 }, (_, i) => (
           <i
             key={i}
             style={{
-              background:
-                id === "K02"
-                  ? `oklch(${0.28 + i * 0.09} .12 300)`
-                  : `oklch(.66 ${i * 0.035} 300)`,
+              background: `oklch(.66 ${i * 0.035} 300)`,
             }}
           />
         ))}

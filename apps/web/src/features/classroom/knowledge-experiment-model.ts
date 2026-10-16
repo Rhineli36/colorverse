@@ -1,27 +1,27 @@
 export const KnowledgeExperiments = {
   K01: {
-    sceneName: "星环观测站",
-    label: "穹顶色相",
+    sceneName: "流动的色相",
+    label: "画面色相偏移",
     min: 0,
     max: 360,
     step: 1,
-    initial: 280,
-    reference: 220,
-    ends: ["红 → 黄 → 绿", "青 → 蓝 → 紫"],
-    hint: "保持穹顶的明度与彩度，换一种色相。观测站和周围星空保持不变。",
-    question: "换色之后，你会怎样为这个地方命名？",
+    initial: 0,
+    reference: 0,
+    ends: ["原始配色", "旋转一周"],
+    hint: "转动画面的色相，观察曲面、圆球与背景的颜色怎样一起变化。左图保留原始配色。",
+    question: "同样的形状换一组颜色，会让你想到什么？",
   },
   K02: {
-    sceneName: "月夜灯塔",
-    label: "灯塔明度",
-    min: 30,
-    max: 85,
+    sceneName: "阶梯上的光",
+    label: "画面明暗",
+    min: 40,
+    max: 160,
     step: 1,
-    initial: 70,
-    reference: 55,
+    initial: 100,
+    reference: 100,
     ends: ["暗一些", "亮一些"],
-    hint: "调整灯塔窗光及水面倒影的明度，海岸与夜空保持不变。",
-    question: "哪一版的灯塔更容易被你看见？",
+    hint: "调整整幅图的亮度，比较阶梯、墙面与人物剪影的明暗关系。100% 为原图亮度。",
+    question: "画面变亮或变暗后，你先注意到哪里？",
   },
   K03: {
     sceneName: "晶石花园",
@@ -96,8 +96,6 @@ export function experimentPalette(id: KnowledgeExperimentId, value: number) {
     arch: "#68778d",
     orb: lch(0.7, 0.1, 300),
   };
-  if (id === "K01") colors.orb = lch(0.7, 0.1, value);
-  if (id === "K02") colors.orb = lch(value / 100, 0.08, 300);
   if (id === "K03") colors.orb = lch(0.7, value, 300);
   if (id === "K04") {
     const hue = value <= 50 ? 250 : 50;
