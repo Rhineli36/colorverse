@@ -306,13 +306,90 @@ export function CompetitionView() {
       <h3>
         {workId ? "同学的回应" : "来这颗星球坐坐"}{" "}
         <small>
-          ♡ {records(workId).filter((r) => r.kind === "like").length}
+          <span className="like-heart is-liked" aria-hidden="true">
+            ♥
+          </span>{" "}
+          {records(workId).filter((r) => r.kind === "like").length}
         </small>
       </h3>
+      <div className="offline-replies">
+        {records(workId).length ? (
+          records(workId).map((r) => (
+            <article key={r.id}>
+              <strong>{presentationName(r.author)}</strong>
+              <p>
+                {r.kind === "like" ? (
+                  <>
+                    <span className="like-heart is-liked" aria-hidden="true">
+                      ♥
+                    </span>{" "}
+                    点亮了一份喜欢
+                  </>
+                ) : (
+                  r.content.replace(/^演示留言[：:]\s*/, "")
+                )}
+              </p>
+              {r.createdAt && (
+                <time dateTime={r.createdAt}>
+                  {new Date(r.createdAt).toLocaleString("zh-CN", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  })}
+                </time>
+              )}
+            </article>
+          ))
+        ) : (
+          <p className="muted">
+            {workId
+              ? "说说你的色彩感受，让不同的理解在这里相遇。"
+              : "还没有人留下脚印，下一位旅人会是谁？"}
+          </p>
+        )}
+      </div>
       {role && role !== "guest" && (
         <div className="offline-comment-composer">
-          <button disabled={busy} onClick={() => interact("like", "", workId)}>
-            ♡ {workId ? "喜欢作品" : "喜欢这颗星球"} ·{" "}
+          <button
+            className="like-toggle"
+            aria-pressed={state.interactions.some(
+              (i) =>
+                i.planetId === selected &&
+                i.workId === workId &&
+                i.kind === "like" &&
+                i.author === (role === "teacher" ? "体验教师" : "体验同学"),
+            )}
+            disabled={busy}
+            onClick={() => interact("like", "", workId)}
+          >
+            <span
+              className={
+                "like-heart " +
+                (state.interactions.some(
+                  (i) =>
+                    i.planetId === selected &&
+                    i.workId === workId &&
+                    i.kind === "like" &&
+                    i.author === (role === "teacher" ? "体验教师" : "体验同学"),
+                )
+                  ? "is-liked"
+                  : "")
+              }
+              aria-hidden="true"
+            >
+              {state.interactions.some(
+                (i) =>
+                  i.planetId === selected &&
+                  i.workId === workId &&
+                  i.kind === "like" &&
+                  i.author === (role === "teacher" ? "体验教师" : "体验同学"),
+              )
+                ? "♥"
+                : "♡"}
+            </span>{" "}
+            {workId ? "喜欢作品" : "喜欢这颗星球"} ·{" "}
             {records(workId).filter((r) => r.kind === "like").length}
           </button>
           {["✨", "💙", "👏", "🔥", "🌈"].map((e) => (
@@ -344,37 +421,6 @@ export function CompetitionView() {
           </button>
         </div>
       )}
-      <div className="offline-replies">
-        {records(workId).length ? (
-          records(workId).map((r) => (
-            <article key={r.id}>
-              <strong>{presentationName(r.author)}</strong>
-              <p>
-                {r.kind === "like"
-                  ? "♡ 点亮了一份喜欢"
-                  : r.content.replace(/^演示留言[：:]\s*/, "")}
-              </p>
-              {r.createdAt && (
-                <time dateTime={r.createdAt}>
-                  {new Date(r.createdAt).toLocaleString("zh-CN", {
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  })}
-                </time>
-              )}
-            </article>
-          ))
-        ) : (
-          <p className="muted">
-            {workId
-              ? "说说你的色彩感受，让不同的理解在这里相遇。"
-              : "还没有人留下脚印，下一位旅人会是谁？"}
-          </p>
-        )}
-      </div>
     </section>
   );
   if (error)

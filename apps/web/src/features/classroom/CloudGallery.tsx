@@ -646,9 +646,16 @@ export function CloudGallery({
     <div key={i.id} className="cloud-message-row">
       <p>
         <strong>{presentationName(i.display_name)}</strong>{" "}
-        {i.kind === "like"
-          ? `♡ 点赞了${subject}`
-          : i.content.replace(/^演示留言(?:（[^）]*）)?[：:]\s*/, "")}
+        {i.kind === "like" ? (
+          <>
+            <span className="like-heart is-liked" aria-hidden="true">
+              ♥
+            </span>{" "}
+            点赞了{subject}
+          </>
+        ) : (
+          i.content.replace(/^演示留言(?:（[^）]*）)?[：:]\s*/, "")
+        )}
         {i.learning_feedback && (
           <>
             <br />
@@ -1403,64 +1410,6 @@ export function CloudGallery({
               </div>
             </PlanetExplorer>
           </SceneLayout>
-          {owned && (
-            <section className="planet-quick-message">
-              <strong>星球留言板 · ♡ {likeCounts.planet ?? 0}</strong>
-              <input
-                aria-label="星球留言"
-                maxLength={500}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="欢迎来串门，给朋友们留一句话～"
-              />
-              <button
-                disabled={busy || !comment.trim()}
-                onClick={() => interact("comment", comment)}
-              >
-                发送留言
-              </button>
-            </section>
-          )}
-          {!owned && !work && (
-            <section className="cloud-social planet-quick-message" ref={social}>
-              <strong>为这颗星球留下回应</strong>
-              <button
-                disabled={busy}
-                onClick={() => toggleReaction("like", "")}
-              >
-                {reaction("like") ? "♥ 已点赞" : "♡ 点赞星球"} ·{" "}
-                {likeCounts.planet ?? 0}
-              </button>
-              {["✨", "💙", "👏", "🔥", "🌈"].map((emoji) => (
-                <button
-                  disabled={
-                    busy ||
-                    Boolean(
-                      reaction("emoji") && reaction("emoji")?.content !== emoji,
-                    )
-                  }
-                  key={emoji}
-                  aria-pressed={reaction("emoji")?.content === emoji}
-                  onClick={() => toggleReaction("emoji", emoji)}
-                >
-                  {emoji}
-                </button>
-              ))}
-              <input
-                aria-label="星球留言"
-                maxLength={500}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="这一趟星球旅行，让你想到什么？留下感受或建议…"
-              />
-              <button
-                disabled={busy || !comment.trim()}
-                onClick={() => interact("comment", comment)}
-              >
-                发送留言
-              </button>
-            </section>
-          )}
           {(owned || staff) && selected.works.some((w) => w.withdrawn) && (
             <details className="cloud-withdrawn-list">
               <summary>
@@ -1580,6 +1529,78 @@ export function CloudGallery({
               .filter((i) => !i.work_id)
               .map((i) => interactionRow(i, "这颗星球"))}
           </section>
+          {owned && (
+            <section className="planet-quick-message">
+              <strong>
+                星球留言板 ·{" "}
+                <span className="like-heart is-liked" aria-hidden="true">
+                  ♥
+                </span>{" "}
+                {likeCounts.planet ?? 0}
+              </strong>
+              <input
+                aria-label="星球留言"
+                maxLength={500}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="欢迎来串门，给朋友们留一句话～"
+              />
+              <button
+                disabled={busy || !comment.trim()}
+                onClick={() => interact("comment", comment)}
+              >
+                发送留言
+              </button>
+            </section>
+          )}
+          {!owned && !work && (
+            <section className="cloud-social planet-quick-message" ref={social}>
+              <strong>为这颗星球留下回应</strong>
+              <button
+                disabled={busy}
+                onClick={() => toggleReaction("like", "")}
+              >
+                <span
+                  className={
+                    "like-heart " + (reaction("like") ? "is-liked" : "")
+                  }
+                  aria-hidden="true"
+                >
+                  {reaction("like") ? "♥" : "♡"}
+                </span>{" "}
+                {reaction("like") ? "已点赞" : "点赞星球"} ·{" "}
+                {likeCounts.planet ?? 0}
+              </button>
+              {["✨", "💙", "👏", "🔥", "🌈"].map((emoji) => (
+                <button
+                  disabled={
+                    busy ||
+                    Boolean(
+                      reaction("emoji") && reaction("emoji")?.content !== emoji,
+                    )
+                  }
+                  key={emoji}
+                  aria-pressed={reaction("emoji")?.content === emoji}
+                  onClick={() => toggleReaction("emoji", emoji)}
+                >
+                  {emoji}
+                </button>
+              ))}
+              <input
+                aria-label="星球留言"
+                maxLength={500}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="这一趟星球旅行，让你想到什么？留下感受或建议…"
+              />
+              <button
+                disabled={busy || !comment.trim()}
+                onClick={() => interact("comment", comment)}
+              >
+                发送留言
+              </button>
+            </section>
+          )}
         </>
       )}
       {sample && (
@@ -1879,6 +1900,15 @@ export function CloudGallery({
               >
                 下载原图
               </button>
+              <section className="work-community" aria-label="作品互动记录">
+                <h3>这件作品收到的回应</h3>
+                {!interactions.some((i) => i.work_id === work.id) && (
+                  <p>还没有回应。邀请同学进入这颗星球，留下他们的观察。</p>
+                )}
+                {interactions
+                  .filter((i) => i.work_id === work.id)
+                  .map((i) => interactionRow(i, "作品"))}
+              </section>
               {owned && !work.withdrawn && (
                 <button
                   className="primary"
@@ -1916,7 +1946,13 @@ export function CloudGallery({
                 className="cloud-social work-community"
                 aria-label="回复同学"
               >
-                <h3>这件作品 · ♡ {likeCounts[work.id] ?? 0}</h3>
+                <h3>
+                  这件作品 ·{" "}
+                  <span className="like-heart is-liked" aria-hidden="true">
+                    ♥
+                  </span>{" "}
+                  {likeCounts[work.id] ?? 0}
+                </h3>
                 <input
                   aria-label="作品留言"
                   maxLength={500}
@@ -1945,7 +1981,15 @@ export function CloudGallery({
                   disabled={busy}
                   onClick={() => toggleReaction("like", "")}
                 >
-                  {reaction("like") ? "♥ 已点赞" : "♡ 点赞作品"} ·{" "}
+                  <span
+                    className={
+                      "like-heart " + (reaction("like") ? "is-liked" : "")
+                    }
+                    aria-hidden="true"
+                  >
+                    {reaction("like") ? "♥" : "♡"}
+                  </span>{" "}
+                  {reaction("like") ? "已点赞" : "点赞作品"} ·{" "}
                   {likeCounts[work.id] ?? 0}
                 </button>
                 {["✨", "💙", "👏", "🔥", "🌈"].map((emoji) => (
@@ -2006,15 +2050,6 @@ export function CloudGallery({
                 </button>
               </section>
             )}
-            <section className="work-community" aria-label="作品互动记录">
-              <h3>这件作品收到的回应</h3>
-              {!interactions.some((i) => i.work_id === work.id) && (
-                <p>还没有回应。邀请同学进入这颗星球，留下他们的观察。</p>
-              )}
-              {interactions
-                .filter((i) => i.work_id === work.id)
-                .map((i) => interactionRow(i, "作品"))}
-            </section>
           </section>
         </div>
       )}

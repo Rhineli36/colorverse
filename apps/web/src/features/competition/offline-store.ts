@@ -146,6 +146,7 @@ export class OfflineExperienceStore {
           (i) =>
             i.planetId === value.planetId &&
             i.workId === value.workId &&
+            i.author === (role === "teacher" ? "体验教师" : "体验同学") &&
             i.kind === value.kind,
         );
         if (old >= 0) {
@@ -205,7 +206,9 @@ export class OfflineExperienceStore {
   async readNotification(expected: number, role: ExperienceRole, id: string) {
     return this.commit(expected, role, (s) => ({
       ...s,
-      readNotifications: [...new Set([...s.readNotifications, `${role}:${id}`])].slice(-500),
+      readNotifications: [
+        ...new Set([...s.readNotifications, `${role}:${id}`]),
+      ].slice(-500),
     }));
   }
   async close() {

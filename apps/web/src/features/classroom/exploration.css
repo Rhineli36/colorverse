@@ -1503,6 +1503,19 @@
   }
 }
 /* Stronger identity and navigation, shared by the live classroom and exhibition. */
+.like-heart {
+  color: #f3f5f5 !important;
+  font-size: 1.15em;
+}
+.like-heart.is-liked {
+  color: #f16b78 !important;
+}
+.like-toggle {
+  color: #e5edf2 !important;
+}
+.offline-comment-composer {
+  margin-top: 20px;
+}
 .topbar .brand,
 .competition-header .competition-brand {
   font-size: 25px !important;

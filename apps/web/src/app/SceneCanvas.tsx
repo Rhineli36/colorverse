@@ -54,6 +54,8 @@ export function SceneCanvas({
   currentCamera.current = camera;
   callbacks.current = options;
   const [error, setError] = useState("");
+  // A new asset adapter replaces the renderer. Reapply every renderer setting
+  // below even when its value (especially movableKey) has not changed.
   useEffect(() => {
     let active = true;
     const r = new SceneRenderer(assets, {
@@ -121,7 +123,7 @@ export function SceneCanvas({
     return () => {
       cancelled = true;
     };
-  }, [scene, planet, planets, universe, birthLayerId]);
+  }, [assets, scene, planet, planets, universe, birthLayerId]);
   useEffect(() => {
     let cancelled = false;
     void ready.current?.then(() => {
@@ -130,7 +132,7 @@ export function SceneCanvas({
     return () => {
       cancelled = true;
     };
-  }, [camera]);
+  }, [assets, camera]);
   useEffect(() => {
     let cancelled = false;
     void ready.current?.then(() => {
@@ -139,10 +141,10 @@ export function SceneCanvas({
     return () => {
       cancelled = true;
     };
-  }, [motionPaused]);
+  }, [assets, motionPaused]);
   useEffect(() => {
     renderer.current?.setLayerPreview(layerPreview);
-  }, [layerPreview]);
+  }, [assets, layerPreview]);
   useEffect(() => {
     let cancelled = false;
     void ready.current?.then(() => {
@@ -151,7 +153,7 @@ export function SceneCanvas({
     return () => {
       cancelled = true;
     };
-  }, [showOrbitGuides]);
+  }, [assets, showOrbitGuides]);
   useEffect(() => {
     let cancelled = false;
     void ready.current?.then(() => {
@@ -160,7 +162,7 @@ export function SceneCanvas({
     return () => {
       cancelled = true;
     };
-  }, [focusId]);
+  }, [assets, focusId]);
   const movableKey = movablePlanetIds.join("|");
   useEffect(() => {
     let cancelled = false;
@@ -173,7 +175,7 @@ export function SceneCanvas({
     return () => {
       cancelled = true;
     };
-  }, [movableKey]);
+  }, [assets, movableKey]);
   useEffect(() => {
     let cancelled = false;
     void ready.current?.then(() => {
@@ -182,7 +184,7 @@ export function SceneCanvas({
     return () => {
       cancelled = true;
     };
-  }, [areaSelection]);
+  }, [assets, areaSelection]);
   return (
     <div className="canvas-host" ref={host} data-testid="scene-canvas">
       {error && (
