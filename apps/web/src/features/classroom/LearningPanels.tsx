@@ -1,4 +1,5 @@
 import { ColorMystery } from "./ColorMystery";
+import { AssignmentBrief } from "./AssignmentBrief";
 import type { EmotionCase } from "@colorverse/contracts";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -186,18 +187,7 @@ export function TaskPrompt({ id }: { id: string }) {
   const t = LearningContent.tasks.find((t) => t.id === id);
   return t ? (
     <section className="learning-panel">
-      <h3>{t.title}</h3>
-      <p>{t.goal}</p>
-      <p>{t.description}</p>
-      <ol>
-        {t.steps.map((s) => (
-          <li key={s}>{s}</li>
-        ))}
-      </ol>
-      <p>
-        提交两条作品记录，选择同一比较组，并标记不同版本；系统不自动判断是否完成两版。
-      </p>
-      <p>评价关注：{t.reviewFocus}</p>
+      <AssignmentBrief task={t} showTitle />
       <KnowledgePanel related={t.relatedIds} />
     </section>
   ) : (

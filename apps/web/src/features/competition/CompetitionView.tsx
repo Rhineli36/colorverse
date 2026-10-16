@@ -25,6 +25,7 @@ import {
   AssignmentMail,
   ClassroomInbox,
 } from "../classroom/ClassroomMail";
+import { AssignmentBrief } from "../classroom/AssignmentBrief";
 import { CloudObservatory } from "../classroom/CloudObservatory";
 import { presentationName } from "../classroom/presentation-name";
 import { PlanetExplorer } from "../classroom/PlanetExplorer";
@@ -995,6 +996,14 @@ export function CompetitionView() {
                 ))}
               </select>
             </label>
+            {AssignmentCatalog.filter((task) => task.id === uploadTaskId).map(
+              (task) => (
+                <details key={task.id} className="submission-assignment-brief">
+                  <summary>查看作业要求与范例</summary>
+                  <AssignmentBrief task={task} />
+                </details>
+              ),
+            )}
             <label>
               作品名称
               <input

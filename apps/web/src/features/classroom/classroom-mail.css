@@ -26,10 +26,43 @@
 .assignment-mail img {
   max-width: 100%;
   width: 100%;
-  max-height: 350px;
+  height: auto;
   object-fit: contain;
   background: #07121e;
   border-radius: 10px;
+}
+.assignment-brief figure {
+  margin: 24px 0;
+}
+.assignment-brief img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.assignment-brief h3,
+.assignment-brief h4 {
+  font-size: 17px;
+  font-weight: 500;
+  margin: 22px 0 8px;
+}
+.assignment-brief p,
+.assignment-brief li {
+  line-height: 1.8;
+}
+.assignment-image-fallback {
+  border: 1px dashed #7b9a9b66;
+  border-radius: 10px;
+  padding: 28px;
+  text-align: center;
+}
+.submission-assignment-brief {
+  margin: 14px 0 24px;
+}
+.submission-assignment-brief > summary {
+  cursor: pointer;
+  color: #c5b1e1;
 }
 .assignment-mail select {
   width: 100%;

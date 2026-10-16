@@ -1,8 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { readFile, stat } from "node:fs/promises";
 import sharp from "sharp";
+import { AssignmentCatalog } from "@colorverse/contracts";
 const root = "apps/web/public/competition";
 describe("public competition material boundaries", () => {
+  it("ships three distinct assignment comparisons with complete original proportions and optimized local bytes", async () => {
+    expect(AssignmentCatalog.map((task) => task.id)).toEqual([
+      "T01",
+      "T02",
+      "T03",
+    ]);
+    expect(new Set(AssignmentCatalog.map((task) => task.image)).size).toBe(3);
+    let bytes = 0;
+    for (const task of AssignmentCatalog) {
+      expect(task.image).toMatch(/^assignments\/[a-z-]+\.webp$/);
+      const path = "apps/web/public/" + task.image;
+      const meta = await sharp(path).metadata();
+      expect([meta.width, meta.height]).toEqual([1536, 1024]);
+      expect(meta.exif).toBeUndefined();
+      bytes += (await stat(path)).size;
+    }
+    expect(bytes).toBeLessThan(1_200_000);
+  });
   it("publishes anonymous cases, defaults and suggestions without classroom account identifiers", async () => {
     const text = await readFile(root + "/manifest.json", "utf8"),
       snapshot = JSON.parse(text);

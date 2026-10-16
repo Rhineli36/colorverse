@@ -242,6 +242,93 @@
 .study-large-visual .knowledge-steps {
   height: 120px;
 }
+.knowledge-experiment {
+  padding: 16px;
+  margin: 14px 0 22px;
+  border-radius: 10px;
+  background: #071320;
+}
+.experiment-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.experiment-comparison figure {
+  min-width: 0;
+  margin: 0;
+}
+.experiment-comparison svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 7px;
+}
+.experiment-comparison figcaption {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #aebed2;
+  text-align: center;
+}
+.experiment-control-heading,
+.experiment-range-ends,
+.experiment-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.experiment-control-heading label {
+  font-size: 15px;
+  color: #e9e5ef;
+}
+.experiment-control-heading output {
+  color: #dec4f2;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.knowledge-experiment input[type="range"] {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 0;
+  margin: 5px 0 0;
+  cursor: pointer;
+  accent-color: #d2afea;
+  background: transparent;
+  border: 0;
+  touch-action: pan-y;
+}
+.knowledge-experiment input:focus-visible {
+  outline: 2px solid #e6c4ff;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.experiment-range-ends {
+  color: #9baec5;
+  font-size: 12px;
+}
+.knowledge-experiment .experiment-hint {
+  font-size: 13px !important;
+  color: #aabbd1;
+  margin: 14px 0;
+}
+.experiment-bottom {
+  align-items: flex-start;
+  border-top: 1px solid var(--study-line);
+  padding-top: 12px;
+}
+.experiment-bottom p {
+  font-size: 14px !important;
+  color: #e1d5ed;
+  margin: 0;
+}
+.chromatic-study .experiment-bottom button {
+  flex-shrink: 0;
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
 .study-detail details,
 .study-footer details,
 .study-emotion-intro {

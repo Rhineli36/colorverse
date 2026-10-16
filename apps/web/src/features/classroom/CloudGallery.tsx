@@ -18,6 +18,7 @@ import { CloudWorkReview } from "./CloudWorkReview";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
+  AssignmentCatalog,
   LearningTaskSettingSchema,
   WorkLearningSchema,
   type LearningTaskSetting,
@@ -1666,12 +1667,8 @@ export function CloudGallery({
                   .filter((t) => t.published)
                   .map((t) => (
                     <option key={t.taskId} value={t.taskId}>
-                      {t.taskId} ·{" "}
-                      {t.taskId === "T01"
-                        ? "一颗星球，两种心情"
-                        : t.taskId === "T02"
-                          ? "相近与对比"
-                          : "给星球换一个季节"}
+                      {AssignmentCatalog.find((task) => task.id === t.taskId)
+                        ?.title ?? t.taskId}
                     </option>
                   ))}
               </select>

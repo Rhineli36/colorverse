@@ -4,6 +4,7 @@ import {
   type ClassroomNotification,
 } from "@colorverse/contracts";
 import "./classroom-mail.css";
+import { AssignmentBrief } from "./AssignmentBrief";
 export function AssignmentMail({
   taskId,
   onClose,
@@ -35,23 +36,7 @@ export function AssignmentMail({
       </button>
       <p className="eyebrow">CLASSROOM · ASSIGNMENT</p>
       <h2>{task.title}</h2>
-      <p>{task.goal}</p>
-      <h3>作业要求</h3>
-      <ol>
-        {task.steps.map((s, i) => (
-          <li key={i}>{s}</li>
-        ))}
-      </ol>
-      <p>
-        <strong>提交内容：</strong>
-        {task.deliverables}
-      </p>
-      <h3>图像示范</h3>
-      <img
-        src={`${import.meta.env.BASE_URL}${task.image}`}
-        alt="作业图像示范"
-      />
-      <p>{task.reviewFocus}</p>
+      <AssignmentBrief task={task} />
       {onSubmit && (
         <button className="primary" onClick={onSubmit}>
           去我的星球提交作业 →
@@ -118,18 +103,7 @@ export function AssignmentPublisher({
               ))}
             </select>
           </label>
-          <h3>{task.title}</h3>
-          <p>{task.goal}</p>
-          <ol>
-            {task.steps.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ol>
-          <img
-            src={`${import.meta.env.BASE_URL}${task.image}`}
-            alt="作业图像示范"
-          />
-          <p>{task.deliverables}</p>
+          <AssignmentBrief task={task} showTitle />
           {status && <p role="status">{status}</p>}
           <button disabled={busy} onClick={() => setOpen(false)}>
             取消

@@ -6,6 +6,7 @@ import {
 } from "@colorverse/contracts";
 import { EmotionCases } from "./EmotionCases";
 import { KnowledgeVisual, KnowledgeLabels } from "./KnowledgeVisual";
+import { KnowledgeExperiment } from "./KnowledgeExperiment";
 import { readStudyPreference, saveStudyPreference } from "./study-preferences";
 import "./color-mystery.css";
 export function ColorMystery({
@@ -127,9 +128,7 @@ export function ColorMystery({
           >
             <p className="study-eyebrow">OBSERVE · DISCOVER · CREATE</p>
             <h2>{KnowledgeLabels[card.id]}</h2>
-            <div className="study-large-visual">
-              <KnowledgeVisual id={card.id} large />
-            </div>
+            <KnowledgeExperiment id={card.id} />
             <section>
               <h3>观察</h3>
               <p>{card.summary}</p>

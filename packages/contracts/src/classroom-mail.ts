@@ -1,8 +1,5 @@
 import LearningContent from "./learning-content.json";
-export const AssignmentCatalog = LearningContent.tasks.map((task, i) => ({
-  ...task,
-  image: `competition/student-${i + 1}-work-1.webp`,
-}));
+export const AssignmentCatalog = LearningContent.tasks;
 export type AssignmentPublication = {
   id: string;
   taskId: string;
