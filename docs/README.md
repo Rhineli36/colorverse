@@ -109,3 +109,5 @@
 - [56 · 作业模板配图与七个色彩体验工具](56-assignment-images-and-color-experiments.md)
 
 - [57 · 云端发布、七种场景、新增作业与剩余工作](57-cloud-release-and-remaining-work.md)
+
+- [58 · 背景星球缩放修复与主宇宙文案](58-distant-planets-and-universe-copy.md)
