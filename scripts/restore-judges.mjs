@@ -38,13 +38,19 @@ try {
     throw Error("NOT_MANAGED_REVIEW_CLASS");
   const members = (
     await db.query(
-      "SELECT user_id FROM colorverse.enrollments WHERE class_id=$1",
-      [j.classId],
+      "SELECT e.user_id,e.role,EXISTS(SELECT 1 FROM colorverse.student_accounts a WHERE a.user_id=e.user_id AND a.course_id=$2) AS imported_student FROM colorverse.enrollments e WHERE e.class_id=$1",
+      [j.classId, j.courseId],
     )
   ).rows;
   if (
-    members.length !== 4 ||
-    members.some((m) => !j.accounts.some((a) => a.userId === m.user_id))
+    j.accounts.some(
+      (a) => !members.some((m) => m.user_id === a.userId && m.role === a.role),
+    ) ||
+    members.some(
+      (m) =>
+        !j.accounts.some((a) => a.userId === m.user_id && a.role === m.role) &&
+        !(m.role === "student" && m.imported_student),
+    )
   )
     throw Error("UNEXPECTED_REVIEW_MEMBERSHIP");
   await writeFile(

@@ -91,6 +91,9 @@ beforeAll(async () => {
   await db.exec(
     await readFile("apps/api/migrations/009-student-import.sql", "utf8"),
   );
+  await db.exec(
+    await readFile("apps/api/migrations/010-import-account-scope.sql", "utf8"),
+  );
   for (const [id, name, number] of [
     [ids[0], "教师", null],
     [ids[1], "原学生 · 学号 0008", null],
@@ -272,5 +275,58 @@ describe("roster import and one-time activation", () => {
         )
       ).rows[0].activation_hash,
     ).toBeNull();
+  });
+  it("reuses an existing student across classroom courses and isolates review course identities", async () => {
+    const course = randomUUID(),
+      cls = randomUUID(),
+      teacherEnrollment = randomUUID();
+    await sql.query("INSERT INTO colorverse.courses VALUES($1,'另一课程',$2)", [
+      course,
+      ids[0],
+    ]);
+    await sql.query(
+      "INSERT INTO colorverse.classes(id,course_id,title,term,timezone) VALUES($1,$2,'另一班','测试','Asia/Shanghai')",
+      [cls, course],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,'teacher')",
+      [teacherEnrollment, cls, ids[0]],
+    );
+    const rows = [{ row: 2, studentNumber: "0012", name: "新同学" }],
+      job = randomUUID();
+    expect(await call("preview", { rows }, teacher, "POST", cls)).toMatchObject(
+      { valid: true, rows: [{ status: "existing" }] },
+    );
+    await call("", { requestId: job, rows }, teacher, "POST", cls);
+    const result = (await call(
+      job + "/process",
+      undefined,
+      teacher,
+      "POST",
+      cls,
+    )) as { results: RosterResult[] };
+    expect(result.results[0].result).toBe("已有");
+    expect(authUsers.size).toBe(2);
+    const isolatedCourse = randomUUID(),
+      isolatedClass = randomUUID();
+    await sql.query("INSERT INTO colorverse.courses VALUES($1,'评审课程',$2)", [
+      isolatedCourse,
+      ids[0],
+    ]);
+    await sql.query(
+      "INSERT INTO colorverse.isolated_account_courses VALUES($1)",
+      [isolatedCourse],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.classes(id,course_id,title,term,timezone) VALUES($1,$2,'评审班','测试','Asia/Shanghai')",
+      [isolatedClass, isolatedCourse],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,'teacher')",
+      [randomUUID(), isolatedClass, ids[0]],
+    );
+    expect(
+      await call("preview", { rows }, teacher, "POST", isolatedClass),
+    ).toMatchObject({ valid: true, rows: [{ status: "new" }] });
   });
 });

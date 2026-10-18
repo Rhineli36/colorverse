@@ -32,11 +32,11 @@ node scripts/restore-judges.mjs --restore-judges --proxy
 node scripts/judges-demo.mjs --seed
 ```
 
-恢复脚本核对专用标识、课程、班级名称和全部成员；只归档该评审班，再为同一批体验账号建立干净体验班。旧评审作品和评价保留在已归档班，不删除历史、不修改课堂数据及文件。体验者需重新登录获取新班级。脚本的归档备份保存在 `work/judges-backup-<班级ID>.json`。
+恢复脚本核对专用标识、课程、班级名称和全部成员；除初始体验账号外，只接受明确属于专用评审课程的导入学生。归档该评审班，再为初始体验账号建立干净体验班。追加导入学生保留原来的已归档班历史，不自动加入重建班。旧评审作品和评价保留，不删除历史、不修改课堂数据及文件。体验者需重新登录获取新班级。脚本的归档备份保存在 `work/judges-backup-<班级ID>.json`。
 
 ## 离线封装准备
 
-`pnpm build:competition` 输出完整静态资源到 `work/competition-site`。保留 `competition/`、`emotion-cases/`、`knowledge/`、`assignments/`、`demo/`、`music/` 及构建 assets 的实际目录；按构建结果整体打包，不手工挑资源。
+`pnpm build:competition` 输出完整静态资源到 `work/competition-site`。保留 `competition/`、`emotion-cases/`、`knowledge-examples/`、`assignments/`、`demo/`、`music/` 及构建 assets 的实际目录；按构建结果整体打包，不手工挑资源。
 
 沿用已有本地 HTTP 启动器，不以 `file://` 直接打开；固定本机端口和浏览器用户数据目录，确保 IndexedDB 体验记录连续。无需 Supabase 或 Cloudflare 密钥。尚未生成最终安装 EXE。
 

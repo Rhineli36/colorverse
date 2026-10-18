@@ -118,6 +118,10 @@ try {
         "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",
         [a.enrollmentId, j.classId, a.userId, a.role],
       );
+    await db.query(
+      "INSERT INTO colorverse.isolated_account_courses(course_id) VALUES($1) ON CONFLICT DO NOTHING",
+      [j.courseId],
+    );
     await db.query("COMMIT");
     await db.end();
     db = undefined;

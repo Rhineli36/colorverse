@@ -232,6 +232,33 @@ try {
     "GRANT INSERT ON colorverse.users,colorverse.enrollments TO colorverse_classroom_writer",
   );
   await client.query("COMMIT");
+  const scopeMigration = await readFile(
+    "apps/api/migrations/010-import-account-scope.sql",
+    "utf8",
+  );
+  const scopeHash = createHash("sha256").update(scopeMigration).digest("hex");
+  await client.query("BEGIN");
+  await client.query("SELECT pg_advisory_xact_lock(7301941)");
+  await client.query("SET LOCAL search_path=colorverse,pg_catalog");
+  const tenth = await client.query(
+    "SELECT sha256 FROM course_migrations WHERE version=10",
+  );
+  if (tenth.rows.length && tenth.rows[0].sha256 !== scopeHash)
+    throw Error("MIGRATION_HASH_MISMATCH");
+  if (!tenth.rows.length) {
+    await client.query(scopeMigration);
+    await client.query(
+      "INSERT INTO course_migrations(version,sha256) VALUES(10,$1)",
+      [scopeHash],
+    );
+  }
+  await client.query(
+    "REVOKE ALL ON colorverse.isolated_account_courses FROM PUBLIC,anon,authenticated",
+  );
+  await client.query(
+    "GRANT SELECT ON colorverse.isolated_account_courses TO colorverse_classroom_writer",
+  );
+  await client.query("COMMIT");
   const studentCounts = await client.query(
     "SELECT count(*)::int AS students FROM colorverse.enrollments WHERE role='student' AND status='active'",
   );

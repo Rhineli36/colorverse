@@ -1,4 +1,6 @@
 .student-import-dialog {
+  font-size: 16px;
+  line-height: 1.6;
   width: min(860px, calc(100vw - 48px));
   max-height: 85vh;
   overflow: auto;
@@ -7,6 +9,30 @@
   border: 1px solid #49616e;
   border-radius: 18px;
   padding: 28px;
+}
+.student-import-dialog button {
+  font-size: 15px;
+  padding: 10px 16px;
+  color: #edf2ee;
+}
+.student-import-dialog .row-buttons {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+.student-import-dialog .row-buttons button {
+  flex: none;
+  font-size: 15px;
+  padding: 10px 16px;
+  color: #edf2ee;
+}
+.student-import-dialog .primary {
+  background: #dceabd;
+  color: #16323d;
+}
+.student-import-dialog .modal-close {
+  padding: 8px 12px;
 }
 .student-import-dialog::backdrop {
   background: #031019a8;

@@ -283,7 +283,10 @@ export function StudentImporter({
                 <div>
                   <p role="status">
                     {busy ? "正在处理" : "已处理"} {job.completed} /{" "}
-                    {job.total || "…"}。请保留此窗口，网络中断后可继续。
+                    {job.total || "…"}。
+                    {job.completed < job.total
+                      ? "请保留此窗口，网络中断后可继续。"
+                      : ""}
                   </p>
                   {!busy && job.completed < job.total && (
                     <button onClick={() => void resume(job.id)}>
@@ -318,6 +321,7 @@ export function StudentImporter({
                   {!busy && job.completed === job.total && job.total > 0 && (
                     <button
                       onClick={() => {
+                        sessionStorage.removeItem(key);
                         setJob(undefined);
                         setRows([]);
                         setResults([]);

@@ -119,7 +119,7 @@ async function admin(
 async function existingStudents(sql: Sql, courseId: string) {
   return (
     await sql.query(
-      `SELECT DISTINCT u.id,u.auth_subject,u.status,u.display_name,u.student_number,u.real_name,a.login_account,a.login_email FROM colorverse.users u JOIN colorverse.enrollments e ON e.user_id=u.id JOIN colorverse.classes c ON c.id=e.class_id LEFT JOIN colorverse.student_accounts a ON a.user_id=u.id AND a.course_id=c.course_id WHERE c.course_id=$1 AND e.role='student'`,
+      `SELECT DISTINCT u.id,u.auth_subject,u.status,u.display_name,u.student_number,u.real_name,a.login_account,a.login_email FROM colorverse.users u JOIN colorverse.enrollments e ON e.user_id=u.id JOIN colorverse.classes c ON c.id=e.class_id LEFT JOIN colorverse.student_accounts a ON a.user_id=u.id WHERE e.role='student' AND (c.course_id=$1 OR (NOT EXISTS(SELECT 1 FROM colorverse.isolated_account_courses WHERE course_id=$1) AND NOT EXISTS(SELECT 1 FROM colorverse.isolated_account_courses WHERE course_id=c.course_id)))`,
       [courseId],
     )
   ).rows;
@@ -202,8 +202,15 @@ async function createRow(
   row: RosterRow,
   transport: typeof fetch,
 ): Promise<RosterResult> {
+  const isolated =
+    (
+      await sql.query(
+        "SELECT 1 FROM colorverse.isolated_account_courses WHERE course_id=$1",
+        [courseId],
+      )
+    ).rows.length > 0;
   await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-    courseId + ":" + row.studentNumber.toLowerCase(),
+    (isolated ? courseId : "classroom") + ":" + row.studentNumber.toLowerCase(),
   ]);
   const check = (await preview(sql, [row], courseId))[0];
   if (check.status === "invalid")
