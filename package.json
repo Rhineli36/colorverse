@@ -35,6 +35,7 @@
     "@colorverse/package-io": "workspace:*",
     "@colorverse/renderer": "workspace:*",
     "@electric-sql/pglite": "^0.5.8",
+    "exceljs": "4.4.0",
     "fflate": "~0.8.3",
     "idb": "^8.0.4",
     "jszip": "^3.10.2",

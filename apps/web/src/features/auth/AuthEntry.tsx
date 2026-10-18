@@ -7,6 +7,7 @@ import {
 } from "@colorverse/contracts";
 import "./auth.css";
 import { RoleChoices } from "../classroom/ExperienceHeader";
+import { StudentActivation } from "./StudentActivation";
 
 export function AuthEntry({
   onSession,
@@ -37,6 +38,7 @@ export function AuthEntry({
   const [roleChoice, setRoleChoice] = useState<"student" | "teacher" | null>(
     null,
   );
+  const [activation, setActivation] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
@@ -238,7 +240,9 @@ export function AuthEntry({
         <h2 id="auth-title">
           {hasSession ? "你的宇宙身份" : "登录你的色彩宇宙"}
         </h2>
-        <p className="muted">学生和教师使用课堂邮箱登录。游客可以直接浏览。</p>
+        <p className="muted">
+          使用学号、老师提供的账号或课堂邮箱登录。游客可以直接浏览。
+        </p>
         {hasSession ? (
           <>
             <p className="auth-identity">{identity ?? "身份等待验证"}</p>
@@ -324,6 +328,16 @@ export function AuthEntry({
           </>
         ) : compact && !roleChoice ? (
           <RoleChoices onChoose={setRoleChoice} />
+        ) : activation ? (
+          <StudentActivation
+            initialAccount={email}
+            onBack={() => setActivation(false)}
+            onDone={(account) => {
+              setEmail(account);
+              setActivation(false);
+              setMessage("激活成功，请使用刚设置的密码登录。");
+            }}
+          />
         ) : (
           <form
             onSubmit={async (event) => {
@@ -361,10 +375,10 @@ export function AuthEntry({
               </div>
             )}
             <label>
-              课堂邮箱
+              账号
               <input
                 ref={emailInput}
-                type="email"
+                type="text"
                 autoComplete="username"
                 required
                 maxLength={254}
@@ -389,6 +403,18 @@ export function AuthEntry({
             <button className="primary" type="submit" disabled={busy}>
               {busy ? "正在登录…" : "登录"}
             </button>
+            {roleChoice !== "teacher" && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setMessage("");
+                  setActivation(true);
+                }}
+              >
+                首次激活学生账号
+              </button>
+            )}
           </form>
         )}
         <p className="auth-pilot-note">云端课堂试用 · 班级身份由服务器核对</p>

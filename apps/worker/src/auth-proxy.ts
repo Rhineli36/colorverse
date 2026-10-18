@@ -1,6 +1,13 @@
 import type { AuthEnvironment } from "./auth";
+import {
+  importConnection,
+  resolveStudentLogin,
+  studentImportsReady,
+  type StudentImportEnvironment,
+} from "./student-import";
 
-export interface AuthProxyEnvironment extends AuthEnvironment {
+export interface AuthProxyEnvironment
+  extends AuthEnvironment, StudentImportEnvironment {
   AUTH_PROXY_ENABLED?: string;
 }
 const reply = (
@@ -114,6 +121,23 @@ export async function authProxy(
           : typeof payload.refresh_token !== "string")
       )
         return reply(400, "登录内容无效", "INVALID_INPUT");
+      if (keys[0] === "email" && !payload.email.includes("@")) {
+        if (!studentImportsReady(env)) return reply(503, "账号登录正在准备");
+        const sql = importConnection(env);
+        try {
+          await sql.connect();
+          payload.email = await resolveStudentLogin(sql, payload.email.trim());
+          body = new TextEncoder().encode(JSON.stringify(payload));
+        } catch {
+          return reply(
+            400,
+            "账号尚未激活或账号、密码不正确",
+            "invalid_credentials",
+          );
+        } finally {
+          await sql.end();
+        }
+      }
     }
     const response = await transport(
       `${env.SUPABASE_URL}${path}${url.search}`,

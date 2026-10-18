@@ -6,6 +6,7 @@ import {
 } from "../classroom/ExperienceHeader";
 import "../classroom/experience.css";
 import { TeacherDashboard } from "../classroom/TeacherDashboard";
+import { StudentImporter } from "../classroom/StudentImporter";
 import { ReviewPanel } from "../classroom/ReviewPanel";
 import { FramedImage } from "../classroom/FramedImage";
 import { StudentIdentityForm } from "../classroom/StudentIdentityForm";
@@ -711,6 +712,7 @@ export function CompetitionView({
             />
             <TeacherDashboard
               busy={busy}
+              tools={<StudentImporter offline disabled={busy} />}
               rows={planets.map((p) => ({
                 id: p.id,
                 name: p.document.metadata.name,

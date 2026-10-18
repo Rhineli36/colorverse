@@ -1,0 +1,60 @@
+.student-import-dialog {
+  width: min(860px, calc(100vw - 48px));
+  max-height: 85vh;
+  overflow: auto;
+  background: #102731;
+  color: #edf2ee;
+  border: 1px solid #49616e;
+  border-radius: 18px;
+  padding: 28px;
+}
+.student-import-dialog::backdrop {
+  background: #031019a8;
+}
+.student-import-dialog > p {
+  line-height: 1.8;
+}
+.student-import-dialog label {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+.student-import-dialog select {
+  padding: 12px;
+  background: #0b1e29;
+  color: inherit;
+  border: 1px solid #49616e;
+  border-radius: 8px;
+}
+.student-import-dialog [role="alert"] {
+  color: #ffb2a3;
+}
+.roster-table {
+  max-height: 38vh;
+  overflow: auto;
+  margin: 18px 0;
+  border: 1px solid #39505e;
+  border-radius: 8px;
+}
+.roster-table table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: left;
+}
+.roster-table th,
+.roster-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #39505e;
+}
+.roster-table th {
+  position: sticky;
+  top: 0;
+  background: #17333e;
+}
+.roster-invalid {
+  background: #7b322c45;
+  color: #ffc4b9;
+}
+.roster-upload input {
+  max-width: 310px;
+}

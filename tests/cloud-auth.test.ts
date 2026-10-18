@@ -205,7 +205,7 @@ describe("browser configuration", () => {
     expect(readAuthConfig(config)?.url).toBe(config.VITE_SUPABASE_URL);
   });
   it("uses actionable login errors without echoing provider internals", () => {
-    expect(loginError(400, "invalid_credentials")).toContain("邮箱或密码");
+    expect(loginError(400, "invalid_credentials")).toContain("账号、密码");
     expect(loginError(429)).toContain("稍后");
     expect(loginError(400, "email_not_confirmed")).toContain("邮箱验证");
     expect(loginError()).toContain("无法连接");

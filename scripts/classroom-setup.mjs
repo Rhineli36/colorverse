@@ -199,6 +199,39 @@ try {
     "GRANT UPDATE(display_name,student_number,real_name) ON colorverse.users TO colorverse_classroom_writer",
   );
   await client.query("COMMIT");
+  const rosterMigration = await readFile(
+    "apps/api/migrations/009-student-import.sql",
+    "utf8",
+  );
+  const rosterHash = createHash("sha256").update(rosterMigration).digest("hex");
+  await client.query("BEGIN");
+  await client.query("SELECT pg_advisory_xact_lock(7301941)");
+  await client.query("SET LOCAL search_path=colorverse,pg_catalog");
+  const ninth = await client.query(
+    "SELECT sha256 FROM course_migrations WHERE version=9",
+  );
+  if (ninth.rows.length && ninth.rows[0].sha256 !== rosterHash)
+    throw Error("MIGRATION_HASH_MISMATCH");
+  if (!ninth.rows.length) {
+    await client.query(rosterMigration);
+    await client.query(
+      "INSERT INTO course_migrations(version,sha256) VALUES(9,$1)",
+      [rosterHash],
+    );
+  }
+  await client.query(
+    "REVOKE ALL ON colorverse.student_accounts,colorverse.student_import_batches,colorverse.classroom_login_aliases FROM PUBLIC,anon,authenticated",
+  );
+  await client.query(
+    "GRANT SELECT,INSERT,UPDATE ON colorverse.student_accounts,colorverse.student_import_batches TO colorverse_classroom_writer",
+  );
+  await client.query(
+    "GRANT SELECT ON colorverse.classroom_login_aliases TO colorverse_classroom_writer",
+  );
+  await client.query(
+    "GRANT INSERT ON colorverse.users,colorverse.enrollments TO colorverse_classroom_writer",
+  );
+  await client.query("COMMIT");
   const studentCounts = await client.query(
     "SELECT count(*)::int AS students FROM colorverse.enrollments WHERE role='student' AND status='active'",
   );

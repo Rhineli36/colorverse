@@ -12,6 +12,7 @@ import { Gallery, CloudGallery } from "./CloudGallery";
 import type { z } from "zod";
 import { TeacherDashboard } from "./TeacherDashboard";
 import { PendingSubmissions } from "./PendingSubmissions";
+import { StudentImporter } from "./StudentImporter";
 import type { ClassroomNotification } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
 import { presentationName } from "./presentation-name";
@@ -196,6 +197,13 @@ export function CloudClassroomView({
         })}
         tools={
           <>
+            <StudentImporter
+              classes={memberships}
+              initialClassId={classId}
+              actorId={session?.identity.id}
+              disabled={busy}
+              onChanged={() => setRevision((n) => n + 1)}
+            />
             {memberships.length > 1 && (
               <select
                 aria-label="管理班级"

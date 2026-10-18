@@ -60,6 +60,6 @@ export function loginError(status?: number, code?: string) {
     return "尝试次数较多，请稍后再登录";
   if (code === "email_not_confirmed") return "请先完成邮箱验证";
   if (status === 400 || status === 401 || code === "invalid_credentials")
-    return "邮箱或密码不正确，请重新输入";
+    return "账号尚未激活或账号、密码不正确，请核对后重试";
   return "登录服务暂时无法连接，请稍后再试";
 }

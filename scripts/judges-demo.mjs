@@ -322,7 +322,8 @@ try {
     [
       "仅供项目负责人保管，不随源码包和静态包公开。",
       ...j.accounts.map(
-        (a) => `${a.name}\n邮箱：${a.email}\n密码：${a.password}\n`,
+        (a) =>
+          `${a.name}\n账号：${a.loginAccount || a.email}\n密码：${a.password}\n`,
       ),
     ].join("\n"),
     { mode: 0o600 },

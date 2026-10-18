@@ -2,6 +2,8 @@ import { AuthFailure, verifyIdentity, type AuthEnvironment } from "./auth";
 import { authProxy, type AuthProxyEnvironment } from "./auth-proxy";
 import { CloudSessionSchema } from "@colorverse/contracts";
 import { ClassroomFailure } from "./classroom";
+import { z } from "zod";
+import { handleStudentImport, handleStudentActivation } from "./student-import";
 import { resolveClassroomOverview } from "./classroom-database";
 import {
   handleShowcaseCloud,
@@ -75,6 +77,50 @@ export async function handleRequest(
   }
   if (url.pathname.startsWith("/api/supabase/"))
     return authProxy(request, env, transport);
+  const roster =
+    /^\/api\/v1\/cloud\/classes\/([^/]+)\/student-imports(?:\/(.*))?$/.exec(
+      url.pathname,
+    );
+  if (roster || url.pathname === "/api/v1/student/activate") {
+    if (
+      request.headers.get("Origin") &&
+      request.headers.get("Origin") !== url.origin
+    )
+      return json(403, {
+        error: { code: "ORIGIN_FORBIDDEN", message: "请从本站操作" },
+      });
+    try {
+      const value = roster
+        ? await handleStudentImport(
+            request,
+            env,
+            await verifyIdentity(request, env, transport),
+            roster[1],
+            roster[2] ?? "",
+          )
+        : await handleStudentActivation(request, env);
+      return json(200, value);
+    } catch (error) {
+      if (error instanceof AuthFailure || error instanceof ClassroomFailure)
+        return json(error.status, {
+          error: { code: error.code, message: error.message },
+        });
+      if (error instanceof z.ZodError)
+        return json(400, {
+          error: {
+            code: "INVALID_INPUT",
+            message: "名单或填写内容无效，请核对后重试",
+          },
+        });
+      console.warn("student_import_unavailable");
+      return json(503, {
+        error: {
+          code: "IMPORT_UNAVAILABLE",
+          message: "学生账号服务暂不可用，请稍后重试",
+        },
+      });
+    }
+  }
   const showcase =
     /^\/api\/v1\/cloud\/classes\/([^/]+)\/(profile|notifications|notification-read|learning-tasks|learning-tasks\/custom-[a-f0-9-]{36}\/image|guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior|position|visibility)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review|description)|interactions|interactions\/[a-f0-9-]+)$/.exec(
       url.pathname,
