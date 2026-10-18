@@ -8,7 +8,13 @@ const View =
           default: m.CompetitionView,
         })),
       )
-    : lazy(() => import("./app/App").then((m) => ({ default: m.App })));
+    : import.meta.env.VITE_ENABLE_CLOUD_AUTH === "true"
+      ? lazy(() =>
+          import("./features/classroom/CloudExperienceView").then((m) => ({
+            default: m.CloudExperienceView,
+          })),
+        )
+      : lazy(() => import("./app/App").then((m) => ({ default: m.App })));
 createRoot(document.getElementById("root")!).render(
   <Suspense fallback={<p role="status">正在展开色彩宇宙…</p>}>
     <View />

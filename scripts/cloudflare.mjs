@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import { mkdir, writeFile, readFile, cp } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -84,6 +84,12 @@ try {
       VITE_ENABLE_CLOUD_AUTH: "true",
       VITE_EXHIBITION_MODE: "false",
       VITE_USE_AUTH_PROXY: "true",
+      VITE_SOURCE_REVISION: execFileSync(
+        "git",
+        ["rev-parse", "--short", "HEAD"],
+        { cwd: root, encoding: "utf8" },
+      ).trim(),
+      VITE_RELEASE_ID: new Date().toISOString(),
     };
     phase = "static_build";
     await run(["build:competition"], env);

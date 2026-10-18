@@ -1,4 +1,5 @@
 import { SceneLayout } from "./SceneLayout";
+import { CloudPlanetCreator } from "./CloudPlanetCreator";
 import { presentationName } from "./presentation-name";
 import { showLearningGuide } from "./presentation-options";
 import { PlanetExplorer } from "./PlanetExplorer";
@@ -32,7 +33,7 @@ import {
   type CloudGuideStepId,
   type CloudSession,
 } from "@colorverse/contracts";
-import { classroomRequest } from "./CloudClassroomView";
+import { classroomRequest } from "./cloud-request";
 import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
 import { GrowthLibraryChooser } from "../studio/GrowthLibraryChooser";
 import { download } from "../../app/download";
@@ -79,7 +80,10 @@ const Planet = z.object({
     .default({ likes: 0, emojis: 0, comments: 0 }),
   works: z.array(Work),
 });
-const Gallery = z.object({ actorId: z.uuid(), planets: z.array(Planet) });
+export const Gallery = z.object({
+  actorId: z.uuid(),
+  planets: z.array(Planet),
+});
 type WorkData = z.infer<typeof Work>;
 function PrivateImage({ classId, id }: { classId: string; id: string }) {
   const image = usePrivateImage(`classes/${classId}/works/${id}/image`, id);
@@ -117,7 +121,13 @@ export function CloudGallery({
   onGuideProgress,
   guideOpenRequest = 0,
   navigation,
+  experience = false,
+  onViewChange,
+  initialColorCase,
 }: {
+  experience?: boolean;
+  onViewChange?: (view: string) => void;
+  initialColorCase?: import("@colorverse/contracts").EmotionCase;
   session: CloudSession;
   initialPlanetId?: string;
   initialClassId?: string;
@@ -137,6 +147,7 @@ export function CloudGallery({
     sequence: number;
   };
 }) {
+  const [creationDismissed, setCreationDismissed] = useState(false);
   const memberships = session.access === "active" ? session.memberships : [],
     [classId, setClassId] = useState(
       memberships.find((m) => m.classId === initialClassId)?.classId ??
@@ -148,8 +159,9 @@ export function CloudGallery({
     [exploring, setExploring] = useState(Boolean(initialPlanetId)),
     [mysteryOpen, setMysteryOpen] = useState(false),
     [exampleDates, setExampleDates] = useState<Record<string, string>>({}),
-    [colorCase, setColorCase] =
-      useState<import("@colorverse/contracts").EmotionCase>(),
+    [colorCase, setColorCase] = useState<
+      import("@colorverse/contracts").EmotionCase | undefined
+    >(initialColorCase),
     [creationSkin, setCreationSkin] = useState(0),
     [focusRequest, setFocusRequest] = useState<{
       id: string;
@@ -365,8 +377,9 @@ export function CloudGallery({
           setData(result);
           setExploring(
             Boolean(initialPlanetId) ||
-              memberships.find((m) => m.classId === classId)?.role ===
-                "student",
+              (!experience &&
+                memberships.find((m) => m.classId === classId)?.role ===
+                  "student"),
           );
           setPlanetId(
             initialPlanetId ??
@@ -418,6 +431,27 @@ export function CloudGallery({
     ),
     student =
       memberships.find((m) => m.classId === classId)?.role === "student";
+  useEffect(() => {
+    onViewChange?.(
+      mysteryOpen
+        ? "knowledge"
+        : settingsOpen
+          ? "edit"
+          : student && !myPlanet && !creationDismissed
+            ? "create"
+            : exploring
+              ? "room"
+              : "universe",
+    );
+  }, [
+    mysteryOpen,
+    settingsOpen,
+    exploring,
+    student,
+    myPlanet?.id,
+    creationDismissed,
+    onViewChange,
+  ]);
   const handledNavigation = useRef(-1);
   useEffect(() => {
     if (
@@ -432,6 +466,7 @@ export function CloudGallery({
     setEditing(false);
     setSettingsOpen(false);
     setSample(null);
+    setMysteryOpen(false);
     if (navigation.action === "knowledge") {
       setMysteryOpen(true);
       return;
@@ -459,6 +494,25 @@ export function CloudGallery({
       setPlanetId(target.id);
       setExploring(true);
       setWork(target.works.find((w) => w.id === navigation.workId) ?? null);
+      return;
+    }
+    if (experience && navigation.action === "edit") {
+      const target =
+        staff && navigation.planetId
+          ? data.planets.find((p) => p.id === navigation.planetId)
+          : myPlanet;
+      setCreationDismissed(false);
+      setEditLaunch(false);
+      if (target) {
+        setPlanetId(target.id);
+        setExploring(true);
+        setSettingsOpen(true);
+      } else setExploring(false);
+      return;
+    }
+    if (experience && navigation.planetId && navigation.action === "room") {
+      setPlanetId(navigation.planetId);
+      setExploring(true);
       return;
     }
     setEditLaunch(navigation.action === "edit");
@@ -822,9 +876,64 @@ export function CloudGallery({
         setNotice("你的星球诞生了，随时可以继续编辑。");
       }
     });
+  const finishDesign = async (id: string) => {
+    await refresh(id);
+    setSettingsOpen(false);
+    setExploring(false);
+    setEditLaunch(false);
+    setFocusRequest({ id, sequence: Date.now() });
+  };
+  if (
+    experience &&
+    data &&
+    student &&
+    !myPlanet &&
+    !creationDismissed &&
+    !mysteryOpen
+  )
+    return (
+      <main className="experience-editor">
+        <CloudPlanetCreator
+          classId={classId}
+          initialColor={colorCase}
+          onPendingChange={onPendingChange}
+          onSaved={finishDesign}
+          onClose={() => setCreationDismissed(true)}
+        />
+      </main>
+    );
+  if (
+    experience &&
+    selected &&
+    settingsOpen &&
+    (owned || staff) &&
+    !mysteryOpen
+  )
+    return (
+      <main className="experience-editor">
+        <CloudPlanetAppearance
+          key={selected.id}
+          classId={classId}
+          id={selected.id}
+          document={selected.document}
+          works={selected.works.filter((w) => !w.withdrawn)}
+          initialSection={settingsSection}
+          initialColorCase={colorCase}
+          busy={busy}
+          run={perform}
+          onSaved={() => refresh(selected.id)}
+          onClose={() => {
+            setSettingsOpen(false);
+            setExploring(false);
+            setFocusRequest({ id: selected.id, sequence: Date.now() });
+          }}
+          onDirtyChange={setAppearanceDirty}
+        />
+      </main>
+    );
   return (
     <main
-      className={`classroom-main cloud-gallery ${exploring ? "scene-exploring" : editLaunch ? "editing-launch" : "cloud-main-universe"}`}
+      className={`classroom-main cloud-gallery ${experience && mysteryOpen ? "experience-knowledge" : exploring ? "scene-exploring" : editLaunch ? "editing-launch" : "cloud-main-universe"}`}
     >
       <header className="classroom-heading">
         <div>
@@ -891,7 +1000,7 @@ export function CloudGallery({
           重新读取星球图片
         </button>
       )}
-      {student && data && !myPlanet && (
+      {student && data && !myPlanet && !experience && (
         <section className="cloud-create">
           <span>✧</span>
           <div>
@@ -1053,7 +1162,7 @@ export function CloudGallery({
           )}
         </section>
       )}
-      {data && !exploring && !editLaunch && (
+      {data && !exploring && !editLaunch && !mysteryOpen && (
         <CloudObservatory
           movablePlanetIds={
             pending
@@ -1078,13 +1187,28 @@ export function CloudGallery({
           }}
           focusRequest={focusRequest}
           classId={classId}
-          planets={observatoryPlanets}
+          planets={observatoryPlanets.filter(
+            (p) => staff || p.document.visible !== false,
+          )}
           ownId={myPlanet?.id}
           selectedId={planetId}
           onEnter={(id) => {
             if (pending) return;
             const style = samples.find((p) => p.id === id);
             if (style) {
+              if (experience) {
+                if (student) {
+                  setCreationDismissed(false);
+                  if (myPlanet) {
+                    setPlanetId(myPlanet.id);
+                    setSettingsSection("exterior");
+                    setColorCase(undefined);
+                    setSettingsOpen(true);
+                    setExploring(true);
+                  }
+                }
+                return;
+              }
               setSample(style);
               return;
             }
@@ -1101,12 +1225,12 @@ export function CloudGallery({
           }}
         />
       )}
-      {selected && exploring && (
+      {selected && exploring && !mysteryOpen && (
         <>
           <div className="cloud-room-heading">
             <div className="row-buttons">
               <button disabled={pending} onClick={() => setExploring(false)}>
-                ← 返回班级宇宙
+                ← 返回宇宙
               </button>
               {onBack && (
                 <button disabled={pending} onClick={onBack}>
@@ -1181,7 +1305,7 @@ export function CloudGallery({
                     setUploadOpen(true);
                   }}
                 >
-                  ＋ 上传作品 · 点亮新元素
+                  ＋ 提交作品 · 点亮新元素
                 </button>
               </div>
             )}
@@ -2057,20 +2181,22 @@ export function CloudGallery({
         </div>
       )}
       {mysteryOpen && (
-        <div className="cloud-modal-backdrop">
+        <div className={experience ? "" : "cloud-modal-backdrop"}>
           <section
-            className="cloud-modal mystery-modal"
-            role="dialog"
-            aria-modal="true"
+            className={experience ? "" : "cloud-modal mystery-modal"}
+            role={experience ? undefined : "dialog"}
+            aria-modal={experience ? undefined : true}
             aria-label="色彩的奥秘"
           >
-            <button
-              className="modal-close"
-              aria-label="关闭色彩的奥秘"
-              onClick={() => setMysteryOpen(false)}
-            >
-              ×
-            </button>
+            {!experience && (
+              <button
+                className="modal-close"
+                aria-label="关闭色彩的奥秘"
+                onClick={() => setMysteryOpen(false)}
+              >
+                ×
+              </button>
+            )}
             <KnowledgePanel
               expanded
               onBack={() => setMysteryOpen(false)}

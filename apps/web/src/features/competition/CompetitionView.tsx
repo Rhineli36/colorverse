@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  ExperienceHeader,
+  RoleChoices,
+  type ExperienceDestination,
+} from "../classroom/ExperienceHeader";
+import "../classroom/experience.css";
+import { TeacherDashboard } from "../classroom/TeacherDashboard";
+import { ReviewPanel } from "../classroom/ReviewPanel";
+import {
   GrowthPresetIds,
   GrowthPresets,
   type EmotionCase,
@@ -46,13 +54,27 @@ function rememberedRole(): ExperienceRole {
     return "guest";
   }
 }
-export function CompetitionView() {
+export function CompetitionView({
+  readOnly = false,
+  hideHeader = false,
+  navigation,
+  onRequestLogin,
+  onViewChange,
+}: {
+  readOnly?: boolean;
+  hideHeader?: boolean;
+  navigation?: { destination: ExperienceDestination; sequence: number };
+  onRequestLogin?: (colorCase?: EmotionCase) => void;
+  onViewChange?: (view: string) => void;
+} = {}) {
   const store = useRef<OfflineExperienceStore | null>(null);
   store.current ??= new OfflineExperienceStore();
   const [data, setData] = useState<Data | null>(null),
     [state, setState] = useState<OfflineState>(blankExperience),
     [ready, setReady] = useState(false),
-    [role, setRole] = useState<ExperienceRole>(rememberedRole),
+    [role, setRole] = useState<ExperienceRole>(() =>
+      readOnly ? "guest" : rememberedRole(),
+    ),
     [loginOpen, setLoginOpen] = useState(false),
     [tab, setTab] = useState("universe"),
     [selected, setSelected] = useState("demo-1"),
@@ -77,6 +99,20 @@ export function CompetitionView() {
     [imageZoom, setImageZoom] = useState(false),
     [grade, setGrade] = useState(""),
     [review, setReview] = useState("");
+  useEffect(() => {
+    if (navigation)
+      setTab(navigation.destination === "knowledge" ? "learning" : "universe");
+  }, [navigation?.sequence]);
+  useEffect(() => {
+    onViewChange?.(editTarget !== undefined ? "edit" : tab);
+  }, [tab, editTarget, onViewChange]);
+  const reviewDirty =
+    role === "teacher" &&
+    Boolean(
+      work &&
+      (grade !== (work.score?.toString() ?? "") ||
+        review !== (work.comment ?? "")),
+    );
   const assignmentCatalog = [...AssignmentCatalog, ...state.customTasks];
   const [mailTask, setMailTask] = useState<string>(),
     [uploadTaskId, setUploadTaskId] = useState("");
@@ -93,9 +129,14 @@ export function CompetitionView() {
     [rationale, setRationale] = useState(""),
     [file, setFile] = useState<File | null>(null);
   useEffect(() => {
+    if (loginOpen && readOnly) {
+      onRequestLogin?.(colorCase);
+      setLoginOpen(false);
+      return;
+    }
     if (loginOpen && !loginDialog.current?.open)
       loginDialog.current?.showModal();
-  }, [loginOpen]);
+  }, [loginOpen, readOnly, onRequestLogin]);
   useEffect(() => {
     let active = true;
     setError("");
@@ -106,7 +147,7 @@ export function CompetitionView() {
           return r.json();
         })
         .then((v) => Snapshot.parse(v)),
-      store.current!.load(),
+      readOnly ? Promise.resolve(blankExperience()) : store.current!.load(),
     ])
       .then(([d, s]) => {
         if (active) {
@@ -462,106 +503,74 @@ export function CompetitionView() {
   ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return (
     <div
-      className={`competition-app offline-app ${tab === "universe" && editTarget === undefined ? "universe-active" : ""} ${tab === "gallery" ? "exploring" : ""}`}
+      className={`${hideHeader ? "experience-guest" : "competition-app offline-app"} ${tab === "universe" && editTarget === undefined ? "universe-active" : ""} ${tab === "gallery" ? "exploring" : ""}`}
     >
-      <header className="competition-header">
-        <button
-          className="competition-brand"
-          onClick={() => {
+      {!hideHeader && (
+        <ExperienceHeader
+          disabled={busy || reviewDirty}
+          role={role}
+          onNavigate={(destination) => {
+            if (destination === "room") {
+              myPlanet();
+              return;
+            }
+            if (destination === "edit") {
+              if (editTarget !== undefined) return;
+              setColorCase(undefined);
+              setEditTarget(state.ownPlanet);
+              return;
+            }
             if (!leaveEditor()) return;
-            setTab("universe");
-            setEditTarget(undefined);
+            setTab(destination === "knowledge" ? "learning" : destination);
+            if (destination === "universe") setEditTarget(undefined);
           }}
-        >
-          ◉ COLORVERSE <span>色 彩 星 球</span>
-        </button>
-        <nav aria-label="主导航">
-          <button
-            onClick={() => {
-              if (!leaveEditor()) return;
-              setTab("universe");
-              setEditTarget(undefined);
-            }}
-          >
-            探索宇宙
-          </button>
-          {role === "student" && (
+          account={
             <>
-              <button onClick={myPlanet}>我的星球</button>
-              <button
-                onClick={() => {
-                  if (editTarget !== undefined) return;
-                  setColorCase(undefined);
-                  setEditTarget(state.ownPlanet);
-                }}
-              >
-                编辑星球
-              </button>
+              {role !== "guest" && (
+                <ClassroomInbox
+                  notifications={notifications}
+                  readIds={state.readNotifications
+                    .filter((id) => id.startsWith(role + ":"))
+                    .map((id) => id.slice(role.length + 1))}
+                  onRead={(id) =>
+                    void run(async () =>
+                      setState(
+                        await store.current!.readNotification(
+                          state.revision,
+                          role,
+                          id,
+                        ),
+                      ),
+                    )
+                  }
+                  onAssignment={setMailTask}
+                  onReaction={(n) => {
+                    if (!leaveEditor()) return;
+                    const p = planets.find((p) => p.id === n.planetId);
+                    if (p) {
+                      setSelected(p.id);
+                      setTab("gallery");
+                      setWork(p.works.find((w) => w.id === n.workId) ?? null);
+                    }
+                  }}
+                />
+              )}
+              {role !== "guest" ? (
+                <button onClick={logout} disabled={busy}>
+                  退出登录
+                </button>
+              ) : (
+                <button onClick={() => setLoginOpen(true)}>登录</button>
+              )}
+              {role !== "guest" && (
+                <button disabled={busy} onClick={() => setResetOpen(true)}>
+                  重新开始
+                </button>
+              )}
             </>
-          )}
-          <button
-            onClick={() => {
-              if (!leaveEditor()) return;
-              setTab("learning");
-            }}
-          >
-            色彩的奥秘
-          </button>
-          {role === "teacher" && (
-            <button
-              onClick={() => {
-                if (!leaveEditor()) return;
-                setTab("teacher");
-              }}
-            >
-              教师管理
-            </button>
-          )}
-        </nav>
-        <div className="offline-account-controls">
-          {role !== "guest" && (
-            <ClassroomInbox
-              notifications={notifications}
-              readIds={state.readNotifications
-                .filter((id) => id.startsWith(role + ":"))
-                .map((id) => id.slice(role.length + 1))}
-              onRead={(id) =>
-                void run(async () =>
-                  setState(
-                    await store.current!.readNotification(
-                      state.revision,
-                      role,
-                      id,
-                    ),
-                  ),
-                )
-              }
-              onAssignment={setMailTask}
-              onReaction={(n) => {
-                if (!leaveEditor()) return;
-                const p = planets.find((p) => p.id === n.planetId);
-                if (p) {
-                  setSelected(p.id);
-                  setTab("gallery");
-                  setWork(p.works.find((w) => w.id === n.workId) ?? null);
-                }
-              }}
-            />
-          )}
-          {role !== "guest" ? (
-            <button onClick={logout} disabled={busy}>
-              退出登录
-            </button>
-          ) : (
-            <button onClick={() => setLoginOpen(true)}>登录</button>
-          )}
-          {role !== "guest" && (
-            <button disabled={busy} onClick={() => setResetOpen(true)}>
-              重新开始
-            </button>
-          )}
-        </div>
-      </header>
+          }
+        />
+      )}
       {notice && (
         <p role="status" className="offline-notice">
           {notice}
@@ -608,110 +617,73 @@ export function CompetitionView() {
             }}
           />
         ) : tab === "teacher" ? (
-          <section className="offline-teacher" aria-label="教师管理">
-            <h1>班级的色彩轨迹</h1>
-            <AssignmentPublisher
-              disabled={busy}
-              catalog={assignmentCatalog}
-              onCreate={async (draft, image, requestId) => {
-                let dataUrl = "";
-                if (image) {
-                  const prepared = await importOfflineImage(image);
-                  dataUrl = await new Promise<string>((ok, bad) => {
-                    const reader = new FileReader();
-                    reader.onload = () => ok(String(reader.result));
-                    reader.onerror = () => bad(Error("无法读取示范图片"));
-                    reader.readAsDataURL(prepared.blob);
-                  });
-                  if (dataUrl.length > 2000000)
-                    throw Error("请缩小示范图片后重试");
+          <TeacherDashboard
+            busy={busy}
+            rows={planets.map((p) => ({
+              id: p.id,
+              name: p.document.metadata.name,
+              author: p.display_name,
+              works: p.works.length,
+              sent: p.sent,
+              received:
+                (p.planetInteractions?.length ?? 0) +
+                state.interactions.filter((i) => i.planetId === p.id).length,
+              reviewed: p.works.filter((w) => w.score !== undefined).length,
+              visible: p.visible,
+              stationary: p.document.motion.mode === "stationary",
+              hasPlanet: true,
+            }))}
+            onEnter={(id) => {
+              setSelected(id);
+              setTab("gallery");
+            }}
+            onEdit={(id) => {
+              setColorCase(undefined);
+              setEditTarget(planets.find((p) => p.id === id));
+            }}
+            onVisibility={async (id, visible) => {
+              const p = planets.find((p) => p.id === id);
+              if (p) await run(() => savePlanet({ ...p, visible }));
+            }}
+            publisher={
+              <AssignmentPublisher
+                disabled={busy}
+                catalog={assignmentCatalog}
+                onCreate={async (draft, image, requestId) => {
+                  let dataUrl = "";
+                  if (image) {
+                    const prepared = await importOfflineImage(image);
+                    dataUrl = await new Promise<string>((ok, bad) => {
+                      const reader = new FileReader();
+                      reader.onload = () => ok(String(reader.result));
+                      reader.onerror = () => bad(Error("无法读取示范图片"));
+                      reader.readAsDataURL(prepared.blob);
+                    });
+                    if (dataUrl.length > 2000000)
+                      throw Error("请缩小示范图片后重试");
+                  }
+                  setState(
+                    await store.current!.createAssignment(
+                      state.revision,
+                      role,
+                      draft,
+                      dataUrl,
+                      requestId,
+                    ),
+                  );
+                }}
+                onPublish={async (id) =>
+                  setState(
+                    await store.current!.publishAssignment(
+                      state.revision,
+                      role,
+                      id,
+                    ),
+                  )
                 }
-                setState(
-                  await store.current!.createAssignment(
-                    state.revision,
-                    role,
-                    draft,
-                    dataUrl,
-                    requestId,
-                  ),
-                );
-              }}
-              onPublish={async (id) =>
-                setState(
-                  await store.current!.publishAssignment(
-                    state.revision,
-                    role,
-                    id,
-                  ),
-                )
-              }
-            />
-            <p>
-              {planets.length} 颗星球 ·{" "}
-              {planets.reduce((n, p) => n + p.works.length, 0)} 件作品
-            </p>
-            <table>
-              <thead>
-                <tr>
-                  <th>星球</th>
-                  <th>作品</th>
-                  <th>收到回应</th>
-                  <th>运行状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {planets.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      {p.document.metadata.name}
-                      <small>{p.display_name}</small>
-                    </td>
-                    <td>{p.works.length}</td>
-                    <td>
-                      {(p.planetInteractions?.length ?? 0) +
-                        state.interactions.filter((i) => i.planetId === p.id)
-                          .length}
-                    </td>
-                    <td>
-                      {p.visible ? "可见" : "隐藏"} ·{" "}
-                      {p.document.motion.mode === "stationary"
-                        ? "静止"
-                        : "运行中"}
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => {
-                          setSelected(p.id);
-                          setTab("gallery");
-                        }}
-                      >
-                        进入星球
-                      </button>
-                      <button
-                        onClick={() => {
-                          setColorCase(undefined);
-                          setEditTarget(p);
-                        }}
-                      >
-                        修改星球
-                      </button>
-                      <button
-                        disabled={busy}
-                        onClick={() =>
-                          void run(() =>
-                            savePlanet({ ...p, visible: !p.visible }),
-                          )
-                        }
-                      >
-                        {p.visible ? "隐藏" : "显示"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+              />
+            }
+          />
         ) : tab === "gallery" && planet ? (
           <section className="competition-gallery" aria-label="星球内部">
             <div className="competition-room-heading compact-room-heading">
@@ -889,7 +861,7 @@ export function CompetitionView() {
           />
         )}
       </main>
-      {loginOpen && (
+      {loginOpen && !readOnly && (
         <dialog
           ref={loginDialog}
           className="offline-login-backdrop"
@@ -909,18 +881,7 @@ export function CompetitionView() {
             <p>
               选择一种想表达的感受，为自己的星球找到颜色；也可以先去拜访其他星球，看看不同的色彩故事。
             </p>
-            <div className="offline-role-choices">
-              <button onClick={() => chooseRole("student")}>
-                <span>01 / CREATE</span>
-                <strong>学生登录</strong>
-                <small>创造我的星球</small>
-              </button>
-              <button onClick={() => chooseRole("teacher")}>
-                <span>02 / GUIDE</span>
-                <strong>教师登录</strong>
-                <small>看见每一次生长</small>
-              </button>
-            </div>
+            <RoleChoices onChoose={chooseRole} />
           </section>
         </dialog>
       )}
@@ -1107,7 +1068,11 @@ export function CompetitionView() {
           ref={workDialog}
           className="competition-backdrop"
           aria-label="作品详情"
-          onCancel={() => {
+          onCancel={(e) => {
+            if (busy || reviewDirty) {
+              e.preventDefault();
+              return;
+            }
             setWork(null);
             setElementDraft(null);
           }}
@@ -1116,6 +1081,7 @@ export function CompetitionView() {
             <button
               className="modal-close"
               aria-label="关闭作品"
+              disabled={busy || reviewDirty}
               onClick={() => {
                 setWork(null);
                 setElementDraft(null);
@@ -1169,59 +1135,43 @@ export function CompetitionView() {
               )}
             </p>
             {work.description && <p>{work.description}</p>}
-            {work.score !== undefined && (
-              <section className="cloud-work-review" aria-label="教师评价">
-                <h3>教师评价</h3>
-                <strong className="cloud-review-score">
-                  {work.score}
-                  <small> / 100</small>
-                </strong>
-                <p>{work.comment}</p>
-              </section>
-            )}
-            {role === "teacher" && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void run(async () => {
-                    const updated = {
-                      ...work,
-                      score: Number(grade),
-                      comment: review,
-                    };
-                    await savePlanet({
-                      ...planet,
-                      works: planet.works.map((w) =>
-                        w.id === work.id ? updated : w,
-                      ),
-                    });
-                    setWork(updated);
+            <ReviewPanel
+              record={
+                work.score !== undefined || work.comment
+                  ? { score: work.score, comment: work.comment ?? "" }
+                  : null
+              }
+              staff={role === "teacher"}
+              score={grade}
+              comment={review}
+              onScore={setGrade}
+              onComment={setReview}
+              busy={busy}
+              dirty={
+                grade !== (work.score?.toString() ?? "") ||
+                review !== (work.comment ?? "")
+              }
+              onReset={() => {
+                setGrade(work.score?.toString() ?? "");
+                setReview(work.comment ?? "");
+              }}
+              onSave={() =>
+                void run(async () => {
+                  const updated = {
+                    ...work,
+                    score: grade.trim() ? Number(grade) : undefined,
+                    comment: review.trim(),
+                  };
+                  await savePlanet({
+                    ...planet,
+                    works: planet.works.map((w) =>
+                      w.id === work.id ? updated : w,
+                    ),
                   });
-                }}
-              >
-                <label>
-                  评分
-                  <input
-                    aria-label="教师评分"
-                    type="number"
-                    min={0}
-                    max={100}
-                    required
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                  />
-                </label>
-                <label>
-                  评语
-                  <textarea
-                    aria-label="教师评语"
-                    value={review}
-                    onChange={(e) => setReview(e.target.value)}
-                  />
-                </label>
-                <button disabled={busy}>保存评价</button>
-              </form>
-            )}
+                  setWork(updated);
+                })
+              }
+            />
             {((owned && role === "student") || role === "teacher") && (
               <>
                 <button onClick={() => setElementDraft(structuredClone(work))}>

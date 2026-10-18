@@ -1,9 +1,10 @@
 import { PlanetDesignEditor, type DesignElement } from "./PlanetDesignEditor";
 import { blankIntent } from "./LearningPanels";
+import { planetAppearancePayload } from "./planet-appearance-payload";
 import { useEffect, useState, useRef } from "react";
 import { z } from "zod";
 import { CloudPlanetDocumentSchema } from "@colorverse/contracts";
-import { classroomRequest } from "./CloudClassroomView";
+import { classroomRequest } from "./cloud-request";
 import {
   acquirePrivateImage,
   clearPrivateImages,
@@ -214,19 +215,11 @@ export function CloudPlanetAppearance({
       setStatus("");
       let partial = false;
       try {
-        const metadata = draft.metadata;
-        const appearance: Record<string, unknown> = {
-          ...draft,
-          learningIntent: draft.learningIntent ?? blankIntent(),
-        };
-        for (const key of ["metadata", "media", "revision", "position"])
-          delete appearance[key];
         await classroomRequest(`classes/${classId}/planets/${id}/appearance`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...appearance,
-            ...metadata,
+            ...planetAppearancePayload(draft),
             revision: revision.current,
           }),
         });

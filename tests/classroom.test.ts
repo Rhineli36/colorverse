@@ -1710,3 +1710,119 @@ describe("teacher-authored assignments", () => {
     }
   });
 });
+
+describe("teacher planet visibility", () => {
+  it("preserves every document field and blocks hidden planet direct URLs for peers", async () => {
+    const owner = randomUUID(),
+      enrollment = randomUUID(),
+      planet = randomUUID(),
+      workId = randomUUID();
+    await db.query(
+      "INSERT INTO users VALUES($1,$2,$1::uuid::text,'可见性测试','active')",
+      [owner, issuer],
+    );
+    await db.query(
+      "INSERT INTO enrollments(id,user_id,class_id,role) VALUES($1,$2,$3,'student')",
+      [enrollment, owner, ids[5]],
+    );
+    const document = {
+      metadata: { name: "保留原资料", summary: "保留寄语" },
+      revision: 0,
+      color: "#123456",
+      media: {},
+      position: { x: 100, y: 200 },
+    };
+    await db.query("INSERT INTO planets VALUES($1,$2,$3)", [
+      planet,
+      enrollment,
+      JSON.stringify(document),
+    ]);
+    await db.query(
+      "INSERT INTO showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id) VALUES($1,$2,'保留作品',$3,100,'crystal',$4)",
+      [workId, planet, randomUUID(), randomUUID()],
+    );
+    const call = (
+      actor: string,
+      route: string,
+      method = "GET",
+      body?: unknown,
+      cls = ids[5],
+    ) =>
+      handleShowcaseCloud(
+        new Request(`https://test.invalid/?planetId=${planet}`, {
+          method,
+          ...(body
+            ? {
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              }
+            : {}),
+        }),
+        env,
+        identity(actor),
+        cls,
+        route,
+        clientFactory,
+      );
+    const route = `planets/${planet}/visibility`;
+    await expect(
+      call(owner, route, "PUT", { visible: false, revision: 0 }),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      call(ids[0], route, "PUT", { visible: false, revision: 0 }, ids[6]),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(
+      (await call(ids[0], route, "PUT", { visible: false, revision: 0 }))
+        .status,
+    ).toBe(200);
+    await expect(
+      call(ids[0], route, "PUT", { visible: true, revision: 0 }),
+    ).rejects.toMatchObject({ status: 409 });
+    const saved = (
+      await sql.query("SELECT document FROM colorverse.planets WHERE id=$1", [
+        planet,
+      ])
+    ).rows[0].document;
+    expect(saved).toEqual({ ...document, visible: false, revision: 1 });
+    const peer = await (await call(ids[2], "planets")).json();
+    expect(peer.planets.some((p: { id: string }) => p.id === planet)).toBe(
+      false,
+    );
+    for (const actor of [owner, ids[0]])
+      expect(
+        (await (await call(actor, "planets")).json()).planets.some(
+          (p: { id: string }) => p.id === planet,
+        ),
+      ).toBe(true);
+    for (const path of [
+      `planets/${planet}/interior`,
+      `works/${workId}/image`,
+      `works/${workId}/original`,
+      `works/${workId}/review`,
+      "interactions",
+    ])
+      await expect(call(ids[2], path)).rejects.toMatchObject({ status: 404 });
+    await expect(
+      call(ids[2], "interactions", "POST", {
+        planetId: planet,
+        workId,
+        kind: "comment",
+        content: "不应写入",
+        requestId: randomUUID(),
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect((await call(owner, `works/${workId}/review`)).status).toBe(200);
+    expect(
+      (await call(ids[0], route, "PUT", { visible: true, revision: 1 })).status,
+    ).toBe(200);
+    expect((await call(ids[2], `works/${workId}/review`)).status).toBe(200);
+    expect(
+      (
+        await sql.query(
+          "SELECT count(*)::int AS n FROM colorverse.showcase_works WHERE id=$1",
+          [workId],
+        )
+      ).rows[0].n,
+    ).toBe(1);
+  });
+});

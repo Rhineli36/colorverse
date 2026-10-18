@@ -122,7 +122,7 @@ describe("offline experience isolation and content", () => {
       LearningIntentSchema.parse({ referenceCaseId: "red-blush" })
         .referenceCaseId,
     ).toBe("red-blush");
-    expect(cases.filter((c) => c.image.status === "ready")).toHaveLength(4);
+    expect(cases.filter((c) => c.image.status === "ready")).toHaveLength(23);
     for (const c of cases) {
       for (const value of [
         c.observation,

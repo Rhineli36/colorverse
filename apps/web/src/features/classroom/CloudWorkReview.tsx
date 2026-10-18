@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ShowcaseReviewResponse } from "@colorverse/contracts";
 import type { z } from "zod";
+import { ReviewPanel } from "./ReviewPanel";
 import { classroomRequest } from "./cloud-request";
 
 type Review = z.infer<typeof ShowcaseReviewResponse>["review"];
@@ -106,118 +107,47 @@ export function CloudWorkReview({
     }
   };
   return (
-    <section className="cloud-work-review" aria-label="教师点评与评分">
-      <div className="cloud-review-heading">
-        <h3>教师点评与评分</h3>
-      </div>
-      {loading && <p role="status">正在读取点评…</p>}
-      {error && (
-        <div role="alert">
-          <p>{error}</p>
-          <button
-            disabled={loading || saving}
-            onClick={() => {
-              preserveDraft.current = ready;
-              setReload((n) => n + 1);
-            }}
-          >
-            读取最新点评{ready ? "（保留草稿）" : ""}
-          </button>
-        </div>
-      )}
-      {ready && review && (
-        <div className="cloud-review-record">
-          {review.score !== null && (
-            <strong className="cloud-review-score">
-              {review.score}
-              <small> / 100</small>
-            </strong>
-          )}
-          <p>{review.comment || "暂无文字点评"}</p>
-          {review.source === "teacher" && (
-            <small>
-              {review.reviewer_name} ·{" "}
-              {new Date(review.created_at).toLocaleString("zh-CN")}
-            </small>
-          )}
-        </div>
-      )}
-      {ready && !review && !loading && (
-        <p className="muted">这件作品还没有教师点评。</p>
-      )}
-      {staff && ready && (
-        <div className="cloud-review-form">
-          <p className="muted">
-            教学参考：色彩关系的理解、氛围表达、说明依据、比较与反思。总分仍为
-            100 分，系统不自动评分。
-          </p>
-          <label>
-            教师评分（100 分制，可留空）
-            <input
-              aria-label="教师评分"
-              type="number"
-              min="0"
-              max="100"
-              step="any"
-              value={score}
-              disabled={saving || loading || withdrawn}
-              onChange={(e) => {
-                setScore(e.target.value);
-                setNotice("");
-              }}
-            />
-          </label>
-          <label>
-            教师点评
-            <textarea
-              aria-label="教师点评"
-              rows={4}
-              maxLength={2000}
-              placeholder="肯定作品亮点，并给出可尝试的修改方向…"
-              value={comment}
-              disabled={saving || loading || withdrawn}
-              onChange={(e) => {
-                setComment(e.target.value);
-                setNotice("");
-              }}
-            />
-          </label>
-          {withdrawn && <p>作品已撤下，恢复展示后可以保存点评。</p>}
-          <div className="row-buttons">
-            <button
-              className="primary"
-              disabled={
-                saving ||
-                loading ||
-                !valid ||
-                withdrawn ||
-                (!dirty && review?.source === "teacher")
-              }
-              onClick={() => void save()}
-            >
-              {saving
-                ? "保存中…"
-                : review?.source === "demo"
-                  ? "确认并保存教师点评"
-                  : "保存点评与评分"}
-            </button>
-            <button
-              disabled={!dirty || saving || loading}
-              onClick={() => {
-                reset(review);
-                setError("");
-                setNotice("");
-              }}
-            >
-              放弃点评草稿
-            </button>
-          </div>
-          {dirty && (
-            <p className="muted">点评尚未保存。保存或放弃草稿后可关闭作品。</p>
-          )}
-        </div>
-      )}
-      {notice && <p role="status">{notice}</p>}
-    </section>
+    <ReviewPanel
+      record={
+        review
+          ? {
+              ...review,
+              author:
+                review.source === "teacher" ? review.reviewer_name : undefined,
+              date: review.created_at,
+            }
+          : null
+      }
+      staff={staff && ready}
+      score={score}
+      comment={comment}
+      busy={saving}
+      loading={loading}
+      dirty={dirty}
+      allowUnchanged={review?.source === "demo"}
+      withdrawn={withdrawn}
+      error={error}
+      notice={notice}
+      onScore={(v) => {
+        setScore(v);
+        setNotice("");
+      }}
+      onComment={(v) => {
+        setComment(v);
+        setNotice("");
+      }}
+      onSave={() => {
+        if (valid) void save();
+      }}
+      onReset={() => {
+        reset(review);
+        setError("");
+        setNotice("");
+      }}
+      onRetry={() => {
+        preserveDraft.current = ready;
+        setReload((n) => n + 1);
+      }}
+    />
   );
 }

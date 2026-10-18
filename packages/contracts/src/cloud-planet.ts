@@ -72,6 +72,10 @@ export const CloudPlanetPositionInput = z.strictObject({
   position: CloudPlanetPositionSchema,
   revision: z.number().int().nonnegative(),
 });
+export const CloudPlanetVisibilityInput = z.strictObject({
+  visible: z.boolean(),
+  revision: z.number().int().nonnegative(),
+});
 
 export const CloudPlanetAppearanceInput = z.strictObject({
   useDefaultExterior: z.boolean().optional(),
@@ -103,6 +107,7 @@ export const CloudPlanetAppearanceInput = z.strictObject({
   practice: z.literal("tone").optional(),
 });
 export const CloudPlanetDocumentSchema = z.object({
+  visible: z.boolean().default(true),
   useDefaultExterior: z.boolean().default(false),
   haloIntensity: z.number().min(0).max(1).default(0.6),
   interiorView: z

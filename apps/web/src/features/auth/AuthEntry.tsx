@@ -6,15 +6,20 @@ import {
   type CloudSession,
 } from "@colorverse/contracts";
 import "./auth.css";
+import { RoleChoices } from "../classroom/ExperienceHeader";
 
 export function AuthEntry({
   onSession,
   onEnter,
   hasPendingChanges = false,
+  compact = false,
+  openRequest = 0,
 }: {
   onSession?: (session: CloudSession | null) => void;
   onEnter?: (membership: CloudMembership) => Promise<boolean>;
   hasPendingChanges?: boolean;
+  compact?: boolean;
+  openRequest?: number;
 }) {
   const [client] = useState(getAuthClient);
   const [open, setOpen] = useState(false);
@@ -29,10 +34,16 @@ export function AuthEntry({
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedClass, setSelectedClass] = useState("");
   const [entering, setEntering] = useState(false);
+  const [roleChoice, setRoleChoice] = useState<"student" | "teacher" | null>(
+    null,
+  );
   const dialog = useRef<HTMLDialogElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
   const verifiedSubject = useRef<string | null>(null);
+  useEffect(() => {
+    if (openRequest) setOpen(true);
+  }, [openRequest]);
   useEffect(() => {
     if (!client) return;
     let active = true;
@@ -155,16 +166,59 @@ export function AuthEntry({
       setEntering(false);
     }
   };
+  const signOut = async () => {
+    if (busy || hasPendingChanges) return;
+    setBusy(true);
+    try {
+      const { error } = await client.auth.signOut({ scope: "local" });
+      if (error) {
+        setMessage("退出失败，请稍后重试");
+        setOpen(true);
+      } else {
+        verifiedSubject.current = null;
+        setIdentity(null);
+        setMemberships([]);
+        onSession?.(null);
+        setHasSession(false);
+        setPassword("");
+        setMessage("");
+        setOpen(false);
+        setRoleChoice(null);
+      }
+    } catch {
+      setMessage("退出失败，请稍后重试");
+      setOpen(true);
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <>
       <button
         className="outline small cloud-login-entry"
-        onClick={() => setOpen(true)}
+        disabled={busy || (compact && hasSession && hasPendingChanges)}
+        onClick={() => (compact && hasSession ? void signOut() : setOpen(true))}
       >
-        {checking ? "验证登录…" : hasSession ? "我的云端账户" : "登录"}
+        {checking
+          ? "验证登录…"
+          : hasSession
+            ? compact
+              ? "退出登录"
+              : "我的云端账户"
+            : "登录"}
       </button>
+      {compact && hasSession && (
+        <button
+          disabled={busy || hasPendingChanges}
+          onClick={() => setOpen(true)}
+        >
+          账户与班级
+        </button>
+      )}
       <dialog
-        className="auth-dialog"
+        className={
+          compact ? "auth-dialog experience-auth-dialog" : "auth-dialog"
+        }
         ref={dialog}
         aria-labelledby="auth-title"
         onCancel={(event) => {
@@ -268,6 +322,8 @@ export function AuthEntry({
               </p>
             )}
           </>
+        ) : compact && !roleChoice ? (
+          <RoleChoices onChoose={setRoleChoice} />
         ) : (
           <form
             onSubmit={async (event) => {
@@ -290,6 +346,20 @@ export function AuthEntry({
               }
             }}
           >
+            {compact && (
+              <div className="row-buttons">
+                <span>
+                  {roleChoice === "teacher" ? "教师登录" : "学生登录"}
+                </span>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setRoleChoice(null)}
+                >
+                  重新选择身份
+                </button>
+              </div>
+            )}
             <label>
               课堂邮箱
               <input

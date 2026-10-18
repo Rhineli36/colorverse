@@ -1,0 +1,153 @@
+.cloud-experience .competition-main {
+  max-width: none;
+}
+.cloud-experience .cloud-gallery {
+  background: none;
+}
+.cloud-experience.universe-active .competition-main {
+  padding: 0;
+}
+.cloud-experience .cloud-gallery.scene-exploring {
+  padding: 26px 0 40px;
+}
+.cloud-experience .cloud-gallery.scene-exploring > .classroom-heading,
+.cloud-experience .cloud-gallery.scene-exploring > .cloud-highlights,
+.cloud-experience .cloud-gallery > .mystery-entry,
+.cloud-experience .cloud-gallery > .learning-panel,
+.cloud-experience .cloud-room-heading h2,
+.cloud-experience .cloud-room-heading .cloud-planet-summary,
+.cloud-experience .cloud-room-heading > div:nth-child(2) > .muted {
+  display: none;
+}
+.cloud-experience .cloud-gallery.cloud-main-universe {
+  min-height: calc(100dvh - 98px);
+}
+.cloud-experience .experience-knowledge {
+  padding-top: 0;
+}
+.cloud-experience .experience-editor {
+  padding: 26px 0;
+  max-width: none;
+}
+.experience-error {
+  padding: 30px 5vw;
+  color: #e3c9bb;
+}
+.experience-auth-dialog {
+  width: min(900px, 92vw);
+  max-height: 90dvh;
+  overflow: auto;
+  padding: 38px;
+  background: #0d2130;
+  color: #e4eef0;
+  border: 1px solid #8ba9ac55;
+  border-radius: 22px;
+}
+.experience-auth-dialog::backdrop {
+  background: #020a14bb;
+  backdrop-filter: blur(8px);
+}
+.experience-auth-dialog .auth-pilot-note {
+  display: none;
+}
+.experience-auth-dialog .offline-role-choices {
+  margin: 20px 0;
+}
+.experience-auth-dialog form {
+  max-width: 560px;
+  margin: 20px auto;
+}
+.experience-auth-dialog .auth-memberships {
+  padding: 0;
+  list-style: none;
+}
+.experience-auth-dialog .auth-memberships button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 14px;
+}
+.experience-auth-dialog label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.experience-auth-dialog input {
+  background: #081824;
+  color: #eef5eb;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #90a7ad55;
+  border-radius: 8px;
+}
+.experience-auth-dialog .modal-close {
+  float: right;
+  position: static;
+}
+.experience-auth-dialog h2 {
+  font-size: 30px;
+  font-weight: 400;
+}
+.experience-teacher {
+  padding: 32px 0;
+}
+.experience-teacher > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.experience-teacher h1 {
+  font-weight: 400;
+  margin: 0;
+}
+.experience-teacher .teacher-name {
+  display: block;
+  color: #9ab7c2;
+  margin-top: 6px;
+}
+.experience-teacher .classroom-table-wrap {
+  overflow-x: auto;
+}
+.experience-teacher table {
+  min-width: 720px;
+  width: 100%;
+  border-collapse: collapse;
+}
+.experience-teacher th,
+.experience-teacher td {
+  text-align: left;
+  border-bottom: 1px solid #91aaba26;
+  padding: 16px 10px;
+  font-size: 14px;
+}
+.experience-teacher td button {
+  margin: 4px;
+}
+.experience-teacher .classroom-metrics {
+  margin-top: 20px;
+}
+.experience-teacher .classroom-tools input {
+  background: #0d2130;
+  color: #dce7ec;
+  padding: 12px;
+  border: 1px solid #91aaba33;
+  border-radius: 8px;
+}
+.experience-teacher .classroom-tools select {
+  background: #0d2130;
+  color: #dce7ec;
+  padding: 10px;
+  border: 1px solid #91aaba33;
+  border-radius: 8px;
+}
+@media (max-width: 760px) {
+  .experience-auth-dialog {
+    padding: 22px;
+  }
+  .experience-teacher .classroom-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

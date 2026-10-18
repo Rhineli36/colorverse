@@ -9,6 +9,15 @@
     "directory": "apps/web/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      "/api/*",
+      "/",
+      "/index.html",
+      "/exhibition",
+      "/exhibition/",
+      "/exhibition/index.html",
+      "/release.json",
+      "/exhibition/release.json"
+    ]
   }
 }

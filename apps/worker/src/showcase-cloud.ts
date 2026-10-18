@@ -12,6 +12,7 @@ import {
   CloudPlanetPresets,
   cloudPlanetFromPreset,
   CloudPlanetPositionInput,
+  CloudPlanetVisibilityInput,
   DefaultCloudMotion,
   PeerObservationSchema,
   CustomAssignmentFields,
@@ -164,6 +165,46 @@ export async function handleShowcaseCloud(
     await client.connect();
     await client.query("BEGIN");
     const actor = await classroomActor(client, identity, classId);
+    // Hiding a planet protects direct media/review/interaction URLs too, not
+    // just its entry in the universe. The author can still maintain their work.
+    if (actor.role === "student") {
+      let planetId: string | undefined = /^planets\/([a-f0-9-]{36})\//.exec(
+        resource,
+      )?.[1];
+      const workId = /^works\/([a-f0-9-]{36})\//.exec(resource)?.[1];
+      if (workId)
+        planetId = (
+          await client.query(
+            "SELECT w.planet_id FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE w.id=$1 AND e.class_id=$2",
+            [workId, classId],
+          )
+        ).rows[0]?.planet_id;
+      if (resource === "interactions" && request.method === "GET")
+        planetId =
+          new URL(request.url).searchParams.get("planetId") ?? undefined;
+      if (
+        (resource === "interactions" || resource === "guide") &&
+        request.method === "POST"
+      ) {
+        const input = JSON.parse(
+          new TextDecoder().decode(await readLimited(request.clone(), 12000)),
+        );
+        planetId = input.planetId;
+      }
+      if (planetId && z.uuid().safeParse(planetId).success) {
+        const planet = (
+          await client.query(
+            "SELECT p.owner_enrollment_id,p.document->>'visible' AS visible FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE p.id=$1 AND e.class_id=$2",
+            [planetId, classId],
+          )
+        ).rows[0];
+        if (
+          planet?.visible === "false" &&
+          planet.owner_enrollment_id !== actor.id
+        )
+          throw new ClassroomFailure(404, "NOT_FOUND", "星球暂不可查看");
+      }
+    }
     const assignmentImage =
       /^learning-tasks\/(custom-[a-f0-9-]{36})\/image$/.exec(resource);
     if (assignmentImage && request.method === "GET") {
@@ -471,7 +512,7 @@ export async function handleShowcaseCloud(
     }
     if (resource === "planets" && request.method === "GET") {
       const rows = await client.query(
-        `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, (SELECT jsonb_build_object('likes', count(*) FILTER(WHERE i.kind='like'), 'emojis', count(*) FILTER(WHERE i.kind='emoji'), 'comments', count(*) FILTER(WHERE i.kind='comment')) FROM colorverse.classroom_interactions i LEFT JOIN colorverse.showcase_works iw ON iw.id=i.work_id WHERE i.planet_id=p.id AND (i.work_id IS NULL OR iw.withdrawn_at IS NULL)) stats, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision,'learning',w.learning_context,'withdrawn',w.withdrawn_at IS NOT NULL,'canRestore',(w.withdrawn_at IS NULL OR w.withdrawn_by=p.owner_enrollment_id OR $3::boolean)) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$2::uuid OR $3::boolean)),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' ORDER BY u.display_name`,
+        `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, (SELECT jsonb_build_object('likes', count(*) FILTER(WHERE i.kind='like'), 'emojis', count(*) FILTER(WHERE i.kind='emoji'), 'comments', count(*) FILTER(WHERE i.kind='comment')) FROM colorverse.classroom_interactions i LEFT JOIN colorverse.showcase_works iw ON iw.id=i.work_id WHERE i.planet_id=p.id AND (i.work_id IS NULL OR iw.withdrawn_at IS NULL)) stats, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision,'learning',w.learning_context,'withdrawn',w.withdrawn_at IS NOT NULL,'canRestore',(w.withdrawn_at IS NULL OR w.withdrawn_by=p.owner_enrollment_id OR $3::boolean)) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$2::uuid OR $3::boolean)),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' AND ($3::boolean OR p.owner_enrollment_id=$2::uuid OR COALESCE(p.document->>'visible','true')<>'false') ORDER BY u.display_name`,
         [
           classId,
           actor.id,
@@ -497,7 +538,7 @@ export async function handleShowcaseCloud(
           "请使用学生账户创建自己的星球",
         );
       const input = planetInput.parse(
-        JSON.parse(new TextDecoder().decode(await readLimited(request, 2048))),
+        JSON.parse(new TextDecoder().decode(await readLimited(request, 16000))),
       );
       const skin =
         "random" in input
@@ -544,7 +585,7 @@ export async function handleShowcaseCloud(
       return Response.json({ created: result.rows.length > 0, id });
     }
     const planetMatch =
-      /^planets\/([a-f0-9-]+)\/(appearance|exterior|interior|position)$/.exec(
+      /^planets\/([a-f0-9-]+)\/(appearance|exterior|interior|position|visibility)$/.exec(
         resource,
       );
     if (planetMatch) {
@@ -572,6 +613,44 @@ export async function handleShowcaseCloud(
         throw new ClassroomFailure(403, "OWNER_REQUIRED", "只能修改自己的星球");
       const document = row.document,
         revision = document.revision ?? 0;
+      if (kind === "visibility") {
+        if (request.method !== "PUT")
+          throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "不支持此操作");
+        if (actor.role !== "teacher" && actor.role !== "assistant")
+          throw new ClassroomFailure(
+            403,
+            "TEACHER_REQUIRED",
+            "只有本班教师可以设置星球可见性",
+          );
+        const input = CloudPlanetVisibilityInput.parse(
+          JSON.parse(
+            new TextDecoder().decode(await readLimited(request, 4096)),
+          ),
+        );
+        if (input.revision !== revision)
+          throw new ClassroomFailure(
+            409,
+            "PLANET_CONFLICT",
+            "星球已更新，请刷新后再试",
+          );
+        await client.query(
+          "UPDATE colorverse.planets SET document=$1 WHERE id=$2",
+          [
+            JSON.stringify({
+              ...document,
+              visible: input.visible,
+              revision: revision + 1,
+            }),
+            id,
+          ],
+        );
+        await client.query("COMMIT");
+        return Response.json({
+          saved: true,
+          visible: input.visible,
+          revision: revision + 1,
+        });
+      }
       if (kind === "position") {
         if (request.method !== "PUT")
           throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "不支持此操作");

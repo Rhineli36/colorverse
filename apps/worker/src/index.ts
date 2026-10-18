@@ -39,11 +39,32 @@ export async function handleRequest(
   enrollments: typeof resolveEnrollment = resolveEnrollment,
 ) {
   const url = new URL(request.url);
-  if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
+  if (!url.pathname.startsWith("/api/")) {
+    if (url.pathname === "/exhibition") {
+      url.pathname = "/exhibition/";
+      return Response.redirect(url.href, 308);
+    }
+    const asset = await env.ASSETS.fetch(request);
+    if (
+      [
+        "/",
+        "/index.html",
+        "/exhibition/",
+        "/exhibition/index.html",
+        "/release.json",
+        "/exhibition/release.json",
+      ].includes(url.pathname)
+    ) {
+      const response = new Response(asset.body, asset);
+      response.headers.set("Cache-Control", "no-cache, must-revalidate");
+      return response;
+    }
+    return asset;
+  }
   if (url.pathname.startsWith("/api/supabase/"))
     return authProxy(request, env, transport);
   const showcase =
-    /^\/api\/v1\/cloud\/classes\/([^/]+)\/(notifications|learning-tasks|learning-tasks\/custom-[a-f0-9-]{36}\/image|guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior|position)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review|description)|interactions|interactions\/[a-f0-9-]+)$/.exec(
+    /^\/api\/v1\/cloud\/classes\/([^/]+)\/(notifications|learning-tasks|learning-tasks\/custom-[a-f0-9-]{36}\/image|guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior|position|visibility)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review|description)|interactions|interactions\/[a-f0-9-]+)$/.exec(
       url.pathname,
     );
   if (showcase) {
