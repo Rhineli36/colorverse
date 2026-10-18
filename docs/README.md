@@ -1,6 +1,6 @@
 # 色彩星球 / COLORVERSE 设计文档
 
-2026-10-16 最新云端发布、七种场景、新增作业与剩余工作请阅读 [57 云端发布和后续清单](57-cloud-release-and-remaining-work.md)。三份作业图文见 [56](56-assignment-images-and-color-experiments.md)，学习页整体改版见 [55](55-color-mystery-redesign.md)，连续拖动等修复见 [54](54-repeat-drag-and-discussion.md)。历史记录中的“仅本地”“尚未上线”以 57 号最新结果更新。
+2026-10-18 最新图片、云端与展示版前端统一及实际发布版本请阅读 [62 本轮交付记录](62-cloud-exhibition-parity.md)。三份作业图文见 [56](56-assignment-images-and-color-experiments.md)，学习页整体改版见 [55](55-color-mystery-redesign.md)，连续拖动等修复见 [54](54-repeat-drag-and-discussion.md)。历史记录中的“仅本地”“尚未上线”以最新交付记录更新。
 
 当前参赛版本请优先阅读 [47 参赛运行与打包说明](47-competition-run-and-package.md)。以下阶段规划和验收记录按当时版本理解，不能用旧的“待接入”描述判断现在的实现状态。
 
