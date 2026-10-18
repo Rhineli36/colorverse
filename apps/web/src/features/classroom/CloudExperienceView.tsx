@@ -7,6 +7,7 @@ import {
   type ExperienceDestination,
 } from "./ExperienceHeader";
 import { CloudGallery } from "./CloudGallery";
+import { CloudStudentGate } from "./CloudStudentGate";
 import { CloudClassroomView } from "./CloudClassroomView";
 import { CloudInbox } from "./CloudInbox";
 import "./classroom.css";
@@ -22,6 +23,7 @@ export function CloudExperienceView() {
   const [pending, setPending] = useState(false);
   const [loginRequest, setLoginRequest] = useState(0);
   const [notice, setNotice] = useState("");
+  const [pendingCount, setPendingCount] = useState(0);
   const [initialColor, setInitialColor] = useState<EmotionCase>();
   const [navigation, setNavigation] = useState<{
     action: "universe" | "room" | "edit" | "knowledge" | "submit" | "feedback";
@@ -96,6 +98,7 @@ export function CloudExperienceView() {
       data-experience-mode="cloud"
     >
       <ExperienceHeader
+        pendingCount={pendingCount}
         role={role}
         disabled={pending}
         onNavigate={navigate}
@@ -103,6 +106,7 @@ export function CloudExperienceView() {
           <>
             {active && (
               <CloudInbox
+                onPendingCount={setPendingCount}
                 session={active}
                 disabled={pending}
                 onSubmit={(id, taskId) => jump(id, "submit", { taskId })}
@@ -134,6 +138,12 @@ export function CloudExperienceView() {
           {notice}
         </p>
       )}
+      {(location.pathname.startsWith("/review") ||
+        membership?.title.includes("评审体验")) && (
+        <p className="experience-mode-label">
+          评审体验 · 示例内容用于演示，与真实课堂分开保存
+        </p>
+      )}
       {active && membership ? (
         <main className="competition-main">
           {teacher && role === "teacher" ? (
@@ -141,27 +151,34 @@ export function CloudExperienceView() {
               session={active}
               initialClassId={membership.classId}
               onPendingChange={setPending}
-              onPlanetAction={(id, action, targetClass) => {
+              onPlanetAction={(id, action, targetClass, workId) => {
                 setClassId(targetClass);
                 setTeacher(false);
                 setNavigation((n) => ({
                   action,
                   planetId: id,
+                  workId,
                   sequence: n.sequence + 1,
                 }));
               }}
             />
           ) : (
-            <CloudGallery
+            <CloudStudentGate
               key={`${active.identity.id}:${membership.classId}`}
-              session={active}
-              initialClassId={membership.classId}
-              initialColorCase={initialColor}
-              navigation={navigation}
-              experience
-              onPendingChange={setPending}
-              onViewChange={setScreen}
-            />
+              enabled={role === "student"}
+              classId={membership.classId}
+            >
+              <CloudGallery
+                key={`${active.identity.id}:${membership.classId}`}
+                session={active}
+                initialClassId={membership.classId}
+                initialColorCase={initialColor}
+                navigation={navigation}
+                experience
+                onPendingChange={setPending}
+                onViewChange={setScreen}
+              />
+            </CloudStudentGate>
           )}
         </main>
       ) : (

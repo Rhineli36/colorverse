@@ -5,6 +5,8 @@ import {
   AssignmentDefinitionSchema,
   CustomAssignmentFields,
   type CustomAssignmentDraft,
+  StudentIdentitySchema,
+  identityFromDisplayName,
 } from "@colorverse/contracts";
 import {
   ExperiencePlanet,
@@ -19,12 +21,15 @@ const Interaction = z.object({
   kind: z.enum(["like", "emoji", "comment"]),
   content: z.string().max(500),
   author: z.string(),
+  actor: z.enum(["student", "teacher"]).optional(),
   createdAt: z.string(),
 });
 export const ExperienceState = z.object({
   version: z.literal(1),
   revision: z.number().int().nonnegative(),
   ownPlanet: ExperiencePlanet.nullable(),
+  identity: StudentIdentitySchema.nullable().default(null),
+  planetCreatedAt: z.string().optional(),
   overrides: z.record(z.string(), ExperiencePlanet),
   interactions: z.array(Interaction).max(3000),
   assignments: z
@@ -45,6 +50,7 @@ export const blankExperience = (revision = 0): OfflineState => ({
   version: 1,
   revision,
   ownPlanet: null,
+  identity: null,
   overrides: {},
   interactions: [],
   assignments: [],
@@ -63,9 +69,13 @@ export class OfflineExperienceStore {
     },
   });
   async load() {
-    return ExperienceState.parse(
+    const state = ExperienceState.parse(
       (await (await this.db).get("state", "current")) ?? blankExperience(),
     );
+    state.identity ??= state.ownPlanet
+      ? identityFromDisplayName(state.ownPlanet.display_name)
+      : null;
+    return state;
   }
   async media(key: string) {
     return (await this.db).get("media", key);
@@ -136,8 +146,17 @@ export class OfflineExperienceStore {
               (previous?.document.revision ?? planet.document.revision) + 1,
           },
         };
-        if (planet.id === "my-offline-planet") s.ownPlanet = next;
-        else s.overrides[planet.id] = next;
+        if (planet.id === "my-offline-planet") {
+          if (!s.ownPlanet) s.planetCreatedAt = new Date().toISOString();
+          s.ownPlanet = s.identity
+            ? {
+                ...next,
+                display_name: `${s.identity.realName} · 学号 ${s.identity.studentNumber}`,
+                realName: s.identity.realName,
+                studentNumber: s.identity.studentNumber,
+              }
+            : next;
+        } else s.overrides[planet.id] = next;
         return s;
       },
       media,
@@ -154,7 +173,9 @@ export class OfflineExperienceStore {
           (i) =>
             i.planetId === value.planetId &&
             i.workId === value.workId &&
-            i.author === (role === "teacher" ? "体验教师" : "体验同学") &&
+            (i.actor === role ||
+              (!i.actor &&
+                i.author === (role === "teacher" ? "体验教师" : "体验同学"))) &&
             i.kind === value.kind,
         );
         if (old >= 0) {
@@ -166,7 +187,11 @@ export class OfflineExperienceStore {
         ...value,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
-        author: role === "teacher" ? "体验教师" : "体验同学",
+        author:
+          role === "teacher"
+            ? "体验教师"
+            : (s.identity?.realName ?? "体验同学"),
+        actor: role as "teacher" | "student",
       });
       return s;
     });

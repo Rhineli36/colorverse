@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { MotionSchema } from "./motion";
 import { LearningIntentSchema } from "./learning";
+import { ImagePlacementSchema } from "./experience";
 
 export const DefaultCloudMotion = {
   version: "1.0.0",
@@ -78,6 +79,12 @@ export const CloudPlanetVisibilityInput = z.strictObject({
 });
 
 export const CloudPlanetAppearanceInput = z.strictObject({
+  imagePlacement: z
+    .object({
+      exterior: ImagePlacementSchema.optional(),
+      interior: ImagePlacementSchema.optional(),
+    })
+    .optional(),
   useDefaultExterior: z.boolean().optional(),
   haloIntensity: z.number().min(0).max(1).optional(),
   interiorView: z
@@ -107,6 +114,13 @@ export const CloudPlanetAppearanceInput = z.strictObject({
   practice: z.literal("tone").optional(),
 });
 export const CloudPlanetDocumentSchema = z.object({
+  createdAt: z.string().optional(),
+  imagePlacement: z
+    .object({
+      exterior: ImagePlacementSchema.optional(),
+      interior: ImagePlacementSchema.optional(),
+    })
+    .default({}),
   visible: z.boolean().default(true),
   useDefaultExterior: z.boolean().default(false),
   haloIntensity: z.number().min(0).max(1).default(0.6),

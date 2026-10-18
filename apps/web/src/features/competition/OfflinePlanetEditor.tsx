@@ -87,7 +87,15 @@ export function OfflinePlanetEditor({
       setDraft((d) => ({
         ...d,
         [kind]: result.key,
-        document: { ...d.document, revision: d.document.revision + 1 },
+        document: {
+          ...d.document,
+          ...(kind === "exterior" ? { useDefaultExterior: false } : {}),
+          revision: d.document.revision + 1,
+          imagePlacement: {
+            ...d.document.imagePlacement,
+            [kind]: { x: 0, y: 0, scale: 1 },
+          },
+        },
       }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "图片读取失败");
@@ -134,8 +142,24 @@ export function OfflinePlanetEditor({
           ...d,
           exterior: undefined,
           document: planet
-            ? { ...d.document, skin }
-            : cloudPlanetFromPreset(skin),
+            ? {
+                ...d.document,
+                skin,
+                useDefaultExterior: true,
+                imagePlacement: {
+                  ...d.document.imagePlacement,
+                  exterior: undefined,
+                },
+              }
+            : {
+                ...d.document,
+                ...cloudPlanetFromPreset(skin),
+                metadata: d.document.metadata,
+                imagePlacement: {
+                  ...d.document.imagePlacement,
+                  exterior: undefined,
+                },
+              },
         }))
       }
       onSave={() => void onSave(draft, media)}

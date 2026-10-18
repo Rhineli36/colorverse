@@ -64,6 +64,9 @@ beforeAll(async () => {
       "INSERT INTO users VALUES($1::uuid,$2,$1::uuid::text,'测试用户','active')",
       [id, issuer],
     );
+  await db.exec(
+    await readFile("apps/api/migrations/008-precompetition.sql", "utf8"),
+  );
   await db.query("INSERT INTO courses VALUES($1,'课程',$2)", [ids[4], ids[0]]);
   for (const id of ids.slice(5, 7))
     await db.query(
@@ -1718,7 +1721,7 @@ describe("teacher planet visibility", () => {
       planet = randomUUID(),
       workId = randomUUID();
     await db.query(
-      "INSERT INTO users VALUES($1,$2,$1::uuid::text,'可见性测试','active')",
+      "INSERT INTO users(id,auth_issuer,auth_subject,display_name,status) VALUES($1,$2,$1::uuid::text,'可见性测试','active')",
       [owner, issuer],
     );
     await db.query(
@@ -1824,5 +1827,140 @@ describe("teacher planet visibility", () => {
         )
       ).rows[0].n,
     ).toBe(1);
+  });
+});
+
+describe("precompetition profile, notification and review summaries", () => {
+  it("binds a trimmed first identity to the account without replacing its existing planet", async () => {
+    const before = (
+      await sql.query(
+        "SELECT id FROM colorverse.planets WHERE owner_enrollment_id=$1",
+        [ids[8]],
+      )
+    ).rows.map((r) => r.id);
+    const get = () =>
+      handleShowcaseCloud(
+        request("profile", undefined, "GET"),
+        env,
+        identity(ids[1]),
+        ids[5],
+        "profile",
+        clientFactory,
+      );
+    expect((await (await get()).json()).profile).toBe(null);
+    const value = await handleShowcaseCloud(
+      request(
+        "profile",
+        { realName: " 小王 ", studentNumber: " 00128 " },
+        "PUT",
+      ),
+      env,
+      identity(ids[1]),
+      ids[5],
+      "profile",
+      clientFactory,
+    );
+    expect((await value.json()).profile).toEqual({
+      realName: "小王",
+      studentNumber: "00128",
+    });
+    expect((await (await get()).json()).profile.studentNumber).toBe("00128");
+    expect(
+      (
+        await sql.query(
+          "SELECT id FROM colorverse.planets WHERE owner_enrollment_id=$1",
+          [ids[8]],
+        )
+      ).rows.map((r) => r.id),
+    ).toEqual(before);
+    await expect(
+      handleShowcaseCloud(
+        request("profile", undefined, "GET"),
+        env,
+        identity(ids[0]),
+        ids[5],
+        "profile",
+        clientFactory,
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+  it("keeps a read submission pending, handles a real zero grade and scopes teacher notifications to class", async () => {
+    const { classroomNotifications } =
+      await import("../apps/worker/src/notifications");
+    const freshWork = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id) VALUES($1,$2,'通知测试',$3,100,'crystal',$4)",
+      [freshWork, ids[11], randomUUID(), randomUUID()],
+    );
+    await sql.query(
+      "UPDATE colorverse.planets SET document=jsonb_set(document,'{createdAt}',to_jsonb(now()::text)) WHERE id=$1",
+      [ids[11]],
+    );
+    const actor = { id: ids[7], role: "teacher" };
+    const before = await classroomNotifications(sql, actor, ids[5]);
+    expect(
+      before.notifications.filter((n) => n.id === `planet-created:${ids[11]}`),
+    ).toHaveLength(1);
+    expect(
+      before.notifications.find((n) => n.workId === freshWork)?.pending,
+    ).toBe(true);
+    await handleShowcaseCloud(
+      request("notification-read", { id: `submission:${freshWork}` }),
+      env,
+      identity(ids[0]),
+      ids[5],
+      "notification-read",
+      clientFactory,
+    );
+    await handleShowcaseCloud(
+      request("notification-read", { id: `submission:${freshWork}` }),
+      env,
+      identity(ids[0]),
+      ids[5],
+      "notification-read",
+      clientFactory,
+    );
+    const read = await classroomNotifications(sql, actor, ids[5]);
+    expect(
+      read.readIds.filter((id) => id === `submission:${freshWork}`),
+    ).toHaveLength(1);
+    expect(
+      read.notifications.find((n) => n.workId === freshWork)?.pending,
+    ).toBe(true);
+    await showcaseReview(sql, actor, ids[5], freshWork, "POST", {
+      score: 0,
+      comment: "",
+      revision: 0,
+      requestId: randomUUID(),
+    });
+    expect(
+      (await classroomNotifications(sql, actor, ids[5])).notifications.find(
+        (n) => n.workId === freshWork,
+      )?.pending,
+    ).toBe(false);
+    expect(
+      (await classroomNotifications(sql, actor, ids[6])).notifications.some(
+        (n) => n.workId === freshWork,
+      ),
+    ).toBe(false);
+    for (const [user, visible] of [
+      [ids[0], true],
+      [ids[1], true],
+      [ids[2], false],
+    ] as const) {
+      const r = await handleShowcaseCloud(
+        request("planets", undefined, "GET"),
+        env,
+        identity(user),
+        ids[5],
+        "planets",
+        clientFactory,
+      );
+      const p = (await r.json()).planets.find(
+        (p: { id: string }) => p.id === ids[11],
+      );
+      const w = p.works.find((w: { id: string }) => w.id === freshWork);
+      expect(w.score).toBe(visible ? 0 : undefined);
+    }
   });
 });

@@ -1,4 +1,5 @@
 import { PlanetDesignEditor, type DesignElement } from "./PlanetDesignEditor";
+import { FramedImage } from "./FramedImage";
 import { blankIntent } from "./LearningPanels";
 import { planetAppearancePayload } from "./planet-appearance-payload";
 import { useEffect, useState, useRef } from "react";
@@ -113,7 +114,14 @@ export function CloudPlanetOrb({
         } as React.CSSProperties
       }
     >
-      <img
+      <FramedImage
+        round
+        placement={
+          document.useDefaultExterior
+            ? undefined
+            : document.imagePlacement.exterior
+        }
+        color={document.color}
         className="student-orb cloud-planet-orb"
         alt="星球外貌"
         src={
@@ -299,11 +307,23 @@ export function CloudPlanetAppearance({
           return;
         }
         setFiles((v) => ({ ...v, [kind]: file }));
+        setDraft((d) => ({
+          ...d,
+          imagePlacement: {
+            ...d.imagePlacement,
+            [kind]: { x: 0, y: 0, scale: 1 },
+          },
+        }));
         if (kind === "exterior")
           setDraft((d) => ({ ...d, useDefaultExterior: false }));
       }}
       onTemplate={(skin) => {
-        setDraft((d) => ({ ...d, skin, useDefaultExterior: true }));
+        setDraft((d) => ({
+          ...d,
+          skin,
+          useDefaultExterior: true,
+          imagePlacement: { ...d.imagePlacement, exterior: undefined },
+        }));
         setFiles((v) => {
           const n = { ...v };
           delete n.exterior;

@@ -18,5 +18,11 @@ export async function classroomRequest(path: string, init: RequestInit = {}) {
     const data = await response.json().catch(() => null);
     throw new Error(data?.error?.message ?? "云端连接失败，请稍后重试");
   }
+  if (
+    init.method &&
+    init.method !== "GET" &&
+    !path.endsWith("notification-read")
+  )
+    window.dispatchEvent(new Event("classroom-data-changed"));
   return response;
 }

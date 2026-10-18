@@ -12,12 +12,14 @@ export function planetAppearancePayload(
     revision: _revision,
     position: _position,
     visible: _visible,
+    createdAt: _createdAt,
     ...appearance
   } = document;
   void _media;
   void _revision;
   void _position;
   void _visible;
+  void _createdAt;
   return CloudPlanetAppearanceInput.parse({
     ...appearance,
     ...metadata,

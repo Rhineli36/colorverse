@@ -7,8 +7,12 @@ import {
 import "../classroom/experience.css";
 import { TeacherDashboard } from "../classroom/TeacherDashboard";
 import { ReviewPanel } from "../classroom/ReviewPanel";
+import { FramedImage } from "../classroom/FramedImage";
+import { StudentIdentityForm } from "../classroom/StudentIdentityForm";
+import { PendingSubmissions } from "../classroom/PendingSubmissions";
 import {
   GrowthPresetIds,
+  hasTeacherReview,
   GrowthPresets,
   type EmotionCase,
   AssignmentCatalog,
@@ -252,6 +256,7 @@ export function CompetitionView({
     setTab("universe");
     setNotice("");
     setEditTarget(undefined);
+    if (r === "student" && !state.identity) return;
     if (r === "student" && colorCase) setEditTarget(state.ownPlanet ?? null);
     else if (r === "student" && !state.ownPlanet) setEditTarget(null);
     else if (r === "student" && state.ownPlanet) {
@@ -403,7 +408,10 @@ export function CompetitionView({
                 i.planetId === selected &&
                 i.workId === workId &&
                 i.kind === "like" &&
-                i.author === (role === "teacher" ? "体验教师" : "体验同学"),
+                (i.actor
+                  ? i.actor === role
+                  : i.author ===
+                    (role === "teacher" ? "体验教师" : "体验同学")),
             )}
             disabled={busy}
             onClick={() => interact("like", "", workId)}
@@ -416,7 +424,10 @@ export function CompetitionView({
                     i.planetId === selected &&
                     i.workId === workId &&
                     i.kind === "like" &&
-                    i.author === (role === "teacher" ? "体验教师" : "体验同学"),
+                    (i.actor
+                      ? i.actor === role
+                      : i.author ===
+                        (role === "teacher" ? "体验教师" : "体验同学")),
                 )
                   ? "is-liked"
                   : "")
@@ -428,7 +439,10 @@ export function CompetitionView({
                   i.planetId === selected &&
                   i.workId === workId &&
                   i.kind === "like" &&
-                  i.author === (role === "teacher" ? "体验教师" : "体验同学"),
+                  (i.actor
+                    ? i.actor === role
+                    : i.author ===
+                      (role === "teacher" ? "体验教师" : "体验同学")),
               )
                 ? "♥"
                 : "♡"}
@@ -477,6 +491,31 @@ export function CompetitionView({
   if (!ready || !data) return <p role="status">正在展开色彩宇宙…</p>;
   const visible = planets.filter((p) => p.visible || role === "teacher");
   const notifications: ClassroomNotification[] = [
+    ...(role === "teacher" && state.ownPlanet && state.planetCreatedAt
+      ? [
+          {
+            id: `planet-created:${state.ownPlanet.id}`,
+            kind: "planet-created" as const,
+            title: `${state.identity?.realName ?? state.ownPlanet.display_name}创建了「${state.ownPlanet.document.metadata.name}」`,
+            content: "评审体验班级 · 演示内容",
+            createdAt: state.planetCreatedAt,
+            planetId: state.ownPlanet.id,
+          },
+        ]
+      : []),
+    ...(role === "teacher"
+      ? planets.flatMap((p) =>
+          p.works.map((w) => ({
+            id: `submission:${w.id}`,
+            kind: "submission" as const,
+            title: `${p.display_name} · ${w.title}`,
+            createdAt: w.exampleDate ?? w.createdAt ?? "2026-01-01T00:00:00Z",
+            planetId: p.id,
+            workId: w.id,
+            pending: !hasTeacherReview(w.score, w.comment),
+          })),
+        )
+      : []),
     ...state.assignments.map((a) => ({
       id: a.id,
       kind: "assignment" as const,
@@ -489,7 +528,7 @@ export function CompetitionView({
         (i) =>
           role === "student" &&
           i.planetId === state.ownPlanet?.id &&
-          i.author !== "体验同学",
+          (i.actor ? i.actor !== "student" : i.author !== "体验同学"),
       )
       .map((i) => ({
         id: i.id,
@@ -507,6 +546,10 @@ export function CompetitionView({
     >
       {!hideHeader && (
         <ExperienceHeader
+          pendingCount={
+            notifications.filter((n) => n.kind === "submission" && n.pending)
+              .length
+          }
           disabled={busy || reviewDirty}
           role={role}
           onNavigate={(destination) => {
@@ -577,7 +620,36 @@ export function CompetitionView({
         </p>
       )}
       <main className="competition-main">
-        {editTarget !== undefined ? (
+        {!hideHeader && (
+          <small className="experience-mode-label">
+            离线展示体验 · 示例数据与点评仅用于演示
+          </small>
+        )}
+        {role === "student" && !state.identity ? (
+          <StudentIdentityForm
+            offline
+            onSave={async (identity) => {
+              const next = await store.current!.commit(
+                state.revision,
+                "student",
+                (s) => ({
+                  ...s,
+                  identity,
+                  ownPlanet: s.ownPlanet
+                    ? {
+                        ...s.ownPlanet,
+                        display_name: `${identity.realName} · 学号 ${identity.studentNumber}`,
+                        realName: identity.realName,
+                        studentNumber: identity.studentNumber,
+                      }
+                    : null,
+                }),
+              );
+              setState(next);
+              setEditTarget(next.ownPlanet ?? null);
+            }}
+          />
+        ) : editTarget !== undefined ? (
           <OfflinePlanetEditor
             key={editTarget?.id ?? "create"}
             planet={editTarget}
@@ -617,73 +689,98 @@ export function CompetitionView({
             }}
           />
         ) : tab === "teacher" ? (
-          <TeacherDashboard
-            busy={busy}
-            rows={planets.map((p) => ({
-              id: p.id,
-              name: p.document.metadata.name,
-              author: p.display_name,
-              works: p.works.length,
-              sent: p.sent,
-              received:
-                (p.planetInteractions?.length ?? 0) +
-                state.interactions.filter((i) => i.planetId === p.id).length,
-              reviewed: p.works.filter((w) => w.score !== undefined).length,
-              visible: p.visible,
-              stationary: p.document.motion.mode === "stationary",
-              hasPlanet: true,
-            }))}
-            onEnter={(id) => {
-              setSelected(id);
-              setTab("gallery");
-            }}
-            onEdit={(id) => {
-              setColorCase(undefined);
-              setEditTarget(planets.find((p) => p.id === id));
-            }}
-            onVisibility={async (id, visible) => {
-              const p = planets.find((p) => p.id === id);
-              if (p) await run(() => savePlanet({ ...p, visible }));
-            }}
-            publisher={
-              <AssignmentPublisher
-                disabled={busy}
-                catalog={assignmentCatalog}
-                onCreate={async (draft, image, requestId) => {
-                  let dataUrl = "";
-                  if (image) {
-                    const prepared = await importOfflineImage(image);
-                    dataUrl = await new Promise<string>((ok, bad) => {
-                      const reader = new FileReader();
-                      reader.onload = () => ok(String(reader.result));
-                      reader.onerror = () => bad(Error("无法读取示范图片"));
-                      reader.readAsDataURL(prepared.blob);
-                    });
-                    if (dataUrl.length > 2000000)
-                      throw Error("请缩小示范图片后重试");
-                  }
+          <>
+            <PendingSubmissions
+              items={notifications}
+              readIds={state.readNotifications
+                .filter((id) => id.startsWith("teacher:"))
+                .map((id) => id.slice(8))}
+              onOpen={(n) => {
+                void run(async () => {
                   setState(
-                    await store.current!.createAssignment(
+                    await store.current!.readNotification(
                       state.revision,
                       role,
-                      draft,
-                      dataUrl,
-                      requestId,
+                      n.id,
                     ),
                   );
-                }}
-                onPublish={async (id) =>
-                  setState(
-                    await store.current!.publishAssignment(
-                      state.revision,
-                      role,
-                      id,
-                    ),
-                  )
-                }
-              />
-            }
-          />
+                  const p = planets.find((p) => p.id === n.planetId);
+                  if (p) {
+                    setSelected(p.id);
+                    setTab("gallery");
+                    setWork(p.works.find((w) => w.id === n.workId) ?? null);
+                  } else setNotice("这份作业已不可访问，请刷新列表。");
+                });
+              }}
+            />
+            <TeacherDashboard
+              busy={busy}
+              rows={planets.map((p) => ({
+                id: p.id,
+                name: p.document.metadata.name,
+                author: p.display_name,
+                works: p.works.length,
+                sent: p.sent,
+                received:
+                  (p.planetInteractions?.length ?? 0) +
+                  state.interactions.filter((i) => i.planetId === p.id).length,
+                reviewed: p.works.filter((w) => w.score !== undefined).length,
+                visible: p.visible,
+                stationary: p.document.motion.mode === "stationary",
+                hasPlanet: true,
+              }))}
+              onEnter={(id) => {
+                setSelected(id);
+                setTab("gallery");
+              }}
+              onEdit={(id) => {
+                setColorCase(undefined);
+                setEditTarget(planets.find((p) => p.id === id));
+              }}
+              onVisibility={async (id, visible) => {
+                const p = planets.find((p) => p.id === id);
+                if (p) await run(() => savePlanet({ ...p, visible }));
+              }}
+              publisher={
+                <AssignmentPublisher
+                  disabled={busy}
+                  catalog={assignmentCatalog}
+                  onCreate={async (draft, image, requestId) => {
+                    let dataUrl = "";
+                    if (image) {
+                      const prepared = await importOfflineImage(image);
+                      dataUrl = await new Promise<string>((ok, bad) => {
+                        const reader = new FileReader();
+                        reader.onload = () => ok(String(reader.result));
+                        reader.onerror = () => bad(Error("无法读取示范图片"));
+                        reader.readAsDataURL(prepared.blob);
+                      });
+                      if (dataUrl.length > 2000000)
+                        throw Error("请缩小示范图片后重试");
+                    }
+                    setState(
+                      await store.current!.createAssignment(
+                        state.revision,
+                        role,
+                        draft,
+                        dataUrl,
+                        requestId,
+                      ),
+                    );
+                  }}
+                  onPublish={async (id) =>
+                    setState(
+                      await store.current!.publishAssignment(
+                        state.revision,
+                        role,
+                        id,
+                      ),
+                    )
+                  }
+                />
+              }
+            />
+          </>
         ) : tab === "gallery" && planet ? (
           <section className="competition-gallery" aria-label="星球内部">
             <div className="competition-room-heading compact-room-heading">
@@ -712,6 +809,13 @@ export function CompetitionView({
             <SceneLayout
               story={{ ...planet.document.metadata, demoWriting: false }}
               author={planet.display_name}
+              showReviewStatus={
+                (owned && role === "student") || role === "teacher"
+              }
+              onOpenWork={(id) => {
+                setWork(planet.works.find((w) => w.id === id) ?? null);
+                setElementDraft(null);
+              }}
               works={planet.works}
             >
               <PlanetExplorer sceneId={planet.id}>
@@ -726,7 +830,9 @@ export function CompetitionView({
                   }
                 >
                   {
-                    <img
+                    <FramedImage
+                      placement={planet.document.imagePlacement.interior}
+                      color={planet.document.color}
                       key={imageRetry}
                       className="scene-saved-background"
                       style={{

@@ -11,12 +11,14 @@ export function CloudWorkReview({
   staff,
   withdrawn,
   onPendingChange,
+  onSaved,
 }: {
   classId: string;
   workId: string;
   staff: boolean;
   withdrawn: boolean;
   onPendingChange: (pending: boolean) => void;
+  onSaved?: () => Promise<unknown>;
 }) {
   const [review, setReview] = useState<Review>(null),
     [score, setScore] = useState(""),
@@ -100,6 +102,8 @@ export function CloudWorkReview({
       setReview(value);
       reset(value);
       setNotice("教师点评与评分已保存，学生可以查看。");
+      window.dispatchEvent(new Event("classroom-data-changed"));
+      await onSaved?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存失败，草稿已保留");
     } finally {

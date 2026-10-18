@@ -1,4 +1,5 @@
 import { SceneLayout } from "./SceneLayout";
+import { FramedImage } from "./FramedImage";
 import { CloudPlanetCreator } from "./CloudPlanetCreator";
 import { presentationName } from "./presentation-name";
 import { showLearningGuide } from "./presentation-options";
@@ -57,6 +58,8 @@ const Work = z.object({
   id: z.uuid(),
   learning: WorkLearningSchema.nullable().optional(),
   title: z.string(),
+  score: z.number().nullable().optional(),
+  comment: z.string().optional(),
   description: z.string(),
   presetId: z.enum(GrowthPresetIds),
   color: z.string(),
@@ -490,10 +493,18 @@ export function CloudGallery({
     }
     if (navigation.action === "feedback") {
       const target = data.planets.find((p) => p.id === navigation.planetId);
-      if (!target) return;
+      if (!target) {
+        setNotice("这个星球已删除或暂不可访问，请刷新列表。");
+        return;
+      }
       setPlanetId(target.id);
       setExploring(true);
       setWork(target.works.find((w) => w.id === navigation.workId) ?? null);
+      if (
+        navigation.workId &&
+        !target.works.some((w) => w.id === navigation.workId && !w.withdrawn)
+      )
+        setNotice("这份作业已撤下或暂不可访问。");
       return;
     }
     if (experience && navigation.action === "edit") {
@@ -1355,6 +1366,12 @@ export function CloudGallery({
             </p>
           )}
           <SceneLayout
+            showReviewStatus={
+              staff || selected.owner_enrollment_id === data?.actorId
+            }
+            onOpenWork={(id) =>
+              setWork(selected.works.find((w) => w.id === id) ?? null)
+            }
             story={selected.document.metadata}
             author={selected.display_name}
             works={selected.works
@@ -1378,7 +1395,9 @@ export function CloudGallery({
                   }}
                 >
                   {
-                    <img
+                    <FramedImage
+                      placement={selected.document.imagePlacement.interior}
+                      color={selected.document.color}
                       className="cloud-room-background"
                       style={{
                         objectFit: selected.document.interiorView.fit,
@@ -2004,6 +2023,7 @@ export function CloudGallery({
               workId={work.id}
               staff={staff}
               withdrawn={work.withdrawn}
+              onSaved={() => refresh(selected?.id)}
               onPendingChange={setReviewPending}
             />
             <div className="row-buttons">

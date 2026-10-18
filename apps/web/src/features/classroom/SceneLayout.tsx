@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
+import { reviewStatus } from "@colorverse/contracts";
 
 type Story = {
   name: string;
@@ -12,6 +13,8 @@ export function SceneLayout({
   author,
   works,
   children,
+  showReviewStatus = false,
+  onOpenWork,
 }: {
   story: Story;
   author: string;
@@ -20,8 +23,12 @@ export function SceneLayout({
     title: string;
     createdAt?: string | null;
     exampleDate?: string;
+    score?: number | null;
+    comment?: string;
   }[];
   children: ReactNode;
+  showReviewStatus?: boolean;
+  onOpenWork?: (id: string) => void;
 }) {
   const scene = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -79,6 +86,10 @@ export function SceneLayout({
             <li key={w.id}>
               <button
                 onClick={() => {
+                  if (onOpenWork) {
+                    onOpenWork(w.id);
+                    return;
+                  }
                   const element = Array.from(
                     scene.current?.querySelectorAll<HTMLElement>(
                       "[data-work-id]",
@@ -95,6 +106,11 @@ export function SceneLayout({
                 <span>{String(i + 1).padStart(2, "0")}</span>
                 <div>
                   <strong>{w.title}</strong>
+                  {showReviewStatus && (
+                    <small className="work-review-status">
+                      {reviewStatus(w.score, w.comment)}
+                    </small>
+                  )}
                   <time dateTime={w.exampleDate ?? w.createdAt ?? undefined}>
                     {w.createdAt
                       ? new Date(w.exampleDate ?? w.createdAt).toLocaleString(

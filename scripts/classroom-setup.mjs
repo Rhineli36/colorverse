@@ -169,6 +169,36 @@ try {
     );
   }
   await client.query("COMMIT");
+  const precompetition = await readFile(
+    "apps/api/migrations/008-precompetition.sql",
+    "utf8",
+  );
+  const eighthHash = createHash("sha256").update(precompetition).digest("hex");
+  await client.query("BEGIN");
+  await client.query("SELECT pg_advisory_xact_lock(7301941)");
+  await client.query("SET LOCAL search_path=colorverse,pg_catalog");
+  const eighth = await client.query(
+    "SELECT sha256 FROM course_migrations WHERE version=8",
+  );
+  if (eighth.rows.length && eighth.rows[0].sha256 !== eighthHash)
+    throw Error("MIGRATION_HASH_MISMATCH");
+  if (!eighth.rows.length) {
+    await client.query(precompetition);
+    await client.query(
+      "INSERT INTO course_migrations(version,sha256) VALUES(8,$1)",
+      [eighthHash],
+    );
+  }
+  await client.query(
+    "REVOKE ALL ON colorverse.classroom_notice_reads FROM PUBLIC,anon,authenticated",
+  );
+  await client.query(
+    "GRANT SELECT,INSERT ON colorverse.classroom_notice_reads TO colorverse_classroom_writer",
+  );
+  await client.query(
+    "GRANT UPDATE(display_name,student_number,real_name) ON colorverse.users TO colorverse_classroom_writer",
+  );
+  await client.query("COMMIT");
   const studentCounts = await client.query(
     "SELECT count(*)::int AS students FROM colorverse.enrollments WHERE role='student' AND status='active'",
   );

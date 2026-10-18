@@ -1,3 +1,4 @@
+import { studentProfile } from "./student-profile";
 import {
   nextGrowthPlacement,
   growthElementColor,
@@ -165,6 +166,37 @@ export async function handleShowcaseCloud(
     await client.connect();
     await client.query("BEGIN");
     const actor = await classroomActor(client, identity, classId);
+    if (resource === "profile") {
+      const body =
+        request.method === "PUT"
+          ? JSON.parse(
+              new TextDecoder().decode(await readLimited(request, 4096)),
+            )
+          : undefined;
+      const value = await studentProfile(client, actor, request.method, body);
+      await client.query("COMMIT");
+      return Response.json(value);
+    }
+    if (resource === "notification-read") {
+      if (request.method !== "POST")
+        throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
+      const body = z
+        .object({ id: z.string().min(1).max(250) })
+        .parse(
+          JSON.parse(
+            new TextDecoder().decode(await readLimited(request, 4096)),
+          ),
+        );
+      const available = await classroomNotifications(client, actor, classId);
+      if (!available.notifications.some((n) => n.id === body.id))
+        throw new ClassroomFailure(404, "NOT_FOUND", "消息不存在或已不可查看");
+      await client.query(
+        "INSERT INTO colorverse.classroom_notice_reads(enrollment_id,notice_id) VALUES($1,$2) ON CONFLICT DO NOTHING",
+        [actor.id, body.id],
+      );
+      await client.query("COMMIT");
+      return Response.json({ saved: true });
+    }
     // Hiding a planet protects direct media/review/interaction URLs too, not
     // just its entry in the universe. The author can still maintain their work.
     if (actor.role === "student") {
@@ -519,8 +551,23 @@ export async function handleShowcaseCloud(
           actor.role === "teacher" || actor.role === "assistant",
         ],
       );
+      const reviews = await client.query(
+        `SELECT DISTINCT ON(r.work_id) r.work_id,r.score::float8 score,r.comment FROM colorverse.showcase_reviews r JOIN colorverse.showcase_works w ON w.id=r.work_id JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE e.class_id=$1 AND (p.owner_enrollment_id=$2 OR $3::boolean) ORDER BY r.work_id,r.revision DESC`,
+        [
+          classId,
+          actor.id,
+          ["teacher", "assistant"].includes(String(actor.role)),
+        ],
+      );
       await client.query("COMMIT");
       for (const p of rows.rows) {
+        for (const w of p.works) {
+          const r = reviews.rows.find((r) => r.work_id === w.id);
+          if (r) {
+            w.score = r.score;
+            w.comment = r.comment;
+          }
+        }
         for (const w of p.works)
           w.learning = visibleLearning(
             w.learning,
@@ -554,6 +601,7 @@ export async function handleShowcaseCloud(
           actor.id,
           JSON.stringify({
             ...starter,
+            createdAt: new Date().toISOString(),
             metadata: {
               ...starter.metadata,
               name: appearance.name,
@@ -739,6 +787,9 @@ export async function handleShowcaseCloud(
                 : {}),
               ...(input.saturation !== undefined
                 ? { saturation: input.saturation }
+                : {}),
+              ...(input.imagePlacement !== undefined
+                ? { imagePlacement: input.imagePlacement }
                 : {}),
               ...(input.learningIntent !== undefined
                 ? { learningIntent: input.learningIntent }

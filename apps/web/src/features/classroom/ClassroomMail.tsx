@@ -296,6 +296,10 @@ export function ClassroomInbox({
                 <div>
                   <strong>{n.title}</strong>
                   {n.content && <p>{n.content}</p>}
+                  {n.kind === "planet-created" && <p>前往星球 →</p>}
+                  {n.kind === "submission" && (
+                    <p>{n.pending ? "待评价" : "已评价"} · 查看作品 →</p>
+                  )}
                   <time>
                     {new Date(n.createdAt).toLocaleString("zh-CN", {
                       hour12: false,

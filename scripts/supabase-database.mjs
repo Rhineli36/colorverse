@@ -17,7 +17,12 @@ export async function readDatabaseConfig() {
   return config;
 }
 export async function connectDatabase(config, runtime) {
-  const host = config.SUPABASE_DB_HOST;
+  const host = process.env.COLORVERSE_DB_POOLER_HOST ?? config.SUPABASE_DB_HOST;
+  if (
+    process.env.COLORVERSE_DB_POOLER_HOST &&
+    !/^aws-[0-9]+-[a-z]+-[a-z]+-[0-9]+\.pooler\.supabase\.com$/.test(host)
+  )
+    throw Error("INVALID_POOLER_HOST");
   let stream;
   if (process.argv.includes("--proxy")) {
     stream = await new Promise((resolveSocket, reject) => {
@@ -65,7 +70,11 @@ export async function connectDatabase(config, runtime) {
     host,
     port: 5432,
     database: "postgres",
-    user: runtime?.CLOUD_DATABASE_USER ?? config.SUPABASE_DB_USER,
+    user:
+      (runtime?.CLOUD_DATABASE_USER ?? config.SUPABASE_DB_USER) +
+      (process.env.COLORVERSE_DB_POOLER_HOST
+        ? `.${config.SUPABASE_DB_HOST.split(".")[1]}`
+        : ""),
     password: runtime?.CLOUD_DATABASE_PASSWORD ?? config.SUPABASE_DB_PASSWORD,
     ssl: {
       rejectUnauthorized: true,

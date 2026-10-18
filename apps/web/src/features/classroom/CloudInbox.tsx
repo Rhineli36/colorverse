@@ -11,11 +11,13 @@ export function CloudInbox({
   disabled = false,
   onSubmit,
   onReaction,
+  onPendingCount,
 }: {
   session: CloudSession;
   disabled?: boolean;
   onSubmit: (classId: string, taskId: string) => void;
   onReaction: (classId: string, n: ClassroomNotification) => void;
+  onPendingCount?: (count: number) => void;
 }) {
   const [items, setItems] = useState<
       (ClassroomNotification & { classId: string })[]
@@ -47,8 +49,10 @@ export function CloudInbox({
       : "";
   useEffect(() => {
     let active = true;
+    let generation = 0;
     const refresh = () => {
       if (document.hidden) return;
+      const attempt = ++generation;
       setStatus("正在读取信息…");
       void Promise.all(
         signature
@@ -59,33 +63,48 @@ export function CloudInbox({
               `classes/${classId}/notifications`,
             );
             const value = await r.json();
-            return value.notifications.map((n: ClassroomNotification) => ({
-              ...n,
-              classId,
-            }));
+            return {
+              readIds: value.readIds ?? [],
+              items: value.notifications.map((n: ClassroomNotification) => ({
+                ...n,
+                classId,
+              })),
+            };
           }),
       )
         .then((v) => {
+          if (!active || attempt !== generation) return;
           if (active)
             setItems(
-              v.flat().sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+              v
+                .flatMap((r) => r.items)
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
             );
+          if (active) {
+            setRead(v.flatMap((r) => r.readIds));
+            onPendingCount?.(
+              v
+                .flatMap((r) => r.items)
+                .filter((n) => n.kind === "submission" && n.pending).length,
+            );
+          }
           if (active) setStatus("");
         })
         .catch(() => {
-          if (active) setStatus("信息暂时未能读取，请重新读取。");
+          if (active && attempt === generation)
+            setStatus("信息暂时未能读取，请重新读取。");
         });
     };
     refreshRef.current = refresh;
     setItems([]);
     refresh();
-    const timer = setInterval(refresh, 20000);
     window.addEventListener("focus", refresh);
+    window.addEventListener("classroom-data-changed", refresh);
     return () => {
       active = false;
       refreshRef.current = () => {};
-      clearInterval(timer);
       window.removeEventListener("focus", refresh);
+      window.removeEventListener("classroom-data-changed", refresh);
     };
   }, [signature, session.identity.id]);
   return (
@@ -99,6 +118,13 @@ export function CloudInbox({
         onRead={(id) => {
           const next = [...new Set([...read, id])].slice(-500);
           setRead(next);
+          const item = items.find((n) => n.id === id);
+          if (item)
+            void classroomRequest(`classes/${item.classId}/notification-read`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id }),
+            }).catch(() => setStatus("已读状态未能保存，请重试。"));
           try {
             localStorage.setItem(key, JSON.stringify(next));
           } catch {}

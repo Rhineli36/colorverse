@@ -16,6 +16,7 @@ import { SceneCanvas } from "../../app/SceneCanvas";
 import { classroomRequest } from "./cloud-request";
 import { presentationName } from "./presentation-name";
 import { distantPlanetField } from "./distant-planets";
+import { placedImageBlob } from "./FramedImage";
 
 export type ObservatoryPlanet = {
   id: string;
@@ -124,7 +125,13 @@ export function CloudObservatory({
   const projection = useMemo(() => {
     const sources = new Map<
       string,
-      { url: string; fallback: string; private: boolean }
+      {
+        url: string;
+        fallback: string;
+        private: boolean;
+        placement?: import("@colorverse/contracts").ImagePlacement;
+        color?: string;
+      }
     >();
     const documents = visible.map((p) => {
       const i = planets.findIndex((source) => source.id === p.id);
@@ -183,9 +190,13 @@ export function CloudObservatory({
           ? `${import.meta.env.BASE_URL}competition/${approved.image}`
           : undefined);
       const record = doc.assetRefs[0],
-        path = `cloud-orb:${p.id}:${p.document.media.exterior?.id ?? p.document.skin}:${retry}`;
+        path = `cloud-orb:${p.id}:${p.document.media.exterior?.id ?? p.document.skin}:${JSON.stringify(p.document.imagePlacement.exterior)}:${p.document.color}:${p.document.revision}:${retry}`;
       record.original.path = path;
       sources.set(path, {
+        placement: p.document.useDefaultExterior
+          ? undefined
+          : p.document.imagePlacement.exterior,
+        color: p.document.color,
         url:
           preview ??
           (p.document.media.exterior && !p.document.useDefaultExterior
@@ -246,7 +257,9 @@ export function CloudObservatory({
               const blob = await response.blob();
               const decoded = await createImageBitmap(blob);
               decoded.close();
-              return blob;
+              return source.placement
+                ? placedImageBlob(blob, source.placement, source.color!)
+                : blob;
             } catch {
               setImageErrors((n) => n + 1);
               try {

@@ -40,6 +40,18 @@ export async function handleRequest(
 ) {
   const url = new URL(request.url);
   if (!url.pathname.startsWith("/api/")) {
+    if (url.pathname === "/review") {
+      url.pathname = "/review/";
+      return Response.redirect(url.href, 308);
+    }
+    if (url.pathname === "/review/" || url.pathname === "/review/index.html") {
+      const assetUrl = new URL(url);
+      assetUrl.pathname = "/index.html";
+      const asset = await env.ASSETS.fetch(new Request(assetUrl, request));
+      const response = new Response(asset.body, asset);
+      response.headers.set("Cache-Control", "no-cache, must-revalidate");
+      return response;
+    }
     if (url.pathname === "/exhibition") {
       url.pathname = "/exhibition/";
       return Response.redirect(url.href, 308);
@@ -64,7 +76,7 @@ export async function handleRequest(
   if (url.pathname.startsWith("/api/supabase/"))
     return authProxy(request, env, transport);
   const showcase =
-    /^\/api\/v1\/cloud\/classes\/([^/]+)\/(notifications|learning-tasks|learning-tasks\/custom-[a-f0-9-]{36}\/image|guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior|position|visibility)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review|description)|interactions|interactions\/[a-f0-9-]+)$/.exec(
+    /^\/api\/v1\/cloud\/classes\/([^/]+)\/(profile|notifications|notification-read|learning-tasks|learning-tasks\/custom-[a-f0-9-]{36}\/image|guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior|position|visibility)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review|description)|interactions|interactions\/[a-f0-9-]+)$/.exec(
       url.pathname,
     );
   if (showcase) {

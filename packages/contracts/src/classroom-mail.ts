@@ -31,7 +31,14 @@ export type AssignmentPublication = {
 };
 export type ClassroomNotification = {
   id: string;
-  kind: "assignment" | "like" | "emoji" | "comment";
+  kind:
+    | "assignment"
+    | "like"
+    | "emoji"
+    | "comment"
+    | "planet-created"
+    | "submission";
+  pending?: boolean;
   title: string;
   createdAt: string;
   taskId?: string;

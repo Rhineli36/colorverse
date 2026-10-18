@@ -10,6 +10,8 @@ import { blankIntent } from "./LearningPanels";
 import { CloudAtmosphere } from "./CloudStudentGuide";
 import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
 import "./planet-design.css";
+import { FramedImage } from "./FramedImage";
+import { resetImagePlacement } from "@colorverse/contracts";
 export type DesignDocument = z.infer<typeof CloudPlanetDocumentSchema>;
 export type DesignElement = {
   id: string;
@@ -250,24 +252,6 @@ export function PlanetDesignEditor({
                   }
                 />
               </label>
-              <label>
-                显示方式
-                <select
-                  aria-label="背景显示方式"
-                  value={view.fit}
-                  onChange={(e) =>
-                    patch({
-                      interiorView: {
-                        ...view,
-                        fit: e.target.value as "contain" | "cover",
-                      },
-                    })
-                  }
-                >
-                  <option value="contain">完整显示</option>
-                  <option value="cover">铺满画面</option>
-                </select>
-              </label>
               <fieldset>
                 <legend>内部图层</legend>
                 {(
@@ -393,7 +377,14 @@ export function PlanetDesignEditor({
               <div
                 className={`design-orb motion-${d.motion.mode} halo-${d.halo}`}
               >
-                <img
+                <FramedImage
+                  round
+                  editing={!busy && !exterior.includes("/demo/")}
+                  color={d.color}
+                  placement={d.imagePlacement.exterior}
+                  onChange={(exterior) =>
+                    patch({ imagePlacement: { ...d.imagePlacement, exterior } })
+                  }
                   src={exterior}
                   alt="星球实时预览"
                   onError={() => setFailed(true)}
@@ -403,8 +394,16 @@ export function PlanetDesignEditor({
             ) : (
               <>
                 {view.backgroundVisible && (
-                  <img
-                    className="design-room-image"
+                  <FramedImage
+                    editing={!busy && !interior.includes("/demo/")}
+                    color={d.color}
+                    className="design-room-adjustment"
+                    placement={d.imagePlacement.interior}
+                    onChange={(interior) =>
+                      patch({
+                        imagePlacement: { ...d.imagePlacement, interior },
+                      })
+                    }
                     src={interior}
                     style={{
                       objectFit: view.fit,
@@ -446,6 +445,20 @@ export function PlanetDesignEditor({
               </p>
             )}
           </div>
+          <button
+            className="image-reset"
+            disabled={busy}
+            onClick={() =>
+              patch({
+                imagePlacement: {
+                  ...d.imagePlacement,
+                  [tab]: resetImagePlacement(),
+                },
+              })
+            }
+          >
+            复位
+          </button>
           <p className="design-preview-note">
             {tab === "exterior"
               ? "选择模板、色彩或细节，即时查看变化"

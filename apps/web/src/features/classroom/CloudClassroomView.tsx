@@ -11,6 +11,8 @@ import {
 import { Gallery, CloudGallery } from "./CloudGallery";
 import type { z } from "zod";
 import { TeacherDashboard } from "./TeacherDashboard";
+import { PendingSubmissions } from "./PendingSubmissions";
+import type { ClassroomNotification } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
 import { presentationName } from "./presentation-name";
 import "./classroom.css";
@@ -26,8 +28,9 @@ export function CloudClassroomView({
   onPendingChange?: (pending: boolean) => void;
   onPlanetAction?: (
     id: string,
-    action: "room" | "edit",
+    action: "room" | "edit" | "feedback",
     classId: string,
+    workId?: string,
   ) => void;
 }) {
   const memberships =
@@ -50,8 +53,13 @@ export function CloudClassroomView({
     [revision, setRevision] = useState(0);
   const [target, setTarget] = useState<{
     id: string;
-    action: "room" | "edit";
+    action: "room" | "edit" | "feedback";
+    workId?: string;
   }>();
+  const [inbox, setInbox] = useState<{
+    notifications: ClassroomNotification[];
+    readIds: string[];
+  }>({ notifications: [], readIds: [] });
   useEffect(() => {
     if (memberships.some((m) => m.classId === initialClassId))
       setClassId(initialClassId!);
@@ -76,11 +84,15 @@ export function CloudClassroomView({
       classroomRequest(`classes/${classId}/learning-tasks`).then((r) =>
         r.json(),
       ),
+      classroomRequest(`classes/${classId}/notifications`).then((r) =>
+        r.json(),
+      ),
     ])
-      .then(([overview, planets, tasks]) => {
+      .then(([overview, planets, tasks, notices]) => {
         if (active) {
           setData(overview);
           setGallery(planets);
+          setInbox(notices);
           setCatalog([
             ...AssignmentCatalog,
             ...tasks.tasks
@@ -113,7 +125,12 @@ export function CloudClassroomView({
         session={session}
         initialClassId={classId}
         initialPlanetId={target.id}
-        navigation={{ action: target.action, planetId: target.id, sequence: 1 }}
+        navigation={{
+          action: target.action,
+          planetId: target.id,
+          workId: target.workId,
+          sequence: 1,
+        }}
         experience
         onPendingChange={onPendingChange}
         onBack={() => {
@@ -131,6 +148,32 @@ export function CloudClassroomView({
             重新读取班级
           </button>
         </p>
+      )}
+      {!busy && !error && (
+        <PendingSubmissions
+          items={inbox.notifications}
+          readIds={inbox.readIds}
+          onOpen={(n) => {
+            if (!n.planetId || !n.workId) return;
+            void classroomRequest(`classes/${classId}/notification-read`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: n.id }),
+            })
+              .then(() =>
+                window.dispatchEvent(new Event("classroom-data-changed")),
+              )
+              .catch(() => {});
+            if (onPlanetAction)
+              onPlanetAction(n.planetId, "feedback", classId, n.workId);
+            else
+              setTarget({
+                id: n.planetId,
+                action: "feedback",
+                workId: n.workId,
+              });
+          }}
+        />
       )}
       <TeacherDashboard
         busy={busy}

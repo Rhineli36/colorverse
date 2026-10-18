@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BackgroundMusic } from "./BackgroundMusic";
 
 export type ExperienceDestination =
   "universe" | "room" | "edit" | "knowledge" | "teacher";
@@ -7,11 +8,13 @@ export function ExperienceHeader({
   onNavigate,
   account,
   disabled = false,
+  pendingCount = 0,
 }: {
   role: "guest" | "student" | "teacher";
   onNavigate: (destination: ExperienceDestination) => void;
   account: ReactNode;
   disabled?: boolean;
+  pendingCount?: number;
 }) {
   return (
     <header className="competition-header">
@@ -41,11 +44,15 @@ export function ExperienceHeader({
         </button>
         {role === "teacher" && (
           <button disabled={disabled} onClick={() => onNavigate("teacher")}>
-            教师管理
+            教师管理{" "}
+            {pendingCount > 0 && <b className="inbox-count">{pendingCount}</b>}
           </button>
         )}
       </nav>
-      <div className="offline-account-controls">{account}</div>
+      <div className="offline-account-controls">
+        <BackgroundMusic />
+        {account}
+      </div>
     </header>
   );
 }

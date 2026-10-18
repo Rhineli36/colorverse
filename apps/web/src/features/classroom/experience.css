@@ -33,6 +33,50 @@
   padding: 30px 5vw;
   color: #e3c9bb;
 }
+.student-identity {
+  max-width: 620px;
+  margin: 40px auto;
+  padding: 32px;
+  background: #102431;
+  border: 1px solid #9bb1b355;
+  border-radius: 18px;
+}
+.student-identity form,
+.student-identity label {
+  display: grid;
+  gap: 12px;
+}
+.student-identity form {
+  gap: 24px;
+}
+.student-identity input {
+  padding: 12px;
+  background: #091a26;
+  color: #e8eee5;
+  border: 1px solid #8da5b866;
+  border-radius: 8px;
+}
+.pending-submissions {
+  padding: 22px 0;
+}
+.pending-submissions > button {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+  gap: 20px;
+  padding: 14px;
+  margin: 8px 0;
+  background: #102632;
+  color: #e7ede5;
+  border: 1px solid #8ba8b133;
+  border-radius: 8px;
+}
+.pending-submissions small {
+  display: block;
+  color: #a9bec7;
+  margin-top: 6px;
+}
 .experience-auth-dialog {
   width: min(900px, 92vw);
   max-height: 90dvh;
@@ -150,4 +194,88 @@
   .experience-teacher .classroom-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+.work-review-status {
+  display: block;
+  color: #e3e7bb;
+  font-size: 12px;
+  margin: 5px 0;
+}
+.pending-submissions {
+  padding: 20px;
+  border: 1px solid #344855;
+  border-radius: 14px;
+  margin: 16px 0;
+  background: #10232d;
+}
+.pending-submissions ul {
+  list-style: none;
+  padding: 0;
+  max-height: 320px;
+  overflow: auto;
+}
+.pending-submissions li button {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  text-align: left;
+  margin: 6px 0;
+}
+.pending-submissions li strong {
+  flex: 1;
+  min-width: 240px;
+}
+.pending-submissions time {
+  font-size: 12px;
+  color: #b7c6ce;
+}
+.inbox-count {
+  background: #e5eab9;
+  color: #1b3540;
+  border-radius: 20px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+.experience-mode-label {
+  display: block;
+  text-align: center;
+  color: #a8bcc9;
+  font-size: 12px;
+  margin: 4px auto;
+  position: relative;
+  z-index: 3;
+}
+.background-music {
+  position: relative;
+}
+.music-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  width: 250px;
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid #6c8394;
+  border-radius: 14px;
+  background: #10232f;
+  box-shadow: 0 12px 36px #0008;
+  z-index: 1000;
+}
+.music-track {
+  display: grid;
+  text-align: left;
+  gap: 5px;
+}
+.music-track small {
+  color: #afc2cc;
+}
+.music-track[aria-pressed="true"] {
+  border-color: #dce6b4;
+}
+.music-panel p {
+  font-size: 13px;
+  margin: 0;
 }

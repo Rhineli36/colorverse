@@ -131,11 +131,23 @@ export function CloudPlanetCreator({
           return;
         }
         setFiles((v) => ({ ...v, [kind]: file }));
+        setDraft((d) => ({
+          ...d,
+          imagePlacement: {
+            ...d.imagePlacement,
+            [kind]: { x: 0, y: 0, scale: 1 },
+          },
+        }));
         if (kind === "exterior")
           setDraft((d) => ({ ...d, useDefaultExterior: false }));
       }}
       onTemplate={(skin) => {
-        setDraft(cloudPlanetFromPreset(skin));
+        setDraft((d) => ({
+          ...d,
+          ...cloudPlanetFromPreset(skin),
+          metadata: d.metadata,
+          imagePlacement: { ...d.imagePlacement, exterior: undefined },
+        }));
         setFiles((v) => {
           const next = { ...v };
           delete next.exterior;
