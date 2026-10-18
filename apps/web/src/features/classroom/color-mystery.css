@@ -560,7 +560,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(transparent, #06101edb 30%, #06101ef5);
+  background: linear-gradient(transparent, #06101e24 35%, #06101e80);
+  text-shadow: 0 1px 4px #000b;
   padding: 35px 16px 16px;
   display: flex;
   align-items: center;

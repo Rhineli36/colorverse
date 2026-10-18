@@ -145,11 +145,6 @@ export function ColorMystery({
               <h3>创作启发</h3>
               <p>{guidance?.prompt ?? card.tryPrompt}</p>
             </section>
-            <details>
-              <summary>继续了解</summary>
-              <p>{card.title}</p>
-              <p>{card.related}</p>
-            </details>
             {onBack && (
               <button className="study-apply" onClick={onBack}>
                 把发现带回星球 ↗
