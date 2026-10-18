@@ -546,6 +546,7 @@ export function CompetitionView({
     >
       {!hideHeader && (
         <ExperienceHeader
+          modeLabel="离线展示 · 演示内容"
           pendingCount={
             notifications.filter((n) => n.kind === "submission" && n.pending)
               .length
@@ -620,11 +621,6 @@ export function CompetitionView({
         </p>
       )}
       <main className="competition-main">
-        {!hideHeader && (
-          <small className="experience-mode-label">
-            离线展示体验 · 示例数据与点评仅用于演示
-          </small>
-        )}
         {role === "student" && !state.identity ? (
           <StudentIdentityForm
             offline

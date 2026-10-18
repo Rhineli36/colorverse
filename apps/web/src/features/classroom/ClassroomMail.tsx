@@ -237,8 +237,12 @@ export function ClassroomInbox({
 }) {
   const [open, setOpen] = useState(false),
     ref = useRef<HTMLDialogElement>(null);
+  const scrollPosition = useRef(0);
   useEffect(() => {
-    if (open) ref.current?.showModal();
+    if (open && ref.current) {
+      ref.current.showModal();
+      ref.current.scrollTop = scrollPosition.current;
+    }
   }, [open]);
   const unread = notifications.filter((n) => !readIds.includes(n.id)).length;
   return (
@@ -258,6 +262,9 @@ export function ClassroomInbox({
         <dialog
           ref={ref}
           className="classroom-inbox"
+          onScroll={(e) => {
+            scrollPosition.current = e.currentTarget.scrollTop;
+          }}
           aria-label="我的信息"
           onCancel={() => setOpen(false)}
         >

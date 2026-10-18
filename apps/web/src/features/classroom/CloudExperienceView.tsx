@@ -98,6 +98,12 @@ export function CloudExperienceView() {
       data-experience-mode="cloud"
     >
       <ExperienceHeader
+        modeLabel={
+          location.pathname.startsWith("/review") ||
+          membership?.title.includes("评审体验")
+            ? "评审体验 · 演示内容"
+            : undefined
+        }
         pendingCount={pendingCount}
         role={role}
         disabled={pending}
@@ -136,12 +142,6 @@ export function CloudExperienceView() {
       {notice && (
         <p role="status" className="offline-notice">
           {notice}
-        </p>
-      )}
-      {(location.pathname.startsWith("/review") ||
-        membership?.title.includes("评审体验")) && (
-        <p className="experience-mode-label">
-          评审体验 · 示例内容用于演示，与真实课堂分开保存
         </p>
       )}
       {active && membership ? (

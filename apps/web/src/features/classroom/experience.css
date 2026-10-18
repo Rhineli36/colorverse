@@ -238,15 +238,6 @@
   padding: 2px 6px;
   font-size: 12px;
 }
-.experience-mode-label {
-  display: block;
-  text-align: center;
-  color: #a8bcc9;
-  font-size: 12px;
-  margin: 4px auto;
-  position: relative;
-  z-index: 3;
-}
 .background-music {
   position: relative;
 }
@@ -278,4 +269,11 @@
 .music-panel p {
   font-size: 13px;
   margin: 0;
+}
+.experience-mode-badge {
+  max-width: 100px;
+  font-size: 11px;
+  color: #c4d1b0;
+  line-height: 1.6;
+  text-align: center;
 }

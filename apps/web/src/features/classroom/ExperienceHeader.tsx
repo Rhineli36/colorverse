@@ -9,12 +9,14 @@ export function ExperienceHeader({
   account,
   disabled = false,
   pendingCount = 0,
+  modeLabel,
 }: {
   role: "guest" | "student" | "teacher";
   onNavigate: (destination: ExperienceDestination) => void;
   account: ReactNode;
   disabled?: boolean;
   pendingCount?: number;
+  modeLabel?: string;
 }) {
   return (
     <header className="competition-header">
@@ -50,6 +52,9 @@ export function ExperienceHeader({
         )}
       </nav>
       <div className="offline-account-controls">
+        {modeLabel && (
+          <span className="experience-mode-badge">{modeLabel}</span>
+        )}
         <BackgroundMusic />
         {account}
       </div>
