@@ -547,7 +547,6 @@ export function CompetitionView({
     >
       {!hideHeader && (
         <ExperienceHeader
-          modeLabel="离线展示 · 演示内容"
           pendingCount={
             notifications.filter((n) => n.kind === "submission" && n.pending)
               .length
