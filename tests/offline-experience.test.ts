@@ -25,6 +25,26 @@ const planet = () => ({
   works: [],
 });
 describe("offline experience isolation and content", () => {
+  it("does not import pre-anonymization identities while leaving the old experience intact", async () => {
+    await deleteDB(OFFLINE_DB_NAME);
+    const legacy = await openDB("colorverse-judges-offline-v1", 1, {
+      upgrade(db) {
+        db.createObjectStore("state");
+        db.createObjectStore("media");
+      },
+    });
+    const saved = {
+      identity: { realName: "旧体验身份", studentNumber: "OLD-PRIVATE" },
+    };
+    await legacy.put("state", saved, "current");
+    const store = new OfflineExperienceStore();
+    expect((await store.load()).identity).toBeNull();
+    expect(await legacy.get("state", "current")).toEqual(saved);
+    await store.close();
+    legacy.close();
+    await deleteDB(OFFLINE_DB_NAME);
+    await deleteDB("colorverse-judges-offline-v1");
+  });
   it("keeps teacher and student likes separate when toggled and reopened", async () => {
     await deleteDB(OFFLINE_DB_NAME);
     let store = new OfflineExperienceStore();

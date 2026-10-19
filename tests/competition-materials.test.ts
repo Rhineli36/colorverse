@@ -43,6 +43,30 @@ describe("public competition material boundaries", () => {
         ),
       ).toBe(true);
     }
+    const authors = new Set(["默认风格"]);
+    for (const [index, student] of snapshot.students.entries()) {
+      expect(student.realName).toBe(
+        `虚拟学生 ${String(index + 1).padStart(2, "0")}`,
+      );
+      expect(student.studentNumber).toBe(
+        `DEMO${String(index + 1).padStart(4, "0")}`,
+      );
+      expect(student.display_name).toBe(
+        `${student.realName} · 学号 ${student.studentNumber}`,
+      );
+      authors.add(student.realName);
+      authors.add(student.display_name);
+    }
+    const inspectAuthors = (value: unknown) => {
+      if (!value || typeof value !== "object") return;
+      for (const [key, item] of Object.entries(value)) {
+        if (key === "author" && typeof item === "string")
+          expect(authors.has(item.replace(/（演示账号）/g, ""))).toBe(true);
+        inspectAuthors(item);
+      }
+    };
+    inspectAuthors(snapshot);
+    expect(text).not.toMatch(/\b\d{8,}\b/);
   });
   it("ships all 35 local optimized images without source metadata and within the exhibition budget", async () => {
     const data = JSON.parse(await readFile(root + "/manifest.json", "utf8"));

@@ -12,7 +12,8 @@ import {
   ExperiencePlanet,
   type ExperiencePlanetData,
 } from "./competition-model";
-export const OFFLINE_DB_NAME = "colorverse-judges-offline-v1";
+// A separate namespace prevents pre-anonymization overrides and uploaded identities resurfacing.
+export const OFFLINE_DB_NAME = "colorverse-judges-offline-anonymous-v1";
 export type ExperienceRole = "student" | "teacher" | "guest";
 const Interaction = z.object({
   id: z.string(),

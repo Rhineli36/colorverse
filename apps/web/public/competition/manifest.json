@@ -3,7 +3,7 @@
   "students": [
     {
       "id": "demo-1",
-      "display_name": "马彦文 · 学号 12250601",
+      "display_name": "虚拟学生 01 · 学号 DEMO0001",
       "document": {
         "metadata": {
           "name": "焰色失重",
@@ -50,29 +50,29 @@
             {
               "kind": "like",
               "content": "",
-              "author": "顾静怡（演示账号）"
+              "author": "虚拟学生 05（演示账号）"
             },
             {
               "kind": "like",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "谢谢建议！我会再看看「蓝红人物配色」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -98,25 +98,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "谢谢建议！我会再看看「暖金纹样」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -142,25 +142,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "谢谢建议！我会再看看「服饰配色研究」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -186,25 +186,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "谢谢建议！我会再看看「同色系彩妆海报」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -231,34 +231,34 @@
             {
               "kind": "emoji",
               "content": "🌈",
-              "author": "顾静怡（演示账号）"
+              "author": "虚拟学生 05（演示账号）"
             },
             {
               "kind": "like",
               "content": "",
-              "author": "顾静怡（演示账号）"
+              "author": "虚拟学生 05（演示账号）"
             },
             {
               "kind": "like",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "谢谢建议！我会再看看「角色插画」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -270,34 +270,34 @@
       "exterior": "case-1-exterior.webp",
       "interior": "case-1-interior.webp",
       "style": "红蓝图形·波普",
-      "realName": "马彦文",
-      "studentNumber": "12250601",
+      "realName": "虚拟学生 01",
+      "studentNumber": "DEMO0001",
       "planetInteractions": [
         {
           "kind": "emoji",
           "content": "🌈",
-          "author": "顾静怡（演示账号）"
+          "author": "虚拟学生 05（演示账号）"
         },
         {
           "kind": "like",
           "content": "",
-          "author": "顾静怡（演示账号）"
+          "author": "虚拟学生 05（演示账号）"
         },
         {
           "kind": "comment",
-          "author": "孙瑞迎 · 学号 12250603",
+          "author": "虚拟学生 02 · 学号 DEMO0002",
           "content": "这片红蓝很酷，来踩踩！下次带新作品来串门。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "张陈曦 · 学号 12250606",
+          "author": "虚拟学生 03 · 学号 DEMO0003",
           "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "马彦文 · 学号 12250601",
+          "author": "虚拟学生 01 · 学号 DEMO0001",
           "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
           "source": "prepared"
         }
@@ -305,7 +305,7 @@
     },
     {
       "id": "demo-2",
-      "display_name": "孙瑞迎 · 学号 12250603",
+      "display_name": "虚拟学生 02 · 学号 DEMO0002",
       "document": {
         "metadata": {
           "name": "落日来信",
@@ -352,34 +352,34 @@
             {
               "kind": "emoji",
               "content": "✨",
-              "author": "马彦文（演示账号）"
+              "author": "虚拟学生 01（演示账号）"
             },
             {
               "kind": "like",
               "content": "",
-              "author": "马彦文（演示账号）"
+              "author": "虚拟学生 01（演示账号）"
             },
             {
               "kind": "like",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "谢谢建议！我会再看看「敦煌风纹样」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -405,25 +405,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "谢谢建议！我会再看看「复古服饰配色」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -449,25 +449,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "谢谢建议！我会再看看「星光与狐狸」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -493,25 +493,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "谢谢建议！我会再看看「彩妆广告海报」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -537,25 +537,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "谢谢建议！我会再看看「互补色运动饮料」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -567,34 +567,34 @@
       "exterior": "case-2-exterior.webp",
       "interior": "case-2-interior.webp",
       "style": "暖橙粉紫·水彩童话",
-      "realName": "孙瑞迎",
-      "studentNumber": "12250603",
+      "realName": "虚拟学生 02",
+      "studentNumber": "DEMO0002",
       "planetInteractions": [
         {
           "kind": "emoji",
           "content": "✨",
-          "author": "马彦文（演示账号）"
+          "author": "虚拟学生 01（演示账号）"
         },
         {
           "kind": "like",
           "content": "",
-          "author": "马彦文（演示账号）"
+          "author": "虚拟学生 01（演示账号）"
         },
         {
           "kind": "comment",
-          "author": "张陈曦 · 学号 12250606",
+          "author": "虚拟学生 03 · 学号 DEMO0003",
           "content": "被这片落日色留住了，想在这里多待一会儿。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "李欣怡 · 学号 12250608",
+          "author": "虚拟学生 04 · 学号 DEMO0004",
           "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "孙瑞迎 · 学号 12250603",
+          "author": "虚拟学生 02 · 学号 DEMO0002",
           "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
           "source": "prepared"
         }
@@ -602,7 +602,7 @@
     },
     {
       "id": "demo-3",
-      "display_name": "张陈曦 · 学号 12250606",
+      "display_name": "虚拟学生 03 · 学号 DEMO0003",
       "document": {
         "metadata": {
           "name": "森野绮梦",
@@ -649,29 +649,29 @@
             {
               "kind": "like",
               "content": "",
-              "author": "孙瑞迎（演示账号）"
+              "author": "虚拟学生 02（演示账号）"
             },
             {
               "kind": "like",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "谢谢建议！我会再看看「冷色纹样」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -698,34 +698,34 @@
             {
               "kind": "emoji",
               "content": "💙",
-              "author": "孙瑞迎（演示账号）"
+              "author": "虚拟学生 02（演示账号）"
             },
             {
               "kind": "like",
               "content": "",
-              "author": "孙瑞迎（演示账号）"
+              "author": "虚拟学生 02（演示账号）"
             },
             {
               "kind": "like",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "谢谢建议！我会再看看「薄荷绿服饰」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -751,25 +751,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "谢谢建议！我会再看看「花园插画」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -795,25 +795,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "谢谢建议！我会再看看「角色色彩练习」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -839,25 +839,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "张陈曦 · 学号 12250606",
+              "author": "虚拟学生 03 · 学号 DEMO0003",
               "content": "谢谢建议！我会再看看「清明节气海报」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -869,34 +869,34 @@
       "exterior": "case-3-exterior.webp",
       "interior": "case-3-interior.webp",
       "style": "粉紫橄榄绿·手绘花园",
-      "realName": "张陈曦",
-      "studentNumber": "12250606",
+      "realName": "虚拟学生 03",
+      "studentNumber": "DEMO0003",
       "planetInteractions": [
         {
           "kind": "emoji",
           "content": "💙",
-          "author": "孙瑞迎（演示账号）"
+          "author": "虚拟学生 02（演示账号）"
         },
         {
           "kind": "like",
           "content": "",
-          "author": "孙瑞迎（演示账号）"
+          "author": "虚拟学生 02（演示账号）"
         },
         {
           "kind": "comment",
-          "author": "李欣怡 · 学号 12250608",
+          "author": "虚拟学生 04 · 学号 DEMO0004",
           "content": "这座小花园好治愈，路过也能收获一点好心情。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "顾静怡 · 学号 12250620",
+          "author": "虚拟学生 05 · 学号 DEMO0005",
           "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "张陈曦 · 学号 12250606",
+          "author": "虚拟学生 03 · 学号 DEMO0003",
           "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
           "source": "prepared"
         }
@@ -904,7 +904,7 @@
     },
     {
       "id": "demo-4",
-      "display_name": "李欣怡 · 学号 12250608",
+      "display_name": "虚拟学生 04 · 学号 DEMO0004",
       "document": {
         "metadata": {
           "name": "云隙漫游",
@@ -951,29 +951,29 @@
             {
               "kind": "like",
               "content": "",
-              "author": "张陈曦（演示账号）"
+              "author": "虚拟学生 03（演示账号）"
             },
             {
               "kind": "like",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "谢谢建议！我会再看看「柔彩纹样」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -999,25 +999,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "谢谢建议！我会再看看「撞色服饰」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1044,34 +1044,34 @@
             {
               "kind": "emoji",
               "content": "👏",
-              "author": "张陈曦（演示账号）"
+              "author": "虚拟学生 03（演示账号）"
             },
             {
               "kind": "like",
               "content": "",
-              "author": "张陈曦（演示账号）"
+              "author": "虚拟学生 03（演示账号）"
             },
             {
               "kind": "like",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "谢谢建议！我会再看看「云端梦境」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1097,25 +1097,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "谢谢建议！我会再看看「香水海报」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1142,29 +1142,29 @@
             {
               "kind": "emoji",
               "content": "🌈",
-              "author": "顾静怡（演示账号）"
+              "author": "虚拟学生 05（演示账号）"
             },
             {
               "kind": "like",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "李欣怡 · 学号 12250608",
+              "author": "虚拟学生 04 · 学号 DEMO0004",
               "content": "谢谢建议！我会再看看「天空与气球」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1176,44 +1176,44 @@
       "exterior": "case-4-exterior.webp",
       "interior": "case-4-interior.webp",
       "style": "粉蓝淡紫·云端梦境",
-      "realName": "李欣怡",
-      "studentNumber": "12250608",
+      "realName": "虚拟学生 04",
+      "studentNumber": "DEMO0004",
       "planetInteractions": [
         {
           "kind": "emoji",
           "content": "🌈",
-          "author": "孙瑞迎（演示账号）"
+          "author": "虚拟学生 02（演示账号）"
         },
         {
           "kind": "like",
           "content": "",
-          "author": "马彦文（演示账号）"
+          "author": "虚拟学生 01（演示账号）"
         },
         {
           "kind": "emoji",
           "content": "👏",
-          "author": "张陈曦（演示账号）"
+          "author": "虚拟学生 03（演示账号）"
         },
         {
           "kind": "like",
           "content": "",
-          "author": "张陈曦（演示账号）"
+          "author": "虚拟学生 03（演示账号）"
         },
         {
           "kind": "comment",
-          "author": "顾静怡 · 学号 12250620",
+          "author": "虚拟学生 05 · 学号 DEMO0005",
           "content": "粉紫色像软软的云，宇宙散步打卡成功。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "马彦文 · 学号 12250601",
+          "author": "虚拟学生 01 · 学号 DEMO0001",
           "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "李欣怡 · 学号 12250608",
+          "author": "虚拟学生 04 · 学号 DEMO0004",
           "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
           "source": "prepared"
         }
@@ -1221,7 +1221,7 @@
     },
     {
       "id": "demo-5",
-      "display_name": "顾静怡 · 学号 12250620",
+      "display_name": "虚拟学生 05 · 学号 DEMO0005",
       "document": {
         "metadata": {
           "name": "月白棱镜",
@@ -1268,29 +1268,29 @@
             {
               "kind": "like",
               "content": "",
-              "author": "李欣怡（演示账号）"
+              "author": "虚拟学生 04（演示账号）"
             },
             {
               "kind": "like",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "谢谢建议！我会再看看「青苹果图案」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1316,25 +1316,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "谢谢建议！我会再看看「紫绿纹样」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1360,25 +1360,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "谢谢建议！我会再看看「角色插画配色」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1405,34 +1405,34 @@
             {
               "kind": "emoji",
               "content": "🔥",
-              "author": "李欣怡（演示账号）"
+              "author": "虚拟学生 04（演示账号）"
             },
             {
               "kind": "like",
               "content": "",
-              "author": "李欣怡（演示账号）"
+              "author": "虚拟学生 04（演示账号）"
             },
             {
               "kind": "like",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "谢谢建议！我会再看看「无色设计海报」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1458,25 +1458,25 @@
           "interactions": [
             {
               "kind": "like",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "马彦文 · 学号 12250601",
+              "author": "虚拟学生 01 · 学号 DEMO0001",
               "content": "第一眼就被画面的色彩抓住了，主体和背景的关系很有意思。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "孙瑞迎 · 学号 12250603",
+              "author": "虚拟学生 02 · 学号 DEMO0002",
               "content": "喜欢这件作品的氛围！想看看减少一点点亮色后，视觉焦点会不会更集中。",
               "source": "prepared"
             },
             {
               "kind": "comment",
-              "author": "顾静怡 · 学号 12250620",
+              "author": "虚拟学生 05 · 学号 DEMO0005",
               "content": "谢谢建议！我会再看看「同色系果汁包装」的颜色面积和明暗关系，之后带着新想法回来。",
               "source": "prepared"
             }
@@ -1488,34 +1488,34 @@
       "exterior": "case-5-exterior.webp",
       "interior": "case-5-interior.webp",
       "style": "紫绿白·几何纹样",
-      "realName": "顾静怡",
-      "studentNumber": "12250620",
+      "realName": "虚拟学生 05",
+      "studentNumber": "DEMO0005",
       "planetInteractions": [
         {
           "kind": "emoji",
           "content": "🔥",
-          "author": "李欣怡（演示账号）"
+          "author": "虚拟学生 04（演示账号）"
         },
         {
           "kind": "like",
           "content": "",
-          "author": "李欣怡（演示账号）"
+          "author": "虚拟学生 04（演示账号）"
         },
         {
           "kind": "comment",
-          "author": "马彦文 · 学号 12250601",
+          "author": "虚拟学生 01 · 学号 DEMO0001",
           "content": "月白和浅紫好干净，找到了一座安静的小展馆。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "孙瑞迎 · 学号 12250603",
+          "author": "虚拟学生 02 · 学号 DEMO0002",
           "content": "来拜访一下大神的星球～这里的配色很有自己的性格。",
           "source": "prepared"
         },
         {
           "kind": "comment",
-          "author": "顾静怡 · 学号 12250620",
+          "author": "虚拟学生 05 · 学号 DEMO0005",
           "content": "欢迎串门！谢谢喜欢，有新作品的时候记得再来坐坐。",
           "source": "prepared"
         }

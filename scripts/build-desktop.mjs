@@ -100,7 +100,16 @@ await writeFile(resolve(resources, "icon.ico"), Buffer.concat([ico, png]));
 await writeFile(
   resolve(project, "desktop-release.json"),
   JSON.stringify(
-    { version: desktopPackage.version, electron: "44.9.0", frontend: release },
+    {
+      version: desktopPackage.version,
+      electron: "44.9.0",
+      frontend: release,
+      privacy: {
+        policy: "anonymous-exhibition-v1",
+        profileDirectory: "ColorverseOfflineAnonymous",
+        legacyProfileImported: false,
+      },
+    },
     null,
     2,
   ),

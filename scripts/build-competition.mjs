@@ -2,12 +2,21 @@ import { spawn } from "node:child_process";
 import { cp, rm, mkdir, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, relative } from "node:path";
+import { assertAnonymousCompetition } from "./competition-privacy.mjs";
 const root = fileURLToPath(new URL("../", import.meta.url)),
   destination = resolve(root, "work/competition-site");
 if (
   relative(root, destination).replaceAll("\\", "/") !== "work/competition-site"
 )
   throw Error("INVALID_STATIC_DESTINATION");
+assertAnonymousCompetition(
+  JSON.parse(
+    await readFile(
+      resolve(root, "apps/web/public/competition/manifest.json"),
+      "utf8",
+    ),
+  ),
+);
 await new Promise((ok, bad) => {
   const child = spawn(process.execPath, [process.env.npm_execpath, "build"], {
     cwd: root,
@@ -30,7 +39,7 @@ await new Promise((ok, bad) => {
 await rm(destination, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
 await cp(resolve(root, "apps/web/dist"), destination, { recursive: true });
-// Keep the five case authors credited as requested; live classroom IDs and credentials remain excluded.
+// The public fixture uses virtual identities; live classroom identities stay on the server.
 const manifestPath = resolve(destination, "competition/manifest.json");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const sanitize = (text) => {
@@ -59,6 +68,7 @@ for (const student of manifest.students) {
   }));
 }
 await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+assertAnonymousCompetition(manifest);
 await writeFile(
   resolve(destination, "competition/cloud-exterior-previews.json"),
   "[]\n",

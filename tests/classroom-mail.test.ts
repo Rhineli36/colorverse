@@ -67,7 +67,7 @@ describe("published assignment mail and incoming feedback", () => {
     }
   }, 15000);
   it("keeps offline publication and per-role read markers after reopen and prevents student publication", async () => {
-    await deleteDB("colorverse-judges-offline-v1");
+    await deleteDB("colorverse-judges-offline-anonymous-v1");
     let store = new OfflineExperienceStore();
     await expect(store.publishAssignment(0, "student", "T01")).rejects.toThrow(
       "教师",
@@ -82,10 +82,10 @@ describe("published assignment mail and incoming feedback", () => {
     expect(s.readNotifications).toContain("teacher:" + id);
     expect(s.readNotifications).not.toContain("student:" + id);
     await store.close();
-    await deleteDB("colorverse-judges-offline-v1");
+    await deleteDB("colorverse-judges-offline-anonymous-v1");
   });
   it("retains teacher-authored offline assignments after reopen and rejects student creation", async () => {
-    await deleteDB("colorverse-judges-offline-v1");
+    await deleteDB("colorverse-judges-offline-anonymous-v1");
     let store = new OfflineExperienceStore();
     const draft = {
         title: "颜色日记",
@@ -105,6 +105,6 @@ describe("published assignment mail and incoming feedback", () => {
     store = new OfflineExperienceStore();
     expect((await store.load()).customTasks[0].title).toBe(draft.title);
     await store.close();
-    await deleteDB("colorverse-judges-offline-v1");
+    await deleteDB("colorverse-judges-offline-anonymous-v1");
   });
 });

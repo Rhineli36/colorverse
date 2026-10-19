@@ -44,7 +44,7 @@ for name in ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_prox
 os.environ['NO_PROXY'] = 'localhost,127.0.0.1,::1'
 environment['NO_PROXY'] = os.environ['NO_PROXY']
 assert shutil.which('node', path=environment['PATH']) is None
-GET = """async()=>{const db=await new Promise((ok,bad)=>{const r=indexedDB.open('colorverse-judges-offline-v1');r.onsuccess=()=>ok(r.result);r.onerror=()=>bad(r.error)});return await new Promise(ok=>{const r=db.transaction('state').objectStore('state').get('current');r.onsuccess=()=>{ok(r.result);db.close()}})}"""
+GET = """async()=>{const db=await new Promise((ok,bad)=>{const r=indexedDB.open('colorverse-judges-offline-anonymous-v1');r.onsuccess=()=>ok(r.result);r.onerror=()=>bad(r.error)});return await new Promise(ok=>{const r=db.transaction('state').objectStore('state').get('current');r.onsuccess=()=>{ok(r.result);db.close()}})}"""
 class Progress(list):
     def append(self, message):
         super().append(message)
@@ -101,8 +101,12 @@ try:
         launch()
         b, page = attach(p)
         page.wait_for_selector('canvas[data-scene-ready="true"]')
+        sample = page.evaluate('async()=>await (await fetch("competition/manifest.json")).json()')
+        assert all(s['realName'] == f'虚拟学生 {i:02}' and s['studentNumber'] == f'DEMO{i:04}' for i,s in enumerate(sample['students'],1))
         page.screenshot(path=str(out / 'exe-startup.png'))
         checks.append('Portable EXE starts with no Node on PATH and renderer offline')
+        checks.append('All five bundled identities are virtual and start without a prefilled user identity')
+        assert page.evaluate(GET)['identity'] is None
         second = subprocess.Popen(launch_args, env=environment, cwd=exe.parent,
                                   creationflags=subprocess.CREATE_NO_WINDOW,
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

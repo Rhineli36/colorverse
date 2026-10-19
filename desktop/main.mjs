@@ -18,7 +18,7 @@ app.setPath(
   "userData",
   testing && process.env.COLORVERSE_TEST_USER_DATA
     ? resolve(process.env.COLORVERSE_TEST_USER_DATA)
-    : join(app.getPath("appData"), "ColorverseOffline"),
+    : join(app.getPath("appData"), "ColorverseOfflineAnonymous"),
 );
 if (testing) {
   app.commandLine.appendSwitch("remote-debugging-address", "127.0.0.1");
@@ -188,7 +188,7 @@ if (!app.requestSingleInstanceLock()) {
       await log(String(error));
       dialog.showErrorBox(
         "色彩星球启动失败",
-        "请重新打开程序。如仍无法启动，请联系项目负责人，并提供本机 ColorverseOffline 目录中的 desktop.log。",
+        "请重新打开程序。如仍无法启动，请联系项目负责人，并提供本机 ColorverseOfflineAnonymous 目录中的 desktop.log。",
       );
       app.quit();
     });
