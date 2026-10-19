@@ -93,6 +93,7 @@ export function AssignmentPublisher({
   return (
     <>
       <button
+        className="teacher-primary-action teacher-publish-action"
         disabled={disabled}
         onClick={() => {
           setStatus("");

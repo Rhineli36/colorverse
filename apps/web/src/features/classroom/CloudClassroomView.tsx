@@ -197,13 +197,6 @@ export function CloudClassroomView({
         })}
         tools={
           <>
-            <StudentImporter
-              classes={memberships}
-              initialClassId={classId}
-              actorId={session?.identity.id}
-              disabled={busy}
-              onChanged={() => setRevision((n) => n + 1)}
-            />
             {memberships.length > 1 && (
               <select
                 aria-label="管理班级"
@@ -220,6 +213,13 @@ export function CloudClassroomView({
             <button disabled={busy} onClick={() => setRevision((n) => n + 1)}>
               刷新统计
             </button>
+            <StudentImporter
+              classes={memberships}
+              initialClassId={classId}
+              actorId={session?.identity.id}
+              disabled={busy}
+              onChanged={() => setRevision((n) => n + 1)}
+            />
           </>
         }
         onEnter={(id) => open(id, "room")}

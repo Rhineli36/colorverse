@@ -147,6 +147,49 @@
   font-weight: 400;
   margin: 0;
 }
+.experience-teacher > header .teacher-toolbar {
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+}
+.experience-teacher > header .teacher-primary-action {
+  flex: none;
+  min-width: 144px;
+  min-height: 52px;
+  padding: 14px 24px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #17343d;
+  box-shadow: 0 4px 14px #0002;
+}
+.experience-teacher > header .teacher-import-action {
+  background: #c4dfe3;
+  border-color: #c4dfe3;
+}
+.experience-teacher > header .teacher-publish-action {
+  background: #e0e6b8;
+  border-color: #e0e6b8;
+}
+.experience-teacher > header .teacher-primary-action:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+.experience-teacher > header .teacher-primary-action:focus-visible {
+  outline: 2px solid #eef5e0;
+  outline-offset: 4px;
+}
+@media (max-width: 760px) {
+  .experience-teacher > header .teacher-toolbar {
+    width: 100%;
+  }
+  .experience-teacher > header .teacher-primary-action {
+    flex: 1 1 140px;
+  }
+}
 .experience-teacher .teacher-name {
   display: block;
   color: #9ab7c2;

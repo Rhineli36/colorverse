@@ -50,7 +50,7 @@ export function TeacherDashboard({
     <section className="experience-teacher" aria-label="教师管理">
       <header>
         <h1>班级的色彩轨迹</h1>
-        <div className="row-buttons">
+        <div className="row-buttons teacher-toolbar">
           {tools}
           {publisher}
         </div>

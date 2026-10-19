@@ -81,6 +81,7 @@ export function StudentImporter({
   return (
     <>
       <button
+        className="teacher-primary-action teacher-import-action"
         disabled={disabled}
         onClick={() => {
           setOpen(true);
