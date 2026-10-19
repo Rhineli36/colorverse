@@ -1,0 +1,201 @@
+/* Shared by classroom and exhibition; keep the brand independent of account state. */
+.interface-icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  vertical-align: middle;
+}
+.competition-app .competition-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  justify-content: flex-start;
+  gap: 18px clamp(20px, 2.4vw, 46px);
+  padding: 14px 3vw;
+  background: #07121ef5;
+  backdrop-filter: blur(16px);
+}
+.competition-app .competition-header nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.competition-app .competition-header nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 16px !important;
+  padding: 11px 18px !important;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  background: transparent;
+  color: #b8c5cd;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.competition-app .competition-header nav button[aria-current="page"] {
+  background: #dcebc112;
+  color: #e1eaca;
+  border-color: #dcebc10c;
+}
+.competition-app .competition-header nav button[aria-current="page"]::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dcebc1;
+  flex: none;
+}
+.competition-app .competition-header nav button:hover:not(:disabled) {
+  background: #dcebc10b;
+  color: #eef3e8;
+}
+.competition-app .competition-header .offline-account-controls {
+  margin-left: auto;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.competition-app .competition-header .offline-account-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1.4;
+  min-height: 44px;
+  font-size: 16px !important;
+}
+.competition-app .competition-header .background-music > button,
+.competition-app .competition-header .inbox-entry {
+  background: transparent;
+  border-color: transparent;
+  padding: 10px 8px !important;
+  color: #c2cdd2;
+  border-radius: 22px;
+}
+.competition-app .competition-header .background-music > button {
+  width: 112px;
+}
+.competition-app .competition-header .inbox-entry {
+  white-space: nowrap;
+}
+.competition-app .competition-header .inbox-entry b {
+  padding: 2px 6px;
+  border-radius: 12px;
+  background: #e5eab9;
+  color: #1b3540;
+  font-size: 12px;
+}
+.competition-app .competition-header .experience-login,
+.competition-app .competition-header .cloud-login-entry,
+.competition-app .competition-header .identity-menu > button {
+  background: transparent;
+  border: 1px solid #a8b89065;
+  border-radius: 28px;
+  padding: 10px 18px !important;
+  color: #e1e9d5;
+}
+.competition-app .competition-header .identity-menu > button {
+  border-color: #889eac44;
+  min-width: 112px;
+}
+.competition-app
+  .competition-header
+  .identity-menu
+  > button
+  .interface-icon:last-child {
+  width: 16px;
+  height: 16px;
+}
+.competition-app .competition-header button:focus-visible {
+  outline: 2px solid #dcebc1;
+  outline-offset: 3px;
+}
+.disclosure-menu {
+  position: relative;
+  flex: none;
+}
+.disclosure-panel {
+  position: fixed;
+  z-index: 100;
+  width: 200px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #7d929d70;
+  border-radius: 12px;
+  background: #10212e;
+  box-shadow: 0 12px 32px #0008;
+}
+.competition-app .disclosure-panel button {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px !important;
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #e3ecec;
+  font-size: 16px !important;
+  text-align: left;
+  justify-content: flex-start;
+}
+.competition-app .disclosure-panel button:hover:not(:disabled) {
+  background: #dcebc114;
+}
+.competition-app .competition-header .disclosure-panel button,
+.competition-app
+  .experience-teacher
+  .teacher-row-actions
+  .disclosure-panel
+  button {
+  border: 0;
+  justify-content: flex-start;
+  padding: 10px 14px !important;
+}
+.competition-app .competition-header .music-panel {
+  position: fixed;
+  right: auto;
+  box-sizing: border-box;
+  width: 280px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+@media (max-width: 1250px) {
+  .competition-app .competition-header nav {
+    order: 3;
+    width: 100%;
+  }
+  .competition-app .competition-header {
+    gap: 12px 24px;
+  }
+}
+@media (max-width: 600px) {
+  .competition-app .competition-header {
+    padding: 12px 18px;
+  }
+  .competition-app .competition-header nav {
+    gap: 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .competition-app .competition-header nav button {
+    flex: none;
+    padding: 10px 14px !important;
+  }
+  .competition-app .competition-header .offline-account-controls {
+    gap: 6px;
+    flex: 1 0 100%;
+    justify-content: flex-end;
+  }
+  .competition-app .competition-header .offline-account-controls button {
+    padding: 10px !important;
+  }
+}

@@ -1,0 +1,392 @@
+.competition-app .experience-teacher {
+  padding: 22px 0 40px;
+  font-size: 16px;
+}
+.experience-teacher .teacher-heading {
+  min-width: 0;
+}
+.experience-teacher .teacher-eyebrow {
+  margin: 0 0 10px;
+  color: #c3bddc;
+  font-size: 13px;
+  letter-spacing: 0.25em;
+}
+.competition-app .experience-teacher h1 {
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.35;
+  font-weight: 500;
+}
+.experience-teacher .teacher-description {
+  font-size: 16px;
+  color: #b7c7d0;
+  margin: 10px 0 0;
+}
+.competition-app .experience-teacher > header {
+  margin-bottom: 24px;
+  align-items: flex-end;
+}
+.competition-app .experience-teacher > header .teacher-import-action {
+  background: transparent;
+  color: #dbe5e9;
+  border-color: #9aaebb80;
+  box-shadow: none;
+}
+.competition-app .experience-teacher > header .teacher-publish-action {
+  background: #e3e9bd;
+  border-color: #e3e9bd;
+  box-shadow: none;
+}
+.experience-teacher .teacher-toolbar > button:not(.teacher-primary-action),
+.experience-teacher .teacher-toolbar select {
+  font: inherit;
+  border: 1px solid #8aa1b14d;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-height: 44px;
+  background: #10212e;
+  color: #dbe7e8;
+}
+.competition-app .experience-teacher .pending-submissions {
+  margin: 0 0 16px;
+  padding: 14px 20px;
+  background: #bdcbe70a;
+  border: 1px solid #839fb23d;
+  border-radius: 12px;
+}
+.experience-teacher .pending-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  box-sizing: border-box;
+}
+.experience-teacher .pending-empty > .interface-icon {
+  width: 22px;
+  height: 22px;
+  background: #e3e9bd;
+  color: #172b33;
+  border-radius: 50%;
+  padding: 3px;
+}
+.experience-teacher .pending-empty p {
+  margin: 0;
+  font-size: 14px;
+  color: #d6e0e7;
+}
+.experience-teacher .pending-empty p span {
+  color: #b4c2ce;
+}
+.experience-teacher .pending-total {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.experience-teacher .pending-submissions b {
+  font-size: 14px;
+  font-weight: 600;
+  color: #172b33;
+  background: #e3e9bd;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.experience-teacher .pending-active summary {
+  cursor: pointer;
+  font-size: 16px;
+  padding: 3px 0;
+}
+.experience-teacher .pending-active summary b {
+  margin-left: 8px;
+}
+.experience-teacher .pending-active summary > span {
+  margin-left: 16px;
+  font-size: 14px;
+  color: #b8cbd3;
+}
+.experience-teacher .pending-active li button {
+  padding: 12px;
+  border: 1px solid #6d8e9c33;
+  background: #0c1e2b;
+}
+.experience-teacher .pending-active time {
+  font-size: 13px;
+}
+.competition-app .experience-teacher .classroom-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 20px;
+  padding: 16px 8px;
+  border: 1px solid #839fb23d;
+  border-radius: 14px;
+  background: #b5c5db09;
+}
+.competition-app .experience-teacher .classroom-metrics article {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  overflow: visible;
+}
+.competition-app .experience-teacher .classroom-metrics article + article {
+  border-left: 1px solid #839fb23d;
+}
+.competition-app .experience-teacher .classroom-metrics article:after {
+  content: none;
+}
+.competition-app .experience-teacher .classroom-metrics .interface-icon {
+  width: 32px;
+  height: 32px;
+  color: #bcb6d4;
+}
+.competition-app .experience-teacher .classroom-metrics span {
+  font-size: 14px;
+  color: #bac9d3;
+}
+.competition-app .experience-teacher .classroom-metrics strong {
+  margin-top: 3px;
+  font-size: 30px;
+  line-height: 1.2;
+  color: #eff1ef;
+  font-weight: 600;
+}
+.teacher-student-list {
+  border: 1px solid #839fb23d;
+  border-radius: 14px;
+  padding: 18px;
+  background: #1021306b;
+}
+.teacher-list-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.teacher-list-heading h2 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 500;
+}
+.competition-app .experience-teacher .classroom-tools {
+  margin: 0;
+  gap: 10px;
+  flex: 0 1 750px;
+}
+.competition-app .experience-teacher .classroom-tools input,
+.competition-app .experience-teacher .classroom-tools select {
+  font-size: 14px;
+  min-height: 44px;
+  box-sizing: border-box;
+  background: #0d1e2c;
+  color: #d4e0e7;
+}
+.competition-app .experience-teacher .classroom-tools input {
+  min-width: 220px;
+  width: 100%;
+  flex: 1 1 260px;
+}
+.experience-teacher .classroom-tools input::placeholder {
+  color: #a6b8c5;
+}
+.competition-app .experience-teacher .classroom-table-wrap {
+  border: 1px solid #839fb226;
+  border-radius: 10px;
+}
+.competition-app .experience-teacher table {
+  min-width: 950px;
+}
+.competition-app .experience-teacher th {
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #c7d4df;
+  background: #09172480;
+  white-space: nowrap;
+}
+.competition-app .experience-teacher td {
+  padding: 14px 20px;
+  font-size: 16px;
+}
+.experience-teacher tbody tr:last-child td {
+  border-bottom: 0;
+}
+.teacher-student-cell {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 245px;
+}
+.teacher-planet-name {
+  font-size: 17px;
+  font-weight: 500;
+  color: #e9eeee;
+}
+.competition-app .experience-teacher .teacher-name {
+  font-size: 14px;
+  color: #afc1cd;
+  margin-top: 5px;
+}
+.teacher-thumbnail {
+  width: 54px;
+  height: 54px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.teacher-thumbnail > .interface-icon {
+  width: 42px;
+  height: 42px;
+  color: #92a5b4;
+}
+.teacher-thumbnail .cloud-orb-frame {
+  width: 54px;
+  height: 54px;
+  display: block;
+  filter: none !important;
+}
+.teacher-thumbnail .cloud-orb-frame::before,
+.teacher-thumbnail .cloud-orb-frame::after {
+  content: none;
+}
+.teacher-thumbnail .student-orb.cloud-planet-orb {
+  width: 54px;
+  height: 54px;
+  margin: 0;
+  box-shadow: 0 0 12px #cbd8f51a;
+}
+.teacher-thumbnail .cloud-orb-status {
+  display: none;
+}
+.teacher-status {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  border-radius: 20px;
+  padding: 5px 10px;
+  border: 1px solid #869eaf44;
+  background: #8aa2b414;
+  color: #c2cdd6;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.teacher-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #93a3b7;
+}
+.teacher-status.is-visible i {
+  background: #bbceaa;
+}
+.teacher-review-progress {
+  display: grid;
+  gap: 7px;
+  min-width: 95px;
+  font-size: 14px;
+  color: #c8d5de;
+  font-variant-numeric: tabular-nums;
+}
+.teacher-review-progress progress {
+  appearance: none;
+  width: 100px;
+  height: 5px;
+  border: 0;
+  border-radius: 4px;
+  background: #7e93b333;
+  accent-color: #c8bee4;
+}
+.teacher-review-progress progress::-webkit-progress-bar {
+  border-radius: 4px;
+  background: #7e93b333;
+}
+.teacher-review-progress progress::-webkit-progress-value {
+  border-radius: 4px;
+  background: #c8bee4;
+}
+.teacher-review-progress progress::-moz-progress-bar {
+  border-radius: 4px;
+  background: #c8bee4;
+}
+.teacher-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.competition-app .experience-teacher .teacher-row-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 44px;
+  border: 1px solid #889eae50;
+  border-radius: 9px;
+  background: transparent;
+  color: #e0e9ea;
+  padding: 10px 16px;
+  margin: 0;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.competition-app .experience-teacher .teacher-row-actions .disclosure-trigger {
+  width: 44px;
+  padding: 10px;
+}
+.teacher-row-actions > button .interface-icon {
+  width: 18px;
+  height: 18px;
+}
+.teacher-list-count {
+  margin: 14px 0 0;
+  color: #b2c1cd;
+  font-size: 14px;
+}
+.teacher-empty {
+  padding: 24px;
+  color: #bacad3;
+  font-size: 16px;
+}
+@media (max-width: 900px) {
+  .competition-app .experience-teacher .classroom-metrics article {
+    gap: 12px;
+    padding: 0 16px;
+  }
+  .competition-app .experience-teacher .classroom-metrics .interface-icon {
+    width: 26px;
+    height: 26px;
+  }
+  .teacher-list-heading .classroom-tools {
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .competition-app .experience-teacher .classroom-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 0;
+  }
+  .competition-app .experience-teacher .classroom-metrics article:nth-child(3) {
+    border-left: 0;
+  }
+  .experience-teacher .pending-empty {
+    flex-wrap: wrap;
+  }
+  .experience-teacher .pending-empty p {
+    flex: 1;
+  }
+  .experience-teacher .pending-empty p span {
+    display: block;
+    margin-top: 3px;
+  }
+  .teacher-student-list {
+    padding: 14px;
+  }
+  .competition-app .experience-teacher .teacher-toolbar {
+    justify-content: flex-start;
+  }
+}

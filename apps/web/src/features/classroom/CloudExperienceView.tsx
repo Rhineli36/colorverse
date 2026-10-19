@@ -98,6 +98,19 @@ export function CloudExperienceView() {
       data-experience-mode="cloud"
     >
       <ExperienceHeader
+        current={
+          teacher
+            ? "teacher"
+            : screen === "learning"
+              ? "knowledge"
+              : screen === "gallery"
+                ? "room"
+                : screen === "create"
+                  ? "edit"
+                  : ["room", "edit", "knowledge"].includes(screen)
+                    ? (screen as ExperienceDestination)
+                    : "universe"
+        }
         modeLabel={
           location.pathname.startsWith("/review") ||
           membership?.title.includes("评审体验")

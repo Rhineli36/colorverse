@@ -8,6 +8,7 @@ import {
 import "./classroom-mail.css";
 import { AssignmentBrief } from "./AssignmentBrief";
 import { NewAssignmentForm } from "./NewAssignmentForm";
+import { InterfaceIcon } from "./InterfaceIcon";
 export function AssignmentMail({
   taskId,
   definition,
@@ -257,7 +258,7 @@ export function ClassroomInbox({
           onRefresh?.();
         }}
       >
-        信息 {unread > 0 && <b>{unread}</b>}
+        <InterfaceIcon name="bell" /> 消息 {unread > 0 && <b>{unread}</b>}
       </button>
       {open && (
         <dialog

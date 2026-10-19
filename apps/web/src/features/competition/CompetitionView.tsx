@@ -6,6 +6,9 @@ import {
 } from "../classroom/ExperienceHeader";
 import "../classroom/experience.css";
 import { TeacherDashboard } from "../classroom/TeacherDashboard";
+import { DisclosureMenu } from "../classroom/DisclosureMenu";
+import { InterfaceIcon } from "../classroom/InterfaceIcon";
+import { CloudPlanetOrb } from "../classroom/CloudPlanetAppearance";
 import { StudentImporter } from "../classroom/StudentImporter";
 import { ReviewPanel } from "../classroom/ReviewPanel";
 import { FramedImage } from "../classroom/FramedImage";
@@ -547,6 +550,17 @@ export function CompetitionView({
     >
       {!hideHeader && (
         <ExperienceHeader
+          current={
+            editTarget !== undefined
+              ? "edit"
+              : tab === "learning"
+                ? "knowledge"
+                : tab === "gallery"
+                  ? "room"
+                  : tab === "teacher"
+                    ? "teacher"
+                    : "universe"
+          }
           pendingCount={
             notifications.filter((n) => n.kind === "submission" && n.pending)
               .length
@@ -600,15 +614,24 @@ export function CompetitionView({
                 />
               )}
               {role !== "guest" ? (
-                <button onClick={logout} disabled={busy}>
-                  退出登录
-                </button>
+                <DisclosureMenu
+                  identity
+                  label={role === "teacher" ? "教师" : "学生"}
+                  disabled={busy}
+                >
+                  <button onClick={logout} disabled={busy}>
+                    退出登录
+                  </button>
+                  <button disabled={busy} onClick={() => setResetOpen(true)}>
+                    重新开始
+                  </button>
+                </DisclosureMenu>
               ) : (
-                <button onClick={() => setLoginOpen(true)}>登录</button>
-              )}
-              {role !== "guest" && (
-                <button disabled={busy} onClick={() => setResetOpen(true)}>
-                  重新开始
+                <button
+                  className="experience-login"
+                  onClick={() => setLoginOpen(true)}
+                >
+                  <InterfaceIcon name="user" /> 登录
                 </button>
               )}
             </>
@@ -686,42 +709,58 @@ export function CompetitionView({
           />
         ) : tab === "teacher" ? (
           <>
-            <PendingSubmissions
-              items={notifications}
-              readIds={state.readNotifications
-                .filter((id) => id.startsWith("teacher:"))
-                .map((id) => id.slice(8))}
-              onOpen={(n) => {
-                void run(async () => {
-                  setState(
-                    await store.current!.readNotification(
-                      state.revision,
-                      role,
-                      n.id,
-                    ),
-                  );
-                  const p = planets.find((p) => p.id === n.planetId);
-                  if (p) {
-                    setSelected(p.id);
-                    setTab("gallery");
-                    setWork(p.works.find((w) => w.id === n.workId) ?? null);
-                  } else setNotice("这份作业已不可访问，请刷新列表。");
-                });
-              }}
-            />
             <TeacherDashboard
+              pending={
+                <PendingSubmissions
+                  items={notifications}
+                  readIds={state.readNotifications
+                    .filter((id) => id.startsWith("teacher:"))
+                    .map((id) => id.slice(8))}
+                  onOpen={(n) => {
+                    void run(async () => {
+                      setState(
+                        await store.current!.readNotification(
+                          state.revision,
+                          role,
+                          n.id,
+                        ),
+                      );
+                      const p = planets.find((p) => p.id === n.planetId);
+                      if (p) {
+                        setSelected(p.id);
+                        setTab("gallery");
+                        setWork(p.works.find((w) => w.id === n.workId) ?? null);
+                      } else setNotice("这份作业已不可访问，请刷新列表。");
+                    });
+                  }}
+                />
+              }
               busy={busy}
               tools={<StudentImporter offline disabled={busy} />}
               rows={planets.map((p) => ({
                 id: p.id,
                 name: p.document.metadata.name,
                 author: p.display_name,
+                thumbnail: (
+                  <CloudPlanetOrb
+                    classId="offline"
+                    id={p.id}
+                    document={{ ...p.document, media: {} }}
+                    previewImage={
+                      p.document.useDefaultExterior
+                        ? undefined
+                        : image(p.exterior)
+                    }
+                  />
+                ),
                 works: p.works.length,
                 sent: p.sent,
                 received:
                   (p.planetInteractions?.length ?? 0) +
                   state.interactions.filter((i) => i.planetId === p.id).length,
-                reviewed: p.works.filter((w) => w.score !== undefined).length,
+                reviewed: p.works.filter((w) =>
+                  hasTeacherReview(w.score, w.comment),
+                ).length,
                 visible: p.visible,
                 stationary: p.document.motion.mode === "stationary",
                 hasPlanet: true,

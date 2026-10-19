@@ -8,6 +8,8 @@ import {
 import "./auth.css";
 import { RoleChoices } from "../classroom/ExperienceHeader";
 import { StudentActivation } from "./StudentActivation";
+import { DisclosureMenu } from "../classroom/DisclosureMenu";
+import { InterfaceIcon } from "../classroom/InterfaceIcon";
 
 export function AuthEntry({
   onSession,
@@ -196,25 +198,49 @@ export function AuthEntry({
   };
   return (
     <>
-      <button
-        className="outline small cloud-login-entry"
-        disabled={busy || (compact && hasSession && hasPendingChanges)}
-        onClick={() => (compact && hasSession ? void signOut() : setOpen(true))}
-      >
-        {checking
-          ? "验证登录…"
-          : hasSession
-            ? compact
-              ? "退出登录"
-              : "我的云端账户"
-            : "登录"}
-      </button>
-      {compact && hasSession && (
-        <button
+      {compact && hasSession ? (
+        <DisclosureMenu
+          identity
+          label={
+            selectedMembership?.role === "student"
+              ? "学生"
+              : selectedMembership?.role === "assistant"
+                ? "助教"
+                : selectedMembership
+                  ? "教师"
+                  : "账户"
+          }
           disabled={busy || hasPendingChanges}
-          onClick={() => setOpen(true)}
         >
-          账户与班级
+          <button
+            disabled={busy || hasPendingChanges}
+            onClick={() => setOpen(true)}
+          >
+            账户与班级
+          </button>
+          <button
+            disabled={busy || hasPendingChanges}
+            onClick={() => void signOut()}
+          >
+            退出登录
+          </button>
+        </DisclosureMenu>
+      ) : (
+        <button
+          className="outline small cloud-login-entry"
+          disabled={busy || (compact && hasSession && hasPendingChanges)}
+          onClick={() =>
+            compact && hasSession ? void signOut() : setOpen(true)
+          }
+        >
+          {!hasSession && <InterfaceIcon name="user" />}
+          {checking
+            ? "验证登录…"
+            : hasSession
+              ? compact
+                ? "退出登录"
+                : "我的云端账户"
+              : "登录"}
         </button>
       )}
       <dialog

@@ -11,6 +11,7 @@ import {
 import { Gallery, CloudGallery } from "./CloudGallery";
 import type { z } from "zod";
 import { TeacherDashboard } from "./TeacherDashboard";
+import { CloudPlanetOrb } from "./CloudPlanetAppearance";
 import { PendingSubmissions } from "./PendingSubmissions";
 import { StudentImporter } from "./StudentImporter";
 import type { ClassroomNotification } from "@colorverse/contracts";
@@ -150,33 +151,36 @@ export function CloudClassroomView({
           </button>
         </p>
       )}
-      {!busy && !error && (
-        <PendingSubmissions
-          items={inbox.notifications}
-          readIds={inbox.readIds}
-          onOpen={(n) => {
-            if (!n.planetId || !n.workId) return;
-            void classroomRequest(`classes/${classId}/notification-read`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: n.id }),
-            })
-              .then(() =>
-                window.dispatchEvent(new Event("classroom-data-changed")),
-              )
-              .catch(() => {});
-            if (onPlanetAction)
-              onPlanetAction(n.planetId, "feedback", classId, n.workId);
-            else
-              setTarget({
-                id: n.planetId,
-                action: "feedback",
-                workId: n.workId,
-              });
-          }}
-        />
-      )}
       <TeacherDashboard
+        pending={
+          !busy &&
+          !error && (
+            <PendingSubmissions
+              items={inbox.notifications}
+              readIds={inbox.readIds}
+              onOpen={(n) => {
+                if (!n.planetId || !n.workId) return;
+                void classroomRequest(`classes/${classId}/notification-read`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ id: n.id }),
+                })
+                  .then(() =>
+                    window.dispatchEvent(new Event("classroom-data-changed")),
+                  )
+                  .catch(() => {});
+                if (onPlanetAction)
+                  onPlanetAction(n.planetId, "feedback", classId, n.workId);
+                else
+                  setTarget({
+                    id: n.planetId,
+                    action: "feedback",
+                    workId: n.workId,
+                  });
+              }}
+            />
+          )
+        }
         busy={busy}
         rows={(data?.students ?? []).map((s) => {
           const p = gallery?.planets.find(
@@ -186,6 +190,13 @@ export function CloudClassroomView({
             id: p?.id ?? s.enrollment_id,
             name: p?.document.metadata.name ?? "等待创建星球",
             author: presentationName(s.display_name),
+            thumbnail: p ? (
+              <CloudPlanetOrb
+                classId={classId}
+                id={p.id}
+                document={p.document}
+              />
+            ) : undefined,
             works: s.showcase_count,
             sent: s.sent_count,
             received: s.received_count,

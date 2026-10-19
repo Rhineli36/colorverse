@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { InterfaceIcon } from "./InterfaceIcon";
 const tracks = [
   { id: "quiet-universe", name: "静谧宇宙", description: "舒缓空灵" },
   { id: "light-roaming", name: "轻盈漫游", description: "轻快、富有探索感" },
@@ -24,6 +25,23 @@ export function BackgroundMusic() {
     host = useRef<HTMLDivElement>(null),
     intent = useRef(false),
     generation = useRef(0);
+  const panel = useRef<HTMLElement>(null),
+    [panelPosition, setPanelPosition] = useState({ left: 0, top: 0 });
+  useLayoutEffect(() => {
+    if (!open || !host.current || !panel.current) return;
+    const anchor = host.current.getBoundingClientRect(),
+      box = panel.current.getBoundingClientRect();
+    setPanelPosition({
+      left: Math.max(
+        12,
+        Math.min(anchor.right - box.width, innerWidth - box.width - 12),
+      ),
+      top: Math.max(
+        12,
+        Math.min(anchor.bottom + 12, innerHeight - box.height - 12),
+      ),
+    });
+  }, [open]);
   const play = async () => {
     const a = audio.current;
     if (!a) return;
@@ -48,7 +66,12 @@ export function BackgroundMusic() {
       if (!host.current?.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
+    const dismiss = () => setOpen(false);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      window.removeEventListener("resize", dismiss);
+    };
   }, [open]);
   useEffect(
     () => () => {
@@ -73,7 +96,16 @@ export function BackgroundMusic() {
     if (resume) void play();
   };
   return (
-    <div className="background-music" ref={host}>
+    <div
+      className="background-music"
+      ref={host}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          setOpen(false);
+          host.current?.querySelector("button")?.focus();
+        }
+      }}
+    >
       <audio
         ref={audio}
         src={`${import.meta.env.BASE_URL}music/${initialTrack.current}.wav`}
@@ -93,11 +125,13 @@ export function BackgroundMusic() {
         title={playing ? "音乐播放中" : "音乐已暂停"}
         onClick={() => setOpen((v) => !v)}
       >
-        {playing ? "♫" : "♪"}
+        <InterfaceIcon name="music" />
         <span className="music-label"> {playing ? "播放中" : "音乐"}</span>
       </button>
       {open && (
         <section
+          ref={panel}
+          style={panelPosition}
           className="music-panel"
           aria-label="背景音乐设置"
           onKeyDown={(e) => {
