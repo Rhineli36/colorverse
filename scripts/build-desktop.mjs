@@ -6,6 +6,9 @@ import sharp from "sharp";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const project = resolve(root, "work/desktop-app");
 const resources = resolve(root, "work/desktop-resources");
+const desktopPackage = JSON.parse(
+  await readFile(resolve(root, "desktop/package.json"), "utf8"),
+);
 if (relative(root, project).replaceAll("\\", "/") !== "work/desktop-app")
   throw Error("INVALID_DESKTOP_DESTINATION");
 const run = (args, capture = false) =>
@@ -97,7 +100,7 @@ await writeFile(resolve(resources, "icon.ico"), Buffer.concat([ico, png]));
 await writeFile(
   resolve(project, "desktop-release.json"),
   JSON.stringify(
-    { version: "1.0.0", electron: "44.9.0", frontend: release },
+    { version: desktopPackage.version, electron: "44.9.0", frontend: release },
     null,
     2,
   ),
