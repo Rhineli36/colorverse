@@ -59,13 +59,13 @@ export function SceneLayout({
             </section>
           </div>
         )}
-        {!collapsed && story.reflection && (
+        {story.reflection && (
           <details>
             <summary>创作碎碎念</summary>
             <p>{story.reflection}</p>
           </details>
         )}
-        {!collapsed && story.courseNotes && (
+        {story.courseNotes && (
           <details>
             <summary>关于这堂色彩课</summary>
             <p>{story.courseNotes}</p>

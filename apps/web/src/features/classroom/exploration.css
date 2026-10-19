@@ -1600,8 +1600,8 @@
   line-height: 1.8;
   color: #b5cbd2;
 }
-.story-is-collapsed {
-  grid-template-columns: 0 minmax(0, 1fr) 180px !important;
+.story-is-collapsed .planet-story {
+  padding-top: 44px;
 }
 .story-is-collapsed .story-collapse {
   width: 135px;
@@ -1662,9 +1662,6 @@
   }
   .story-overlay-layout .planet-story {
     width: 100%;
-  }
-  .story-is-collapsed .planet-story {
-    height: 45px;
   }
   .story-overlay-layout .immersive-center {
     width: 100%;
