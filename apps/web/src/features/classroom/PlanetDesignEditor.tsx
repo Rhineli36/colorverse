@@ -375,20 +375,31 @@ export function PlanetDesignEditor({
           >
             {tab === "exterior" ? (
               <div
-                className={`design-orb motion-${d.motion.mode} halo-${d.halo}`}
+                className={`design-orb motion-${d.motion.mode} halo-${d.halo} trajectory-${d.motion.trajectory}`}
               >
-                <FramedImage
-                  round
-                  editing={!busy && !exterior.includes("/demo/")}
-                  color={d.color}
-                  placement={d.imagePlacement.exterior}
-                  onChange={(exterior) =>
-                    patch({ imagePlacement: { ...d.imagePlacement, exterior } })
-                  }
-                  src={exterior}
-                  alt="星球实时预览"
-                  onError={() => setFailed(true)}
-                />
+                <div
+                  className="design-orb-body"
+                  style={{
+                    animationDirection:
+                      d.motion.direction === "reverse" ? "reverse" : "normal",
+                  }}
+                >
+                  <div className="design-orb-effects" aria-hidden="true" />
+                  <FramedImage
+                    round
+                    editing={!busy && !exterior.includes("/demo/")}
+                    color={d.color}
+                    placement={d.imagePlacement.exterior}
+                    onChange={(exterior) =>
+                      patch({
+                        imagePlacement: { ...d.imagePlacement, exterior },
+                      })
+                    }
+                    src={exterior}
+                    alt="星球实时预览"
+                    onError={() => setFailed(true)}
+                  />
+                </div>
                 <strong>{d.metadata.name}</strong>
               </div>
             ) : (

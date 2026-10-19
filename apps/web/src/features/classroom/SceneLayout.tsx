@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { reviewStatus } from "@colorverse/contracts";
 
 type Story = {
@@ -32,6 +32,17 @@ export function SceneLayout({
 }) {
   const scene = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [highlightedWork, setHighlightedWork] = useState<string>();
+  useEffect(() => {
+    const element = Array.from(
+      scene.current?.querySelectorAll<HTMLElement>("[data-work-id]") ?? [],
+    ).find((e) => e.dataset.workId === highlightedWork);
+    if (!element) return;
+    element.dataset.directoryHighlighted = "true";
+    return () => {
+      delete element.dataset.directoryHighlighted;
+    };
+  }, [highlightedWork, children]);
   return (
     <div
       className={`immersive-layout story-overlay-layout ${collapsed ? "story-is-collapsed" : ""}`}
@@ -80,11 +91,15 @@ export function SceneLayout({
         <h3>
           微光档案 <small>{works.length.toString().padStart(2, "0")}</small>
         </h3>
-        <p>点击目录，找到画面中的元素。</p>
+        <p>悬停目录，找到画面中的元素。</p>
         <ol>
           {works.map((w, i) => (
             <li key={w.id}>
               <button
+                onMouseEnter={() => setHighlightedWork(w.id)}
+                onMouseLeave={() => setHighlightedWork(undefined)}
+                onFocus={() => setHighlightedWork(w.id)}
+                onBlur={() => setHighlightedWork(undefined)}
                 onClick={() => {
                   if (onOpenWork) {
                     onOpenWork(w.id);
@@ -130,7 +145,7 @@ export function SceneLayout({
             </li>
           ))}
         </ol>
-        <small>点击条目高亮元素，点击元素欣赏作品。</small>
+        <small>悬停条目显示光圈，点击查看作品。</small>
       </aside>
     </div>
   );

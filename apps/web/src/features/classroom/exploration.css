@@ -1034,6 +1034,25 @@
 .scene-growth:focus > span {
   opacity: 1 !important;
 }
+.immersive-layout [data-directory-highlighted="true"] {
+  z-index: 4;
+}
+.immersive-layout [data-directory-highlighted="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border: 2px solid #fff5bd;
+  border-radius: 50%;
+  background: #fff5bd14;
+  box-shadow:
+    0 0 0 5px #13263755,
+    0 0 22px 7px #fff1ae88,
+    inset 0 0 16px #fff1ae55;
+  pointer-events: none;
+}
+.immersive-layout [data-directory-highlighted="true"] > span {
+  opacity: 1;
+}
 .planet-quick-message {
   padding: 20px !important;
   background: #10212c !important;
