@@ -1,0 +1,11 @@
+{
+  "name": "colorverse-offline",
+  "productName": "色彩星球",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "description": "设计色彩课程辅助教学与创作工具",
+  "author": "Colorverse",
+  "license": "UNLICENSED"
+}

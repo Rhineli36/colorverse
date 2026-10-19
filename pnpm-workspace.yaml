@@ -2,5 +2,6 @@ packages:
   - apps/*
   - packages/*
 allowBuilds:
+  electron-winstaller: false
   esbuild: true
   workerd: true

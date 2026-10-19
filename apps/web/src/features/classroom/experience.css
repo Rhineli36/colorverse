@@ -283,6 +283,12 @@
 }
 .background-music {
   position: relative;
+  flex: none;
+}
+.background-music > button {
+  box-sizing: border-box;
+  width: 112px;
+  white-space: nowrap;
 }
 .music-panel {
   position: absolute;
