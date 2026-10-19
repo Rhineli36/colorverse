@@ -156,6 +156,7 @@ if (!app.requestSingleInstanceLock()) {
           webviewTag: false,
           webSecurity: true,
           spellcheck: false,
+          backgroundThrottling: !testing,
         },
       });
       window.removeMenu();
@@ -177,7 +178,8 @@ if (!app.requestSingleInstanceLock()) {
         );
       });
       window.once("ready-to-show", () => {
-        if (!testing) window.show();
+        if (!testing || process.env.COLORVERSE_DESKTOP_SHOW === "1")
+          window.show();
       });
       await window.loadURL(origin);
       await log(`started ${app.getVersion()} / ${process.versions.electron}`);

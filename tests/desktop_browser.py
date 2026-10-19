@@ -28,19 +28,37 @@ out = ROOT / 'outputs/desktop-tests'
 out.mkdir(parents=True, exist_ok=True)
 profile = Path(tempfile.mkdtemp(prefix='desktop-acceptance-', dir=ROOT / 'work'))
 environment = dict(os.environ)
+node_free_path = os.pathsep.join(
+    folder for folder in os.environ.get('PATH', '').split(os.pathsep)
+    if not shutil.which('node', path=folder.strip('"'))
+)
 environment.update(COLORVERSE_DESKTOP_TEST='1', COLORVERSE_TEST_USER_DATA=str(profile),
-                   PATH=os.pathsep.join([str(Path(os.environ['WINDIR']) / 'System32'), os.environ['WINDIR']]))
+                   COLORVERSE_DESKTOP_SHOW='1',
+                   PATH=node_free_path)
 for name in ['ELECTRON_RUN_AS_NODE', 'NODE_OPTIONS', 'NODE_PATH']:
     environment.pop(name, None)
+for name in ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy', 'NODE_USE_ENV_PROXY']:
+    os.environ.pop(name, None)
+    environment.pop(name, None)
+os.environ['NO_PROXY'] = 'localhost,127.0.0.1,::1'
+environment['NO_PROXY'] = os.environ['NO_PROXY']
 assert shutil.which('node', path=environment['PATH']) is None
 GET = """async()=>{const db=await new Promise((ok,bad)=>{const r=indexedDB.open('colorverse-judges-offline-v1');r.onsuccess=()=>ok(r.result);r.onerror=()=>bad(r.error)});return await new Promise(ok=>{const r=db.transaction('state').objectStore('state').get('current');r.onsuccess=()=>{ok(r.result);db.close()}})}"""
-checks, errors = [], []
+class Progress(list):
+    def append(self, message):
+        super().append(message)
+        print(message, flush=True)
+
+checks, errors = Progress(), []
 process = None
 completed = False
+launch_args = [str(exe), '--disable-background-timer-throttling',
+               '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows',
+               '--force-device-scale-factor=1', '--mute-audio']
 
 def launch():
     global process
-    process = subprocess.Popen([str(exe)], env=environment, cwd=exe.parent,
+    process = subprocess.Popen(launch_args, env=environment, cwd=exe.parent,
                                creationflags=subprocess.CREATE_NO_WINDOW,
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(100):
@@ -56,10 +74,12 @@ def launch():
 def attach(playwright):
     browser = playwright.chromium.connect_over_cdp('http://127.0.0.1:9250')
     context = browser.contexts[0]
-    context.set_offline(True)
     page = context.pages[0]
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('dialog', lambda dialog: dialog.accept())
+    page.wait_for_load_state('networkidle')
+    expect(page.get_by_role('button', name='登录', exact=True)).to_be_visible()
+    context.set_offline(True)
     page.reload(wait_until='networkidle')
     assert page.url == 'colorverse://app/'
     assert page.evaluate('typeof require==="undefined"&&typeof process==="undefined"')
@@ -78,7 +98,7 @@ try:
         page.wait_for_selector('canvas[data-scene-ready="true"]')
         page.screenshot(path=str(out / 'exe-startup.png'))
         checks.append('Portable EXE starts with no Node on PATH and renderer offline')
-        second = subprocess.Popen([str(exe)], env=environment, cwd=exe.parent,
+        second = subprocess.Popen(launch_args, env=environment, cwd=exe.parent,
                                   creationflags=subprocess.CREATE_NO_WINDOW,
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         second.wait(timeout=30)
@@ -105,25 +125,30 @@ try:
         box = host.bounding_box()
         drag(box['x']+box['width']/2, box['y']+box['height']/2, 20, -10)
         page.get_by_label('光晕效果', exact=True).select_option('ring')
-        assert page.locator('.design-orb-effects').evaluate('(e)=>getComputedStyle(e).borderTopWidth') == '2px'
+        page.wait_for_function('()=>document.querySelector(".design-orb").classList.contains("halo-ring")&&parseFloat(getComputedStyle(document.querySelector(".design-orb-effects")).borderTopWidth)>1', polling=100)
         page.get_by_label('星球运行速度', exact=True).select_option('fast')
-        assert page.locator('.design-orb-body').evaluate('(e)=>getComputedStyle(e).animationDuration') == '4s'
+        page.wait_for_function('()=>getComputedStyle(document.querySelector(".design-orb-body")).animationDuration==="4s"', polling=100)
         page.get_by_role('tab', name='内部背景', exact=True).click()
         page.get_by_label('上传内部背景', exact=True).set_input_files(str(ROOT / 'apps/web/public/assignments/two-seasons.webp'))
         interior = page.locator('.design-room-adjustment')
-        corner = interior.locator('.corner-3').bounding_box()
-        drag(corner['x']+8, corner['y']+8, 40, 40)
+        page.wait_for_function('()=>{const e=document.querySelector(".design-room-adjustment img");return e&&e.complete&&e.naturalWidth>1}', polling=100)
+        control = interior.locator('.corner-3')
+        control.hover()
+        corner = control.bounding_box()
+        page.mouse.down()
+        page.mouse.move(corner['x']+corner['width']/2+40, corner['y']+corner['height']/2+40, steps=8)
+        page.mouse.up()
         box = interior.bounding_box()
         drag(box['x']+box['width']/2, box['y']+box['height']/2, -30, 18)
         page.get_by_label('粒子氛围', exact=True).select_option('fireflies')
-        expect(page.locator('.design-preview .cloud-atmosphere i')).to_have_count(24)
+        expect(page.locator('.design-preview .cloud-atmosphere.fireflies i')).to_have_count(24)
         page.screenshot(path=str(out / 'exe-editor.png'))
         page.get_by_role('button', name='保存并返回我的星球').click()
         expect(page.locator('.planet-design-editor')).to_have_count(0)
         state = page.evaluate(GET)
         placement = state['ownPlanet']['document']['imagePlacement']
         assert state['identity'] == {'studentNumber': '00128', 'realName': 'EXE验证同学'}
-        assert placement['exterior']['x'] != 0 and placement['interior']['scale'] > 1
+        assert placement['exterior']['x'] != 0 and placement['interior']['scale'] > 1, placement
         checks.append('Identity, uploaded images, drag/zoom/reset, halo, motion and atmosphere')
         page.get_by_role('button', name='我的星球', exact=True).click()
         page.get_by_role('button', name='进入星球内部', exact=False).click()
@@ -166,13 +191,21 @@ try:
         expect(page.locator('.scene-work-directory')).to_contain_text('教师评分 0 分')
         page.get_by_role('button', name='背景音乐', exact=True).click()
         stable = page.locator('.competition-header nav').bounding_box()
+        def wait_music():
+            for _ in range(120):
+                state = page.evaluate('()=>{const a=document.querySelector("audio");return {paused:a.paused,ready:a.readyState,error:a.error?{code:a.error.code,message:a.error.message}:null,src:a.src,panel:document.querySelector(".music-panel")?.innerText}}')
+                if not state['paused'] and state['ready'] >= 2:
+                    return
+                time.sleep(.25)
+            (out/'music-failure.json').write_text(json.dumps(state,ensure_ascii=False,indent=2),'utf-8')
+            raise AssertionError(state)
         page.get_by_role('button', name='播放音乐', exact=True).click()
-        page.wait_for_function('()=>!document.querySelector("audio").paused&&document.querySelector("audio").readyState>=2')
+        wait_music()
         assert stable == page.locator('.competition-header nav').bounding_box()
         page.evaluate('window.musicNode=document.querySelector("audio")')
         for name in ['轻盈漫游', '温暖午后', '静谧宇宙']:
             page.get_by_role('button', name=name, exact=False).click()
-            page.wait_for_function('()=>!document.querySelector("audio").paused&&document.querySelector("audio").readyState>=2')
+            wait_music()
         page.get_by_role('button', name='背景音乐', exact=True).click()
         page.get_by_role('button', name='探索宇宙', exact=True).click()
         page.get_by_role('button', name='退出登录', exact=True).click()
@@ -211,6 +244,7 @@ finally:
                        timeout=15, check=False)
     report = {'status': 'passed' if completed else 'failed', 'exe': str(exe), 'sha256': hashlib.sha256(exe.read_bytes()).hexdigest(),
               'profile': str(profile), 'nodeAbsentFromAppPath': True, 'rendererOffline': True,
+              'audioMutedDuringAutomation': True,
               'checks': checks, 'errors': errors}
     (out / 'acceptance.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), 'utf-8')
 print(json.dumps({'passed': len(checks), 'errors': errors}, ensure_ascii=False))

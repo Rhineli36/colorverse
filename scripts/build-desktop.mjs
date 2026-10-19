@@ -121,14 +121,14 @@ const config = {
     "!**/node_modules/**/*",
   ],
   asar: true,
-  compression: "maximum",
+  compression: "normal",
   npmRebuild: false,
   win: {
     target: [{ target: "portable", arch: ["x64"] }],
     icon: resolve(resources, "icon.ico"),
     artifactName: "色彩星球-离线版-${version}-x64.${ext}",
   },
-  portable: { requestExecutionLevel: "user" },
+  portable: { requestExecutionLevel: "user", unpackDirName: true },
 };
 const configPath = resolve(root, "work/desktop-builder.json");
 await writeFile(configPath, JSON.stringify(config, null, 2));
