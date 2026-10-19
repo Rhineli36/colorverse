@@ -993,7 +993,7 @@ export function CloudGallery({
       <button className="mystery-entry" onClick={() => setMysteryOpen(true)}>
         色彩的奥秘 ✧
       </button>
-      {staff && (
+      {staff && !experience && (
         <TaskSettings
           key={`${session.identity.id}:${classId}`}
           classId={classId}
