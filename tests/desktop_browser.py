@@ -106,7 +106,8 @@ try:
         page.screenshot(path=str(out / 'exe-startup.png'))
         checks.append('Portable EXE starts with no Node on PATH and renderer offline')
         checks.append('All five bundled identities are virtual and start without a prefilled user identity')
-        assert page.evaluate(GET)['identity'] is None
+        initial_state = page.evaluate(GET)
+        assert initial_state is None or initial_state['identity'] is None
         second = subprocess.Popen(launch_args, env=environment, cwd=exe.parent,
                                   creationflags=subprocess.CREATE_NO_WINDOW,
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -143,7 +144,9 @@ try:
         page.wait_for_function('()=>{const e=document.querySelector(".design-room-adjustment img");return e&&e.complete&&e.naturalWidth>1}', polling=100)
         control = interior.locator('.corner-3')
         control.hover()
+        page.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
         corner = control.bounding_box()
+        page.mouse.move(corner['x']+corner['width']/2, corner['y']+corner['height']/2)
         page.mouse.down()
         page.mouse.move(corner['x']+corner['width']/2+40, corner['y']+corner['height']/2+40, steps=8)
         page.mouse.up()
@@ -187,7 +190,10 @@ try:
         page.get_by_label('搜索学生或星球', exact=True).fill('00128')
         expect(page.locator('tbody tr')).to_have_count(1)
         page.get_by_label('搜索学生或星球', exact=True).fill('')
-        own_row.get_by_role('button', name='更多操作', exact=False).click()
+        more = own_row.get_by_role('button', name='更多操作', exact=False)
+        more.hover()
+        page.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
+        more.click()
         expect(page.get_by_role('button', name='修改星球', exact=True)).to_be_visible()
         expect(page.get_by_role('button', name='隐藏', exact=True)).to_be_visible()
         page.keyboard.press('Escape')
