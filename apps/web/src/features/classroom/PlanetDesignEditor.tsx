@@ -406,7 +406,7 @@ export function PlanetDesignEditor({
                     onError={() => setFailed(true)}
                   />
                 </div>
-                <strong>{d.metadata.name}</strong>
+                <strong title={d.metadata.name}>{d.metadata.name}</strong>
               </div>
             ) : (
               <>

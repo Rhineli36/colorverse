@@ -189,12 +189,14 @@
   place-items: center;
 }
 .exterior-preview {
+  container-type: size;
+  --orb-caption-space: 100px;
   background: #040e1c
     url("../../../../../packages/renderer/src/assets/universe-v2.webp")
     center/cover;
 }
 .design-orb {
-  width: 75%;
+  width: min(75%, 360px, calc(100cqh - var(--orb-caption-space)));
   max-width: 360px;
   text-align: center;
   position: relative;
@@ -233,6 +235,10 @@
   margin: 25px 0;
   font-size: 22px;
   font-weight: 400;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .design-orb.motion-slow .design-orb-body {
   animation: var(--design-orbit, design-orbit-ellipse) 15s linear infinite;
@@ -527,6 +533,9 @@
   }
   .design-orb {
     max-width: 140px;
+  }
+  .exterior-preview {
+    --orb-caption-space: 48px;
   }
   .design-orb strong {
     font-size: 14px;

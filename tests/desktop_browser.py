@@ -36,6 +36,7 @@ assert shutil.which('node', path=environment['PATH']) is None
 GET = """async()=>{const db=await new Promise((ok,bad)=>{const r=indexedDB.open('colorverse-judges-offline-v1');r.onsuccess=()=>ok(r.result);r.onerror=()=>bad(r.error)});return await new Promise(ok=>{const r=db.transaction('state').objectStore('state').get('current');r.onsuccess=()=>{ok(r.result);db.close()}})}"""
 checks, errors = [], []
 process = None
+completed = False
 
 def launch():
     global process
@@ -202,10 +203,13 @@ try:
         checks.append('Confirmed reset restores initial examples without changing application files')
         assert not errors, errors
         close(page)
+        completed = True
 finally:
     if process is not None and process.poll() is None:
-        process.terminate()
-    report = {'exe': str(exe), 'sha256': hashlib.sha256(exe.read_bytes()).hexdigest(),
+        subprocess.run(['taskkill.exe', '/PID', str(process.pid), '/T', '/F'],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       timeout=15, check=False)
+    report = {'status': 'passed' if completed else 'failed', 'exe': str(exe), 'sha256': hashlib.sha256(exe.read_bytes()).hexdigest(),
               'profile': str(profile), 'nodeAbsentFromAppPath': True, 'rendererOffline': True,
               'checks': checks, 'errors': errors}
     (out / 'acceptance.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), 'utf-8')
