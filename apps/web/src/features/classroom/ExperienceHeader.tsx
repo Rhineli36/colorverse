@@ -25,7 +25,16 @@ export function ExperienceHeader({
         disabled={disabled}
         onClick={() => onNavigate("universe")}
       >
-        ◉ COLORVERSE <span>色 彩 星 球</span>
+        <svg className="competition-brand-mark" viewBox="0 0 56 56" fill="none" aria-hidden="true" focusable="false">
+          <circle cx="27" cy="29" r="22" stroke="currentColor" strokeWidth="1.5" opacity="0.8" />
+          <ellipse cx="27" cy="29" rx="19" ry="23" transform="rotate(30 27 29)" stroke="currentColor" strokeWidth="1" opacity="0.65" />
+          <circle cx="27" cy="29" r="11" fill="currentColor" />
+          <circle cx="46" cy="15" r="4.5" fill="currentColor" stroke="#07121e" strokeWidth="2" />
+        </svg>
+        <span className="competition-brand-wordmark">
+          <span className="competition-brand-english">COLORVERSE</span>
+          <span className="competition-brand-chinese" lang="zh-CN">色彩星球</span>
+        </span>
       </button>
       <nav aria-label="主导航">
         <button disabled={disabled} onClick={() => onNavigate("universe")}>

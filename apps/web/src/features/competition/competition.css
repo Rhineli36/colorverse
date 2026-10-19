@@ -17,18 +17,40 @@
   background: #07121eef;
 }
 .competition-brand {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: clamp(12px, 1vw, 18px);
+  padding: 0;
   border: 0;
   background: none;
-  font-size: 20px;
-  letter-spacing: 2px;
   color: #dcebc1;
-}
-.competition-brand span {
-  font-size: 22px;
-  display: block;
   text-align: left;
-  margin-top: 6px;
-  letter-spacing: 5px;
+  white-space: nowrap;
+}
+.competition-brand-mark {
+  flex: none;
+  width: clamp(42px, 3vw, 52px);
+  height: auto;
+}
+.competition-brand-wordmark {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.competition-brand-english {
+  display: block;
+  font-size: clamp(19px, 1.5vw, 25px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.08em;
+}
+.competition-brand-chinese {
+  display: block;
+  font-size: clamp(14px, 1vw, 17px);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.36em;
 }
 .competition-header nav {
   display: flex;
