@@ -119,27 +119,33 @@ export function PlanetDesignEditor({
           </h1>
         </div>
         <div className="row-buttons">
-          <button onClick={() => setProfile(true)}>星球资料</button>
           <button disabled={busy} onClick={leave}>
             返回宇宙
           </button>
         </div>
       </header>
-      <div className="design-tabs" role="tablist" aria-label="编辑对象">
-        <button
-          role="tab"
-          aria-selected={tab === "exterior"}
-          onClick={() => setTab("exterior")}
-        >
-          星球外观
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === "interior"}
-          onClick={() => setTab("interior")}
-        >
-          内部背景
-        </button>
+      <div className="design-navigation">
+        <div className="design-section-controls">
+          <div className="design-tabs" role="tablist" aria-label="编辑对象">
+            <button
+              role="tab"
+              aria-selected={tab === "exterior"}
+              onClick={() => setTab("exterior")}
+            >
+              星球外观
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === "interior"}
+              onClick={() => setTab("interior")}
+            >
+              内部背景
+            </button>
+          </div>
+          <button aria-haspopup="dialog" onClick={() => setProfile(true)}>
+            星球资料
+          </button>
+        </div>
       </div>
       <div className="design-columns">
         <aside

@@ -1,4 +1,5 @@
 .planet-design-editor {
+  --design-columns: minmax(245px, 28fr) minmax(330px, 40fr) minmax(300px, 32fr);
   height: calc(100dvh - 112px);
   min-height: 640px;
   display: flex;
@@ -40,13 +41,26 @@
   background: #e3eabb;
   color: #142432;
 }
-.design-tabs {
-  display: flex;
-  gap: 4px;
+.design-navigation {
+  display: grid;
+  grid-template-columns: var(--design-columns);
+  gap: 14px;
   margin: 8px 0 12px;
 }
-.design-tabs button {
-  min-width: 145px;
+.design-section-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.design-tabs {
+  display: contents;
+}
+.design-section-controls button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 6px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 .design-tabs [aria-selected="true"] {
   outline: 2px solid #dfe9ac;
@@ -56,10 +70,7 @@
   min-height: 0;
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(245px, 28fr) minmax(330px, 40fr) minmax(
-      300px,
-      32fr
-    );
+  grid-template-columns: var(--design-columns);
   gap: 14px;
 }
 .design-panel {
@@ -467,16 +478,12 @@
   line-height: 1.7;
 }
 @media (max-width: 1050px) {
-  .design-columns {
-    grid-template-columns: minmax(210px, 30fr) minmax(280px, 40fr) minmax(
-        240px,
-        30fr
-      );
-  }
   .flat-swatch-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .planet-design-editor {
+    --design-columns: minmax(210px, 30fr) minmax(280px, 40fr)
+      minmax(240px, 30fr);
     padding: 10px 12px 0;
   }
   .design-panel {
@@ -484,6 +491,9 @@
   }
 }
 @media (max-width: 760px) {
+  .design-navigation {
+    display: block;
+  }
   .planet-design-editor {
     height: auto;
     min-height: calc(100dvh - 110px);
