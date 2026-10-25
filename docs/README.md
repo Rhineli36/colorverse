@@ -117,3 +117,5 @@
 - [60 · 色相与明度样图实装](60-hue-and-lightness-supplied-images.md)
 
 - [61 · 四项滑竿与三项图例观察](61-four-controls-and-three-image-studies.md)
+
+- [66 · Supabase Data API 默认授权变更检查](66-supabase-data-api-grants-audit.md)

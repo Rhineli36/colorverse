@@ -26,6 +26,7 @@
     "cloud:deploy": "node scripts/cloudflare.mjs deploy",
     "cloud:verify": "node scripts/verify-cloudflare.mjs",
     "cloud:database": "tsx scripts/cloud-database.mjs",
+    "cloud:database-access": "node scripts/database-access.mjs",
     "cloud:hyperdrive": "node scripts/cloud-hyperdrive.mjs"
   },
   "dependencies": {

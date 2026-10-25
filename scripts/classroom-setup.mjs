@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { readDatabaseConfig, connectDatabase } from "./supabase-database.mjs";
+import { applyRuntimeGrants } from "./database-access.mjs";
 let client;
 try {
   const config = await readDatabaseConfig();
@@ -259,6 +260,7 @@ try {
     "GRANT SELECT ON colorverse.isolated_account_courses TO colorverse_classroom_writer",
   );
   await client.query("COMMIT");
+  await applyRuntimeGrants(client);
   const studentCounts = await client.query(
     "SELECT count(*)::int AS students FROM colorverse.enrollments WHERE role='student' AND status='active'",
   );
