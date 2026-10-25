@@ -311,7 +311,12 @@ export function StudentImporter({
                         disabled={busy}
                         onClick={() =>
                           void import("./roster-excel")
-                            .then((m) => m.downloadRoster(results))
+                            .then((m) =>
+                              m.downloadRoster(
+                                results,
+                                import.meta.env.VITE_CLASSROOM_NEXT === "true",
+                              ),
+                            )
                             .catch((e) => setError(e.message))
                         }
                       >

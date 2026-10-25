@@ -119,3 +119,5 @@
 - [61 · 四项滑竿与三项图例观察](61-four-controls-and-three-image-studies.md)
 
 - [66 · Supabase Data API 默认授权变更检查](66-supabase-data-api-grants-audit.md)
+
+- [67 · 线上课堂学生名单、作业批改与账号生命周期](67-classroom-roster-assignments-accounts.md)

@@ -4,10 +4,12 @@ import {
   type ClassroomNotification,
 } from "@colorverse/contracts";
 import type { EnrollmentSql } from "./enrollment";
+import { publications, publicationRows } from "./classroom-management";
 export async function classroomNotifications(
   sql: EnrollmentSql,
   actor: Record<string, unknown>,
   classId: string,
+  classroomNext = false,
 ) {
   const tasks = (
     await sql.query(
@@ -65,7 +67,7 @@ export async function classroomNotifications(
     }
     const submissions = (
       await sql.query(
-        `SELECT w.id,w.title,w.created_at,p.id planet_id,u.display_name,c.title class_title,r.score,r.comment FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id JOIN colorverse.classes c ON c.id=e.class_id LEFT JOIN LATERAL (SELECT score,comment FROM colorverse.showcase_reviews WHERE work_id=w.id AND source='teacher' ORDER BY revision DESC LIMIT 1) r ON true WHERE e.class_id=$1 AND e.status='active' AND u.status='active' AND w.withdrawn_at IS NULL ORDER BY w.created_at DESC`,
+        `SELECT w.id,w.title,w.created_at,p.id planet_id,u.display_name,c.title class_title,r.score,r.comment FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id JOIN colorverse.classes c ON c.id=e.class_id LEFT JOIN LATERAL (SELECT score,comment FROM colorverse.showcase_reviews WHERE work_id=w.id AND source='teacher' ${classroomNext ? "AND submission_revision=w.submission_revision" : ""} ORDER BY revision DESC LIMIT 1) r ON true WHERE e.class_id=$1 AND e.status='active' AND u.status='active' AND w.withdrawn_at IS NULL ORDER BY w.created_at DESC`,
         [classId],
       )
     ).rows;
@@ -80,6 +82,61 @@ export async function classroomNotifications(
         workId: String(w.id),
         pending: w.score == null && !String(w.comment ?? "").trim(),
       });
+  }
+  if (classroomNext) {
+    const ids = (
+      await sql.query(
+        "SELECT publication_id FROM colorverse.classroom_recipients WHERE enrollment_id=$1",
+        [actor.id],
+      )
+    ).rows.map((r) => r.publication_id);
+    const all = await publications(sql, classId);
+    const visible = ["teacher", "assistant"].includes(String(actor.role))
+      ? all
+      : all.filter((p) => ids.includes(p.id));
+    for (let i = notifications.length - 1; i >= 0; i--)
+      if (notifications[i].kind === "assignment") notifications.splice(i, 1);
+    for (const p of visible)
+      notifications.push({
+        id: `publication:${p.id}`,
+        kind: "assignment",
+        publicationId: p.id,
+        taskId: p.taskId,
+        assignment: p.definition,
+        title: `老师发布了作业：${p.definition.title}`,
+        createdAt: p.publishedAt,
+      });
+    if (["teacher", "assistant"].includes(String(actor.role))) {
+      const associated = (
+        await sql.query(
+          `SELECT w.id FROM colorverse.showcase_works w JOIN colorverse.classroom_publications p ON p.id=w.publication_id WHERE p.class_id=$1`,
+          [classId],
+        )
+      ).rows.map((r) => String(r.id));
+      const latest = new Map<
+        string,
+        { publicationId: string; pending: boolean }
+      >();
+      for (const p of all)
+        for (const r of await publicationRows(sql, classId, p.id))
+          if (r.workId)
+            latest.set(r.workId, {
+              publicationId: p.id,
+              pending: r.status === "pending",
+            });
+      for (let i = notifications.length - 1; i >= 0; i--) {
+        const n = notifications[i];
+        if (
+          n.kind === "submission" &&
+          n.workId &&
+          associated.includes(n.workId)
+        ) {
+          const current = latest.get(n.workId);
+          if (current) Object.assign(n, current);
+          else notifications.splice(i, 1);
+        }
+      }
+    }
   }
   const read = (
     await sql.query(

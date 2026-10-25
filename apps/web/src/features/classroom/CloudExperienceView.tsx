@@ -8,6 +8,7 @@ import {
 } from "./ExperienceHeader";
 import { CloudGallery } from "./CloudGallery";
 import { CloudStudentGate } from "./CloudStudentGate";
+import { TeacherClassroomStudio } from "./TeacherClassroomStudio";
 import { CloudClassroomView } from "./CloudClassroomView";
 import { CloudInbox } from "./CloudInbox";
 import "./classroom.css";
@@ -17,6 +18,12 @@ import "./experience.css";
 
 export function CloudExperienceView() {
   const [session, setSession] = useState<CloudSession | null>(null);
+  const [reviewWorkId, setReviewWorkId] = useState<string>();
+  const [reviewWorkRequest, setReviewWorkRequest] = useState(0);
+  const TeacherView =
+    import.meta.env.VITE_CLASSROOM_NEXT === "true"
+      ? TeacherClassroomStudio
+      : CloudClassroomView;
   const [classId, setClassId] = useState("");
   const [screen, setScreen] = useState("universe");
   const [teacher, setTeacher] = useState(false);
@@ -30,6 +37,7 @@ export function CloudExperienceView() {
     planetId?: string;
     workId?: string | null;
     taskId?: string;
+    publicationId?: string;
     sequence: number;
   }>({ action: "universe", sequence: 0 });
   const [guestNavigation, setGuestNavigation] = useState({
@@ -85,7 +93,12 @@ export function CloudExperienceView() {
   const jump = (
     targetClass: string,
     action: "submit" | "feedback",
-    data: { taskId?: string; planetId?: string; workId?: string | null },
+    data: {
+      taskId?: string;
+      publicationId?: string;
+      planetId?: string;
+      workId?: string | null;
+    },
   ) => {
     if (pending) return;
     setClassId(targetClass);
@@ -128,8 +141,21 @@ export function CloudExperienceView() {
                 onPendingCount={setPendingCount}
                 session={active}
                 disabled={pending}
-                onSubmit={(id, taskId) => jump(id, "submit", { taskId })}
-                onReaction={(id, n) => jump(id, "feedback", n)}
+                onSubmit={(id, taskId, publicationId) =>
+                  jump(id, "submit", { taskId, publicationId })
+                }
+                onReaction={(id, n) => {
+                  if (
+                    import.meta.env.VITE_CLASSROOM_NEXT === "true" &&
+                    role === "teacher" &&
+                    n.workId
+                  ) {
+                    setClassId(id);
+                    setReviewWorkId(n.workId);
+                    setReviewWorkRequest((v) => v + 1);
+                    setTeacher(true);
+                  } else jump(id, "feedback", n);
+                }}
               />
             )}
             <AuthEntry
@@ -160,7 +186,13 @@ export function CloudExperienceView() {
       {active && membership ? (
         <main className="competition-main">
           {teacher && role === "teacher" ? (
-            <CloudClassroomView
+            <TeacherView
+              {...(import.meta.env.VITE_CLASSROOM_NEXT === "true"
+                ? {
+                    initialWorkId: reviewWorkId,
+                    initialWorkRequest: reviewWorkRequest,
+                  }
+                : {})}
               session={active}
               initialClassId={membership.classId}
               onPendingChange={setPending}

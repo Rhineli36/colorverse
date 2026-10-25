@@ -187,7 +187,12 @@ export async function handleShowcaseCloud(
             new TextDecoder().decode(await readLimited(request, 4096)),
           ),
         );
-      const available = await classroomNotifications(client, actor, classId);
+      const available = await classroomNotifications(
+        client,
+        actor,
+        classId,
+        env.CLASSROOM_NEXT === "true",
+      );
       if (!available.notifications.some((n) => n.id === body.id))
         throw new ClassroomFailure(404, "NOT_FOUND", "消息不存在或已不可查看");
       await client.query(
@@ -411,7 +416,12 @@ export async function handleShowcaseCloud(
     if (resource === "notifications") {
       if (request.method !== "GET")
         throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
-      const result = await classroomNotifications(client, actor, classId);
+      const result = await classroomNotifications(
+        client,
+        actor,
+        classId,
+        env.CLASSROOM_NEXT === "true",
+      );
       await client.query("COMMIT");
       return Response.json(result);
     }
@@ -445,6 +455,7 @@ export async function handleShowcaseCloud(
         review[1],
         request.method,
         body,
+        env.CLASSROOM_NEXT === "true",
       );
       await client.query("COMMIT");
       return Response.json(result);
@@ -544,7 +555,7 @@ export async function handleShowcaseCloud(
     }
     if (resource === "planets" && request.method === "GET") {
       const rows = await client.query(
-        `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, (SELECT jsonb_build_object('likes', count(*) FILTER(WHERE i.kind='like'), 'emojis', count(*) FILTER(WHERE i.kind='emoji'), 'comments', count(*) FILTER(WHERE i.kind='comment')) FROM colorverse.classroom_interactions i LEFT JOIN colorverse.showcase_works iw ON iw.id=i.work_id WHERE i.planet_id=p.id AND (i.work_id IS NULL OR iw.withdrawn_at IS NULL)) stats, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision,'learning',w.learning_context,'withdrawn',w.withdrawn_at IS NOT NULL,'canRestore',(w.withdrawn_at IS NULL OR w.withdrawn_by=p.owner_enrollment_id OR $3::boolean)) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$2::uuid OR $3::boolean)),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' AND ($3::boolean OR p.owner_enrollment_id=$2::uuid OR COALESCE(p.document->>'visible','true')<>'false') ORDER BY u.display_name`,
+        `SELECT p.id,p.owner_enrollment_id,u.display_name,p.document, (SELECT jsonb_build_object('likes', count(*) FILTER(WHERE i.kind='like'), 'emojis', count(*) FILTER(WHERE i.kind='emoji'), 'comments', count(*) FILTER(WHERE i.kind='comment')) FROM colorverse.classroom_interactions i LEFT JOIN colorverse.showcase_works iw ON iw.id=i.work_id WHERE i.planet_id=p.id AND (i.work_id IS NULL OR iw.withdrawn_at IS NULL)) stats, COALESCE((SELECT jsonb_agg(jsonb_build_object('id',w.id,'title',w.title,'description',w.description,'presetId',w.preset_id,'color',w.color,'createdAt',w.created_at,'params',w.element_params,'revision',w.revision${env.CLASSROOM_NEXT === "true" ? " ,'imageCount',1+jsonb_array_length(w.gallery_images)" : ""},'learning',w.learning_context,'withdrawn',w.withdrawn_at IS NOT NULL,'canRestore',(w.withdrawn_at IS NULL OR w.withdrawn_by=p.owner_enrollment_id OR $3::boolean)) ORDER BY w.created_at) FROM colorverse.showcase_works w WHERE w.planet_id=p.id AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$2::uuid OR $3::boolean)),'[]'::jsonb) works FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE e.class_id=$1 AND e.status='active' AND u.status='active' AND ($3::boolean OR p.owner_enrollment_id=$2::uuid OR COALESCE(p.document->>'visible','true')<>'false') ORDER BY u.display_name`,
         [
           classId,
           actor.id,
@@ -552,7 +563,7 @@ export async function handleShowcaseCloud(
         ],
       );
       const reviews = await client.query(
-        `SELECT DISTINCT ON(r.work_id) r.work_id,r.score::float8 score,r.comment FROM colorverse.showcase_reviews r JOIN colorverse.showcase_works w ON w.id=r.work_id JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE e.class_id=$1 AND (p.owner_enrollment_id=$2 OR $3::boolean) ORDER BY r.work_id,r.revision DESC`,
+        `SELECT DISTINCT ON(r.work_id) r.work_id,r.score::float8 score,r.comment FROM colorverse.showcase_reviews r JOIN colorverse.showcase_works w ON w.id=r.work_id JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id WHERE e.class_id=$1 AND (p.owner_enrollment_id=$2 OR $3::boolean) ${env.CLASSROOM_NEXT === "true" ? "AND r.submission_revision=w.submission_revision" : ""} ORDER BY r.work_id,r.revision DESC`,
         [
           classId,
           actor.id,
@@ -932,7 +943,7 @@ export async function handleShowcaseCloud(
       if (!z.uuid().safeParse(fileMatch[1]).success)
         throw new ClassroomFailure(404, "NOT_FOUND", "作品不存在");
       const result = await client.query(
-        "SELECT w.storage_key,w.original_storage_key,w.original_mime FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE w.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active' AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$3::uuid OR $4::boolean)",
+        `SELECT w.storage_key,w.original_storage_key,w.original_mime${env.CLASSROOM_NEXT === "true" ? ",w.gallery_images" : ""} FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE w.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active' AND (w.withdrawn_at IS NULL OR p.owner_enrollment_id=$3::uuid OR $4::boolean)`,
         [
           fileMatch[1],
           classId,
@@ -944,6 +955,21 @@ export async function handleShowcaseCloud(
         throw new ClassroomFailure(404, "NOT_FOUND", "作品不存在");
       const row = result.rows[0],
         original = fileMatch[2] === "original";
+      const imageIndex = Number(
+        new URL(request.url).searchParams.get("index") ?? 0,
+      );
+      if (!Number.isInteger(imageIndex) || imageIndex < 0 || imageIndex > 5)
+        throw new ClassroomFailure(404, "NOT_FOUND", "图片不存在");
+      if (imageIndex > 0) {
+        const extra =
+          env.CLASSROOM_NEXT === "true"
+            ? row.gallery_images?.[imageIndex - 1]
+            : null;
+        if (!extra) throw new ClassroomFailure(404, "NOT_FOUND", "图片不存在");
+        row.storage_key = extra.displayKey;
+        row.original_storage_key = extra.originalKey;
+        row.original_mime = extra.mime;
+      }
       if (original && !row.original_storage_key)
         throw new ClassroomFailure(404, "NOT_FOUND", "原图暂不可用");
       await client.query("COMMIT");
@@ -1000,6 +1026,7 @@ export async function handleShowcaseCloud(
           created: false,
         });
       }
+      let extraImages: Blob[] = [];
       let uploadBytes: Uint8Array | undefined,
         uploadMetadata:
           | { title: string; description: string; learning?: unknown }
@@ -1014,7 +1041,14 @@ export async function handleShowcaseCloud(
           body: envelope as BodyInit,
         }).formData();
         if (
-          [...form.keys()].some((k) => !["image", "metadata"].includes(k)) ||
+          [...form.keys()].some(
+            (k) =>
+              ![
+                "image",
+                "metadata",
+                ...(env.CLASSROOM_NEXT === "true" ? ["images"] : []),
+              ].includes(k),
+          ) ||
           form.getAll("image").length !== 1 ||
           form.getAll("metadata").length !== 1
         )
@@ -1023,6 +1057,16 @@ export async function handleShowcaseCloud(
             "INVALID_UPLOAD",
             "请提交一张图片及说明",
           );
+        if (env.CLASSROOM_NEXT === "true") {
+          const extras = form.getAll("images");
+          if (extras.length > 5 || extras.some((f) => !(f instanceof Blob)))
+            throw new ClassroomFailure(
+              400,
+              "INVALID_UPLOAD",
+              "每次最多提交六张作品图片。",
+            );
+          extraImages = extras as Blob[];
+        }
         const image = form.get("image"),
           metadata = form.get("metadata");
         if (
@@ -1051,6 +1095,22 @@ export async function handleShowcaseCloud(
         classId,
         uploadMetadata?.learning,
       );
+      if (env.CLASSROOM_NEXT === "true" && learning?.taskId) {
+        if (
+          !learning.publicationId ||
+          !(
+            await client.query(
+              "SELECT 1 FROM colorverse.classroom_publications p JOIN colorverse.classroom_recipients r ON r.publication_id=p.id WHERE p.id=$1 AND p.class_id=$2 AND p.task_id=$3 AND r.enrollment_id=$4",
+              [learning.publicationId, classId, learning.taskId, actor.id],
+            )
+          ).rows.length
+        )
+          throw new ClassroomFailure(
+            400,
+            "ASSIGNMENT_REQUIRED",
+            "请选择本次布置给你的作业；自由创作请选择自由展示。",
+          );
+      }
       const title = z
         .string()
         .trim()
@@ -1067,7 +1127,7 @@ export async function handleShowcaseCloud(
         );
       const quota = (
         await client.query(
-          "SELECT count(*)::int count,COALESCE(sum(byte_size+original_byte_size),0)::int bytes FROM colorverse.showcase_works WHERE planet_id=$1",
+          `SELECT count(*)::int count,COALESCE(sum(byte_size+original_byte_size${env.CLASSROOM_NEXT === "true" ? "+gallery_byte_size" : ""}),0)::int bytes FROM colorverse.showcase_works WHERE planet_id=$1`,
           [planet.id],
         )
       ).rows[0];
@@ -1176,6 +1236,75 @@ export async function handleShowcaseCloud(
           growthElementColor(planet.document.color, occupied.length),
         ],
       );
+      if (extraImages.length) {
+        const gallery: {
+          displayKey: string;
+          originalKey: string;
+          mime: string;
+        }[] = [];
+        let galleryBytes = 0;
+        for (let i = 0; i < extraImages.length; i++) {
+          const raw = new Uint8Array(await extraImages[i].arrayBuffer());
+          let infoExtra;
+          try {
+            infoExtra = imageInfo(raw);
+          } catch {
+            throw new ClassroomFailure(
+              400,
+              "INVALID_IMAGE",
+              "附加图片不是有效的 PNG、JPEG 或 WebP。",
+            );
+          }
+          if (infoExtra.width * infoExtra.height > 16000000)
+            throw new ClassroomFailure(
+              400,
+              "IMAGE_DIMENSIONS",
+              "每张图片最多1600万像素。",
+            );
+          const output = await env
+            .IMAGES!.input(new Blob([raw as BlobPart]).stream())
+            .transform({ width: 2048, height: 2048, fit: "scale-down" })
+            .output({ format: "image/webp", quality: 90, anim: false });
+          const decoded = new Uint8Array(await output.response().arrayBuffer());
+          galleryBytes += raw.length + decoded.length;
+          if (
+            quota.bytes + bytes.length + display.length + galleryBytes >
+            104857600
+          )
+            throw new ClassroomFailure(
+              409,
+              "QUOTA_EXCEEDED",
+              "星球素材空间已达上限。",
+            );
+          const displayKey = `${identity.subject}/${id}-gallery-${i + 1}.webp`,
+            originalKey = `${identity.subject}/${id}-gallery-${i + 1}-original.${infoExtra.mimeType.split("/")[1]}`;
+          uploadedKeys.push(displayKey, originalKey);
+          await storage(
+            env,
+            `colorverse-classroom/${originalKey}`,
+            "POST",
+            raw,
+            infoExtra.mimeType,
+          );
+          await storage(
+            env,
+            `colorverse-classroom/${displayKey}`,
+            "POST",
+            decoded,
+            "image/webp",
+          );
+          gallery.push({ displayKey, originalKey, mime: infoExtra.mimeType });
+        }
+        await client.query(
+          "UPDATE colorverse.showcase_works SET gallery_images=$1,gallery_byte_size=$2 WHERE id=$3",
+          [JSON.stringify(gallery), galleryBytes, id],
+        );
+      }
+      if (env.CLASSROOM_NEXT === "true" && learning?.publicationId)
+        await client.query(
+          "UPDATE colorverse.showcase_works SET publication_id=$1 WHERE id=$2",
+          [learning.publicationId, id],
+        );
       commitAttempted = true;
       await client.query("COMMIT");
       uploadedKeys.length = 0;
@@ -1194,7 +1323,7 @@ export async function handleShowcaseCloud(
           ),
         );
       const result = await client.query(
-        `UPDATE colorverse.showcase_works w SET description=$1,revision=w.revision+1
+        `UPDATE colorverse.showcase_works w SET description=$1,revision=w.revision+1${env.CLASSROOM_NEXT === "true" ? ",submission_revision=w.submission_revision+CASE WHEN w.description IS DISTINCT FROM $1 THEN 1 ELSE 0 END,submission_history=w.submission_history||CASE WHEN w.description IS DISTINCT FROM $1 THEN jsonb_build_array(jsonb_build_object('revision',w.submission_revision,'description',w.description,'title',w.title,'savedAt',now())) ELSE '[]'::jsonb END" : ""}
          FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id
          WHERE w.id=$2 AND w.planet_id=p.id AND e.id=$3 AND e.class_id=$4
            AND w.revision=$5 AND w.withdrawn_at IS NULL RETURNING w.id,w.revision`,

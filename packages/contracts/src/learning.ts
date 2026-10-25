@@ -41,6 +41,7 @@ export const LearningTaskSettingSchema = LearningPolicySchema.extend({
   revision: z.number().int().nonnegative(),
 });
 export const WorkLearningInput = LearningIntentSchema.extend({
+  publicationId: z.uuid().nullable().optional(),
   taskId: LearningTaskIdSchema.nullable().default(null),
   comparisonGroupId: z.uuid().nullable().default(null),
   variantLabel: z.string().trim().max(40).default(""),

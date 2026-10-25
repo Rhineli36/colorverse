@@ -7,6 +7,8 @@ import {
 } from "@colorverse/contracts";
 import "./auth.css";
 import { RoleChoices } from "../classroom/ExperienceHeader";
+import { FirstStudentLogin } from "./FirstStudentLogin";
+import { AccountSettings } from "./AccountSettings";
 import { StudentActivation } from "./StudentActivation";
 import { DisclosureMenu } from "../classroom/DisclosureMenu";
 import { InterfaceIcon } from "../classroom/InterfaceIcon";
@@ -41,6 +43,8 @@ export function AuthEntry({
     null,
   );
   const [activation, setActivation] = useState(false);
+  const [accountSettings, setAccountSettings] = useState(false);
+  const classroomNext = import.meta.env.VITE_CLASSROOM_NEXT === "true";
   const dialog = useRef<HTMLDialogElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
@@ -198,6 +202,14 @@ export function AuthEntry({
   };
   return (
     <>
+      {classroomNext &&
+        hasSession &&
+        selectedMembership?.role === "student" && (
+          <AccountSettings
+            open={accountSettings}
+            onClose={() => setAccountSettings(false)}
+          />
+        )}
       {compact && hasSession ? (
         <DisclosureMenu
           identity
@@ -212,6 +224,14 @@ export function AuthEntry({
           }
           disabled={busy || hasPendingChanges}
         >
+          {classroomNext && selectedMembership?.role === "student" && (
+            <button
+              disabled={busy || hasPendingChanges}
+              onClick={() => setAccountSettings(true)}
+            >
+              账号设置
+            </button>
+          )}
           <button
             disabled={busy || hasPendingChanges}
             onClick={() => setOpen(true)}
@@ -354,6 +374,24 @@ export function AuthEntry({
           </>
         ) : compact && !roleChoice ? (
           <RoleChoices onChoose={setRoleChoice} />
+        ) : activation && classroomNext ? (
+          <FirstStudentLogin
+            initialAccount={email}
+            onBack={() => setActivation(false)}
+            onDone={async (account, chosenPassword) => {
+              setEmail(account);
+              const { error } = await client.auth.signInWithPassword({
+                email: account,
+                password: chosenPassword,
+              });
+              if (error)
+                throw Error(
+                  "密码已设置，但登录未完成。可返回账号登录后使用刚设置的密码重试。",
+                );
+              setActivation(false);
+              setMessage("账号激活成功，正在核对班级。");
+            }}
+          />
         ) : activation ? (
           <StudentActivation
             initialAccount={email}
@@ -366,6 +404,7 @@ export function AuthEntry({
           />
         ) : (
           <form
+            aria-label="账号登录"
             onSubmit={async (event) => {
               event.preventDefault();
               if (busy) return;
@@ -438,7 +477,7 @@ export function AuthEntry({
                   setActivation(true);
                 }}
               >
-                首次激活学生账号
+                {classroomNext ? "首次登录：学号＋姓名" : "首次激活学生账号"}
               </button>
             )}
           </form>

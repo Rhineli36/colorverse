@@ -1,0 +1,392 @@
+.classroom-studio {
+  padding: 24px 0 48px;
+  color: #e5eaf5;
+  font-size: 16px;
+  --purple: #b39af6;
+  --studio-line: #6e83ad40;
+}
+.classroom-studio h1 {
+  font-size: 30px;
+  margin: 0;
+}
+.classroom-studio h2 {
+  font-size: 24px;
+}
+.classroom-studio h3 {
+  font-size: 19px;
+}
+.classroom-studio button,
+.classroom-studio input,
+.classroom-studio select {
+  font: inherit;
+  border: 1px solid var(--studio-line);
+  border-radius: 8px;
+  background: #132139;
+  color: #e9e9f5;
+  padding: 10px 14px;
+  min-height: 42px;
+  box-sizing: border-box;
+}
+.classroom-studio button {
+  cursor: pointer;
+}
+.classroom-studio button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.classroom-studio button.primary,
+.classroom-studio button[aria-pressed="true"] {
+  background: #b39af6;
+  color: #121830;
+  border-color: #b39af6;
+}
+.classroom-studio-heading {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.classroom-studio-heading nav {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+.classroom-studio-heading nav button {
+  background: transparent;
+  border-color: transparent;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+}
+.classroom-studio-heading nav button[aria-current="page"] {
+  color: #cfbfff;
+  border-bottom-color: #b39af6;
+}
+.classroom-studio-tools,
+.classroom-list-tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.classroom-list-tools input {
+  margin-left: auto;
+  min-width: 220px;
+}
+.classroom-studio-tools .teacher-primary-action {
+  min-width: 140px;
+}
+.classroom-board {
+  background: #0b182aee;
+  border: 1px solid var(--studio-line);
+  border-radius: 12px;
+  padding: 22px;
+  min-width: 0;
+}
+.assignment-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.assignment-workspace.has-review {
+  grid-template-columns: minmax(540px, 1fr) minmax(340px, 410px);
+}
+.assignment-metrics,
+.roster-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.roster-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.assignment-metrics > div,
+.roster-metrics > div {
+  padding: 14px;
+  border: 1px solid #8591cd40;
+  border-radius: 9px;
+  background: #ac9ad60b;
+}
+.assignment-metrics span,
+.roster-metrics span {
+  display: block;
+  color: #bec9e1;
+  font-size: 14px;
+}
+.assignment-metrics strong,
+.roster-metrics strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 26px;
+  color: #f1edff;
+}
+.classroom-table-scroll {
+  max-height: 64vh;
+  overflow: auto;
+  border: 1px solid var(--studio-line);
+  border-radius: 8px;
+}
+.classroom-studio table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+}
+.classroom-studio th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #1a2941;
+  font-weight: 500;
+}
+.classroom-studio td,
+.classroom-studio th {
+  text-align: left;
+  padding: 13px 14px;
+  border-bottom: 1px solid #8f9eb52a;
+  white-space: nowrap;
+}
+.classroom-studio td small {
+  display: block;
+  font-size: 13px;
+  color: #b3c0da;
+  margin-top: 5px;
+}
+.classroom-studio tr.is-selected {
+  background: #a693ed29;
+}
+.classroom-studio td > button {
+  padding: 8px 10px;
+  background: transparent;
+  color: #cfbfff;
+}
+.submission-thumb,
+.submission-placeholder {
+  width: 76px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  background: #25314a;
+}
+.submission-status {
+  display: inline-block;
+  font-size: 14px;
+  padding: 5px 10px;
+  border: 1px solid #a5b1cd44;
+  border-radius: 18px;
+  background: #a1aac714;
+}
+.submission-status.pending {
+  color: #f1c66d;
+  background: #e5b64a12;
+}
+.submission-status.reviewed {
+  color: #9ee2d2;
+  background: #76ceb314;
+}
+.submission-progress {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  color: #d4cee9;
+}
+.submission-progress progress {
+  flex: 1;
+  height: 10px;
+  accent-color: #b39af6;
+}
+.publication-card {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--studio-line);
+}
+.publication-card:last-child {
+  border: 0;
+}
+.classroom-empty {
+  padding: 24px;
+  color: #b9c5dd;
+  line-height: 1.8;
+}
+.classroom-review-drawer,
+.classroom-student-drawer {
+  background: #101e33;
+  border: 1px solid var(--studio-line);
+  border-radius: 12px;
+  padding: 22px;
+  box-sizing: border-box;
+  max-height: calc(100dvh - 120px);
+  overflow: auto;
+  position: sticky;
+  top: 110px;
+  min-width: 0;
+}
+.classroom-review-drawer header,
+.classroom-student-drawer header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--studio-line);
+}
+.classroom-review-drawer header h2,
+.classroom-student-drawer header h2 {
+  margin: 0 0 16px;
+}
+.classroom-review-drawer header button,
+.classroom-student-drawer header button {
+  background: transparent;
+  font-size: 24px;
+  border: 0;
+}
+.review-picture {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  max-height: 48vh;
+  object-fit: contain;
+  background: #080f1d;
+}
+.classroom-review-drawer > p {
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.classroom-review-drawer > small {
+  display: block;
+  color: #b7c4da;
+  margin: 12px 0;
+}
+.classroom-review-drawer .cloud-review-form {
+  display: grid;
+  gap: 18px;
+}
+.classroom-review-drawer .cloud-review-form input,
+.classroom-review-drawer .cloud-review-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+.classroom-review-drawer > button.primary {
+  width: 100%;
+  margin: 18px 0;
+}
+.classroom-review-drawer details p span {
+  display: block;
+  font-size: 14px;
+  color: #c2cce1;
+}
+.classroom-student-drawer {
+  position: fixed;
+  right: 20px;
+  top: 110px;
+  bottom: 20px;
+  width: min(480px, calc(100vw - 40px));
+  z-index: 55;
+  box-shadow: 0 15px 60px #0009;
+}
+.classroom-student-drawer article {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--studio-line);
+}
+.classroom-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #020916b8;
+  backdrop-filter: blur(5px);
+  display: grid;
+  place-items: center;
+  z-index: 80;
+}
+.classroom-publish-dialog {
+  background: #111e33;
+  border: 1px solid var(--studio-line);
+  border-radius: 12px;
+  padding: 28px;
+  width: min(650px, 90vw);
+  max-height: 85dvh;
+  overflow: auto;
+}
+.classroom-publish-dialog label {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 10px 0;
+}
+.publication-targets {
+  max-height: 35vh;
+  overflow: auto;
+  margin: 16px 0;
+}
+.classroom-studio details {
+  margin: 20px 0;
+  color: #c1cce2;
+}
+.classroom-studio details button {
+  margin: 5px;
+}
+.classroom-error,
+.classroom-secret {
+  padding: 16px;
+  background: #4a294033;
+  border: 1px solid #a991b3;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  line-height: 1.8;
+}
+.classroom-secret {
+  background: #372d5a;
+  border-color: #b39af6;
+}
+.classroom-error button,
+.classroom-secret button {
+  margin-left: 14px;
+}
+@media (max-width: 1200px) {
+  .assignment-workspace.has-review {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .classroom-review-drawer {
+    position: fixed;
+    right: 16px;
+    top: 100px;
+    bottom: 16px;
+    width: min(440px, calc(100vw - 32px));
+    z-index: 60;
+    box-shadow: 0 15px 60px #000a;
+  }
+}
+@media (max-width: 760px) {
+  .classroom-studio-heading {
+    gap: 14px;
+  }
+  .classroom-studio-heading nav {
+    width: 100%;
+    margin-left: 0;
+    overflow: auto;
+  }
+  .assignment-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .roster-metrics {
+    gap: 6px;
+  }
+  .classroom-board {
+    padding: 14px;
+  }
+  .classroom-studio-heading nav button {
+    white-space: nowrap;
+  }
+  .classroom-list-tools input {
+    width: 100%;
+    margin-left: 0;
+  }
+  .classroom-review-drawer {
+    top: 90px;
+  }
+  .classroom-studio {
+    padding-top: 18px;
+  }
+}

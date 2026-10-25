@@ -29,6 +29,18 @@ export function CloudWorkReview({
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [reload, setReload] = useState(0);
+  const latestRevision = useRef(0);
+  const submissionRevision = useRef<number | undefined>(undefined);
+  const [history, setHistory] = useState<
+    {
+      revision: number;
+      score: number | null;
+      comment: string;
+      created_at: string;
+      submissionRevision?: number;
+      description?: string | null;
+    }[]
+  >([]);
   const preserveDraft = useRef(false),
     attempt = useRef<{ payload: string; id: string } | null>(null);
   const dirty =
@@ -58,7 +70,12 @@ export function CloudWorkReview({
       .then((r) => r.json())
       .then((data) => {
         if (!active) return;
-        const value = ShowcaseReviewResponse.parse(data).review;
+        const parsed = ShowcaseReviewResponse.parse(data);
+        submissionRevision.current = parsed.submissionRevision;
+        latestRevision.current =
+          parsed.latestRevision ?? parsed.review?.revision ?? 0;
+        setHistory(parsed.history ?? []);
+        const value = parsed.review;
         setReview(value);
         setReady(true);
         if (!preserveDraft.current) reset(value);
@@ -82,7 +99,10 @@ export function CloudWorkReview({
     const payload = JSON.stringify({
       score: score === "" ? null : Number(score),
       comment: comment.trim(),
-      revision: review?.revision ?? 0,
+      revision: latestRevision.current,
+      ...(submissionRevision.current == null
+        ? {}
+        : { submissionRevision: submissionRevision.current }),
     });
     if (attempt.current?.payload !== payload)
       attempt.current = { payload, id: crypto.randomUUID() };
@@ -98,7 +118,12 @@ export function CloudWorkReview({
           }),
         },
       );
-      const value = ShowcaseReviewResponse.parse(await response.json()).review;
+      const parsed = ShowcaseReviewResponse.parse(await response.json());
+      submissionRevision.current = parsed.submissionRevision;
+      latestRevision.current =
+        parsed.latestRevision ?? parsed.review?.revision ?? 0;
+      setHistory(parsed.history ?? []);
+      const value = parsed.review;
       setReview(value);
       reset(value);
       setNotice("教师点评与评分已保存，学生可以查看。");
@@ -111,47 +136,69 @@ export function CloudWorkReview({
     }
   };
   return (
-    <ReviewPanel
-      record={
-        review
-          ? {
-              ...review,
-              author:
-                review.source === "teacher" ? review.reviewer_name : undefined,
-              date: review.created_at,
-            }
-          : null
-      }
-      staff={staff && ready}
-      score={score}
-      comment={comment}
-      busy={saving}
-      loading={loading}
-      dirty={dirty}
-      allowUnchanged={review?.source === "demo"}
-      withdrawn={withdrawn}
-      error={error}
-      notice={notice}
-      onScore={(v) => {
-        setScore(v);
-        setNotice("");
-      }}
-      onComment={(v) => {
-        setComment(v);
-        setNotice("");
-      }}
-      onSave={() => {
-        if (valid) void save();
-      }}
-      onReset={() => {
-        reset(review);
-        setError("");
-        setNotice("");
-      }}
-      onRetry={() => {
-        preserveDraft.current = ready;
-        setReload((n) => n + 1);
-      }}
-    />
+    <>
+      <ReviewPanel
+        record={
+          review
+            ? {
+                ...review,
+                author:
+                  review.source === "teacher"
+                    ? review.reviewer_name
+                    : undefined,
+                date: review.created_at,
+              }
+            : null
+        }
+        staff={staff && ready}
+        score={score}
+        comment={comment}
+        busy={saving}
+        loading={loading}
+        dirty={dirty}
+        allowUnchanged={review?.source === "demo"}
+        withdrawn={withdrawn}
+        error={error}
+        notice={notice}
+        onScore={(v) => {
+          setScore(v);
+          setNotice("");
+        }}
+        onComment={(v) => {
+          setComment(v);
+          setNotice("");
+        }}
+        onSave={() => {
+          if (valid) void save();
+        }}
+        onReset={() => {
+          reset(review);
+          setError("");
+          setNotice("");
+        }}
+        onRetry={() => {
+          preserveDraft.current = ready;
+          setReload((n) => n + 1);
+          void onSaved?.();
+        }}
+      />
+      {history.length > 0 && (
+        <details>
+          <summary>历史评分（对应此前提交内容）</summary>
+          {history.map((h) => (
+            <p key={h.revision}>
+              评价版本 {h.revision} ·{" "}
+              {h.score == null ? "暂无分数" : h.score + " 分"} · {h.comment}
+              {h.submissionRevision != null && (
+                <small> · 提交内容版本 {h.submissionRevision + 1}</small>
+              )}
+              {h.description != null && (
+                <span>当时的创作说明：{h.description}</span>
+              )}
+            </p>
+          ))}
+        </details>
+      )}
+    </>
   );
 }

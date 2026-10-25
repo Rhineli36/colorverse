@@ -1,8 +1,10 @@
 export interface AuthEnvironment {
+  CLASSROOM_NEXT?: string;
   SUPABASE_URL?: string;
   SUPABASE_PUBLISHABLE_KEY?: string;
 }
 export interface VerifiedIdentity {
+  mustChangePassword?: boolean;
   issuer: string;
   subject: string;
   email: string;
@@ -85,5 +87,16 @@ export async function verifyIdentity(
       "UNAUTHENTICATED",
       "请使用已验证邮箱的课堂账户登录",
     );
-  return { issuer: `${url}/auth/v1`, subject: user.id, email: user.email };
+  const metadata =
+    "app_metadata" in user
+      ? (user.app_metadata as Record<string, unknown> | undefined)
+      : undefined;
+  return {
+    issuer: `${url}/auth/v1`,
+    subject: user.id,
+    email: user.email,
+    ...(metadata?.colorverse_password_required === true
+      ? { mustChangePassword: true }
+      : {}),
+  };
 }

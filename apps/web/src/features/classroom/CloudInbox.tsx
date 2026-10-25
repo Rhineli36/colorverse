@@ -15,7 +15,7 @@ export function CloudInbox({
 }: {
   session: CloudSession;
   disabled?: boolean;
-  onSubmit: (classId: string, taskId: string) => void;
+  onSubmit: (classId: string, taskId: string, publicationId?: string) => void;
   onReaction: (classId: string, n: ClassroomNotification) => void;
   onPendingCount?: (count: number) => void;
 }) {
@@ -26,6 +26,7 @@ export function CloudInbox({
     [task, setTask] = useState<{
       classId: string;
       taskId: string;
+      publicationId?: string;
       definition?: AssignmentDefinition;
     }>();
   const key = `colorverse.inbox.read.${session.identity.id}`;
@@ -136,6 +137,7 @@ export function CloudInbox({
               classId: item.classId,
               taskId,
               definition: item.assignment,
+              publicationId: item.publicationId,
             });
         }}
         onReaction={(n) => {
@@ -154,7 +156,7 @@ export function CloudInbox({
               (m) => m.classId === task.classId && m.role === "student",
             )
               ? () => {
-                  onSubmit(task.classId, task.taskId);
+                  onSubmit(task.classId, task.taskId, task.publicationId);
                   setTask(undefined);
                 }
               : undefined

@@ -32,10 +32,25 @@ export const ShowcaseReviewInput = z
     score: z.number().min(0).max(100).nullable(),
     comment: z.string().trim().max(2000),
     revision: z.number().int().nonnegative(),
+    submissionRevision: z.number().int().nonnegative().optional(),
     requestId: z.uuid(),
   })
   .refine((v) => v.score !== null || v.comment.length > 0);
 export const ShowcaseReviewResponse = z.strictObject({
+  submissionRevision: z.number().int().nonnegative().optional(),
+  latestRevision: z.number().int().nonnegative().optional(),
+  history: z
+    .array(
+      z.object({
+        revision: z.number(),
+        score: z.number().nullable(),
+        comment: z.string(),
+        created_at: z.string(),
+        submissionRevision: z.number().int().nonnegative().optional(),
+        description: z.string().nullable().optional(),
+      }),
+    )
+    .optional(),
   review: z
     .strictObject({
       id: z.uuid(),

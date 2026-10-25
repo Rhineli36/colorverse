@@ -329,4 +329,48 @@ describe("roster import and one-time activation", () => {
       await call("preview", { rows }, teacher, "POST", isolatedClass),
     ).toMatchObject({ valid: true, rows: [{ status: "new" }] });
   });
+  it("uses the selected course account scope in the new classroom without merging same-number identities from other courses", async () => {
+    const course = randomUUID(),
+      cls = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.courses VALUES($1,'独立账号范围',$2)",
+      [course, ids[0]],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.classes(id,course_id,title,term,timezone) VALUES($1,$2,'新范围班','测试','Asia/Shanghai')",
+      [cls, course],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,'teacher')",
+      [randomUUID(), cls, ids[0]],
+    );
+    const rows = [{ row: 2, studentNumber: "0012", name: "新同学" }],
+      before = new Map([...authUsers].map(([id, u]) => [id, u.password]));
+    const next = (resource: string, body?: unknown) =>
+      handleStudentImport(
+        request(resource, body),
+        { ...env, CLASSROOM_NEXT: "true" },
+        teacher,
+        cls,
+        resource,
+        factory,
+        transport,
+      );
+    expect(await next("preview", { rows })).toMatchObject({
+      valid: true,
+      rows: [{ status: "new" }],
+    });
+    const job = randomUUID();
+    await next("", { requestId: job, rows });
+    expect(await next(job + "/process")).toMatchObject({
+      results: [{ result: "新建", activationCode: "" }],
+    });
+    expect(authUsers.size).toBe(before.size + 1);
+    expect(await next("preview", { rows })).toMatchObject({
+      valid: true,
+      rows: [{ status: "existing" }],
+    });
+    for (const [id, pwd] of before)
+      expect(authUsers.get(id)?.password).toBe(pwd);
+  });
 });

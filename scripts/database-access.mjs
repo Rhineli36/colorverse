@@ -94,6 +94,15 @@ export async function auditDatabaseAccess(client) {
     classroom_login_aliases: ["SELECT"],
     isolated_account_courses: ["SELECT"],
   };
+  const rolloutTables = Object.fromEntries(
+    [
+      "classroom_publications",
+      "classroom_recipients",
+      "classroom_login_history",
+      "classroom_activation_challenges",
+      "classroom_security_attempts",
+    ].map((t) => [t, ["SELECT", "INSERT", "UPDATE"]]),
+  );
   for (const [table, privileges] of Object.entries(writer))
     for (const p of privileges)
       if (!has("colorverse_classroom_writer", table, p))
@@ -122,7 +131,9 @@ export async function auditDatabaseAccess(client) {
     grants.some(
       (g) =>
         g.grantee === "colorverse_classroom_writer" &&
-        !writer[g.table_name]?.includes(g.privilege_type),
+        !(writer[g.table_name] ?? rolloutTables[g.table_name])?.includes(
+          g.privilege_type,
+        ),
     )
   )
     failures.push("writer_unexpected_table_privilege");

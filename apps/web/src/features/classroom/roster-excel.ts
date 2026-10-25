@@ -85,7 +85,10 @@ export async function readRoster(file: File) {
   }
   throw Error("没有找到同一行的“学号”和“姓名”表头，请使用模板或检查点名册");
 }
-export async function rosterWorkbook(results?: RosterResult[]) {
+export async function rosterWorkbook(
+  results?: RosterResult[],
+  firstLogin = false,
+) {
   const book = new ExcelJS.Workbook(),
     sheet = book.addWorksheet(results ? "账号清单" : "学生名单");
   sheet.columns = results
@@ -94,7 +97,11 @@ export async function rosterWorkbook(results?: RosterResult[]) {
         { header: "登录账号", key: "loginAccount", width: 38 },
         { header: "姓名", key: "name", width: 18 },
         { header: "班级", key: "className", width: 38 },
-        { header: "首次激活码", key: "activationCode", width: 28 },
+        {
+          header: firstLogin ? "首次登录方式" : "首次激活码",
+          key: "activationCode",
+          width: 38,
+        },
         { header: "创建结果", key: "result", width: 14 },
         { header: "说明", key: "message", width: 70 },
       ]
@@ -103,7 +110,19 @@ export async function rosterWorkbook(results?: RosterResult[]) {
         { header: "姓名", key: "name", width: 20 },
       ];
   for (const column of sheet.columns) column.numFmt = "@";
-  if (results) for (const row of results) sheet.addRow(row);
+  if (results)
+    for (const row of results)
+      sheet.addRow(
+        firstLogin
+          ? {
+              ...row,
+              activationCode:
+                row.result === "失败"
+                  ? "—"
+                  : "未激活：学号＋姓名；已激活：学号＋密码",
+            }
+          : row,
+      );
   else {
     sheet.addRow({ studentNumber: "001234", name: "示例同学" });
     sheet.getCell("A2").note =
@@ -131,8 +150,11 @@ export async function rosterWorkbook(results?: RosterResult[]) {
   });
   return new Uint8Array(await book.xlsx.writeBuffer());
 }
-export async function downloadRoster(results?: RosterResult[]) {
-  const bytes = await rosterWorkbook(results),
+export async function downloadRoster(
+  results?: RosterResult[],
+  firstLogin = false,
+) {
+  const bytes = await rosterWorkbook(results, firstLogin),
     url = URL.createObjectURL(
       new Blob([bytes as BlobPart], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

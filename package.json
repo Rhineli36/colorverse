@@ -27,6 +27,7 @@
     "cloud:verify": "node scripts/verify-cloudflare.mjs",
     "cloud:database": "tsx scripts/cloud-database.mjs",
     "cloud:database-access": "node scripts/database-access.mjs",
+    "classroom:next": "node scripts/classroom-next.mjs",
     "cloud:hyperdrive": "node scripts/cloud-hyperdrive.mjs"
   },
   "dependencies": {

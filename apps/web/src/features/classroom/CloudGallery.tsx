@@ -57,6 +57,7 @@ const Params = z.object({
 const Work = z.object({
   id: z.uuid(),
   learning: WorkLearningSchema.nullable().optional(),
+  imageCount: z.number().int().min(1).max(6).default(1),
   title: z.string(),
   score: z.number().nullable().optional(),
   comment: z.string().optional(),
@@ -88,18 +89,46 @@ export const Gallery = z.object({
   planets: z.array(Planet),
 });
 type WorkData = z.infer<typeof Work>;
-function PrivateImage({ classId, id }: { classId: string; id: string }) {
-  const image = usePrivateImage(`classes/${classId}/works/${id}/image`, id);
+function PrivateImage({
+  classId,
+  id,
+  count = 1,
+}: {
+  classId: string;
+  id: string;
+  count?: number;
+}) {
+  const [imageIndex, setImageIndex] = useState(0);
+  useEffect(() => setImageIndex(0), [id]);
+  const image = usePrivateImage(
+    `classes/${classId}/works/${id}/image?index=${imageIndex}`,
+    id + ":" + imageIndex,
+  );
   const [zoom, setZoom] = useState(false);
   useEffect(() => setZoom(false), [id]);
   return image.url ? (
-    <button
-      className={`work-image-button ${zoom ? "zoomed" : ""}`}
-      aria-label={zoom ? "还原作品图片" : "放大作品图片"}
-      onClick={() => setZoom((v) => !v)}
-    >
-      <img src={image.url} alt="提交的展示作品" />
-    </button>
+    <>
+      {count > 1 && (
+        <div className="row-buttons">
+          {Array.from({ length: count }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setImageIndex(i)}
+              aria-pressed={imageIndex === i}
+            >
+              图片 {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
+      <button
+        className={`work-image-button ${zoom ? "zoomed" : ""}`}
+        aria-label={zoom ? "还原作品图片" : "放大作品图片"}
+        onClick={() => setZoom((v) => !v)}
+      >
+        <img src={image.url} alt="提交的展示作品" />
+      </button>
+    </>
   ) : (
     <p className="cloud-image-loading">
       {image.error ? (
@@ -145,6 +174,7 @@ export function CloudGallery({
   navigation?: {
     action: "universe" | "room" | "edit" | "knowledge" | "submit" | "feedback";
     taskId?: string;
+    publicationId?: string;
     planetId?: string;
     workId?: string | null;
     sequence: number;
@@ -190,6 +220,10 @@ export function CloudGallery({
     [tasks, setTasks] = useState<LearningTaskSetting[]>([]),
     [taskPending, setTaskPending] = useState(false),
     [taskId, setTaskId] = useState(""),
+    [publicationId, setPublicationId] = useState(""),
+    [publications, setPublications] = useState<
+      { id: string; taskId: string; definition: { title: string } }[]
+    >([]),
     [intent, setIntent] = useState<LearningIntent>(blankIntent),
     [comparisonGroup, setComparisonGroup] = useState(""),
     [variantLabel, setVariantLabel] = useState(""),
@@ -206,6 +240,7 @@ export function CloudGallery({
     [guideRevision, setGuideRevision] = useState(0),
     [planetBirth, setPlanetBirth] = useState(""),
     [file, setFile] = useState<File | null>(null),
+    [extraFiles, setExtraFiles] = useState<File[]>([]),
     [comment, setComment] = useState(""),
     [likeCounts, setLikeCounts] = useState<Record<string, number>>({}),
     [interactions, setInteractions] = useState<
@@ -334,6 +369,14 @@ export function CloudGallery({
         await classroomRequest(`classes/${classId}/learning-tasks`)
       ).json();
       setTasks(v.tasks.map((t: unknown) => LearningTaskSettingSchema.parse(t)));
+      if (import.meta.env.VITE_CLASSROOM_NEXT === "true")
+        setPublications(
+          (
+            await (
+              await classroomRequest(`classes/${classId}/publications`)
+            ).json()
+          ).publications,
+        );
     } catch {
       /* Free exhibition remains available; submit rechecks the selected task on the server. */
     }
@@ -363,6 +406,7 @@ export function CloudGallery({
     setWork(null);
     setTasks([]);
     setTaskId("");
+    setPublicationId("");
     setIntent(blankIntent());
     setComparisonGroup("");
     setVariantLabel("");
@@ -410,6 +454,15 @@ export function CloudGallery({
   }, [classId, session.identity.id, initialPlanetId]);
   useEffect(() => {
     let active = true;
+    if (import.meta.env.VITE_CLASSROOM_NEXT === "true") {
+      setPublications([]);
+      void classroomRequest(`classes/${classId}/publications`)
+        .then((r) => r.json())
+        .then((v) => {
+          if (active) setPublications(v.publications);
+        })
+        .catch((e) => active && setNotice(e.message));
+    }
     void classroomRequest(`classes/${classId}/learning-tasks`)
       .then((r) => r.json())
       .then((v) => {
@@ -483,6 +536,7 @@ export function CloudGallery({
       setPlanetId(myPlanet.id);
       setExploring(true);
       setTaskId(navigation.taskId ?? "");
+      setPublicationId(navigation.publicationId ?? "");
       setIntent(blankIntent());
       setTitle("");
       setDescription("");
@@ -1799,23 +1853,40 @@ export function CloudGallery({
               <select
                 aria-label="选择教学任务"
                 disabled={busy}
-                value={taskId}
+                value={
+                  import.meta.env.VITE_CLASSROOM_NEXT === "true"
+                    ? publicationId
+                    : taskId
+                }
                 onChange={(e) => {
-                  setTaskId(e.target.value);
+                  if (import.meta.env.VITE_CLASSROOM_NEXT === "true") {
+                    setPublicationId(e.target.value);
+                    setTaskId(
+                      publications.find((p) => p.id === e.target.value)
+                        ?.taskId ?? "",
+                    );
+                  } else setTaskId(e.target.value);
                   setComparisonGroup("");
                 }}
               >
                 <option value="">自由展示</option>
-                {tasks
-                  .filter((t) => t.published)
-                  .map((t) => (
-                    <option key={t.taskId} value={t.taskId}>
-                      {t.definition?.title ??
-                        AssignmentCatalog.find((task) => task.id === t.taskId)
-                          ?.title ??
-                        t.taskId}
-                    </option>
-                  ))}
+                {import.meta.env.VITE_CLASSROOM_NEXT === "true"
+                  ? publications.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.definition.title}
+                      </option>
+                    ))
+                  : tasks
+                      .filter((t) => t.published)
+                      .map((t) => (
+                        <option key={t.taskId} value={t.taskId}>
+                          {t.definition?.title ??
+                            AssignmentCatalog.find(
+                              (task) => task.id === t.taskId,
+                            )?.title ??
+                            t.taskId}
+                        </option>
+                      ))}
               </select>
             </label>
             <TaskPrompt
@@ -1833,6 +1904,17 @@ export function CloudGallery({
                   });
                   const form = new FormData();
                   form.set("image", file);
+                  if (import.meta.env.VITE_CLASSROOM_NEXT === "true") {
+                    if (extraFiles.length > 5)
+                      throw Error("每次最多六张图片。");
+                    if (
+                      [file, ...extraFiles].reduce((n, f) => n + f.size, 0) >
+                      8388608
+                    )
+                      throw Error("本次作品图片合计最多8MB。");
+                    for (const image of extraFiles)
+                      form.append("images", image);
+                  }
                   const groupId = taskId
                     ? comparisonGroup || crypto.randomUUID()
                     : null;
@@ -1845,6 +1927,9 @@ export function CloudGallery({
                       learning: {
                         ...intent,
                         taskId: taskId || null,
+                        ...(import.meta.env.VITE_CLASSROOM_NEXT === "true"
+                          ? { publicationId: publicationId || null }
+                          : {}),
                         comparisonGroupId: groupId,
                         variantLabel,
                       },
@@ -1882,11 +1967,16 @@ export function CloudGallery({
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   disabled={busy}
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  multiple={import.meta.env.VITE_CLASSROOM_NEXT === "true"}
+                  onChange={(e) => {
+                    setFile(e.target.files?.[0] ?? null);
+                    setExtraFiles(Array.from(e.target.files ?? []).slice(1));
+                  }}
                 />
               </label>
               <p className="muted">
-                PNG / JPEG / WebP，最多 8 MB。保留原图，展示图自动优化。
+                PNG / JPEG / WebP，合计最多 8
+                MB。可选多图，保留原图并优化展示图。
               </p>
               <label>
                 想表达什么
@@ -1980,7 +2070,11 @@ export function CloudGallery({
             >
               ×
             </button>
-            <PrivateImage classId={classId} id={work.id} />
+            <PrivateImage
+              classId={classId}
+              id={work.id}
+              count={work.imageCount}
+            />
             <h2>{work.title}</h2>
             <p>{work.description}</p>
             <WorkIntentView learning={work.learning} />

@@ -30,6 +30,7 @@ export type AssignmentPublication = {
   publishedAt: string;
 };
 export type ClassroomNotification = {
+  publicationId?: string;
   id: string;
   kind:
     | "assignment"

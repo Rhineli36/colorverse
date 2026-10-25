@@ -269,4 +269,45 @@ describe("cloud work description ownership and revisions", () => {
     expect(saved.learningIntent.customMood).toBe(preset.mood);
     expect(saved.skin).toBe(4);
   });
+  it("preserves the exact previous description when classroom content changes, without invalidating a no-op save", async () => {
+    await db.exec(
+      "ALTER TABLE colorverse.showcase_works ADD COLUMN title text DEFAULT '测试作品', ADD COLUMN submission_revision integer NOT NULL DEFAULT 0, ADD COLUMN submission_history jsonb NOT NULL DEFAULT '[]'",
+    );
+    const old = (
+      await db.query(
+        "SELECT description,revision FROM colorverse.showcase_works WHERE id=$1",
+        [work],
+      )
+    ).rows[0];
+    const save = async (revision: number) =>
+      handleShowcaseCloud(
+        new Request("https://test.invalid", {
+          method: "PUT",
+          body: JSON.stringify({ description: "新版内容说明", revision }),
+        }),
+        { ...env, CLASSROOM_NEXT: "true" },
+        identity(),
+        classId,
+        `works/${work}/description`,
+        client,
+      );
+    await save(Number(old.revision));
+    let row = (
+      await db.query("SELECT * FROM colorverse.showcase_works WHERE id=$1", [
+        work,
+      ])
+    ).rows[0];
+    expect(row.submission_revision).toBe(1);
+    expect(row.submission_history).toMatchObject([
+      { revision: 0, description: old.description },
+    ]);
+    await save(Number(row.revision));
+    row = (
+      await db.query("SELECT * FROM colorverse.showcase_works WHERE id=$1", [
+        work,
+      ])
+    ).rows[0];
+    expect(row.submission_revision).toBe(1);
+    expect(row.submission_history).toHaveLength(1);
+  });
 });

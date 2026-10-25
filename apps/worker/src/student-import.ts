@@ -116,10 +116,12 @@ async function admin(
   const data = await r.json().catch(() => null);
   return { ok: r.ok, status: r.status, data };
 }
-async function existingStudents(sql: Sql, courseId: string) {
+async function existingStudents(sql: Sql, courseId: string, scoped = false) {
   return (
     await sql.query(
-      `SELECT DISTINCT u.id,u.auth_subject,u.status,u.display_name,u.student_number,u.real_name,a.login_account,a.login_email FROM colorverse.users u JOIN colorverse.enrollments e ON e.user_id=u.id JOIN colorverse.classes c ON c.id=e.class_id LEFT JOIN colorverse.student_accounts a ON a.user_id=u.id WHERE e.role='student' AND (c.course_id=$1 OR (NOT EXISTS(SELECT 1 FROM colorverse.isolated_account_courses WHERE course_id=$1) AND NOT EXISTS(SELECT 1 FROM colorverse.isolated_account_courses WHERE course_id=c.course_id)))`,
+      scoped
+        ? `SELECT DISTINCT u.id,u.auth_subject,u.status,u.display_name,u.student_number,u.real_name,a.login_account,a.login_email FROM colorverse.users u JOIN colorverse.enrollments e ON e.user_id=u.id JOIN colorverse.classes c ON c.id=e.class_id LEFT JOIN colorverse.student_accounts a ON a.user_id=u.id AND a.course_id=c.course_id WHERE e.role='student' AND c.course_id=$1`
+        : `SELECT DISTINCT u.id,u.auth_subject,u.status,u.display_name,u.student_number,u.real_name,a.login_account,a.login_email FROM colorverse.users u JOIN colorverse.enrollments e ON e.user_id=u.id JOIN colorverse.classes c ON c.id=e.class_id LEFT JOIN colorverse.student_accounts a ON a.user_id=u.id WHERE e.role='student' AND (c.course_id=$1 OR (NOT EXISTS(SELECT 1 FROM colorverse.isolated_account_courses WHERE course_id=$1) AND NOT EXISTS(SELECT 1 FROM colorverse.isolated_account_courses WHERE course_id=c.course_id)))`,
       [courseId],
     )
   ).rows;
@@ -138,8 +140,9 @@ async function preview(
   sql: Sql,
   rows: RosterRow[],
   courseId: string,
+  scoped = false,
 ): Promise<RosterPreviewRow[]> {
-  const students = await existingStudents(sql, courseId);
+  const students = await existingStudents(sql, courseId, scoped);
   return validateRoster(rows).map((r) => {
     if (r.status === "invalid") return r;
     const found = matching(students, r);
@@ -210,14 +213,21 @@ async function createRow(
       )
     ).rows.length > 0;
   await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-    (isolated ? courseId : "classroom") + ":" + row.studentNumber.toLowerCase(),
+    (isolated || env.CLASSROOM_NEXT === "true" ? courseId : "classroom") +
+      ":" +
+      row.studentNumber.toLowerCase(),
   ]);
-  const check = (await preview(sql, [row], courseId))[0];
+  const check = (
+    await preview(sql, [row], courseId, env.CLASSROOM_NEXT === "true")
+  )[0];
   if (check.status === "invalid")
     throw new ClassroomFailure(409, "STUDENT_CONFLICT", check.message);
   const base = { ...row, className, activationCode: "" };
   if (check.status === "existing") {
-    const u = matching(await existingStudents(sql, courseId), row)[0];
+    const u = matching(
+      await existingStudents(sql, courseId, env.CLASSROOM_NEXT === "true"),
+      row,
+    )[0];
     await enroll(sql, String(u.id), classId);
     let loginAccount = String(u.login_account || "");
     if (!loginAccount) {
@@ -321,14 +331,17 @@ async function createRow(
       loginAccount,
       email,
       userId,
-      await digest(loginAccount.toLowerCase() + ":" + code),
+      env.CLASSROOM_NEXT === "true"
+        ? null
+        : await digest(loginAccount.toLowerCase() + ":" + code),
     ],
   );
   await enroll(sql, userId, classId);
   return {
     ...base,
     loginAccount,
-    activationCode: code.match(/.{4}/g)!.join("-"),
+    activationCode:
+      env.CLASSROOM_NEXT === "true" ? "" : code.match(/.{4}/g)!.join("-"),
     result: "新建",
     message: "首次使用请激活并设置自己的密码",
   };
@@ -367,7 +380,12 @@ export async function handleStudentImport(
       const input = z
         .object({ rows: RosterRowsSchema })
         .parse(await smallJson(request));
-      const rows = await preview(sql, input.rows, courseId);
+      const rows = await preview(
+        sql,
+        input.rows,
+        courseId,
+        env.CLASSROOM_NEXT === "true",
+      );
       await sql.query("COMMIT", []);
       return { rows, valid: rows.every((r) => r.status !== "invalid") };
     }
@@ -375,7 +393,12 @@ export async function handleStudentImport(
       const input = z
         .strictObject({ requestId: z.uuid(), rows: RosterRowsSchema })
         .parse(await smallJson(request));
-      const rows = await preview(sql, input.rows, courseId);
+      const rows = await preview(
+        sql,
+        input.rows,
+        courseId,
+        env.CLASSROOM_NEXT === "true",
+      );
       if (rows.some((r) => r.status === "invalid"))
         throw new ClassroomFailure(
           400,
