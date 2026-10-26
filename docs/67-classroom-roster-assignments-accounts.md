@@ -121,3 +121,9 @@ pnpm classroom:next deploy
 构建与发布脚本读取忽略于 Git 的现有配置文件，使用 reader/writer Hyperdrive 及服务端 Auth/Storage secret；secret 通过标准输入写入独立 Worker，不放在前端或公开说明中。不要为本轮运行 `cloud:deploy`、Pages 的主分支发布或 `package:desktop`。
 
 需要回退时，只回退独立课堂 Worker 的已发布版本。增量表列可保留，不执行删除表、清库或破坏性降级；原参赛 Worker 不参与回退。
+
+## 2026-10-26 样式补丁
+
+色彩情感的八个色系按钮选中后保持透明背景，去掉通用按钮样式带入的浅色方块，保留圆形选中提示和键盘焦点提示。浏览器逐项切换八个色系，并模拟课堂容器的样式覆盖后验证通过，无脚本异常。
+
+独立课堂 Worker 更新至 `549eb04e-67f2-4ae5-9183-1fdae1b17968`；原参赛 Worker 仍为 `76b2e8b5-3634-456b-b00e-b6a2f68dd210`。本补丁不涉及数据库、账号密码或 EXE。

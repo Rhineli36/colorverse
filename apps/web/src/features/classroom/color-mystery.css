@@ -504,6 +504,7 @@
   border: 1px solid #ffffff80;
 }
 .chromatic-study .study-family-nav [aria-pressed="true"] {
+  background: transparent;
   color: #ecd3ff;
 }
 .study-family-nav [aria-pressed="true"] i {
