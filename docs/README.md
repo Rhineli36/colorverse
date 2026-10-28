@@ -121,3 +121,5 @@
 - [66 · Supabase Data API 默认授权变更检查](66-supabase-data-api-grants-audit.md)
 
 - [67 · 线上课堂学生名单、作业批改与账号生命周期](67-classroom-roster-assignments-accounts.md)
+
+- [68 · 云端课堂色彩实验室与深海水母](68-classroom-color-lab.md)

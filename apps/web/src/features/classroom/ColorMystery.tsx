@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useId } from "react";
+import { useState, useEffect, useRef, useId, useContext } from "react";
 import {
   LearningContent,
   findEmotionCase,
@@ -10,31 +10,45 @@ import { KnowledgeExperiment } from "./KnowledgeExperiment";
 import { KnowledgeExampleImages } from "./knowledge-example-images";
 import { readStudyPreference, saveStudyPreference } from "./study-preferences";
 import "./color-mystery.css";
+import {
+  ColorLabEnabled,
+  LAB_PATH,
+  STUDY_PATH,
+  labNavigate,
+} from "../color-lab/lab-navigation";
+import { LabLanding } from "../color-lab/LabLanding";
 export function ColorMystery({
   related = [],
   initialCaseId,
   onApplyColor,
   onBack,
   backLabel = "返回宇宙",
+  routedTab,
 }: {
   related?: string[];
   initialCaseId?: string;
   onApplyColor?: (c: EmotionCase) => void;
   onBack?: () => void;
   backLabel?: string;
+  routedTab?: string;
 }) {
+  const labEnabled = useContext(ColorLabEnabled);
   const instance = useId();
   const reference = findEmotionCase(
     initialCaseId ?? related.find((id) => !!findEmotionCase(id)),
   );
   const preference = readStudyPreference("topic");
   const [tab, setTab] = useState(
-    reference || related[0] === "K08"
-      ? "emotion"
-      : preference.tab === "emotion"
+    routedTab ??
+      (reference || related[0] === "K08"
         ? "emotion"
-        : "knowledge",
+        : preference.tab === "emotion"
+          ? "emotion"
+          : "knowledge"),
   );
+  useEffect(() => {
+    if (routedTab) setTab(routedTab);
+  }, [routedTab]);
   const [knowledge, setKnowledge] = useState(
     related.find((id) => /^K0[1-7]$/.test(id)) ??
       (typeof preference.knowledge === "string" &&
@@ -66,6 +80,7 @@ export function ColorMystery({
         {[
           ["knowledge", "色彩知识"],
           ["emotion", "色彩情感"],
+          ...(labEnabled ? [["lab", "色彩实验室"]] : []),
         ].map(([id, name]) => (
           <button
             key={id}
@@ -73,7 +88,15 @@ export function ColorMystery({
             id={instance + "study-tab-" + id}
             aria-controls={instance + "study-panel-" + id}
             aria-selected={tab === id}
-            onClick={() => setTab(id)}
+            onClick={() => {
+              if (labEnabled && (routedTab || id === "lab"))
+                labNavigate(
+                  id === "lab"
+                    ? LAB_PATH
+                    : STUDY_PATH + (id === "emotion" ? "?tab=emotion" : ""),
+                );
+              else setTab(id);
+            }}
           >
             {name}
           </button>
@@ -161,7 +184,17 @@ export function ColorMystery({
       >
         <EmotionCases initialCaseId={reference?.id} onApply={onApplyColor} />
       </section>
-      <footer className="study-footer">
+      {labEnabled && (
+        <section
+          role="tabpanel"
+          id={instance + "study-panel-lab"}
+          aria-labelledby={instance + "study-tab-lab"}
+          hidden={tab !== "lab"}
+        >
+          {tab === "lab" && <LabLanding />}
+        </section>
+      )}
+      <footer className="study-footer" hidden={tab === "lab"}>
         <span>色彩的感受，也与你的经历和画面情境有关。</span>
         <details>
           <summary>参考资料与创作来源</summary>

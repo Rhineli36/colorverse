@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, lazy, Suspense } from "react";
 import type { CloudSession, EmotionCase } from "@colorverse/contracts";
 import { AuthEntry } from "../auth/AuthEntry";
 import { CompetitionView } from "../competition/CompetitionView";
@@ -15,8 +15,42 @@ import "./classroom.css";
 import "../competition/competition.css";
 import "../competition/offline-experience.css";
 import "./experience.css";
+import { ColorMystery } from "./ColorMystery";
+import {
+  ColorLabEnabled,
+  STUDY_PATH,
+  labNavigate,
+  useLabLocation,
+} from "../color-lab/lab-navigation";
+import { experiments } from "../color-lab/experiments";
+const JellyfishLab = lazy(experiments[0].load);
 
 export function CloudExperienceView() {
+  const labLocation = useLabLocation();
+  const labEnabled =
+    import.meta.env.VITE_CLASSROOM_NEXT === "true" &&
+    !/^\/(review|exhibition)(\/|$)/.test(location.pathname);
+  const labOpen = labEnabled && labLocation.experiment;
+  const studyOpen = labEnabled && labLocation.study;
+  useEffect(() => {
+    if (!labOpen) return;
+    const header = document.querySelector<HTMLElement>(
+      ".cloud-experience > .competition-header",
+    );
+    if (!header) return;
+    const resize = () =>
+      document.documentElement.style.setProperty(
+        "--lab-header-height",
+        header.getBoundingClientRect().height + "px",
+      );
+    const observer = new ResizeObserver(resize);
+    observer.observe(header);
+    resize();
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--lab-header-height");
+    };
+  }, [labOpen]);
   const [session, setSession] = useState<CloudSession | null>(null);
   const [reviewWorkId, setReviewWorkId] = useState<string>();
   const [reviewWorkRequest, setReviewWorkRequest] = useState(0);
@@ -82,6 +116,13 @@ export function CloudExperienceView() {
       setNotice("请先保存或取消当前修改。");
       return;
     }
+    if (labEnabled) {
+      if (destination === "knowledge") {
+        labNavigate(STUDY_PATH);
+        return;
+      }
+      if (labOpen || studyOpen) labNavigate(import.meta.env.BASE_URL);
+    }
     if (!active) {
       setGuestNavigation((n) => ({ destination, sequence: n.sequence + 1 }));
       return;
@@ -106,135 +147,157 @@ export function CloudExperienceView() {
     setNavigation((n) => ({ ...data, action, sequence: n.sequence + 1 }));
   };
   return (
-    <div
-      className={`competition-app offline-app cloud-experience ${screen === "universe" && !teacher ? "universe-active" : ""}`}
-      data-experience-mode="cloud"
-    >
-      <ExperienceHeader
-        current={
-          teacher
-            ? "teacher"
-            : screen === "learning"
+    <ColorLabEnabled.Provider value={labEnabled}>
+      <div
+        className={`competition-app offline-app cloud-experience ${!labOpen && !studyOpen && screen === "universe" && !teacher ? "universe-active" : ""} ${labOpen ? "lab-open" : ""} ${labOpen && labLocation.classroom ? "lab-classroom" : ""}`}
+        data-experience-mode="cloud"
+      >
+        <ExperienceHeader
+          current={
+            labOpen || studyOpen
               ? "knowledge"
-              : screen === "gallery"
-                ? "room"
-                : screen === "create"
-                  ? "edit"
-                  : ["room", "edit", "knowledge"].includes(screen)
-                    ? (screen as ExperienceDestination)
-                    : "universe"
-        }
-        modeLabel={
-          location.pathname.startsWith("/review") ||
-          membership?.title.includes("评审体验")
-            ? "评审体验 · 演示内容"
-            : undefined
-        }
-        pendingCount={pendingCount}
-        role={role}
-        disabled={pending}
-        onNavigate={navigate}
-        account={
-          <>
-            {active && (
-              <CloudInbox
-                onPendingCount={setPendingCount}
-                session={active}
-                disabled={pending}
-                onSubmit={(id, taskId, publicationId) =>
-                  jump(id, "submit", { taskId, publicationId })
-                }
-                onReaction={(id, n) => {
-                  if (
-                    import.meta.env.VITE_CLASSROOM_NEXT === "true" &&
-                    role === "teacher" &&
-                    n.workId
-                  ) {
-                    setClassId(id);
-                    setReviewWorkId(n.workId);
-                    setReviewWorkRequest((v) => v + 1);
-                    setTeacher(true);
-                  } else jump(id, "feedback", n);
+              : teacher
+                ? "teacher"
+                : screen === "learning"
+                  ? "knowledge"
+                  : screen === "gallery"
+                    ? "room"
+                    : screen === "create"
+                      ? "edit"
+                      : ["room", "edit", "knowledge"].includes(screen)
+                        ? (screen as ExperienceDestination)
+                        : "universe"
+          }
+          modeLabel={
+            location.pathname.startsWith("/review") ||
+            membership?.title.includes("评审体验")
+              ? "评审体验 · 演示内容"
+              : undefined
+          }
+          pendingCount={pendingCount}
+          role={role}
+          disabled={pending}
+          onNavigate={navigate}
+          account={
+            <>
+              {active && (
+                <CloudInbox
+                  onPendingCount={setPendingCount}
+                  session={active}
+                  disabled={pending}
+                  onSubmit={(id, taskId, publicationId) =>
+                    jump(id, "submit", { taskId, publicationId })
+                  }
+                  onReaction={(id, n) => {
+                    if (
+                      import.meta.env.VITE_CLASSROOM_NEXT === "true" &&
+                      role === "teacher" &&
+                      n.workId
+                    ) {
+                      setClassId(id);
+                      setReviewWorkId(n.workId);
+                      setReviewWorkRequest((v) => v + 1);
+                      setTeacher(true);
+                    } else jump(id, "feedback", n);
+                  }}
+                />
+              )}
+              <AuthEntry
+                key="cloud-auth"
+                compact
+                onSession={setSession}
+                openRequest={loginRequest}
+                hasPendingChanges={pending}
+                onEnter={async (m) => {
+                  if (pending) return false;
+                  setClassId(m.classId);
+                  setTeacher(m.role !== "student");
+                  setNavigation((n) => ({
+                    action: "universe",
+                    sequence: n.sequence + 1,
+                  }));
+                  return true;
                 }}
               />
-            )}
-            <AuthEntry
-              key="cloud-auth"
-              compact
-              onSession={setSession}
-              openRequest={loginRequest}
-              hasPendingChanges={pending}
-              onEnter={async (m) => {
-                if (pending) return false;
-                setClassId(m.classId);
-                setTeacher(m.role !== "student");
-                setNavigation((n) => ({
-                  action: "universe",
-                  sequence: n.sequence + 1,
-                }));
-                return true;
+            </>
+          }
+        />
+        {notice && (
+          <p role="status" className="offline-notice">
+            {notice}
+          </p>
+        )}
+        {labOpen ? (
+          <main className="competition-main">
+            <Suspense fallback={<p role="status">正在载入水母实验…</p>}>
+              <JellyfishLab classroom={labLocation.classroom} />
+            </Suspense>
+          </main>
+        ) : studyOpen ? (
+          <main className="competition-main">
+            <ColorMystery
+              routedTab={labLocation.tab}
+              onBack={() => navigate("universe")}
+              onApplyColor={(c) => {
+                setInitialColor(c);
+                if (role === "student") navigate("edit");
+                else requestLogin(c);
               }}
             />
-          </>
-        }
-      />
-      {notice && (
-        <p role="status" className="offline-notice">
-          {notice}
-        </p>
-      )}
-      {active && membership ? (
-        <main className="competition-main">
-          {teacher && role === "teacher" ? (
-            <TeacherView
-              {...(import.meta.env.VITE_CLASSROOM_NEXT === "true"
-                ? {
-                    initialWorkId: reviewWorkId,
-                    initialWorkRequest: reviewWorkRequest,
-                  }
-                : {})}
-              session={active}
-              initialClassId={membership.classId}
-              onPendingChange={setPending}
-              onPlanetAction={(id, action, targetClass, workId) => {
-                setClassId(targetClass);
-                setTeacher(false);
-                setNavigation((n) => ({
-                  action,
-                  planetId: id,
-                  workId,
-                  sequence: n.sequence + 1,
-                }));
-              }}
-            />
-          ) : (
-            <CloudStudentGate
-              key={`${active.identity.id}:${membership.classId}`}
-              enabled={role === "student"}
-              classId={membership.classId}
-            >
-              <CloudGallery
-                key={`${active.identity.id}:${membership.classId}`}
+          </main>
+        ) : active && membership ? (
+          <main className="competition-main">
+            {teacher && role === "teacher" ? (
+              <TeacherView
+                {...(import.meta.env.VITE_CLASSROOM_NEXT === "true"
+                  ? {
+                      initialWorkId: reviewWorkId,
+                      initialWorkRequest: reviewWorkRequest,
+                    }
+                  : {})}
                 session={active}
                 initialClassId={membership.classId}
-                initialColorCase={initialColor}
-                navigation={navigation}
-                experience
                 onPendingChange={setPending}
-                onViewChange={setScreen}
+                onPlanetAction={(id, action, targetClass, workId) => {
+                  setClassId(targetClass);
+                  setTeacher(false);
+                  setNavigation((n) => ({
+                    action,
+                    planetId: id,
+                    workId,
+                    sequence: n.sequence + 1,
+                  }));
+                }}
               />
-            </CloudStudentGate>
-          )}
-        </main>
-      ) : (
-        <CompetitionView
-          readOnly
-          hideHeader
-          navigation={guestNavigation}
-          onRequestLogin={requestLogin}
-          onViewChange={setScreen}
-        />
-      )}
-    </div>
+            ) : (
+              <CloudStudentGate
+                key={`${active.identity.id}:${membership.classId}`}
+                enabled={role === "student"}
+                classId={membership.classId}
+              >
+                <CloudGallery
+                  key={`${active.identity.id}:${membership.classId}`}
+                  session={active}
+                  initialClassId={membership.classId}
+                  initialColorCase={initialColor}
+                  navigation={navigation}
+                  experience
+                  onPendingChange={setPending}
+                  onViewChange={setScreen}
+                />
+              </CloudStudentGate>
+            )}
+          </main>
+        ) : (
+          <CompetitionView
+            readOnly
+            hideHeader
+            navigation={guestNavigation}
+            onRequestLogin={requestLogin}
+            onViewChange={setScreen}
+          />
+        )}
+      </div>
+    </ColorLabEnabled.Provider>
   );
 }
