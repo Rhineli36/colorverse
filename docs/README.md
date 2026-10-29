@@ -123,4 +123,5 @@
 - [67 · 线上课堂学生名单、作业批改与账号生命周期](67-classroom-roster-assignments-accounts.md)
 
 - [68 · 云端课堂色彩实验室与深海水母](68-classroom-color-lab.md)
-`n- [69 · 云端课堂色彩之树](69-classroom-color-tree.md)
+
+- [69 · 云端课堂色彩之树](69-classroom-color-tree.md)

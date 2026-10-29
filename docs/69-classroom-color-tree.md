@@ -55,3 +55,21 @@ pnpm dev --port 5186
 ## 已知限制
 
 这是风格化、程序生成的实时三维场景，非参考图的照片级重建。远山简化为几何层，枝干固定，微风作用于叶片。本版只开放受控比较，未提供艺术演绎、季节落叶/积雪、独立提交或评分。没有宣称材质 HEX 等于受光叶片最终显示值；像素一致性保证针对明确标记的教学目标色片内部。自动化测试不能代替教室设备的持续性能检查。
+
+## 实际发布结果
+
+已执行 `pnpm classroom:next deploy`，发布源码为 `7551214`，独立课堂 Worker 最终版本 `20c4d360-1c69-4854-9ad3-6a57c294abf5`（100% 流量），前端 releaseId 为 `2026-10-29T04:49:32.618Z-7551214`。发布日志首次上传 ID 为 `58e34682-4fdd-4fef-8a91-f5cbd5832b9d`，既有脚本更新 secret 后以部署 API 返回的最终版本为准。源码已推送课堂分支 `codex/classroom-roster-assignments-accounts`；未推送 main。
+
+生产静态预览启动命令为：
+
+```powershell
+pnpm exec vite preview --config apps/web/vite.config.ts --outDir C:/Users/Administrator/Documents/Codex/2026-10-09/new-chat/work/classroom-next-site --port 5187 --host 127.0.0.1
+```
+
+树浏览器脚本分别对开发 5186、生产预览 5187 和正式 Workers 地址运行，使用 `COLORVERSE_TEST_URL` 与 `COLORVERSE_TEST_LABEL` 区分。生产预览和线上均通过 8 组验收（含 WebGL 丢失重试和阻断外部请求的冷启动），页面脚本异常为零。目标在 A/B 各取中心及相邻内部 9 个点，均为 RGB 213/168/75；原水母 13 组浏览器回归通过。
+
+线上只读课堂回归通过：教师实际登录、正式班级 35 人、点名册 29 人各保留一条、作业列表/星球/通知可读、匿名教师名单请求拒绝，入口 JS/CSS、树封面和许可与构建产物逐字节一致。
+
+隔离前后对比通过：比赛 Worker 仍为 `76b2e8b5-3634-456b-b00e-b6a2f68dd210`；原自定义域名和 Workers 域名下 `/review/`、`/exhibition/` 共16项 HTML/JS/CSS/release 哈希不变；EXE 哈希仍为 `1b1e7869eec137b4af2df77edb7f3ea4f1c6cc5de10f86745d3ecf6d4a749e3a`。真实证据在 `outputs/tree-lab/isolation-before.json`、`isolation-after.json`、`cloud-regression.json`、`production-browser.json`、`online-browser.json`、`hardware.json`。
+
+线上截图：`online-workbench.png`、`online-春日初醒.png`、`online-盛夏浓荫.png`、`online-秋日流金.png`、`online-冬日静谧.png`、`online-same-color.png`、`online-extracted.png`、`online-comparison.png`、`online-classroom.png`。均由实际三维画布与 React 工作台截取，非参考图拼贴。

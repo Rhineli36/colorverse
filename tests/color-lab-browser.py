@@ -108,4 +108,3 @@ with sync_playwright() as p:
  failed=unavailable.new_page();failed.goto(URL+'/color-mystery/lab/jellyfish',wait_until='networkidle');expect(failed.get_by_role('alert')).to_contain_text('无法启动三维画面');expect(failed.get_by_role('button',name='重试加载',exact=True)).to_be_visible();passed('WebGL unavailable shows Chinese fallback, real local cover and retry');unavailable.close()
  browser.close()
  (OUT/(LABEL+'-browser.json')).write_text(json.dumps({'status':'passed','origin':URL,'checks':checks,'pageErrors':errors},ensure_ascii=False,indent=2),encoding='utf-8')
-
