@@ -1,0 +1,255 @@
+.weight-lab .weight-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--lab-line);
+}
+.weight-heading h1 {
+  font-size: 27px;
+  line-height: 1.3;
+  margin: 3px 0;
+  color: var(--lab-text);
+}
+.weight-heading h1 small {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--lab-muted);
+  margin-left: 16px;
+}
+.weight-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.weight-workspace {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 16px;
+  padding: 16px 20px;
+  overflow: auto;
+}
+.weight-stage {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--lab-line);
+  border-radius: 12px;
+  background: #101b29;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.weight-scenes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.weight-scenes.is-pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.weight-scenes figure {
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.weight-scenes figcaption {
+  font-size: 14px;
+  color: var(--lab-muted);
+}
+.weight-picture {
+  flex: 1;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.weight-art {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: hidden;
+}
+.weight-areas {
+  min-height: 74px;
+  font-size: 13px;
+}
+.weight-area-bar {
+  height: 16px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.weight-areas ul {
+  padding: 0;
+  margin: 10px 0 0;
+  list-style: none;
+  display: flex;
+  gap: 7px 16px;
+  flex-wrap: wrap;
+}
+.weight-areas li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.weight-areas li i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.weight-footnote {
+  font-size: 13px;
+  color: var(--lab-muted);
+  margin: 8px 0 0;
+}
+.weight-settings {
+  overflow: auto;
+  min-height: 0;
+}
+.weight-settings section {
+  padding: 16px;
+  background: #111e2d;
+  border: 1px solid var(--lab-line);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.weight-settings h2 {
+  font-size: 21px;
+  margin: 0 0 16px;
+  color: var(--lab-text);
+}
+.weight-settings h3 {
+  font-size: 16px;
+  color: var(--lab-text);
+  margin: 0 0 12px;
+}
+.weight-settings h3 span {
+  font-size: 13px;
+  color: var(--lab-muted);
+  font-weight: 400;
+  float: right;
+}
+.weight-settings p {
+  font-size: 14px;
+  color: var(--lab-muted);
+  line-height: 1.7;
+  margin: 10px 0;
+}
+.weight-palette {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  text-align: center;
+}
+.weight-palette i {
+  height: 42px;
+  border: 1px solid #8490a1;
+  border-radius: 6px;
+  display: block;
+  margin-bottom: 6px;
+}
+.weight-palette span {
+  font-size: 13px;
+  display: block;
+}
+.weight-palette code {
+  font-size: 11px;
+  color: var(--lab-muted);
+}
+.weight-slider {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.weight-slider output {
+  color: #d5c5ff;
+}
+.weight-settings input[type="range"] {
+  width: 100%;
+  accent-color: #bcaaff;
+}
+.weight-lab .weight-saved {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+}
+.weight-saved .weight-art {
+  height: auto;
+  aspect-ratio: 16/10;
+  margin-bottom: 6px;
+}
+.weight-saved span {
+  font-size: 13px;
+}
+.weight-lab button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+@media (max-width: 1000px) {
+  .weight-workspace {
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 10px;
+    padding: 10px;
+  }
+  .weight-heading h1 small {
+    display: block;
+    margin: 4px 0;
+  }
+  .weight-scenes.is-pair {
+    gap: 8px;
+  }
+}
+@media (max-width: 740px) {
+  .weight-lab .weight-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 12px;
+  }
+  .weight-workspace {
+    display: block;
+  }
+  .weight-stage {
+    min-height: 430px;
+  }
+  .weight-settings {
+    overflow: visible;
+    margin-top: 12px;
+  }
+  .weight-scenes.is-pair {
+    grid-template-columns: 1fr;
+  }
+  .weight-scenes.is-pair figure {
+    min-height: 290px;
+  }
+  .weight-scenes.is-pair .weight-picture {
+    min-height: 190px;
+  }
+  .weight-lab .lab-experiment-toolbar {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+  .weight-lab .lab-experiment-toolbar > span {
+    display: none;
+  }
+  .weight-lab .weight-heading h1 {
+    font-size: 24px;
+  }
+  .weight-heading h1 small {
+    font-size: 15px;
+  }
+  .weight-actions button {
+    padding: 7px 10px;
+  }
+}

@@ -1,4 +1,4 @@
-import { JELLYFISH_PATH, TREE_PATH } from "./lab-navigation";
+import { JELLYFISH_PATH, TREE_PATH, WEIGHT_PATH } from "./lab-navigation";
 export const experiments = [
   {
     id: "jellyfish",
@@ -24,5 +24,18 @@ export const experiments = [
     tags: ["整体色调", "冷暖关系", "同时对比", "色彩面积"],
     path: TREE_PATH,
     load: () => import("./TreeLab"),
+  },
+  {
+    id: "color-weight",
+    number: "03",
+    category: "面积与视觉重心",
+    title: "色彩的分量",
+    subtitle: "一室一瓶，同色不同局",
+    description:
+      "固定四种颜色，展开窗帘，观察面积分布如何改变画面的主次与视觉重心。",
+    cover: import.meta.env.BASE_URL + "color-lab/weight-cover.svg",
+    tags: ["色彩面积", "主次关系", "冷暖倾向", "构图对照"],
+    path: WEIGHT_PATH,
+    load: () => import("./WeightLab"),
   },
 ];

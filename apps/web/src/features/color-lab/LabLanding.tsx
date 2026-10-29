@@ -15,7 +15,7 @@ export function LabLanding() {
         <article className="lab-experiment-card" key={experiment.id}>
           <img
             src={experiment.cover}
-            alt={experiment.title + "真实三维场景封面"}
+            alt={experiment.title + "实验画面"}
             width="625"
             height="900"
           />

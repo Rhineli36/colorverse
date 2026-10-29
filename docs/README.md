@@ -127,3 +127,5 @@
 - [69 · 云端课堂色彩之树](69-classroom-color-tree.md)
 
 - [70 · 固定底图色彩之树与分区调色](70-classroom-tree-artwork.md)
+
+- [71 · 色彩的分量：四纯色静物面积实验](71-classroom-color-weight.md)
