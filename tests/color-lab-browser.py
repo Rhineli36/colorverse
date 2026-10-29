@@ -27,8 +27,8 @@ with sync_playwright() as p:
  page.screenshot(path=str(OUT/(LABEL+'-01-laboratory.png')),full_page=True)
  page.get_by_role('tab',name='色彩知识',exact=True).click();expect(page.locator('.study-topic-grid > button')).to_have_count(7)
  page.get_by_role('tab',name='色彩情感',exact=True).click();expect(page.get_by_role('navigation',name='选择色系').get_by_role('button')).to_have_count(8)
- page.get_by_role('tab',name='色彩实验室',exact=True).click();expect(page.get_by_role('button',name='开始实验 →',exact=True)).to_be_visible();passed('three tabs preserve knowledge and emotion; landing has no particle canvas or Three.js request')
- page.get_by_role('button',name='开始实验 →',exact=True).click();ready(page)
+ page.get_by_role('tab',name='色彩实验室',exact=True).click();expect(page.locator('.lab-experiment-card').filter(has_text='深海水母').get_by_role('button',name='开始实验 →',exact=True)).to_be_visible();passed('three tabs preserve knowledge and emotion; landing has no particle canvas or Three.js request')
+ page.locator('.lab-experiment-card').filter(has_text='深海水母').get_by_role('button',name='开始实验 →',exact=True).click();ready(page)
  page.get_by_role('button',name='暂停',exact=True).click();page.wait_for_timeout(200);initial=snap(page);page.wait_for_timeout(300);assert snap(page)['time']==initial['time'];assert not snap(page)['animationScheduled']
  page.screenshot(path=str(OUT/(LABEL+'-02-workbench.png')))
  geometry=initial['geometryId'];before=hashlib.sha256(page.locator('.lab-canvas-area canvas').screenshot()).hexdigest()
@@ -82,7 +82,7 @@ with sync_playwright() as p:
  for iteration in range(3):
   page.evaluate('window.oldLab=window.colorLab');page.get_by_role('button',name='← 返回实验室',exact=True).click();assert page.evaluate('window.colorLab===undefined');dead=page.evaluate('window.oldLab.getSnapshot()');assert dead['lifecycle']['active']==0 and not dead['animationScheduled']
   oldframes=dead['frames'];page.wait_for_timeout(100);assert page.evaluate('window.oldLab.getSnapshot().frames')==oldframes
-  page.get_by_role('button',name='开始实验 →',exact=True).click();ready(page);assert snap(page)['lifecycle']['active']==1
+  page.locator('.lab-experiment-card').filter(has_text='深海水母').get_by_role('button',name='开始实验 →',exact=True).click();ready(page);assert snap(page)['lifecycle']['active']==1
  passed('three enter/leave cycles dispose renderers and stop old animation loops')
  for width,height in [(1280,720),(1366,768),(1920,1080),(768,1024),(390,844)]:
   page.set_viewport_size({'width':width,'height':height});page.wait_for_timeout(180)
@@ -96,7 +96,7 @@ with sync_playwright() as p:
   for name in ['左右对照','显示设置','退出课堂模式']:visible_in_view(page,page.get_by_role('button',name=name,exact=True))
   page.get_by_role('button',name='退出课堂模式',exact=True).click()
  passed('1280x720, 1366x768, 1920x1080, tablet and narrow mobile controls stay reachable without horizontal overflow')
- page.set_viewport_size({'width':1366,'height':768});page.get_by_role('button',name='← 返回实验室',exact=True).click();page.get_by_role('button',name='课堂展示',exact=True).click();ready(page);assert 'mode=classroom' in page.url;page.reload(wait_until='networkidle');ready(page);assert 'mode=classroom' in page.url
+ page.set_viewport_size({'width':1366,'height':768});page.get_by_role('button',name='← 返回实验室',exact=True).click();page.locator('.lab-experiment-card').filter(has_text='深海水母').get_by_role('button',name='课堂展示',exact=True).click();ready(page);assert 'mode=classroom' in page.url;page.reload(wait_until='networkidle');ready(page);assert 'mode=classroom' in page.url
  page.get_by_role('button',name='退出课堂模式',exact=True).click();page.go_back(wait_until='networkidle');assert 'mode=classroom' in page.url;page.go_forward(wait_until='networkidle');assert 'mode=classroom' not in page.url
  passed('classroom direct link, refresh, browser back and forward retain valid experiment routes')
  assert not errors,errors
@@ -108,3 +108,4 @@ with sync_playwright() as p:
  failed=unavailable.new_page();failed.goto(URL+'/color-mystery/lab/jellyfish',wait_until='networkidle');expect(failed.get_by_role('alert')).to_contain_text('无法启动三维画面');expect(failed.get_by_role('button',name='重试加载',exact=True)).to_be_visible();passed('WebGL unavailable shows Chinese fallback, real local cover and retry');unavailable.close()
  browser.close()
  (OUT/(LABEL+'-browser.json')).write_text(json.dumps({'status':'passed','origin':URL,'checks':checks,'pageErrors':errors},ensure_ascii=False,indent=2),encoding='utf-8')
+

@@ -3,6 +3,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 export const STUDY_PATH = base + "/color-mystery";
 export const LAB_PATH = STUDY_PATH + "/lab";
 export const JELLYFISH_PATH = LAB_PATH + "/jellyfish";
+export const TREE_PATH = LAB_PATH + "/color-tree";
 export const ColorLabEnabled = createContext(false);
 export function labNavigate(path: string, replace = false) {
   if (replace) history.replaceState(null, "", path);
@@ -25,7 +26,10 @@ export function useLabLocation() {
   return {
     value,
     study: [STUDY_PATH, LAB_PATH].includes(url.pathname.replace(/\/$/, "")),
-    experiment: url.pathname.replace(/\/$/, "") === JELLYFISH_PATH,
+    experiment: [JELLYFISH_PATH, TREE_PATH].includes(
+      url.pathname.replace(/\/$/, ""),
+    ),
+    tree: url.pathname.replace(/\/$/, "") === TREE_PATH,
     classroom: url.searchParams.get("mode") === "classroom",
     tab:
       url.pathname.replace(/\/$/, "") === LAB_PATH

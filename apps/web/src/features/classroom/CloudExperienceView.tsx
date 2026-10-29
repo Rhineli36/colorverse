@@ -24,6 +24,7 @@ import {
 } from "../color-lab/lab-navigation";
 import { experiments } from "../color-lab/experiments";
 const JellyfishLab = lazy(experiments[0].load);
+const TreeLab = lazy(() => import("../color-lab/TreeLab"));
 
 export function CloudExperienceView() {
   const labLocation = useLabLocation();
@@ -230,7 +231,11 @@ export function CloudExperienceView() {
         {labOpen ? (
           <main className="competition-main">
             <Suspense fallback={<p role="status">正在载入水母实验…</p>}>
-              <JellyfishLab classroom={labLocation.classroom} />
+              {labLocation.tree ? (
+                <TreeLab classroom={labLocation.classroom} />
+              ) : (
+                <JellyfishLab classroom={labLocation.classroom} />
+              )}
             </Suspense>
           </main>
         ) : studyOpen ? (
