@@ -32,7 +32,24 @@ pnpm classroom:next build
 & 'C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' tests/color-lab-browser.py
 ```
 
-生产静态预览通过 `COLORVERSE_TEST_URL=http://127.0.0.1:5187`，线上通过独立课堂地址运行同一脚本；证据文件分别带 local/production/online 前缀。水母13组浏览器回归沿用原脚本。发布与隔离核对结果在交付时补记。
+生产静态预览通过 `COLORVERSE_TEST_URL=http://127.0.0.1:5187`，线上通过独立课堂地址运行同一脚本；证据文件分别带 local/production/online 前缀。三次11组检查均通过，水母13组本地浏览器回归通过。类型检查、lint、构建及 Worker dry-run 均通过。新增兼容用例验证旧三维方案的颜色参数保留，同时关闭旧环绕并暂停。
+
+## 实际发布与线上回归
+
+- 实验室：https://colorverse-classroom-next.2999346.workers.dev/color-mystery/lab
+- 工作台：https://colorverse-classroom-next.2999346.workers.dev/color-mystery/lab/color-tree
+- 课堂直达：https://colorverse-classroom-next.2999346.workers.dev/color-mystery/lab/color-tree?mode=classroom
+- 发布源码：`1249efe`，分支 `codex/classroom-roster-assignments-accounts`；未推送 main。
+- 前端 releaseId：`2026-10-29T09:09:52.560Z-1249efe`。
+- 最终 Worker 版本：`d9ab24e0-4a8e-40b2-bcd7-3f9e10777eea`，100%流量。
+
+执行 `pnpm classroom:next deploy`。第一次在读取 Cloudflare 服务时网络失败；第二次在 `HTTPS_PROXY/HTTP_PROXY/ALL_PROXY=http://127.0.0.1:7892`、`NODE_USE_ENV_PROXY=0` 下成功上传代码和静态资源，上传版本 `d8fe8f9c-df2b-427b-a093-35f937fc7bd3`；既有脚本的 secret 更新步骤再次遇到网络错误。随后以同一 Cloudflare API、同一独立 Worker、同一已有 secret 值单独重试该步骤（`node work/tree-art-secret-retry.mjs`，`NODE_USE_ENV_PROXY=1`），成功后通过部署 API 核对上述最终版本。未修改凭据内容，未重置账户密码。
+
+线上11组浏览器验收通过，包括18个目标内部像素、分区独立、素材失败重试、上下文恢复、课堂直达、断网后调色导出。正式教师真实登录通过；35人名单包含原29名导入学生，发布作业、星球和通知接口可读取，匿名名单接口401。当前入口 JS/CSS、两张新增 PNG、封面和许可文件与本地生产构建逐字节一致。未创建、删除或改动学生、作品、评分数据；只读回归登录会更新既有登录记录。
+
+比赛 Worker 仍为 `76b2e8b5-3634-456b-b00e-b6a2f68dd210`；默认域名和自定义域名下 `/review/`、`/exhibition/` 共16项HTML/入口资源/release哈希与发布前相同。EXE SHA256仍为 `1b1e7869eec137b4af2df77edb7f3ea4f1c6cc5de10f86745d3ecf6d4a749e3a`，情感案例数据文件也未变。独立课堂仍没有绑定新的自定义域名。
+
+证据：`outputs/tree-art/online-browser.json`、`production-browser.json`、`local-browser.json`、`cloud-regression.json`；线上实拍包括 `online-workbench.png`、四季图、`online-comparison.png`、`online-classroom.png` 和 `online-same-color.png`。隔离前后记录为 `outputs/tree-lab/isolation-before.json`、`isolation-after.json`。所有截图均实际浏览器运行，未用设计稿替代。
 
 ## 实际限制
 
