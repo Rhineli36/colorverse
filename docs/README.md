@@ -125,3 +125,5 @@
 - [68 · 云端课堂色彩实验室与深海水母](68-classroom-color-lab.md)
 
 - [69 · 云端课堂色彩之树](69-classroom-color-tree.md)
+
+- [70 · 固定底图色彩之树与分区调色](70-classroom-tree-artwork.md)

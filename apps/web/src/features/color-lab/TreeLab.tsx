@@ -30,6 +30,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
     file = useRef<HTMLInputElement>(null);
   const [drawer, open] = useState(false),
     [error, fail] = useState(""),
+    [loading, setLoading] = useState(true),
     [attempt, retry] = useState(0),
     [message, notify] = useState(""),
     [labeled, label] = useState(false),
@@ -48,6 +49,8 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
     });
   useEffect(() => {
     let e: Engine | undefined;
+    setLoading(true);
+    fail("");
     try {
       e = createTreeRenderer(
         canvas.current!,
@@ -56,13 +59,18 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
           camera.current = c;
           saveTree({ ...latest.current, camera: c });
         },
-        () => fail("显卡画面中断，请重试或改用低画质。"),
+        (message) => {
+          setLoading(false);
+          fail(message ?? "画面加载失败，请重试。");
+        },
+        () => setLoading(false),
       );
       engine.current = e;
       window.treeLab = { getSnapshot: () => e!.snapshot() };
       fail("");
     } catch {
-      fail("无法启动 WebGL 2，请启用浏览器硬件加速后重试。");
+      setLoading(false);
+      fail("无法启动图像调色，请启用浏览器硬件加速后重试。");
     }
     return () => {
       if (e) {
@@ -228,7 +236,8 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
             <p className="lab-help">
               主色 {p.colors[0]} · 点缀 {p.colors[2]}
             </p>
-            <p>✓ 锁定形态与光照</p>
+            <p className="lab-help">色彩面积为画面中的近似分布。</p>
+            <p>✓ 固定构图与原图明暗</p>
           </>
         )}
         {s.mode === "context" && (
@@ -319,7 +328,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
               {s.extract ? "返回树场景" : "提取目标色"}
             </button>
             <p className="lab-help">
-              目标色片不受灯光、雾和透明混合影响；相机与风动固定。
+              目标色片独立显示，两侧实际颜色一致；原图纹理保留明暗变化。
             </p>
           </>
         )}
@@ -386,8 +395,8 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
                   />
                 </label>
                 <p>
-                  主色 {100 - p.accent - p.auxiliary}% · 辅助 {p.auxiliary}% ·
-                  点缀 {p.accent}%
+                  近似分布：主色 {100 - p.accent - p.auxiliary}% · 辅助{" "}
+                  {p.auxiliary}% · 点缀 {p.accent}%
                 </p>
               </>
             ) : (
@@ -476,9 +485,9 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
         <details>
           <summary>动态与画质</summary>
           <label className="lab-slider">
-            微风 {s.wind}%
+            氛围微光 {s.wind}%
             <input
-              aria-label="微风"
+              aria-label="氛围微光"
               disabled={s.mode === "context"}
               type="range"
               min="0"
@@ -486,15 +495,6 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
               value={s.wind}
               onChange={(e) => change({ wind: +e.target.value })}
             />
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              disabled={s.mode === "context"}
-              checked={s.orbit}
-              onChange={(e) => change({ orbit: e.target.checked })}
-            />
-            自动环绕（默认关闭）
           </label>
           <label>
             画质
@@ -512,7 +512,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
             </select>
           </label>
           <p className="lab-help">
-            受控对照期间锁定画质；质量只改变分辨率，保留全部叶片 ID。
+            固定画面保留纹理；画质仅调整显示分辨率。暂停时停止持续绘制。
           </p>
         </details>
         <p className="lab-question">
@@ -523,7 +523,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
         <details>
           <summary>色彩课堂笔记</summary>
           <p>
-            比较前保持形态、叶片、相机、光源和曝光一致。颜色与情绪的联想因人和情境而异。本版只开放受控比较，不提供艺术演绎。
+            比较时使用同一张底图，保持树形、叶片分布与明暗一致。四季表现为配色变化，不改变叶片数量或添加积雪。颜色与情绪的联想因人和情境而异。
           </p>
         </details>
         <label>
@@ -537,7 +537,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
       </div>
       <footer>
         <button
-          disabled={!!error}
+          disabled={!!error || loading}
           onClick={async () => {
             try {
               download(await engine.current!.png(labeled), "色彩之树.png");
@@ -580,7 +580,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
               key={attempt}
               ref={canvas}
               tabIndex={0}
-              aria-label="色彩之树三维画布"
+              aria-label="色彩之树调色画布"
             />
             <div className="lab-scene-title">
               <span className="lab-eyebrow">EXPERIMENT 02</span>
@@ -588,6 +588,11 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
                 色彩之树<small>一树四季 · 色彩的气候</small>
               </h1>
             </div>
+            {loading && (
+              <div className="tree-loading" role="status">
+                正在加载色彩之树…
+              </div>
+            )}
             {s.compare && (
               <div className="lab-comparison-labels">
                 <span>A{s.mode === "context" ? " · 目标色已锁定" : ""}</span>
@@ -598,7 +603,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
               <div className="lab-render-fallback" role="alert">
                 <img
                   src={import.meta.env.BASE_URL + "color-lab/tree-cover.webp"}
-                  alt="三维树场景封面"
+                  alt="色彩之树底图"
                 />
                 <div>
                   <p>{error}</p>
@@ -616,7 +621,13 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
             )}
           </div>
           <div className="lab-scene-caption">
-            <span>{s.mode === "free" ? s.name : SEASONS[p.season].name}</span>
+            <span>
+              {s.mode === "context"
+                ? "同色异境 · 固定目标色"
+                : s.mode === "free"
+                  ? s.name
+                  : SEASONS[p.season].name}
+            </span>
             <div className="lab-real-swatches">
               {p.colors.map((c, i) => (
                 <i
@@ -633,7 +644,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
               aria-pressed={s.paused}
               onClick={() => change({ paused: !s.paused })}
             >
-              {s.paused ? "继续" : "暂停"}
+              {s.paused ? "播放微光" : "暂停微光"}
             </button>
             <button
               disabled={s.mode === "context"}
@@ -642,12 +653,7 @@ export default function TreeLab({ classroom }: { classroom: boolean }) {
             >
               左右对照
             </button>
-            <button
-              disabled={s.mode === "context"}
-              onClick={() => engine.current?.resetView()}
-            >
-              重置视角
-            </button>
+            <span className="tree-fixed-view">固定构图</span>
             {classroom && (
               <>
                 <select

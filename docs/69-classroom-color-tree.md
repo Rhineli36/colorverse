@@ -1,5 +1,7 @@
 # 实验02：色彩之树
 
+> 本文记录最初的程序化三维实现。2026-10-29 后续已按用户确认改为固定底图分区调色；当前实现、素材来源与验证以 [70 · 固定底图色彩之树](70-classroom-tree-artwork.md) 为准。
+
 2026-10-29，独立云端课堂功能。只发布 `colorverse-classroom-next`，不修改原比赛 Worker、`/review/`、`/exhibition/`、比赛数据及 EXE。不执行通用 cloud:deploy、比赛构建、离线封装或数据库迁移。
 
 ## 入口

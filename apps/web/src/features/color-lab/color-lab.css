@@ -839,5 +839,49 @@
   display: none;
 }
 .tree-lab .lab-canvas-area {
-  background: #29435d;
+  background: #0b1118;
+}
+.tree-lab .lab-canvas-area canvas {
+  top: 80px;
+  height: calc(100% - 80px);
+  cursor: default;
+}
+.tree-lab .lab-scene-title {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  padding: 10px 18px;
+  background: #0b1522;
+}
+.tree-lab .lab-scene-title h1 {
+  font-size: 22px;
+  margin: 0;
+}
+.tree-lab .lab-scene-title h1 small {
+  display: inline;
+  margin-left: 14px;
+}
+.tree-lab .lab-comparison-labels {
+  top: 86px;
+}
+.tree-loading {
+  position: absolute;
+  inset: 80px 0 0;
+  display: grid;
+  place-items: center;
+  background: #0b1118;
+  color: #d5dced;
+}
+.tree-fixed-view {
+  font-size: 13px;
+  color: #b3c4d4;
+  padding: 6px;
+}
+@media (max-width: 600px) {
+  .tree-lab .lab-scene-title h1 small {
+    display: block;
+    margin-left: 0;
+    font-size: 13px;
+  }
 }

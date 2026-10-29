@@ -8,7 +8,7 @@ export const SEASONS = [
   },
   {
     name: "盛夏浓荫",
-    colors: ["#2E7354", "#2B8C83", "#B4CF54"],
+    colors: ["#3D784F", "#548653", "#B4CF54"],
     background: "#55798C",
     question: "相近色中有哪些明暗与冷暖变化？",
   },
@@ -82,7 +82,7 @@ export function treeDefaults(): TreeSettings {
     schemaVersion: 1,
     name: "我的第五季",
     mode: "season",
-    paused: false,
+    paused: true,
     compare: false,
     activeSide: 0,
     quality: "medium",
@@ -97,9 +97,10 @@ export function treeDefaults(): TreeSettings {
 }
 export function readTree() {
   try {
-    return TreeSchema.parse(
+    const saved = TreeSchema.parse(
       JSON.parse(localStorage.getItem(TREE_KEY) ?? "null"),
     );
+    return { ...saved, paused: true, orbit: false };
   } catch {
     return treeDefaults();
   }
