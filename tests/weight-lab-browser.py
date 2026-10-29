@@ -25,8 +25,8 @@ with sync_playwright()as pw:
   differences=[abs(a[i]/sum(a)*100-bb[i]/sum(bb)*100)for i in range(4)];assert max(differences)<.2,differences;convergence.append({'curtain':n,'areaPercent':[x/sum(a)*100 for x in a],'maxPercentagePointDifference':max(differences)});areas.append(a)
  assert all(areas[i][1]<areas[i+1][1]for i in range(3));assert all(areas[i][0]>areas[i+1][0]for i in range(3));ok('13 editable opaque paths; only curtain changes at bounds; locked palette; blue rises and cream falls')
  labels=p.locator('.weight-areas li').all_text_contents();assert abs(sum(float(s.split('约')[1].replace('%',''))for s in labels)-100)<1.e-6;ok('1200x750 vs 2400x1500 converges within 0.2 percentage points at four settings; visible area denominator and rounding total are correct')
- slide(p,12);p.get_by_role('button',name='保存对照',exact=True).click();ready(p);saved=state(p)['document']['saved'][0];slide(p,48);assert state(p)['document']['saved'][0]==saved;assert state(p)['document']['current']['curtain']==48
- p.locator('.lab-toast').click();p.screenshot(path=str(OUT/(LABEL+'-comparison-screen.png')));im=export(p,'comparison-export');assert im.size==(2400,750);colors=[tuple(bytes.fromhex(h[1:]))for h in palette];classified=[]
+ slide(p,12);p.get_by_role('button',name='保存对照',exact=True).click();ready(p);saved=state(p)['document']['saved'][0];p.get_by_role('button',name='保存对照',exact=True).click();ready(p);assert len(state(p)['document']['saved'])==1 and state(p)['document']['saved'][0]==saved;slide(p,48);assert state(p)['document']['saved'][0]==saved;assert state(p)['document']['current']['curtain']==48
+ p.get_by_role('button',name='关闭提示',exact=True).click() if p.get_by_role('button',name='关闭提示',exact=True).count() else None;p.screenshot(path=str(OUT/(LABEL+'-comparison-screen.png')));im=export(p,'comparison-export');assert im.size==(2400,750);colors=[tuple(bytes.fromhex(h[1:]))for h in palette];classified=[]
  for start in [0,1200]:
   counts=[0]*4
   for count,rgb in im.crop((start,0,start+1200,750)).getcolors(1200*750):

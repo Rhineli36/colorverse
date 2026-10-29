@@ -148,6 +148,11 @@ export default function WeightLab({ classroom }: { classroom: boolean }) {
     }
   };
   useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(""), 4500);
+    return () => clearTimeout(timer);
+  }, [notice]);
+  useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape" && classroom && !document.fullscreenElement)
         mode(false);
@@ -156,6 +161,15 @@ export default function WeightLab({ classroom }: { classroom: boolean }) {
     return () => window.removeEventListener("keydown", handler);
   }, [classroom]);
   function save() {
+    const existing = documentState.saved.find(
+      (s) => JSON.stringify(s.scene) === JSON.stringify(current),
+    );
+    if (existing) {
+      select(existing.id);
+      setCompare(true);
+      setNotice("已切换到这份构图的对照。");
+      return;
+    }
     const id = crypto.randomUUID();
     setDocument((v) => ({
       ...v,
@@ -163,7 +177,7 @@ export default function WeightLab({ classroom }: { classroom: boolean }) {
     }));
     select(id);
     setCompare(true);
-    setNotice("已保存参数快照；保留最近两份对照。");
+    setNotice("已保存这份构图，保留最近两份对照。");
   }
   async function exportImage() {
     setExporting(true);
@@ -203,11 +217,21 @@ export default function WeightLab({ classroom }: { classroom: boolean }) {
         </div>
       </div>
       <header className="weight-heading">
-        <div>
-          <span className="lab-eyebrow">EXPERIMENT 03</span>
-          <h1>
-            色彩的分量 <small>一室一瓶，同色不同局</small>
-          </h1>
+        <div className="weight-title">
+          <div className="weight-title-line">
+            <span className="lab-eyebrow">实验 03</span>
+            <h1>
+              色彩的分量 <small>一室一瓶，同色不同局</small>
+            </h1>
+          </div>
+          <div className="weight-notice" role="status">
+            <span>{notice || "固定四种颜色，观察面积与主次的变化。"}</span>
+            {notice && (
+              <button aria-label="关闭提示" onClick={() => setNotice("")}>
+                ×
+              </button>
+            )}
+          </div>
         </div>
         <div className="weight-actions">
           <button className="lab-primary" onClick={save}>
@@ -263,16 +287,18 @@ export default function WeightLab({ classroom }: { classroom: boolean }) {
             </div>
           ) : (
             <p className="weight-footnote">
-              按插画实际可见区域近似统计，四类合计100%；不含界面与画布外留白。
+              <strong>观察：你的目光先落在哪里？</strong>
+              <span>
+                按插画可见面积近似统计，合计100%；不含界面与画布外留白。
+              </span>
             </p>
           )}
         </section>
         <aside className="weight-settings">
           <section>
-            <h2>面积实验</h2>
-            <h3>
-              固定配色 <span>已锁定</span>
-            </h3>
+            <h2>
+              固定配色 <span className="weight-locked">已锁定</span>
+            </h2>
             <div className="weight-palette">
               {current.palette.map((c, i) => (
                 <div key={c}>
@@ -302,7 +328,11 @@ export default function WeightLab({ classroom }: { classroom: boolean }) {
                 }));
               }}
             />
-            <p>相对画布宽度；深蓝总面积见画面下方统计。</p>
+            <div className="weight-range-labels" aria-hidden="true">
+              <span>12% · 较少</span>
+              <span>48% · 较多</span>
+            </div>
+            <p>展开比例表示窗帘宽度，颜色面积另行统计。</p>
             <button
               onClick={() =>
                 setDocument((v) => ({ ...v, current: weightDefault() }))
@@ -312,41 +342,32 @@ export default function WeightLab({ classroom }: { classroom: boolean }) {
             </button>
           </section>
           <section>
-            <h3>观察提示</h3>
-            <p>
-              展开窗帘后，深蓝从陪衬变成主导了吗？颜色相同，你的目光先落在哪里？
-            </p>
-          </section>
-          <section>
             <h3>已保存的对照</h3>
             {!documentState.saved.length ? (
               <p>保存一份构图，再移动窗帘，观察画面的主次变化。</p>
             ) : (
-              documentState.saved.map((s, i) => (
-                <button
-                  className="weight-saved"
-                  key={s.id}
-                  aria-pressed={saved?.id === s.id && compare}
-                  onClick={() => {
-                    select(s.id);
-                    setCompare(true);
-                  }}
-                >
-                  <Artwork scene={s.scene} label={`对照${i + 1}`} />
-                  <span>
-                    对照 {i + 1} · 窗帘 {s.scene.curtain}%
-                  </span>
-                </button>
-              ))
+              <div className="weight-saved-grid">
+                {documentState.saved.map((s, i) => (
+                  <button
+                    className="weight-saved"
+                    key={s.id}
+                    aria-pressed={saved?.id === s.id && compare}
+                    onClick={() => {
+                      select(s.id);
+                      setCompare(true);
+                    }}
+                  >
+                    <Artwork scene={s.scene} label={`对照${i + 1}`} />
+                    <span>
+                      对照 {i + 1} · 窗帘 {s.scene.curtain}%
+                    </span>
+                  </button>
+                ))}
+              </div>
             )}
           </section>
         </aside>
       </div>
-      {notice && (
-        <button className="lab-toast" onClick={() => setNotice("")}>
-          {notice} ×
-        </button>
-      )}
     </div>
   );
 }
