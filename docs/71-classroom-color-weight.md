@@ -41,3 +41,18 @@ pnpm classroom:next build
 ```
 
 生产预览与线上使用 `COLORVERSE_TEST_URL`、`COLORVERSE_TEST_LABEL` 指定相同脚本。此模块无需新增素材、权限、后端接口或部署变量。课堂账号和作业仍需网络；实验自身加载后断网可继续，或通过本地HTTP服务运行，不宣称云端整站可离线冷启动。
+
+## 实际发布
+
+- 实验室：https://colorverse-classroom-next.2999346.workers.dev/color-mystery/lab
+- 工作台：https://colorverse-classroom-next.2999346.workers.dev/color-mystery/lab/color-weight
+- 课堂直达：https://colorverse-classroom-next.2999346.workers.dev/color-mystery/lab/color-weight?mode=classroom
+- 源码版本 `a84faeb`，已推送 `codex/classroom-roster-assignments-accounts`，未推送main。
+- 前端 `2026-10-29T14:17:39.843Z-a84faeb`。
+- 最终Worker版本 `f5697f91-d491-49a4-94b5-04cf7d341b83`，100%流量。既有部署脚本先上传版本 `65f1e399-5ad7-4646-a2d0-a69b9fa152a7`，随后成功沿用原值更新secret，最终版本以部署API为准。
+
+执行 `pnpm classroom:next deploy`，本机代理7892、NODE_USE_ENV_PROXY=0，代码和既有secret更新均成功。Git首次通过schannel推送遇TLS失败，改用OpenSSL与HTTP/1.1后成功，没有关闭证书验证。
+
+本地、生产预览与线上8组浏览器验收均通过。正式教师登录、35人名单及原29名Excel导入学生核对通过，发布作业、星球、通知读取正常；匿名名单请求401。入口静态JS/CSS、SVG封面和原树素材等6项资源与本地生产构建逐字节一致。未修改教学数据，登录沿用既有记录登录时间的逻辑。
+
+隔离核对：比赛Worker仍为 `76b2e8b5-3634-456b-b00e-b6a2f68dd210`，默认域名和自定义域名下review/exhibition共16项资源哈希一致；EXE SHA256仍为 `1b1e7869eec137b4af2df77edb7f3ea4f1c6cc5de10f86745d3ecf6d4a749e3a`，情感案例文件未变。记录见 `outputs/tree-lab/isolation-before.json`、`isolation-after.json`；课堂只读回归见 `outputs/weight-lab/cloud-regression.json`。
