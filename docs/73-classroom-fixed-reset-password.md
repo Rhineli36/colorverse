@@ -9,3 +9,11 @@
 测试使用隔离的PGlite数据和Auth传输替身，没有针对任何真实学生执行重置。`pnpm typecheck`、`pnpm lint`、`pnpm test tests/classroom-management.test.ts`（14项）通过；新增断言检查固定值、强制改密标记、禁止保留8个8、修改后临时密码不再通过，以及既有学生/跨班教师权限限制。没有宣称本轮对真实课堂学生完成了重置演练。
 
 只发布 `colorverse-classroom-next`，自定义域名 `https://colorverse.de5.net/` 通过既有网关自动使用新服务；`/review/` 和 `/exhibition/` 仍使用冻结比赛Worker。
+
+## 实际发布与认证服务检查
+
+已执行 `pnpm classroom:next deploy`，源码 `d71328f`，前端 `2026-10-30T01:28:30.530Z-d71328f`，最终Worker版本 `280d76ea-8ea8-459f-9fde-4b57c3c049f6`（100%）。上传代码版本 `555b1ffd-7836-40b4-b1fe-e590443fe194` 后，既有脚本成功沿用原值更新secret。网关与比赛Worker没有重新部署。
+
+另外创建一个独立、无业务班级关联的虚拟Auth测试账号，实测当前Supabase认证服务接受8个8并能登录，设置另一密码后8个8登录失败、新密码登录成功；测试账号已删除。此检查只验证认证服务兼容性，没有冒充对真实学生执行教师重置。证据 `outputs/fixed-reset-password/auth-provider-check.json`。
+
+自定义域名正式教师登录、35人名单、原29名导入学生、作业/星球/通知读取以及匿名名单401检查通过；当前入口静态资源与生产构建一致，记录 `outputs/fixed-reset-password/classroom-auth.json`。比赛默认地址和自定义域名下review/exhibition共16项资源、旧Worker版本、EXE及情感案例哈希发布前后一致。
