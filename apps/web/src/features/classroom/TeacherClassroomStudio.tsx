@@ -877,7 +877,9 @@ export function TeacherClassroomStudio(props: Props) {
             disabled={busy}
             onClick={() => {
               if (
-                window.confirm(`已核实 ${student.name} 的身份，确认重置密码？`)
+                window.confirm(
+                  `已核实 ${student.name} 的身份，确认将密码重置为 88888888（8个8）？学生登录后须立即修改。`,
+                )
               )
                 void run(async () => {
                   const r = await json(

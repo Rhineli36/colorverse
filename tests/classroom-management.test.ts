@@ -474,13 +474,25 @@ describe("student password lifecycle", () => {
       id[9],
       transport,
     );
-    expect(authUsers.get(id[1])?.password).toBe(r.temporaryPassword);
+    expect(r.temporaryPassword).toBe("88888888");
+    expect(authUsers.get(id[1])?.password).toBe("88888888");
     expect(
       authUsers.get(id[1])?.app_metadata.colorverse_password_required,
     ).toBe(true);
     await expect(
       account("verify", { account: "0001", name: "测试学生1" }),
     ).rejects.toMatchObject({ code: "ALREADY_ACTIVATED" });
+    await expect(
+      account(
+        "password",
+        {
+          currentPassword: "88888888",
+          newPassword: "88888888",
+          confirmPassword: "88888888",
+        },
+        student,
+      ),
+    ).rejects.toBeDefined();
     await account(
       "password",
       {
@@ -493,6 +505,18 @@ describe("student password lifecycle", () => {
     expect(
       authUsers.get(id[1])?.app_metadata.colorverse_password_required,
     ).toBe(false);
+    expect(authUsers.get(id[1])?.password).toBe("Final123456");
+    await expect(
+      account(
+        "password",
+        {
+          currentPassword: "88888888",
+          newPassword: "Another12345",
+          confirmPassword: "Another12345",
+        },
+        student,
+      ),
+    ).rejects.toMatchObject({ code: "CURRENT_PASSWORD_INVALID" });
   });
   it("requires a scoped login account when two account ranges share a school number", async () => {
     const course = randomUUID(),

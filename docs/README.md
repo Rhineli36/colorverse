@@ -131,3 +131,5 @@
 - [71 · 色彩的分量：四纯色静物面积实验](71-classroom-color-weight.md)
 
 - [72 · 云端课堂自定义域名与比赛路径隔离](72-classroom-custom-domain.md)
+
+- [73 · 教师重置学生密码固定为8个8](73-classroom-fixed-reset-password.md)

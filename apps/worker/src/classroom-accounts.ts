@@ -312,8 +312,7 @@ export async function resetStudentPassword(
     )
   ).rows[0];
   if (!u) throw fail(404, "STUDENT_NOT_FOUND", "学生不存在或不属于本班。");
-  const temporaryPassword =
-    "Cv" + crypto.randomUUID().replaceAll("-", "").slice(0, 12) + "7!";
+  const temporaryPassword = "88888888";
   const user = await authAdmin(env, String(u.auth_subject), transport);
   await authAdmin(env, String(u.auth_subject), transport, {
     password: temporaryPassword,
@@ -331,7 +330,7 @@ export async function resetStudentPassword(
   return {
     temporaryPassword,
     message:
-      "请私下交给该学生；登录后必须立即设置个人密码。重置不会重新开放姓名激活入口。",
+      "临时密码为8个8，学生登录后必须立即设置个人密码。重置不会重新开放姓名激活入口。",
   };
 }
 export async function accountRequest(
