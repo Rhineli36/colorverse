@@ -28,6 +28,7 @@
     "cloud:database": "tsx scripts/cloud-database.mjs",
     "cloud:database-access": "node scripts/database-access.mjs",
     "classroom:next": "node scripts/classroom-next.mjs",
+    "classroom:domain": "node scripts/classroom-domain.mjs",
     "cloud:hyperdrive": "node scripts/cloud-hyperdrive.mjs"
   },
   "dependencies": {
