@@ -23,13 +23,17 @@ export async function showcaseReview(
       "只有教师和助教可以保存点评与评分",
     );
   const work = await sql.query(
-    `SELECT w.id,w.withdrawn_at${versioned ? ",w.submission_revision,w.submission_history" : ""} FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id
+    `SELECT w.id,w.withdrawn_at,e.id owner_enrollment_id${versioned ? ",w.submission_revision,w.submission_history" : ""} FROM colorverse.showcase_works w JOIN colorverse.planets p ON p.id=w.planet_id JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id
      WHERE w.id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active' AND (w.withdrawn_at IS NULL OR e.id=$3::uuid OR $4::boolean) ${method === "POST" ? "FOR UPDATE OF w" : ""}`,
     [workId, classId, actor.id, staff],
   );
   if (!work.rows.length)
     throw new ClassroomFailure(404, "NOT_FOUND", "作品不存在或无权查看");
-  const select = `SELECT r.id,r.revision,r.score::float8 score,r.comment,r.source,r.created_at, u.display_name reviewer_name${versioned ? ",r.submission_revision" : ""}
+  // Classroom-only policy. The frozen competition service keeps its existing contract.
+  // classroomActor has already scoped the actor's staff role to this class.
+  const scoreVisible =
+    !versioned || staff || work.rows[0].owner_enrollment_id === actor.id;
+  const select = `SELECT r.id,r.revision,${scoreVisible ? "r.score::float8" : "NULL::float8"} score,r.comment,r.source,r.created_at, u.display_name reviewer_name${versioned ? ",r.submission_revision" : ""}
     FROM colorverse.showcase_reviews r JOIN colorverse.enrollments e ON e.id=r.reviewer_enrollment_id JOIN colorverse.users u ON u.id=e.user_id WHERE r.work_id=$1`;
   if (method === "POST") {
     if (work.rows[0].withdrawn_at)
@@ -106,6 +110,7 @@ export async function showcaseReview(
         Object.entries(r).filter(([k]) => k !== "submission_revision"),
       );
     return {
+      scoreVisible,
       submissionRevision: Number(work.rows[0].submission_revision),
       review:
         latest &&

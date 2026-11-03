@@ -15,6 +15,7 @@ export function ReviewPanel({
   notice = "",
   onRetry,
   allowUnchanged = false,
+  scoreVisible = true,
 }: {
   record: {
     score?: number | null;
@@ -37,6 +38,7 @@ export function ReviewPanel({
   notice?: string;
   onRetry?: () => void;
   allowUnchanged?: boolean;
+  scoreVisible?: boolean;
 }) {
   const valid =
     (score.trim() === "" ||
@@ -48,7 +50,7 @@ export function ReviewPanel({
   return (
     <section className="cloud-work-review" aria-label="教师点评与评分">
       <div className="cloud-review-heading">
-        <h3>教师点评与评分</h3>
+        <h3>{scoreVisible ? "教师点评与评分" : "教师点评"}</h3>
       </div>
       {loading && <p role="status">正在读取点评…</p>}
       {error && (
@@ -63,12 +65,14 @@ export function ReviewPanel({
       )}
       {record && (
         <div className="cloud-review-record">
-          {record.score !== undefined && record.score !== null && (
-            <strong className="cloud-review-score">
-              {record.score}
-              <small> / 100</small>
-            </strong>
-          )}
+          {scoreVisible &&
+            record.score !== undefined &&
+            record.score !== null && (
+              <strong className="cloud-review-score">
+                {record.score}
+                <small> / 100</small>
+              </strong>
+            )}
           <p>{record.comment || "暂无文字点评"}</p>
           {record.author && (
             <small>

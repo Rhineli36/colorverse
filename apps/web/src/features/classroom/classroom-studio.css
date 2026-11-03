@@ -157,6 +157,34 @@
 .classroom-studio tr.is-selected {
   background: #a693ed29;
 }
+.roster-planet {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 54px;
+}
+.roster-planet-thumb,
+.roster-planet-empty {
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+}
+.roster-planet-thumb .cloud-orb-frame,
+.roster-planet-thumb .student-orb {
+  width: 44px;
+  height: 44px;
+}
+.roster-planet-thumb .cloud-orb-status {
+  font-size: 11px;
+  white-space: normal;
+}
+.roster-planet-empty {
+  border: 1px dashed var(--studio-line);
+  border-radius: 50%;
+  color: #b3c0da;
+}
 .classroom-studio td > button {
   padding: 8px 10px;
   background: transparent;

@@ -30,6 +30,7 @@ export function CloudWorkReview({
     [notice, setNotice] = useState(""),
     [reload, setReload] = useState(0);
   const latestRevision = useRef(0);
+  const [scoreVisible, setScoreVisible] = useState(true);
   const submissionRevision = useRef<number | undefined>(undefined);
   const [history, setHistory] = useState<
     {
@@ -71,6 +72,7 @@ export function CloudWorkReview({
       .then((data) => {
         if (!active) return;
         const parsed = ShowcaseReviewResponse.parse(data);
+        setScoreVisible(parsed.scoreVisible !== false);
         submissionRevision.current = parsed.submissionRevision;
         latestRevision.current =
           parsed.latestRevision ?? parsed.review?.revision ?? 0;
@@ -119,6 +121,7 @@ export function CloudWorkReview({
         },
       );
       const parsed = ShowcaseReviewResponse.parse(await response.json());
+      setScoreVisible(parsed.scoreVisible !== false);
       submissionRevision.current = parsed.submissionRevision;
       latestRevision.current =
         parsed.latestRevision ?? parsed.review?.revision ?? 0;
@@ -151,6 +154,7 @@ export function CloudWorkReview({
             : null
         }
         staff={staff && ready}
+        scoreVisible={scoreVisible}
         score={score}
         comment={comment}
         busy={saving}
@@ -184,11 +188,15 @@ export function CloudWorkReview({
       />
       {history.length > 0 && (
         <details>
-          <summary>历史评分（对应此前提交内容）</summary>
+          <summary>
+            历史{scoreVisible ? "评分" : "评语"}（对应此前提交内容）
+          </summary>
           {history.map((h) => (
             <p key={h.revision}>
               评价版本 {h.revision} ·{" "}
-              {h.score == null ? "暂无分数" : h.score + " 分"} · {h.comment}
+              {scoreVisible &&
+                `${h.score == null ? "暂无分数" : h.score + " 分"} · `}
+              {h.comment}
               {h.submissionRevision != null && (
                 <small> · 提交内容版本 {h.submissionRevision + 1}</small>
               )}

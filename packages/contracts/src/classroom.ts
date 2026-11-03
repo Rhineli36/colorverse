@@ -37,6 +37,7 @@ export const ShowcaseReviewInput = z
   })
   .refine((v) => v.score !== null || v.comment.length > 0);
 export const ShowcaseReviewResponse = z.strictObject({
+  scoreVisible: z.boolean().optional(),
   submissionRevision: z.number().int().nonnegative().optional(),
   latestRevision: z.number().int().nonnegative().optional(),
   history: z

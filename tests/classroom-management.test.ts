@@ -14,6 +14,8 @@ import {
   resetStudentPassword,
 } from "../apps/worker/src/classroom-accounts";
 import { classroomNotifications } from "../apps/worker/src/notifications";
+import { classroomActor } from "../apps/worker/src/classroom";
+import { ShowcaseReviewResponse } from "@colorverse/contracts";
 import type { StudentImportEnvironment } from "../apps/worker/src/student-import";
 
 let db: PGlite;
@@ -321,6 +323,69 @@ describe("classroom roster and assignment snapshots", () => {
       review: { score: 95 },
       history: [{ score: 0 }],
     });
+  });
+  it("redacts current and historical scores for classmates while preserving comments", async () => {
+    const peer = await classroomActor(
+      sql,
+      { issuer, subject: id[2], email: "peer@example.test" },
+      id[5],
+    );
+    const response = ShowcaseReviewResponse.parse(
+      await Response.json(
+        await showcaseReview(sql, peer, id[5], workId, "GET", undefined, true),
+      ).json(),
+    );
+    expect(response.scoreVisible).toBe(false);
+    expect(response.review).toMatchObject({ score: null, comment: "重新核对" });
+    expect(response.history).toMatchObject([
+      { score: null, comment: "零分回显测试", submissionRevision: 0 },
+    ]);
+    await expect(
+      showcaseReview(sql, peer, id[5], workId, "POST", {}, true),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+  it("keeps actual zero and current scores available to the author and class staff only", async () => {
+    for (const subject of [id[0], id[1]]) {
+      const actor = await classroomActor(
+        sql,
+        { issuer, subject, email: "reader@example.test" },
+        id[5],
+      );
+      const response = ShowcaseReviewResponse.parse(
+        await Response.json(
+          await showcaseReview(
+            sql,
+            actor,
+            id[5],
+            workId,
+            "GET",
+            undefined,
+            true,
+          ),
+        ).json(),
+      );
+      expect(response.scoreVisible).toBe(true);
+      expect(response.review?.score).toBe(95);
+      expect(response.history?.[0].score).toBe(0);
+    }
+    // A teacher role in another class never authorizes this class.
+    await expect(
+      classroomActor(
+        sql,
+        { issuer, subject: id[3], email: "foreign@example.test" },
+        id[5],
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    // Frozen competition behavior is deliberately retained.
+    const legacy = await showcaseReview(
+      sql,
+      { id: id[10], role: "student" },
+      id[5],
+      workId,
+      "GET",
+    );
+    expect(legacy.review?.score).toBe(95);
+    expect(legacy).not.toHaveProperty("scoreVisible");
   });
   it("deduplicates assignment submission notifications and directs to latest work", async () => {
     const n = await classroomNotifications(

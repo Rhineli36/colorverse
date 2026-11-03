@@ -14,7 +14,11 @@ import { classroomRequest } from "./cloud-request";
 import { CloudClassroomView } from "./CloudClassroomView";
 import { CloudWorkReview } from "./CloudWorkReview";
 import { Gallery } from "./CloudGallery";
-import { usePrivateImage, retryPlanetImages } from "./CloudPlanetAppearance";
+import {
+  CloudPlanetOrb,
+  usePrivateImage,
+  retryPlanetImages,
+} from "./CloudPlanetAppearance";
 import { StudentImporter } from "./StudentImporter";
 import { AssignmentPublisher } from "./ClassroomMail";
 import { download } from "../../app/download";
@@ -446,30 +450,55 @@ export function TeacherClassroomStudio(props: Props) {
                     </tr>
                   </thead>
                   <tbody>
-                    {foundStudents.map((s) => (
-                      <tr key={s.enrollmentId}>
-                        <td>{s.studentNumber || "未登记"}</td>
-                        <td>{s.name}</td>
-                        <td>{s.planetName || "尚未创建"}</td>
-                        <td>
-                          {s.submitted} / {s.expected}
-                        </td>
-                        <td>{s.pending}</td>
-                        <td>
-                          <button
-                            onClick={() => {
-                              if (discard()) {
-                                setWork(undefined);
-                                setStudent(s);
-                                setDirty(false);
-                              }
-                            }}
-                          >
-                            查看学生
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {foundStudents.map((s) => {
+                      const planet = gallery?.planets.find(
+                        (p) => p.id === s.planetId,
+                      );
+                      return (
+                        <tr key={s.enrollmentId}>
+                          <td>{s.studentNumber || "未登记"}</td>
+                          <td>{s.name}</td>
+                          <td>
+                            <span className="roster-planet">
+                              {planet ? (
+                                <span className="roster-planet-thumb">
+                                  <CloudPlanetOrb
+                                    classId={classId}
+                                    id={planet.id}
+                                    document={planet.document}
+                                  />
+                                </span>
+                              ) : (
+                                <span
+                                  className="roster-planet-empty"
+                                  aria-hidden="true"
+                                >
+                                  —
+                                </span>
+                              )}
+                              <span>{s.planetName || "尚未创建"}</span>
+                            </span>
+                          </td>
+                          <td>
+                            {s.submitted} / {s.expected}
+                          </td>
+                          <td>{s.pending}</td>
+                          <td>
+                            <button
+                              onClick={() => {
+                                if (discard()) {
+                                  setWork(undefined);
+                                  setStudent(s);
+                                  setDirty(false);
+                                }
+                              }}
+                            >
+                              查看学生
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
