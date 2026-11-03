@@ -17,6 +17,44 @@ function setup() {
 }
 const token = (sub: string) =>
   "Bearer e30." + btoa(JSON.stringify({ sub })) + ".test";
+it("routes only the growth-preview path to the independent preview, including assets, without touching classroom or competition", async () => {
+  const env = {
+    ...setup(),
+    GROWTH_PREVIEW: { fetch: vi.fn(async () => new Response("preview")) },
+  };
+  for (const path of [
+    "/growth-preview",
+    "/growth-preview/",
+    "/growth-preview/assets/a.js",
+    "/growth-preview/competition/a.webp",
+    "/growth-preview/api/v1/cloud/session",
+  ]) {
+    const request = new Request(
+      "https://colorverse.de5.net" + path + "?test=1",
+      { headers: { Referer: "https://colorverse.de5.net/review/" } },
+    );
+    expect(await (await gatewayRequest(request, env)).text()).toBe("preview");
+    expect(env.GROWTH_PREVIEW.fetch).toHaveBeenLastCalledWith(request);
+  }
+  expect(env.CLASSROOM.fetch).not.toHaveBeenCalled();
+  expect(env.COMPETITION.fetch).not.toHaveBeenCalled();
+  expect(
+    await (
+      await gatewayRequest(
+        new Request("https://colorverse.de5.net/growth-previewing"),
+        env,
+      )
+    ).text(),
+  ).toBe("classroom");
+  expect(
+    (
+      await gatewayRequest(
+        new Request("https://colorverse.de5.net/growth-preview/"),
+        setup(),
+      )
+    ).status,
+  ).toBe(503);
+});
 it("keeps review/exhibition and review APIs on frozen service without redirecting classroom", async () => {
   const env = setup();
   for (const path of [

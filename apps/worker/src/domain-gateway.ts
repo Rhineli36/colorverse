@@ -2,6 +2,7 @@
 export interface DomainGatewayEnvironment {
   CLASSROOM: { fetch(request: Request): Promise<Response> };
   COMPETITION: { fetch(request: Request): Promise<Response> };
+  GROWTH_PREVIEW?: { fetch(request: Request): Promise<Response> };
   REVIEW_SUBJECTS: string;
   REVIEW_CLASS_IDS: string;
 }
@@ -24,6 +25,11 @@ export async function gatewayRequest(
 ) {
   const url = new URL(request.url),
     path = url.pathname;
+  if (path === "/growth-preview" || path.startsWith("/growth-preview/")) {
+    if (!env.GROWTH_PREVIEW)
+      return new Response("Preview unavailable", { status: 503 });
+    return env.GROWTH_PREVIEW.fetch(request);
+  }
   if (frozenPath(path)) return env.COMPETITION.fetch(request);
   let reviewPage = false;
   try {

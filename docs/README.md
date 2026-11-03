@@ -135,3 +135,5 @@
 - [73 · 教师重置学生密码固定为8个8](73-classroom-fixed-reset-password.md)
 
 - [74 · 课堂评分可见范围与教师名单缩略图](74-classroom-score-privacy-and-roster-thumbnails.md)
+
+- [75 · 星球成长独立云端测试预览](75-isolated-growth-preview.md)

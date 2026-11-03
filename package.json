@@ -29,6 +29,7 @@
     "cloud:database-access": "node scripts/database-access.mjs",
     "classroom:next": "node scripts/classroom-next.mjs",
     "classroom:domain": "node scripts/classroom-domain.mjs",
+    "growth:preview": "node scripts/growth-preview.mjs",
     "cloud:hyperdrive": "node scripts/cloud-hyperdrive.mjs"
   },
   "dependencies": {

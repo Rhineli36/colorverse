@@ -48,6 +48,12 @@ if (command === "deploy") {
     services: [
       { binding: "CLASSROOM", service: "colorverse-classroom-next" },
       { binding: "COMPETITION", service: "colorverse-dev" },
+      ...(process.argv.includes("--growth-preview") ||
+      settings.bindings.some(
+        (b) => b.name === "GROWTH_PREVIEW" && b.type === "service",
+      )
+        ? [{ binding: "GROWTH_PREVIEW", service: "colorverse-growth-preview" }]
+        : []),
     ],
     vars,
   };
@@ -62,7 +68,11 @@ if (command === "deploy") {
       path,
       ...(process.argv.includes("--dry-run") ? ["--dry-run"] : []),
     ],
-    { env: { ...process.env, ...cf }, stdio: "inherit", windowsHide: true },
+    {
+      env: { ...process.env, ...cf, NODE_USE_ENV_PROXY: "0" },
+      stdio: "inherit",
+      windowsHide: true,
+    },
   );
   await new Promise((ok, no) => {
     child.on("error", no);
