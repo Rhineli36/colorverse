@@ -1,12 +1,22 @@
 import type { CSSProperties } from "react";
 import { useId } from "react";
-import { StellarFrame } from "./Ornaments";
-import { materials, type FrameId, type RingId } from "./presets";
+import { StellarFrame, type GrowthPalette } from "./Ornaments";
+import {
+  materials,
+  paletteMaterials,
+  type FrameId,
+  type RingId,
+} from "./presets";
 import { FancyFrameDetails } from "./FancyFrames";
 import { JellyfishOrbit } from "./JellyfishOrbit";
 
-export function materialStyle(id: keyof typeof materials): CSSProperties {
-  const [metal, light, accent] = materials[id];
+export function materialStyle(
+  id: keyof typeof materials,
+  palette?: GrowthPalette,
+): CSSProperties {
+  const [metal, light, accent] = palette
+    ? paletteMaterials[palette]
+    : materials[id];
   return {
     "--g-metal": metal,
     "--g-light": light,
@@ -97,12 +107,18 @@ const enamelColors = [
   "#dca1a4",
 ];
 
-export function FramePresetArt({ id }: { id: FrameId }) {
+export function FramePresetArt({
+  id,
+  palette,
+}: {
+  id: FrameId;
+  palette?: GrowthPalette;
+}) {
   const unique = useId().replaceAll(":", "");
   return (
     <div
       className={`gp-frame-preset gp-preset-${id}`}
-      style={materialStyle(id)}
+      style={materialStyle(id, palette)}
       data-frame={id}
     >
       <StellarFrame advanced />
@@ -406,11 +422,13 @@ export function RingPresetArt({
   front = false,
   particles = true,
   staticPreview = false,
+  palette,
 }: {
   id: RingId;
   front?: boolean;
   particles?: boolean;
   staticPreview?: boolean;
+  palette?: GrowthPalette;
 }) {
   const unique = useId().replaceAll(":", "");
   if (id === "jellyfish")
@@ -419,6 +437,7 @@ export function RingPresetArt({
         front={front}
         particles={particles}
         staticPreview={staticPreview}
+        palette={palette}
       />
     );
   const path = front
@@ -431,7 +450,7 @@ export function RingPresetArt({
     <svg
       className={`gp-orbit-art ${front ? "gp-ring-front" : "gp-ring-back"}`}
       viewBox="0 0 500 520"
-      style={materialStyle(id)}
+      style={materialStyle(id, palette)}
       aria-hidden="true"
       data-ring={id}
     >

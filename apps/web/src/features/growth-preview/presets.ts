@@ -94,3 +94,10 @@ export const materials = {
   winter: ["#c7dfed", "#f5fdff", "#a0cfde"],
   jellyfish: ["#b6dbe9", "#f4efff", "#b3a4ef"],
 } as const;
+
+// Optional trial tint; catalogue materials keep their own original colours.
+export const paletteMaterials = {
+  gold: ["#edcb87", "#fff6d8", "#8edddd"],
+  moon: ["#d7e6fa", "#f5fbff", "#99b8ff"],
+  rose: ["#edb5dc", "#fff0fc", "#bda5ff"],
+} as const;

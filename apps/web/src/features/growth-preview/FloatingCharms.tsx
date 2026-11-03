@@ -1,5 +1,6 @@
 import { useId, type CSSProperties } from "react";
-import { materials, type FrameId } from "./presets";
+import { materials, paletteMaterials, type FrameId } from "./presets";
+import type { GrowthPalette } from "./Ornaments";
 
 export const charmNames: Record<FrameId, string> = {
   silver: "月牙风铃",
@@ -53,9 +54,17 @@ function TinyStar({ x, y, size = 5 }: { x: number; y: number; size?: number }) {
     />
   );
 }
-export function FloatingCharm({ id }: { id: FrameId }) {
+export function FloatingCharm({
+  id,
+  palette,
+}: {
+  id: FrameId;
+  palette?: GrowthPalette;
+}) {
   const uid = useId().replaceAll(":", "");
-  const [metal, light, accent] = materials[id];
+  const [metal, light, accent] = palette
+    ? paletteMaterials[palette]
+    : materials[id];
   return (
     <svg
       viewBox="0 0 150 240"

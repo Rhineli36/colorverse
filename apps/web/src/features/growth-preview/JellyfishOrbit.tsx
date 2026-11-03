@@ -1,4 +1,6 @@
 import { useId, type CSSProperties } from "react";
+import type { GrowthPalette } from "./Ornaments";
+import { paletteMaterials } from "./presets";
 
 const colors = [
   ["#a8f0f4", "#5eb9d3", "#e3fbff"],
@@ -9,12 +11,22 @@ export function JellyfishOrbit({
   front = false,
   particles = true,
   staticPreview = false,
+  palette,
 }: {
   front?: boolean;
   particles?: boolean;
   staticPreview?: boolean;
+  palette?: GrowthPalette;
 }) {
   const uid = useId().replaceAll(":", "");
+  const tint = palette ? paletteMaterials[palette] : undefined;
+  const bodyColors = tint
+    ? [
+        [tint[2], tint[0], tint[1]],
+        [tint[0], tint[2], tint[1]],
+        [tint[2], tint[0], tint[1]],
+      ]
+    : colors;
   return (
     <svg
       className={`gp-orbit-art ${front ? "gp-ring-front" : "gp-ring-back"} gp-jelly-orbit ${staticPreview ? "is-static" : ""}`}
@@ -24,7 +36,7 @@ export function JellyfishOrbit({
       data-particles={particles}
     >
       <defs>
-        {colors.map(([light, dark], i) => (
+        {bodyColors.map(([light, dark], i) => (
           <radialGradient
             key={i}
             id={`${uid}bell${i}`}
@@ -52,7 +64,7 @@ export function JellyfishOrbit({
           opacity=".48"
         />
       )}
-      {colors.map(([light, dark, highlight], i) => (
+      {bodyColors.map(([light, dark, highlight], i) => (
         <g
           key={i}
           className="gp-jelly-traveller"

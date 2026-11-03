@@ -62,7 +62,7 @@ const palettes = [
   },
 ];
 function Preview() {
-  const [palette, setPalette] = useState<GrowthPalette>("gold"),
+  const [palette, setPalette] = useState<GrowthPalette>(),
     [background, setBackground] = useState("garden");
   const [framePreset, setFramePreset] = useState<FrameId>(),
     [ringPreset, setRingPreset] = useState<RingId>();
@@ -104,6 +104,15 @@ function Preview() {
   const scene = background === "upload" ? uploadUrl : bg.src;
   const frameName = framePresets.find((p) => p.id === framePreset)?.name;
   const ringName = ringPresets.find((p) => p.id === ringPreset)?.name;
+  const applyPalette = (next: GrowthPalette) => {
+    setPalette(next);
+    // Make a palette click visible even before the user picks a ring.
+    // This is a temporary trial, never an ownership/unlock operation.
+    if (!ringPreset) {
+      setRingPreset("gold");
+      setRing(true);
+    }
+  };
   const tryOn = () =>
     document.querySelector(".gp-preview-grid")?.scrollIntoView({
       behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -113,7 +122,7 @@ function Preview() {
     });
   return (
     <div
-      className={`gp-app palette-${palette} ${moving && !hidden ? "" : "motion-paused"}`}
+      className={`gp-app palette-${palette ?? "gold"} ${moving && !hidden ? "" : "motion-paused"}`}
     >
       <header className="gp-header">
         <a className="gp-brand" href={previewHome}>
@@ -179,7 +188,11 @@ function Preview() {
               <div className="gp-exterior-aura" />
               {particles && <StarDust />}
               {ringPreset && ring && (
-                <RingPresetArt id={ringPreset} particles={particles} />
+                <RingPresetArt
+                  id={ringPreset}
+                  particles={particles}
+                  palette={palette}
+                />
               )}
               <img
                 className="gp-planet-body"
@@ -187,7 +200,12 @@ function Preview() {
                 alt="保留原有花园外观的星球"
               />
               {ringPreset && ring && (
-                <RingPresetArt id={ringPreset} front particles={particles} />
+                <RingPresetArt
+                  id={ringPreset}
+                  front
+                  particles={particles}
+                  palette={palette}
+                />
               )}
               {moon && ringPreset !== "jellyfish" && <MoonOrbit />}
             </div>
@@ -196,8 +214,8 @@ function Preview() {
               <h2>森野绮梦</h2>
               <p>
                 {ringName
-                  ? `当前试戴：${ringName} · 解锁条件待配置`
-                  : "从预设目录挑一款星环，预览环绕的细节。"}
+                  ? `${ring ? "当前试戴" : "已隐藏"}：${ringName} · 解锁条件待配置`
+                  : "勾选星环即可试戴，也可以从预设中挑选款式。"}
               </p>
             </div>
           </section>
@@ -212,7 +230,9 @@ function Preview() {
             </div>
             <div className="gp-room-scene">
               <img className="gp-room-art" src={scene} alt="星球内部背景原画" />
-              {framePreset && frame && <FramePresetArt id={framePreset} />}
+              {framePreset && frame && (
+                <FramePresetArt id={framePreset} palette={palette} />
+              )}
               {particles && <StarDust interior />}
               <div className="gp-work-elements" aria-label="原有作业元素">
                 {[
@@ -259,7 +279,7 @@ function Preview() {
                   name={charmName}
                 >
                   {framePreset ? (
-                    <FloatingCharm id={framePreset} />
+                    <FloatingCharm id={framePreset} palette={palette} />
                   ) : (
                     <StarLantern />
                   )}
@@ -292,14 +312,14 @@ function Preview() {
         <section className="gp-controls" aria-label="装饰与背景设置">
           <div className="gp-control-group gp-palette-group">
             <h3>
-              氛围配色 <small>星灯与伴星 · 边框和星环使用各自材质</small>
+              装饰配色 <small>同步调整试戴装饰，保留原画与主题图案</small>
             </h3>
             <div className="gp-palette-options">
               {palettes.map((p) => (
                 <button
                   key={p.id}
                   aria-pressed={palette === p.id}
-                  onClick={() => setPalette(p.id)}
+                  onClick={() => applyPalette(p.id)}
                 >
                   <span className="gp-swatches">
                     {p.colors.map((c) => (
@@ -309,6 +329,12 @@ function Preview() {
                   {p.name}
                 </button>
               ))}
+              <button
+                aria-pressed={palette === undefined}
+                onClick={() => setPalette(undefined)}
+              >
+                原配色
+              </button>
             </div>
           </div>
           <div className="gp-control-group">
@@ -348,9 +374,23 @@ function Preview() {
         <section className="gp-bottom-controls" aria-label="装饰显示开关">
           <div>
             {[
-              { name: "星环", value: ring, set: setRing },
+              {
+                name: "星环",
+                value: Boolean(ringPreset && ring),
+                set: (show: boolean) => {
+                  setRing(show);
+                  if (show && !ringPreset) setRingPreset("gold");
+                },
+              },
               { name: "伴生卫星", value: moon, set: setMoon },
-              { name: "星辉边框", value: frame, set: setFrame },
+              {
+                name: "星辉边框",
+                value: Boolean(framePreset && frame),
+                set: (show: boolean) => {
+                  setFrame(show);
+                  if (show && !framePreset) setFramePreset("gold");
+                },
+              },
               { name: "配套浮饰", value: lantern, set: setLantern },
               { name: "微光粒子", value: particles, set: setParticles },
             ].map((c) => (
