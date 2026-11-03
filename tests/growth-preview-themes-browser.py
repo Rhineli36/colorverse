@@ -62,9 +62,10 @@ with sync_playwright()as w:
  expect(p.locator('.gp-preset-card[data-locked=true]')).to_have_count(12)
  assert not errors,errors
  assert not any('/api/'in u for u in requests)
+ assert not any('.workers.dev' in u for u in requests)
  assert not any('three.module' in u or 'jellyfish-renderer' in u for u in requests)
  assert p.locator('canvas').count()==0
- (out/'checks.json').write_text(json.dumps({'status':'passed','pairedFrames':[i[1] for i in pairs],'presets':12,'enhancedFrames':['emerald','glass','floral'],'winterFrameAndPersimmon':True,'jellyfishOrbit':True,'jellyfishParticlesOptional':True,'catalogueStatic':True,'pauseAndReducedMotion':True,'backgroundPreserved':True,'workClickThrough':True,'mobileNoOverflow':True,'pageErrors':errors,'apiRequests':0,'newCanvasOrWebGL':False,'cloudDeployment':False},ensure_ascii=False,indent=2),encoding='utf-8')
+ (out/'checks.json').write_text(json.dumps({'status':'passed','target':URL,'cloudTarget':URL.startswith('https://'),'pairedFrames':[i[1] for i in pairs],'presets':12,'enhancedFrames':['emerald','glass','floral'],'winterFrameAndPersimmon':True,'jellyfishOrbit':True,'jellyfishParticlesOptional':True,'catalogueStatic':True,'pauseAndReducedMotion':True,'backgroundPreserved':True,'workClickThrough':True,'mobileNoOverflow':True,'pageErrors':errors,'apiRequests':0,'workersDevRequests':0,'newCanvasOrWebGL':False},ensure_ascii=False,indent=2),encoding='utf-8')
  print('PASS: 12 locked presets; 7 paired floating charms; fancy frames; winter/persimmon; moving jellyfish, optional particles, static catalog; click-through, mobile; no API/canvas/WebGL')
  b.close()
 

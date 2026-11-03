@@ -51,18 +51,18 @@ with sync_playwright()as w:
  p.screenshot(path=str(out/'mobile.png'),full_page=True)
  p.emulate_media(reduced_motion='reduce');assert charm.locator('.gp-float-motion').evaluate('(e)=>getComputedStyle(e).animationName')=='none'
  # A real touch sequence, rather than a synthetic click, moves the ornament.
- c=b.new_context(viewport={'width':390,'height':844},has_touch=True,is_mobile=True,reduced_motion='reduce');q=c.new_page()
- q.goto(URL,wait_until='networkidle');q.get_by_role('button',name='试戴边框：立冬·霜华初绽',exact=True).click()
+ q=p
+ q.get_by_role('button',name='试戴边框：立冬·霜华初绽',exact=True).click()
  touch=q.get_by_role('button',name='拖动霜柿小灯',exact=True);touch.scroll_into_view_if_needed();q.wait_for_timeout(100)
- a=touch.bounding_box();old=xy(touch);client=c.new_cdp_session(q)
+ a=touch.bounding_box();old=xy(touch);client=q.context.new_cdp_session(q)
+ client.send('Emulation.setTouchEmulationEnabled',{'enabled':True,'maxTouchPoints':1})
  x=a['x']+a['width']/2;y=a['y']+a['height']/2
  client.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
  client.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x-80,'y':y+25}]})
  client.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
  assert xy(touch)[0]<old[0]-.1,(old,xy(touch));within(touch,q.locator('.gp-room-scene'))
- c.close()
- assert not errors,errors;assert not any('/api/'in u for u in requests)
- (out/'checks.json').write_text(json.dumps({'status':'passed','mouseDrag':True,'dragPausesFloating':True,'clickDoesNotTeleport':True,'amplitudes':['still','gentle','expressive'],'independentPerCharmPlacement':True,'keyboardAdjustment':True,'escapeCancelsDrag':True,'positionReset':True,'boundaryClamping':True,'mobileAndTouch':True,'reducedMotion':True,'workClickThrough':True,'pageErrors':errors,'apiRequests':0,'cloudDeployment':False},ensure_ascii=False,indent=2),encoding='utf-8')
+ assert not errors,errors;assert not any('/api/'in u for u in requests);assert not any('.workers.dev' in u for u in requests)
+ (out/'checks.json').write_text(json.dumps({'status':'passed','target':URL,'cloudTarget':URL.startswith('https://'),'mouseDrag':True,'dragPausesFloating':True,'clickDoesNotTeleport':True,'amplitudes':['still','gentle','expressive'],'independentPerCharmPlacement':True,'keyboardAdjustment':True,'escapeCancelsDrag':True,'positionReset':True,'boundaryClamping':True,'mobileAndTouch':True,'reducedMotion':True,'workClickThrough':True,'pageErrors':errors,'apiRequests':0,'workersDevRequests':0},ensure_ascii=False,indent=2),encoding='utf-8')
  print('PASS: mouse/touch drag, amplitudes, per-charm retention, cancel/reset, boundaries, resize, keyboard, click-through and no API requests')
  b.close()
 
