@@ -137,3 +137,5 @@
 - [74 · 课堂评分可见范围与教师名单缩略图](74-classroom-score-privacy-and-roster-thumbnails.md)
 
 - [75 · 星球成长独立云端测试预览](75-isolated-growth-preview.md)
+
+- [76 课堂作业先保存后发布与装扮星球入口](76-assignment-save-and-planet-wardrobe.md)

@@ -33,3 +33,16 @@
 使用 `pnpm classroom:next build` / `pnpm classroom:next deploy` 更新 `colorverse-classroom-next`，正式入口仍为 https://colorverse.de5.net/ 。独立预览使用 `pnpm growth:preview deploy`，不修改域名网关或课堂绑定。
 
 周末立冬作业可先保存，再从下拉菜单选择并确认发布；发布记录 ID 可供后续指定皮肤解锁绑定。当前不会因标题含“立冬”自动发放皮肤。
+
+
+## 实际发布与线上验收
+
+- 课堂前端源码：`e57fea0`，发布标识：`2026-11-04T09:25:34.413Z-e57fea0`。
+- 最终课堂 Worker：`23419e98-5375-42bd-9a0c-60ec907082e5`，100%流量。自定义域名及 Workers 默认地址的 release、入口 HTML、入口 JS/CSS 与本次本地构建逐字节一致。
+- 独立装扮预览： https://colorverse.de5.net/growth-preview/ ，源码 `0aa250a`，Worker `c60165dd-d40d-474c-8eb3-243fbce79c8b`。课堂后续的 `e57fea0` 仅把保存成功提示移到示范图上方，不涉及预览。
+- 真实云端浏览器＋接口验收通过：虚拟教师上传真实示范图片并保存，发布记录为零、学生无任务/通知；取消确认不发布；刷新可读取原任务及私有示范图；确认后应交1名虚拟学生、仅生成1条作业通知；学生调用教师名单返回403。
+- 真实学生账号可打开本人星球试戴立冬主题，圆蒙版保持正圆；返回不写入装扮或解锁资格。最终前端另做真实教师/学生只读烟测，通过。
+- 独立预览三种配色、星环开关及前后图层、浮饰联动、锁定状态和窄屏回归通过。
+- 虚拟验收班已按专用班级 ID、课程 ID 和名称校验后归档，不在正式班级发布测试作业。私有账号和会话仅保存在忽略目录 `work/`，未提交。
+- 域名网关仍为 `17eb6e4d-0f9e-473b-be31-d3b4666e1660`；比赛 Worker 仍为 `76b2e8b5-3634-456b-b00e-b6a2f68dd210`；比赛两个域名共16项资源哈希相同；EXE SHA256仍为 `1b1e7869eec137b4af2df77edb7f3ea4f1c6cc5de10f86745d3ecf6d4a749e3a`。
+- 实际验证命令包括：`pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm classroom:next build`、`pnpm classroom:next deploy`、`pnpm growth:preview build`、`pnpm growth:preview deploy`；Python浏览器测试及真实线上专用验收脚本记录于 `outputs/classroom-save-wardrobe/`。构建现有的第三方注释及大包提示仍存在，不影响构建通过。
