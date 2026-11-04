@@ -198,6 +198,7 @@ export function AssignmentPublisher({
             />
           ) : (
             <>
+              {status && <p role="status">{status}</p>}
               <label>
                 准备好的教学任务
                 <select
@@ -214,7 +215,6 @@ export function AssignmentPublisher({
                 </select>
               </label>
               <AssignmentBrief task={task} showTitle />
-              {status && <p role="status">{status}</p>}
               <button disabled={busy} onClick={() => setOpen(false)}>
                 取消
               </button>
