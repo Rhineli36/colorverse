@@ -106,8 +106,7 @@ with sync_playwright() as p:
             page.get_by_role('button',name='装扮星球',exact=True).click()
             expect(page.locator('.gp-room-scene .gp-frame-preset')).to_have_count(0)
             unlocked.append('winter')
-            page.get_by_role('button',name='← 返回星球',exact=True).click()
-            page.get_by_role('button',name='装扮星球',exact=True).click()
+            page.get_by_role('button',name='刷新解锁进度',exact=True).click()
             page.get_by_role('button',name='套用边框：立冬·霜华初绽',exact=True).click()
             expect(page.get_by_role('button',name='不使用边框装扮',exact=True)).to_be_enabled()
             assert equipped['frameId']=='winter'

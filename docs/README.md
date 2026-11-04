@@ -141,3 +141,5 @@
 - [76 课堂作业先保存后发布与装扮星球入口](76-assignment-save-and-planet-wardrobe.md)
 
 - [77 多张作业参考图与立冬装扮绑定](77-multiple-references-and-winter-unlock.md)
+
+- [78 线上课堂六款成长装扮解锁](78-classroom-skin-count-unlocks.md)
