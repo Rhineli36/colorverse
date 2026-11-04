@@ -59,13 +59,17 @@ export function AssignmentPublisher({
   onCreate,
   catalog = AssignmentCatalog,
   disabled = false,
+  saveBeforePublish = false,
+  unpublishedTaskIds = [],
 }: {
+  saveBeforePublish?: boolean;
+  unpublishedTaskIds?: string[];
   onPublish: (taskId: string) => Promise<void>;
   onCreate?: (
     draft: CustomAssignmentDraft,
     image: File | null,
     requestId: string,
-  ) => Promise<void>;
+  ) => Promise<string | void>;
   catalog?: AssignmentDefinition[];
   disabled?: boolean;
 }) {
@@ -80,7 +84,11 @@ export function AssignmentPublisher({
     if (busy) return;
     if (
       dirty.current &&
-      !window.confirm("新增作业尚未发布，确定放弃这些内容吗？")
+      !window.confirm(
+        saveBeforePublish
+          ? "新增作业尚未保存，确定放弃这些内容吗？"
+          : "新增作业尚未发布，确定放弃这些内容吗？",
+      )
     )
       return;
     setOpen(false);
@@ -122,6 +130,9 @@ export function AssignmentPublisher({
             ×
           </button>
           <h2>给班级发布一封创作邀请</h2>
+          {saveBeforePublish && (
+            <p>先保存作业内容，再选择全班或指定学生发布。</p>
+          )}
           {onCreate && (
             <nav className="assignment-compose-tabs" aria-label="作业来源">
               <button
@@ -130,7 +141,11 @@ export function AssignmentPublisher({
                 onClick={() => {
                   if (
                     dirty.current &&
-                    !window.confirm("确定放弃尚未发布的新作业吗？")
+                    !window.confirm(
+                      saveBeforePublish
+                        ? "确定放弃尚未保存的新作业吗？"
+                        : "确定放弃尚未发布的新作业吗？",
+                    )
                   )
                     return;
                   setMode("templates");
@@ -149,23 +164,33 @@ export function AssignmentPublisher({
           )}
           {mode === "new" && onCreate ? (
             <NewAssignmentForm
+              saveOnly={saveBeforePublish}
               onDirtyChange={(v) => {
                 dirty.current = v;
               }}
               onBack={() => {
                 if (
                   !dirty.current ||
-                  window.confirm("确定放弃尚未发布的新作业吗？")
+                  window.confirm(
+                    saveBeforePublish
+                      ? "确定放弃尚未保存的新作业吗？"
+                      : "确定放弃尚未发布的新作业吗？",
+                  )
                 )
                   setMode("templates");
               }}
               onCreate={async (...args) => {
                 setBusy(true);
                 try {
-                  await onCreate(...args);
+                  const createdId = await onCreate(...args);
                   dirty.current = false;
                   setMode("templates");
-                  setOpen(false);
+                  if (saveBeforePublish) {
+                    if (createdId) setTaskId(createdId);
+                    setStatus(
+                      "作业已保存，尚未发布。请选择作业，再确认发布对象。",
+                    );
+                  } else setOpen(false);
                 } finally {
                   setBusy(false);
                 }
@@ -182,6 +207,7 @@ export function AssignmentPublisher({
                 >
                   {catalog.map((t) => (
                     <option key={t.id} value={t.id}>
+                      {unpublishedTaskIds.includes(t.id) ? "[未发布] " : ""}
                       {t.title}
                     </option>
                   ))}
@@ -209,7 +235,11 @@ export function AssignmentPublisher({
                     .finally(() => setBusy(false));
                 }}
               >
-                {busy ? "正在发布…" : "一键发布给全班"}
+                {busy
+                  ? "正在处理…"
+                  : saveBeforePublish
+                    ? "选择发布对象"
+                    : "一键发布给全班"}
               </button>
             </>
           )}

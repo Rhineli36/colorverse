@@ -9,7 +9,9 @@ export function NewAssignmentForm({
   onCreate,
   onBack,
   onDirtyChange,
+  saveOnly = false,
 }: {
+  saveOnly?: boolean;
   onCreate: (
     draft: CustomAssignmentDraft,
     image: File | null,
@@ -193,12 +195,24 @@ export function NewAssignmentForm({
               setError("");
               void onCreate(value, file, requestId.current)
                 .catch((e) =>
-                  setError(e instanceof Error ? e.message : "发布失败，请重试"),
+                  setError(
+                    e instanceof Error
+                      ? e.message
+                      : saveOnly
+                        ? "保存失败，请重试"
+                        : "发布失败，请重试",
+                  ),
                 )
                 .finally(() => setBusy(false));
             }}
           >
-            {busy ? "正在发布…" : "发布新作业"}
+            {busy
+              ? saveOnly
+                ? "正在保存…"
+                : "正在发布…"
+              : saveOnly
+                ? "保存作业"
+                : "发布新作业"}
           </button>
         </div>
       </footer>

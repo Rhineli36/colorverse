@@ -46,6 +46,15 @@ export const framePresets = (
     },
   ] as const
 ).map((p) => ({ ...p, locked: true as const, unlockCondition: null }));
+export const frameUnlockLabels = {
+  silver: "上传自己的星球外观和内部背景后解锁",
+  gold: "有效互动累计达到20次后解锁",
+  sapphire: "自己的星球与作品累计获赞达到10次后解锁",
+  emerald: "提交课程作业达到5次后解锁",
+  glass: "提交课程作业达到10次后解锁",
+  floral: "有效互动累计达到50次后解锁",
+  winter: "提交指定立冬作业并获得教师评分后解锁 · 指定作业待绑定",
+} as const;
 export type FrameId = (typeof framePresets)[number]["id"];
 export const ringPresets = (
   [

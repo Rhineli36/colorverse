@@ -125,6 +125,7 @@ export function TeacherClassroomStudio(props: Props) {
   const [catalog, setCatalog] = useState(
     AssignmentCatalog.map((t) => ({ ...t })),
   );
+  const [unpublishedTaskIds, setUnpublishedTaskIds] = useState<string[]>([]);
   const root = `classes/${classId}/`,
     generation = useRef(0),
     handledNotice = useRef(""),
@@ -168,6 +169,11 @@ export function TeacherClassroomStudio(props: Props) {
         setPublications(z.array(PublicationSchema).parse(p.publications));
         setGallery(Gallery.parse(g));
         setUnlinked(u.works);
+        setUnpublishedTaskIds(
+          t.tasks
+            .filter((x: { taskId: string; published: boolean }) => !x.published)
+            .map((x: { taskId: string }) => x.taskId),
+        );
         setCatalog([
           ...AssignmentCatalog,
           ...t.tasks.flatMap(
@@ -308,6 +314,40 @@ export function TeacherClassroomStudio(props: Props) {
       ))}
     </div>
   );
+  const publisher = (
+    <AssignmentPublisher
+      saveBeforePublish
+      unpublishedTaskIds={unpublishedTaskIds}
+      disabled={busy}
+      catalog={catalog}
+      onPublish={async (id) => beginPublish(id)}
+      onCreate={async (definition, image, requestId) => {
+        const body = new FormData();
+        body.set("metadata", JSON.stringify({ requestId, definition }));
+        if (image) body.set("image", image);
+        const r = await (
+          await classroomRequest(root + "learning-tasks", {
+            method: "POST",
+            body,
+          })
+        ).json();
+        setUnpublishedTaskIds(
+          r.tasks
+            .filter((x: { taskId: string; published: boolean }) => !x.published)
+            .map((x: { taskId: string }) => x.taskId),
+        );
+        setCatalog([
+          ...AssignmentCatalog,
+          ...r.tasks.flatMap(
+            (t: { definition?: (typeof AssignmentCatalog)[number] }) =>
+              t.definition ? [t.definition] : [],
+          ),
+        ]);
+        refresh();
+        return r.taskId;
+      }}
+    />
+  );
   return (
     <section className="classroom-studio" aria-label="课堂教师管理">
       <header className="classroom-studio-heading">
@@ -368,7 +408,11 @@ export function TeacherClassroomStudio(props: Props) {
         </div>
       )}
       {tab === "planets" ? (
-        <CloudClassroomView {...props} initialClassId={classId} />
+        <CloudClassroomView
+          {...props}
+          initialClassId={classId}
+          assignmentPublisher={publisher}
+        />
       ) : (
         <>
           <div className="classroom-studio-tools">
@@ -382,24 +426,7 @@ export function TeacherClassroomStudio(props: Props) {
               disabled={busy}
               onChanged={refresh}
             />
-            <AssignmentPublisher
-              disabled={busy}
-              catalog={catalog}
-              onPublish={async (id) => beginPublish(id)}
-              onCreate={async (definition, image, requestId) => {
-                const body = new FormData();
-                body.set("metadata", JSON.stringify({ requestId, definition }));
-                if (image) body.set("image", image);
-                const r = await (
-                  await classroomRequest(root + "learning-tasks", {
-                    method: "POST",
-                    body,
-                  })
-                ).json();
-                refresh();
-                beginPublish(r.taskId);
-              }}
-            />
+            {publisher}
           </div>
           {busy && <p role="status">正在读取或保存课堂数据…</p>}
           {tab === "roster" ? (

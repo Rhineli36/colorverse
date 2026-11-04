@@ -3,6 +3,7 @@ import { FloatingCharm, charmNames } from "./FloatingCharms";
 import { previewAsset } from "./assets";
 import {
   framePresets,
+  frameUnlockLabels,
   ringPresets,
   type FrameId,
   type RingId,
@@ -28,12 +29,14 @@ export function PresetCatalog({
   frame,
   ring,
   background,
+  exteriorSrc,
   onFrame,
   onRing,
 }: {
   frame?: FrameId;
   ring?: RingId;
   background: string;
+  exteriorSrc?: string;
   onFrame: (id: FrameId) => void;
   onRing: (id: RingId) => void;
 }) {
@@ -44,7 +47,7 @@ export function PresetCatalog({
           <p className="gp-eyebrow">THE ORNAMENT COLLECTION</p>
           <h2>收藏下一份光芒</h2>
           <p>
-            所有款式默认锁定，解锁条件待配置。现在可以临时试戴，比较不同风格。
+            解锁条件显示在各款卡片下方，自动解锁与套用保存尚未开放。现在可以临时试戴，比较不同风格。
           </p>
         </div>
         <span className="gp-catalog-count">
@@ -90,11 +93,7 @@ export function PresetCatalog({
             </div>
             <p className="gp-preset-description">{p.description}</p>
             <p className="gp-charm-caption">配套浮饰 · {charmNames[p.id]}</p>
-            <small className="gp-unlock-rule">
-              {p.id === "winter"
-                ? "拟关联：立冬节气设计作业 · 尚未配置"
-                : "解锁条件待配置"}
-            </small>
+            <small className="gp-unlock-rule">{frameUnlockLabels[p.id]}</small>
           </article>
         ))}
       </div>
@@ -115,7 +114,10 @@ export function PresetCatalog({
                 <RingPresetArt id={p.id} staticPreview particles={false} />
                 <img
                   className="gp-planet-body"
-                  src={previewAsset("competition/case-3-exterior.webp")}
+                  src={
+                    exteriorSrc ??
+                    previewAsset("competition/case-3-exterior.webp")
+                  }
                   alt=""
                 />
                 <RingPresetArt

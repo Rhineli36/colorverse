@@ -1,29 +1,30 @@
-* {
+.gp-app,
+.gp-app * {
   box-sizing: border-box;
 }
-body {
+.gp-app {
   margin: 0;
   background: #07101d;
   color: #e9edf6;
   font-family: Inter, "Microsoft YaHei", "PingFang SC", sans-serif;
 }
-button,
-input {
+.gp-app button,
+.gp-app input {
   font: inherit;
 }
-button {
+.gp-app button {
   cursor: pointer;
 }
-button:focus-visible,
-a:focus-visible,
-label:has(input:focus-visible) {
+.gp-app button:focus-visible,
+.gp-app a:focus-visible,
+.gp-app label:has(input:focus-visible) {
   outline: 2px solid #e3d1ff;
   outline-offset: 4px;
 }
-button {
+.gp-app button {
   color: inherit;
 }
-button:disabled {
+.gp-app button:disabled {
   cursor: default;
 }
 .gp-app {
@@ -1304,4 +1305,12 @@ button:disabled {
   .gp-preset-info h4 {
     font-size: 16px;
   }
+}
+
+/* FramedImage normally fills its host; the planet mask must stay square. */
+.gp-exterior-stage > .gp-planet-body.framed-image {
+  position: absolute;
+  width: 54%;
+  height: auto;
+  aspect-ratio: 1;
 }

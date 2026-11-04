@@ -64,21 +64,30 @@ export async function learningTasks(
       ...rows
         .filter((r) => String(r.taskId).startsWith("custom-"))
         .map((r) => String(r.taskId)),
-    ].map((taskId) => {
-      const row = rows.find((r) => r.taskId === taskId);
-      return LearningTaskSettingSchema.parse(
-        row
-          ? { ...row, definition: row.definition ?? undefined }
-          : {
-              taskId,
-              published: false,
-              requireExplanation: true,
-              allowPeerReview: true,
-              showIntentToPeers: true,
-              revision: 0,
-            },
-      );
-    }),
+    ]
+      .filter((taskId) => {
+        const row = rows.find((r) => r.taskId === taskId);
+        return (
+          !taskId.startsWith("custom-") ||
+          Boolean(row?.published) ||
+          ["teacher", "assistant"].includes(String(actor.role))
+        );
+      })
+      .map((taskId) => {
+        const row = rows.find((r) => r.taskId === taskId);
+        return LearningTaskSettingSchema.parse(
+          row
+            ? { ...row, definition: row.definition ?? undefined }
+            : {
+                taskId,
+                published: false,
+                requireExplanation: true,
+                allowPeerReview: true,
+                showIntentToPeers: true,
+                revision: 0,
+              },
+        );
+      }),
   };
 }
 export async function validateWorkLearning(

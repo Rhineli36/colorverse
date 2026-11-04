@@ -3,7 +3,7 @@ import { BackgroundMusic } from "./BackgroundMusic";
 import "./experience-navigation.css";
 
 export type ExperienceDestination =
-  "universe" | "room" | "edit" | "knowledge" | "teacher";
+  "universe" | "room" | "edit" | "knowledge" | "teacher" | "wardrobe";
 export function ExperienceHeader({
   role,
   onNavigate,
@@ -12,7 +12,9 @@ export function ExperienceHeader({
   pendingCount = 0,
   modeLabel,
   current = "universe",
+  wardrobeEnabled = false,
 }: {
+  wardrobeEnabled?: boolean;
   role: "guest" | "student" | "teacher";
   onNavigate: (destination: ExperienceDestination) => void;
   account: ReactNode;
@@ -98,6 +100,15 @@ export function ExperienceHeader({
             >
               编辑星球
             </button>
+            {wardrobeEnabled && (
+              <button
+                aria-current={current === "wardrobe" ? "page" : undefined}
+                disabled={disabled}
+                onClick={() => onNavigate("wardrobe")}
+              >
+                装扮星球
+              </button>
+            )}
           </>
         )}
         <button

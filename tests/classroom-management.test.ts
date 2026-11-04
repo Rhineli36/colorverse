@@ -1,3 +1,6 @@
+import { handleShowcaseCloud } from "../apps/worker/src/showcase-cloud";
+import { learningTasks } from "../apps/worker/src/learning";
+import type { Client } from "pg";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
@@ -626,5 +629,80 @@ describe("student password lifecycle", () => {
     await expect(
       account("verify", { account: "unknown", name: "未知" }),
     ).rejects.toMatchObject({ status: 429 });
+  });
+});
+
+describe("saved classroom assignment lifecycle", () => {
+  it("saves privately, survives reload and duplicate save, and publishes only to confirmed recipients", async () => {
+    const requestId = randomUUID(),
+      taskId = `custom-${requestId}`;
+    const definition = {
+      title: "立冬测试（虚拟）",
+      description: "观察冬日的冷暖关系",
+      steps: ["绘制一张节气作品"],
+      deliverables: "提交作品和说明",
+    };
+    const client = () =>
+      ({
+        ...sql,
+        connect: async () => {},
+        end: async () => {},
+      }) as unknown as Pick<Client, "connect" | "query" | "end">;
+    const save = (who = teacher) => {
+      const form = new FormData();
+      form.set("metadata", JSON.stringify({ requestId, definition }));
+      return handleShowcaseCloud(
+        new Request("https://classroom.test/", { method: "POST", body: form }),
+        { ...env, IMAGES: {} } as never,
+        who,
+        id[5],
+        "learning-tasks",
+        client,
+      );
+    };
+    const before = (await publications(sql, id[5])).length;
+    expect((await save()).status).toBe(201);
+    expect((await save()).status).toBe(200);
+    const staff = await classroomActor(sql, teacher, id[5]);
+    const pupil = await classroomActor(sql, student, id[5]);
+    expect(
+      (await learningTasks(sql, staff, id[5], "GET")).tasks.find(
+        (t) => t.taskId === taskId,
+      ),
+    ).toMatchObject({
+      published: false,
+      definition: { title: definition.title },
+    });
+    expect(
+      (await learningTasks(sql, pupil, id[5], "GET")).tasks.some(
+        (t) => t.taskId === taskId,
+      ),
+    ).toBe(false);
+    expect((await publications(sql, id[5])).length).toBe(before);
+    expect(
+      (
+        await classroomNotifications(sql, pupil, id[5], true)
+      ).notifications.some((n) => n.taskId === taskId),
+    ).toBe(false);
+    await expect(save(student)).rejects.toMatchObject({ status: 403 });
+    const publication = (await action("publications", "POST", {
+      requestId: randomUUID(),
+      taskId,
+      enrollmentIds: [id[9]],
+      dueAt: null,
+    })) as { id: string };
+    expect(
+      (await publications(sql, id[5])).find((p) => p.id === publication.id),
+    ).toMatchObject({ expected: 1, submitted: 0 });
+    expect(
+      (await learningTasks(sql, pupil, id[5], "GET")).tasks.find(
+        (t) => t.taskId === taskId,
+      )?.published,
+    ).toBe(true);
+    expect(
+      (
+        await classroomNotifications(sql, pupil, id[5], true)
+      ).notifications.filter((n) => n.taskId === taskId),
+    ).toHaveLength(1);
   });
 });

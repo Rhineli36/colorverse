@@ -404,8 +404,14 @@ export async function handleShowcaseCloud(
           : "",
       });
       await client.query(
-        "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,require_explanation,allow_peer_review,show_intent_to_peers,revision,definition,image_storage_key) VALUES($1,$2,true,true,true,true,1,$3,$4)",
-        [classId, taskId, JSON.stringify(definition), imageKey],
+        "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,require_explanation,allow_peer_review,show_intent_to_peers,revision,definition,image_storage_key) VALUES($1,$2,$5,true,true,true,1,$3,$4)",
+        [
+          classId,
+          taskId,
+          JSON.stringify(definition),
+          imageKey,
+          env.CLASSROOM_NEXT !== "true",
+        ],
       );
       const result = await learningTasks(client, actor, classId, "GET");
       commitAttempted = true;

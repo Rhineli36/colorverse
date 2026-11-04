@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AssignmentPublisher } from "./ClassroomMail";
 import {
   LearningTaskSettingSchema,
@@ -24,7 +24,9 @@ export function CloudClassroomView({
   initialClassId,
   onPendingChange,
   onPlanetAction,
+  assignmentPublisher,
 }: {
+  assignmentPublisher?: ReactNode;
   session: CloudSession | null;
   initialClassId?: string;
   onPendingChange?: (pending: boolean) => void;
@@ -257,35 +259,37 @@ export function CloudClassroomView({
           }
         }}
         publisher={
-          <AssignmentPublisher
-            catalog={catalog}
-            disabled={busy}
-            onCreate={async (definition, image, requestId) => {
-              const body = new FormData();
-              body.set("metadata", JSON.stringify({ requestId, definition }));
-              if (image) body.set("image", image);
-              await classroomRequest(`classes/${classId}/learning-tasks`, {
-                method: "POST",
-                body,
-              });
-              setRevision((n) => n + 1);
-            }}
-            onPublish={async (taskId) => {
-              const value = await (
-                await classroomRequest(`classes/${classId}/learning-tasks`)
-              ).json();
-              const task = value.tasks
-                .map((t: unknown) => LearningTaskSettingSchema.parse(t))
-                .find((t: { taskId: string }) => t.taskId === taskId);
-              if (!task) throw Error("作业暂不可用，请刷新。");
-              await classroomRequest(`classes/${classId}/learning-tasks`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...task, published: true }),
-              });
-              setRevision((n) => n + 1);
-            }}
-          />
+          assignmentPublisher ?? (
+            <AssignmentPublisher
+              catalog={catalog}
+              disabled={busy}
+              onCreate={async (definition, image, requestId) => {
+                const body = new FormData();
+                body.set("metadata", JSON.stringify({ requestId, definition }));
+                if (image) body.set("image", image);
+                await classroomRequest(`classes/${classId}/learning-tasks`, {
+                  method: "POST",
+                  body,
+                });
+                setRevision((n) => n + 1);
+              }}
+              onPublish={async (taskId) => {
+                const value = await (
+                  await classroomRequest(`classes/${classId}/learning-tasks`)
+                ).json();
+                const task = value.tasks
+                  .map((t: unknown) => LearningTaskSettingSchema.parse(t))
+                  .find((t: { taskId: string }) => t.taskId === taskId);
+                if (!task) throw Error("作业暂不可用，请刷新。");
+                await classroomRequest(`classes/${classId}/learning-tasks`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ ...task, published: true }),
+                });
+                setRevision((n) => n + 1);
+              }}
+            />
+          )
         }
       />
     </>

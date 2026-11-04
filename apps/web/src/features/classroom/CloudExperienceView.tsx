@@ -23,6 +23,7 @@ import {
   useLabLocation,
 } from "../color-lab/lab-navigation";
 import { experiments } from "../color-lab/experiments";
+const ClassroomWardrobe = lazy(() => import("./ClassroomWardrobe"));
 const JellyfishLab = lazy(experiments[0].load);
 const TreeLab = lazy(() => import("../color-lab/TreeLab"));
 const WeightLab = lazy(() => import("../color-lab/WeightLab"));
@@ -62,6 +63,7 @@ export function CloudExperienceView() {
       : CloudClassroomView;
   const [classId, setClassId] = useState("");
   const [screen, setScreen] = useState("universe");
+  const [wardrobe, setWardrobe] = useState(false);
   const [teacher, setTeacher] = useState(false);
   const [pending, setPending] = useState(false);
   const [loginRequest, setLoginRequest] = useState(0);
@@ -103,6 +105,7 @@ export function CloudExperienceView() {
         session.memberships[0]?.role !== "student",
     );
     setScreen("universe");
+    setWardrobe(false);
   }, [session?.identity.id]);
   useEffect(() => {
     if (!notice) return;
@@ -129,6 +132,8 @@ export function CloudExperienceView() {
       setGuestNavigation((n) => ({ destination, sequence: n.sequence + 1 }));
       return;
     }
+    setWardrobe(destination === "wardrobe" && labEnabled && role === "student");
+    if (destination === "wardrobe") return;
     setTeacher(destination === "teacher");
     if (destination !== "teacher")
       setNavigation((n) => ({ action: destination, sequence: n.sequence + 1 }));
@@ -146,29 +151,33 @@ export function CloudExperienceView() {
     if (pending) return;
     setClassId(targetClass);
     setTeacher(false);
+    setWardrobe(false);
     setNavigation((n) => ({ ...data, action, sequence: n.sequence + 1 }));
   };
   return (
     <ColorLabEnabled.Provider value={labEnabled}>
       <div
-        className={`competition-app offline-app cloud-experience ${!labOpen && !studyOpen && screen === "universe" && !teacher ? "universe-active" : ""} ${labOpen ? "lab-open" : ""} ${labOpen && labLocation.classroom ? "lab-classroom" : ""}`}
+        className={`competition-app offline-app cloud-experience ${!wardrobe && !labOpen && !studyOpen && screen === "universe" && !teacher ? "universe-active" : ""} ${labOpen ? "lab-open" : ""} ${labOpen && labLocation.classroom ? "lab-classroom" : ""}`}
         data-experience-mode="cloud"
       >
         <ExperienceHeader
+          wardrobeEnabled={labEnabled}
           current={
             labOpen || studyOpen
               ? "knowledge"
-              : teacher
-                ? "teacher"
-                : screen === "learning"
-                  ? "knowledge"
-                  : screen === "gallery"
-                    ? "room"
-                    : screen === "create"
-                      ? "edit"
-                      : ["room", "edit", "knowledge"].includes(screen)
-                        ? (screen as ExperienceDestination)
-                        : "universe"
+              : wardrobe
+                ? "wardrobe"
+                : teacher
+                  ? "teacher"
+                  : screen === "learning"
+                    ? "knowledge"
+                    : screen === "gallery"
+                      ? "room"
+                      : screen === "create"
+                        ? "edit"
+                        : ["room", "edit", "knowledge"].includes(screen)
+                          ? (screen as ExperienceDestination)
+                          : "universe"
           }
           modeLabel={
             location.pathname.startsWith("/review") ||
@@ -212,6 +221,7 @@ export function CloudExperienceView() {
                 hasPendingChanges={pending}
                 onEnter={async (m) => {
                   if (pending) return false;
+                  setWardrobe(false);
                   setClassId(m.classId);
                   setTeacher(m.role !== "student");
                   setNavigation((n) => ({
@@ -255,7 +265,14 @@ export function CloudExperienceView() {
           </main>
         ) : active && membership ? (
           <main className="competition-main">
-            {teacher && role === "teacher" ? (
+            {wardrobe && role === "student" && labEnabled ? (
+              <Suspense fallback={<p role="status">正在载入星球装扮…</p>}>
+                <ClassroomWardrobe
+                  classId={membership.classId}
+                  onBack={() => navigate("room")}
+                />
+              </Suspense>
+            ) : teacher && role === "teacher" ? (
               <TeacherView
                 {...(import.meta.env.VITE_CLASSROOM_NEXT === "true"
                   ? {
