@@ -44,6 +44,7 @@ with sync_playwright() as p:
             ]
             if path=='session':
                 data={'identity':{'id':subject,'email':user['email']},'access':'active','database':'connected','cloudWrites':True,'memberships':[{'enrollmentId':actor,'classId':cls,'title':'虚拟验证班','timezone':'Asia/Shanghai','role':'teacher' if role=='teacher' else 'student'}]}
+            elif item=='decorations': data={'planetId':planet_id,'unlocked':[],'bindings':[],'settings':{'frameId':None,'placement':{'x':.85,'y':.35,'amplitude':'gentle'},'options':{'particles':True,'lantern':True},'revision':0}}
             elif item=='profile': data={'profile':{'studentNumber':'00001','name':'虚拟同学'}}
             elif item=='account': data={'name':'虚拟同学','studentNumber':'00001','mustChangePassword':False}
             elif item=='planets': data={'actorId':actor,'planets':planets}

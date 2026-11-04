@@ -247,21 +247,29 @@ export async function handleShowcaseCloud(
     if (assignmentImage && request.method === "GET") {
       const row = (
         await client.query(
-          "SELECT image_storage_key,published FROM colorverse.learning_task_settings WHERE class_id=$1 AND task_id=$2",
+          `SELECT image_storage_key${env.CLASSROOM_NEXT === "true" ? ",image_storage_keys" : ""},published FROM colorverse.learning_task_settings WHERE class_id=$1 AND task_id=$2`,
           [classId, assignmentImage[1]],
         )
       ).rows[0];
+      const index = z.coerce
+        .number()
+        .int()
+        .min(0)
+        .max(5)
+        .parse(new URL(request.url).searchParams.get("index") ?? 0);
+      const keys = (row?.image_storage_keys as string[] | undefined)?.length
+        ? (row.image_storage_keys as string[])
+        : row?.image_storage_key
+          ? [String(row.image_storage_key)]
+          : [];
       if (
-        !row?.image_storage_key ||
+        !keys[index] ||
         (!row.published &&
           !["teacher", "assistant"].includes(String(actor.role)))
       )
         throw new ClassroomFailure(404, "NOT_FOUND", "作业示范图片不存在");
       await client.query("COMMIT");
-      const image = await storage(
-        env,
-        `colorverse-classroom/${row.image_storage_key}`,
-      );
+      const image = await storage(env, `colorverse-classroom/${keys[index]}`);
       return new Response(image.body, {
         headers: {
           "Content-Type": "image/webp",
@@ -291,14 +299,22 @@ export async function handleShowcaseCloud(
         body: envelope as BodyInit,
       }).formData();
       if (
-        [...form.keys()].some((k) => !["metadata", "image"].includes(k)) ||
+        [...form.keys()].some(
+          (k) =>
+            ![
+              "metadata",
+              "image",
+              ...(env.CLASSROOM_NEXT === "true" ? ["images"] : []),
+            ].includes(k),
+        ) ||
         form.getAll("metadata").length !== 1 ||
-        form.getAll("image").length > 1
+        form.getAll("image").length > 1 ||
+        form.getAll("images").length > 5
       )
         throw new ClassroomFailure(
           400,
           "INVALID_UPLOAD",
-          "请提交作业说明与一张示范图片",
+          "请提交作业说明与最多6张参考图片",
         );
       const metadata = form.get("metadata");
       if (
@@ -341,8 +357,9 @@ export async function handleShowcaseCloud(
           "当前班级最多新增50份作业",
         );
       let imageKey: string | null = null;
-      const file = form.get("image");
-      if (file !== null) {
+      const imageKeys: string[] = [];
+      const files = [...form.getAll("image"), ...form.getAll("images")];
+      for (const [index, file] of files.entries()) {
         if (!(file instanceof Blob) || file.size > 8388608)
           throw new ClassroomFailure(
             400,
@@ -386,11 +403,13 @@ export async function handleShowcaseCloud(
             "IMAGE_TOO_LARGE",
             "请缩小示范图片后重试",
           );
-        imageKey = `${identity.subject}/assignment-${input.requestId}.webp`;
-        uploadedKeys.push(imageKey);
+        const key = `${identity.subject}/assignment-${input.requestId}${index ? "-" + index : ""}.webp`;
+        if (index === 0) imageKey = key;
+        imageKeys.push(key);
+        uploadedKeys.push(key);
         await storage(
           env,
-          `colorverse-classroom/${imageKey}`,
+          `colorverse-classroom/${key}`,
           "POST",
           display,
           "image/webp",
@@ -399,18 +418,25 @@ export async function handleShowcaseCloud(
       const definition = AssignmentDefinitionSchema.parse({
         ...input.definition,
         id: taskId,
+        images: imageKeys.map(
+          (_, index) =>
+            `private:classes/${classId}/learning-tasks/${taskId}/image?index=${index}`,
+        ),
         image: imageKey
           ? `private:classes/${classId}/learning-tasks/${taskId}/image`
           : "",
       });
+      const columns =
+        env.CLASSROOM_NEXT === "true" ? ",image_storage_keys" : "";
       await client.query(
-        "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,require_explanation,allow_peer_review,show_intent_to_peers,revision,definition,image_storage_key) VALUES($1,$2,$5,true,true,true,1,$3,$4)",
+        `INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,require_explanation,allow_peer_review,show_intent_to_peers,revision,definition,image_storage_key${columns}) VALUES($1,$2,$5,true,true,true,1,$3,$4${columns ? ",$6" : ""})`,
         [
           classId,
           taskId,
           JSON.stringify(definition),
           imageKey,
           env.CLASSROOM_NEXT !== "true",
+          ...(columns ? [JSON.stringify(imageKeys)] : []),
         ],
       );
       const result = await learningTasks(client, actor, classId, "GET");

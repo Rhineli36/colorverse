@@ -1,3 +1,4 @@
+import { classroomDecorations } from "./classroom-decorations";
 import { handleRequest, type WorkerEnvironment } from "./index";
 import { verifyIdentity, AuthFailure } from "./auth";
 import { ClassroomFailure } from "./classroom";
@@ -85,6 +86,20 @@ export async function nextClassroomRequest(
       try {
         await sql.query("BEGIN");
         await classroomScope(sql, cls[1]);
+        if (/\/decorations$/.test(url.pathname)) {
+          const planetId = url.searchParams.get("planetId");
+          if (planetId) z.uuid().parse(planetId);
+          const value = await classroomDecorations(
+            sql,
+            identity,
+            cls![1],
+            request.method,
+            planetId,
+            request.method === "PUT" ? await smallJson(request) : undefined,
+          );
+          await sql.query("COMMIT");
+          return reply(200, value);
+        }
         if (managed) {
           const resource =
             managed[3] ?? "publications" + (managed[4] ? "/" + managed[4] : "");

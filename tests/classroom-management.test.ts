@@ -1,7 +1,8 @@
+import { classroomDecorations } from "../apps/worker/src/classroom-decorations";
 import { handleShowcaseCloud } from "../apps/worker/src/showcase-cloud";
 import { learningTasks } from "../apps/worker/src/learning";
 import type { Client } from "pg";
-import { beforeAll, afterAll, describe, it, expect } from "vitest";
+import { beforeAll, afterAll, describe, it, expect, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
@@ -114,6 +115,7 @@ beforeAll(async () => {
     "011-explicit-runtime-grants",
     "012-classroom-management",
     "013-submission-content-history",
+    "014-assignment-media-and-skins",
   ])
     await db.exec(await readFile(`apps/api/migrations/${name}.sql`, "utf8"));
   for (let i = 0; i < 5; i++)
@@ -704,5 +706,233 @@ describe("saved classroom assignment lifecycle", () => {
         await classroomNotifications(sql, pupil, id[5], true)
       ).notifications.filter((n) => n.taskId === taskId),
     ).toHaveLength(1);
+  });
+});
+
+describe("winter skin is bound to real class/task grades", () => {
+  it("rejects forged ownership/unlocks, accepts an actual zero grade and persists equipment", async () => {
+    const bindingTask = "T02";
+    await sql.query(
+      "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,revision) VALUES($1,$2,false,1) ON CONFLICT DO NOTHING",
+      [id[5], bindingTask],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.classroom_skin_bindings(class_id,skin_id,task_id) VALUES($1,'winter',$2)",
+      [id[5], bindingTask],
+    );
+    const staff = await classroomActor(sql, teacher, id[5]);
+    const pub = (await action("publications", "POST", {
+      requestId: randomUUID(),
+      taskId: bindingTask,
+      enrollmentIds: [id[9]],
+      dueAt: null,
+    })) as { id: string };
+    const wid = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id,publication_id) VALUES($1,$2,'立冬验收',$1::uuid::text,10,'crystal',$1,$3)",
+      [wid, id[17], pub.id],
+    );
+    const read = () => classroomDecorations(sql, student, id[5], "GET", null);
+    const payload = {
+      frameId: "winter",
+      placement: { x: 0.7, y: 0.3, amplitude: "gentle" },
+      options: { particles: true, lantern: true },
+      revision: 0,
+    };
+    expect((await read()).unlocked).toEqual([]);
+    await expect(
+      classroomDecorations(sql, student, id[5], "PUT", null, payload),
+    ).rejects.toMatchObject({ status: 403, code: "SKIN_LOCKED" });
+    await showcaseReview(
+      sql,
+      staff,
+      id[5],
+      wid,
+      "POST",
+      {
+        score: null,
+        comment: "只有评语",
+        revision: 0,
+        submissionRevision: 0,
+        requestId: randomUUID(),
+      },
+      true,
+    );
+    expect((await read()).unlocked).toEqual([]);
+    await showcaseReview(
+      sql,
+      staff,
+      id[5],
+      wid,
+      "POST",
+      {
+        score: 90,
+        comment: "初稿评分",
+        revision: 1,
+        submissionRevision: 0,
+        requestId: randomUUID(),
+      },
+      true,
+    );
+    await sql.query(
+      "UPDATE colorverse.showcase_works SET submission_revision=1 WHERE id=$1",
+      [wid],
+    );
+
+    expect((await read()).unlocked).toEqual([]); // old grade belongs to an older version
+    await showcaseReview(
+      sql,
+      staff,
+      id[5],
+      wid,
+      "POST",
+      {
+        score: 0,
+        comment: "实际零分也已评分",
+        revision: 2,
+        submissionRevision: 1,
+        requestId: randomUUID(),
+      },
+      true,
+    );
+    expect((await read()).unlocked).toEqual(["winter"]);
+    const applied = await classroomDecorations(
+      sql,
+      student,
+      id[5],
+      "PUT",
+      null,
+      payload,
+    );
+    expect(applied.settings).toMatchObject({
+      frameId: "winter",
+      revision: 1,
+      placement: { x: 0.7 },
+    });
+    await expect(
+      classroomDecorations(sql, student, id[5], "PUT", null, payload),
+    ).rejects.toMatchObject({ code: "SKIN_CONFLICT" });
+    await expect(
+      classroomDecorations(sql, student, id[5], "PUT", null, {
+        ...payload,
+        frameId: "gold",
+        revision: 1,
+      }),
+    ).rejects.toMatchObject({ code: "SKIN_LOCKED" });
+    const visible = await classroomDecorations(
+      sql,
+      teacher,
+      id[5],
+      "GET",
+      id[17],
+    );
+    expect(visible.settings.frameId).toBe("winter");
+    expect(visible.unlocked).toEqual([]);
+    await expect(
+      classroomDecorations(sql, teacher, id[5], "PUT", id[17], {
+        ...payload,
+        revision: 1,
+      }),
+    ).rejects.toMatchObject({ code: "OWNER_REQUIRED" });
+    const cleared = await classroomDecorations(
+      sql,
+      student,
+      id[5],
+      "PUT",
+      null,
+      { ...payload, frameId: null, revision: 1 },
+    );
+    expect(cleared.settings.frameId).toBeNull();
+    expect(cleared.unlocked).toEqual(["winter"]);
+  });
+});
+
+describe("multiple private assignment reference images", () => {
+  it("stores ordered images, restricts draft media, and keeps indexed media private", async () => {
+    const bytes = new Uint8Array(
+      await readFile("apps/web/public/assignments/two-moods.webp"),
+    );
+    const uploaded: string[] = [];
+    const transport = vi.fn(async (url: string, options?: RequestInit) => {
+      if (options?.method === "POST") uploaded.push(url);
+      return new Response(bytes, { headers: { "Content-Type": "image/webp" } });
+    });
+    vi.stubGlobal("fetch", transport);
+    const imageEnv = {
+      ...env,
+      IMAGES: {
+        input: () => ({
+          transform: () => ({
+            output: async () => ({ response: () => new Response(bytes) }),
+          }),
+        }),
+      },
+    };
+    const factory = () =>
+      ({
+        ...sql,
+        connect: async () => {},
+        end: async () => {},
+      }) as unknown as Pick<Client, "connect" | "query" | "end">;
+    const rid = randomUUID();
+    try {
+      const form = new FormData();
+      form.set(
+        "metadata",
+        JSON.stringify({
+          requestId: rid,
+          definition: {
+            title: "双参考图",
+            description: "按顺序看图",
+            steps: [],
+            deliverables: "一张作品",
+          },
+        }),
+      );
+      form.set("image", new Blob([bytes]), "first.webp");
+      form.append("images", new Blob([bytes]), "second.webp");
+      const response = await handleShowcaseCloud(
+        new Request("https://classroom.test/", { method: "POST", body: form }),
+        imageEnv,
+        teacher,
+        id[5],
+        "learning-tasks",
+        factory,
+      );
+      expect(response.status).toBe(201);
+      expect(uploaded).toHaveLength(2);
+      const result = (await response.json()) as {
+        taskId: string;
+        tasks: { taskId: string; definition?: { images?: string[] } }[];
+      };
+      const images = result.tasks.find((t) => t.taskId === result.taskId)
+        ?.definition?.images;
+      expect(images).toHaveLength(2);
+      expect(images?.[1]).toContain("?index=1");
+      const image = await handleShowcaseCloud(
+        new Request("https://classroom.test/?index=1"),
+        imageEnv,
+        teacher,
+        id[5],
+        `learning-tasks/${result.taskId}/image`,
+        factory,
+      );
+      expect(image.headers.get("Cache-Control")).toBe("private, no-store");
+      expect(transport.mock.calls.at(-1)?.[0]).toContain(
+        `assignment-${rid}-1.webp`,
+      );
+      await expect(
+        handleShowcaseCloud(
+          new Request("https://classroom.test/?index=1"),
+          imageEnv,
+          student,
+          id[5],
+          `learning-tasks/${result.taskId}/image`,
+          factory,
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

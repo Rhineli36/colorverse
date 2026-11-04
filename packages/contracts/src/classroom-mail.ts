@@ -15,6 +15,7 @@ export const CustomAssignmentFields = z.strictObject({
 export const AssignmentDefinitionSchema = CustomAssignmentFields.extend({
   id: LearningTaskIdSchema,
   image: z.string().max(2000000).default(""),
+  images: z.array(z.string().max(2000000)).max(6).optional(),
   imageAlt: z.string().max(300).default("作业示范图片"),
   goal: z.string().default(""),
   reviewFocus: z.string().default(""),

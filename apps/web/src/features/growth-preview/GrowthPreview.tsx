@@ -1,3 +1,4 @@
+import type { WardrobeData, WardrobeSelection } from "./wardrobe-types";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   MoonOrbit,
@@ -63,6 +64,7 @@ const palettes = [
 export function GrowthPreview({
   classroomPlanet,
   onBack,
+  wardrobe,
 }: {
   classroomPlanet?: {
     name: string;
@@ -72,6 +74,10 @@ export function GrowthPreview({
     interior: ReactNode;
   };
   onBack?: () => void;
+  wardrobe?: {
+    data: WardrobeData;
+    onSave: (v: WardrobeSelection) => Promise<void>;
+  };
 }) {
   const backgrounds = classroomPlanet
     ? [
@@ -84,19 +90,31 @@ export function GrowthPreview({
         ...sampleBackgrounds,
       ]
     : sampleBackgrounds;
-  const [palette, setPalette] = useState<GrowthPalette>(),
+  const [palette, setPalette] = useState<GrowthPalette | undefined>(
+      wardrobe?.data.settings.options.palette,
+    ),
     [background, setBackground] = useState(classroomPlanet ? "own" : "garden");
-  const [framePreset, setFramePreset] = useState<FrameId>(),
+  const [framePreset, setFramePreset] = useState<FrameId | undefined>(
+      wardrobe?.data.settings.frameId ?? undefined,
+    ),
     [ringPreset, setRingPreset] = useState<RingId>();
   const [moving, setMoving] = useState(true),
     [frame, setFrame] = useState(true),
-    [particles, setParticles] = useState(true),
+    [particles, setParticles] = useState(
+      wardrobe?.data.settings.options.particles ?? true,
+    ),
     [ring, setRing] = useState(true),
     [moon, setMoon] = useState(true),
-    [lantern, setLantern] = useState(true);
+    [lantern, setLantern] = useState(
+      wardrobe?.data.settings.options.lantern ?? true,
+    );
   const [charmPlacements, setCharmPlacements] = useState<
     Record<string, CharmPlacement>
-  >({});
+  >(
+    wardrobe?.data.settings.frameId
+      ? { [wardrobe.data.settings.frameId]: wardrobe.data.settings.placement }
+      : {},
+  );
   const charmKey = framePreset ?? "default";
   const charmPlacement = charmPlacements[charmKey] ?? initialCharmPlacement;
   const setCharmPlacement = (next: CharmPlacement) =>
@@ -122,6 +140,30 @@ export function GrowthPreview({
     const t = setTimeout(() => setMessage(""), 2200);
     return () => clearTimeout(t);
   }, [message]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const saveFrame = async (id: FrameId | null) => {
+    if (!wardrobe || saving) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      await wardrobe.onSave({
+        frameId: id,
+        placement: id
+          ? (charmPlacements[id] ?? initialCharmPlacement)
+          : initialCharmPlacement,
+        options: { palette, particles, lantern },
+        revision: wardrobe.data.settings.revision,
+      });
+      setFramePreset(id ?? undefined);
+      setFrame(true);
+      setMessage(id ? "装扮已套用并保存" : "已取消边框装扮");
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "保存失败，请重试");
+    } finally {
+      setSaving(false);
+    }
+  };
   const bg = backgrounds.find((b) => b.id === background) ?? backgrounds[0];
   const scene = background === "upload" ? uploadUrl : bg.src;
   const frameName = framePresets.find((p) => p.id === framePreset)?.name;
@@ -148,9 +190,11 @@ export function GrowthPreview({
     >
       {onBack ? (
         <header className="gp-header">
-          <button onClick={onBack}>← 返回星球</button>
+          <button disabled={saving} onClick={onBack}>
+            ← 返回星球
+          </button>
           <strong>装扮星球</strong>
-          <span>试戴不会更改已保存的星球</span>
+          <span>试戴不更改星球，已解锁款式可点击套用</span>
         </header>
       ) : (
         <header className="gp-header">
@@ -347,7 +391,7 @@ export function GrowthPreview({
               </span>
               <span>
                 {frameName
-                  ? `仅试戴 · 未解锁：${frameName}`
+                  ? `${wardrobe?.data.unlocked.includes(framePreset!) ? "已解锁" : "仅试戴 · 未解锁"}：${frameName}`
                   : "选择下方预设可临时试戴"}
               </span>
             </div>
@@ -462,7 +506,38 @@ export function GrowthPreview({
             {moving ? "Ⅱ 暂停动态" : "▷ 开启动态"}
           </button>
         </section>
+        {wardrobe && (
+          <section className="gp-save-controls" aria-label="保存星球装扮">
+            {saveError && <p role="alert">{saveError}</p>}
+            <button
+              disabled={
+                saving ||
+                !framePreset ||
+                !wardrobe.data.unlocked.includes(framePreset)
+              }
+              onClick={() => void saveFrame(framePreset ?? null)}
+            >
+              {saving ? "正在保存…" : "保存当前装扮"}
+            </button>
+            <button
+              disabled={saving || !wardrobe.data.settings.frameId}
+              onClick={() => void saveFrame(null)}
+            >
+              不使用边框装扮
+            </button>
+            <p role="status">
+              {message || "未解锁款式可试戴；套用和保存仅对已解锁款式开放。"}
+            </p>
+          </section>
+        )}
         <PresetCatalog
+          unlocked={wardrobe?.data.unlocked}
+          winterLabel={
+            wardrobe?.data.bindings.find((b) => b.skin_id === "winter")
+              ?.title ?? undefined
+          }
+          onApply={wardrobe ? (id) => void saveFrame(id) : undefined}
+          saving={saving}
           frame={framePreset}
           ring={ringPreset}
           background={scene}
@@ -481,7 +556,9 @@ export function GrowthPreview({
         <footer className="gp-page-footer">
           <span>STARS GROW WITH YOU.</span>
           <span>
-            解锁条件见各款卡片 · 自动解锁与套用保存即将接入 · 当前试戴不更改星球
+            {wardrobe
+              ? "已解锁款式可套用并保存 · 试戴其他款式不会自动替换"
+              : "解锁条件见各款卡片 · 独立预览不发放解锁资格"}
           </span>
         </footer>
       </main>

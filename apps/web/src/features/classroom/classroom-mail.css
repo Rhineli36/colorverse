@@ -214,3 +214,7 @@
 .assignment-mail li {
   margin: 10px 0;
 }
+
+.assignment-brief figure > img + img {
+  margin-top: 16px;
+}

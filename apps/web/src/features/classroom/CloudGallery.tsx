@@ -17,7 +17,7 @@ import {
 } from "./LearningPanels";
 import { CloudObservatory, type ObservatoryPlanet } from "./CloudObservatory";
 import { CloudWorkReview } from "./CloudWorkReview";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { z } from "zod";
 import {
   AssignmentCatalog,
@@ -48,6 +48,9 @@ import {
   type AppearanceSection,
 } from "./CloudPlanetAppearance";
 import { CloudStudentGuide, CloudAtmosphere } from "./CloudStudentGuide";
+const EquippedPlanetDecorations = lazy(
+  () => import("./EquippedPlanetDecorations"),
+);
 const Params = z.object({
   x: z.number().default(0.5),
   y: z.number().default(0.6),
@@ -1484,6 +1487,14 @@ export function CloudGallery({
                 />
                 {selected.document.interiorView.particlesVisible && (
                   <CloudAtmosphere kind={selected.document.atmosphere} />
+                )}
+                {import.meta.env.VITE_CLASSROOM_NEXT === "true" && (
+                  <Suspense fallback={null}>
+                    <EquippedPlanetDecorations
+                      classId={classId}
+                      planetId={selected.id}
+                    />
+                  </Suspense>
                 )}
                 {planetBirth === selected.id && (
                   <div className="cloud-planet-birth" role="status">

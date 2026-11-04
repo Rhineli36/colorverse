@@ -1,3 +1,7 @@
+import {
+  WardrobeState,
+  type WardrobeData,
+} from "../growth-preview/wardrobe-types";
 import { useEffect, useState } from "react";
 import { Gallery } from "./CloudGallery";
 import { classroomRequest } from "./cloud-request";
@@ -13,6 +17,7 @@ export default function ClassroomWardrobe({
   onBack: () => void;
 }) {
   const [data, setData] = useState<ReturnType<typeof Gallery.parse>>();
+  const [wardrobe, setWardrobe] = useState<WardrobeData>();
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -33,6 +38,22 @@ export default function ClassroomWardrobe({
     return () => controller.abort();
   }, [classId, attempt]);
   const own = data?.planets.find((p) => p.owner_enrollment_id === data.actorId);
+  useEffect(() => {
+    if (!own) return;
+    const controller = new AbortController();
+    setWardrobe(undefined);
+    classroomRequest(`classes/${classId}/decorations`, {
+      signal: controller.signal,
+    })
+      .then((r) => r.json())
+      .then((v) => {
+        if (!controller.signal.aborted) setWardrobe(WardrobeState.parse(v));
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) setError(e.message);
+      });
+    return () => controller.abort();
+  }, [classId, own?.id, attempt]);
   const exterior = usePlanetImage(
     classId,
     own?.id ?? "",
@@ -73,6 +94,7 @@ export default function ClassroomWardrobe({
         <button onClick={onBack}>返回创建星球</button>
       </section>
     );
+  if (!wardrobe) return <p role="status">正在读取装扮与解锁状态…</p>;
   const d = own.document;
   const exteriorSrc =
     exterior.url || `${import.meta.env.BASE_URL}demo/v2/body-${d.skin}.webp`;
@@ -82,6 +104,17 @@ export default function ClassroomWardrobe({
     <GrowthPreview
       key={own.id}
       onBack={onBack}
+      wardrobe={{
+        data: wardrobe,
+        onSave: async (settings) => {
+          const r = await classroomRequest(`classes/${classId}/decorations`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(settings),
+          });
+          setWardrobe(WardrobeState.parse(await r.json()));
+        },
+      }}
       classroomPlanet={{
         name: d.metadata.name,
         interiorSrc,

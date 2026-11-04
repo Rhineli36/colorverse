@@ -9,6 +9,8 @@ OUT = ROOT / 'outputs/classroom-save-wardrobe'; OUT.mkdir(parents=True, exist_ok
 auth_host = re.search(r'https://([a-z0-9]+\.supabase\.co)', (ROOT/'apps/web/.env.local').read_text()).group(1)
 subject, cls, owner, teacher, planet = [str(uuid.uuid4()) for _ in range(5)]
 tasks, published, checks, errors = [], [], [], []
+equipped={'frameId':None,'placement':{'x':.85,'y':.35,'amplitude':'gentle'},'options':{'particles':True,'lantern':True},'revision':0}
+unlocked=[]
 def enc(v): return base64.urlsafe_b64encode(json.dumps(v).encode()).decode().rstrip('=')
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, channel='chrome', args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
@@ -23,13 +25,18 @@ with sync_playwright() as p:
         def api(route):
             path = route.request.url.split('/api/v1/cloud/')[1].split('?')[0]; item = path.split('/')[-1]
             if path == 'session': data = {'identity':{'id':subject,'email':user['email']},'access':'active','database':'connected','cloudWrites':True,'memberships':[{'enrollmentId':actor,'classId':cls,'title':'虚拟验收班','timezone':'Asia/Shanghai','role':role}]}
+            elif item == 'decorations':
+                if route.request.method=='PUT': equipped.update(route.request.post_data_json); equipped['revision']+=1
+                data={'planetId':planet,'unlocked':unlocked,'bindings':[{'skin_id':'winter','task_id':'T02','title':'绑定立冬作业'}],'settings':equipped}
+            elif item == 'image':
+                route.fulfill(body=(ROOT/'apps/web/public/assignments/two-moods.webp').read_bytes(),content_type='image/webp');return
             elif item == 'profile': data = {'profile':{'studentNumber':'00001','name':'虚拟学生'}}
             elif item == 'account': data = {'name':'虚拟学生','studentNumber':'00001','mustChangePassword':False}
             elif item == 'planets': data = {'actorId':actor,'planets':[{'id':planet,'owner_enrollment_id':owner,'display_name':'虚拟学生','document':{'metadata':{'name':'我的验收星球'},'skin':0},'works':[]}]}
             elif item == 'learning-tasks':
                 if route.request.method == 'POST':
                     metadata = re.search(r'name="metadata"\r\n\r\n(.*?)\r\n--', route.request.post_data, re.S)
-                    v = json.loads(metadata.group(1)); definition = {'image':'','imageAlt':'作业示范图片','goal':'','reviewFocus':'','peerPrompt':'','relatedIds':[],**v['definition'], 'id':'custom-'+v['requestId']}
+                    v = json.loads(metadata.group(1)); definition = {'images':['private:classes/'+cls+'/learning-tasks/custom-'+v['requestId']+'/image?index='+str(i) for i in range(1+route.request.post_data.count('name="images"'))], 'image':'','imageAlt':'作业示范图片','goal':'','reviewFocus':'','peerPrompt':'','relatedIds':[],**v['definition'], 'id':'custom-'+v['requestId']}
                     tasks.append({'taskId':definition['id'],'published':False,'requireExplanation':True,'allowPeerReview':True,'showIntentToPeers':True,'revision':1,'definition':definition})
                     data = {'tasks':tasks,'taskId':definition['id']}
                 else: data = {'tasks':tasks if role == 'teacher' else [t for t in tasks if t['published']]}
@@ -53,10 +60,14 @@ with sync_playwright() as p:
             page.get_by_label('作业标题',exact=True).fill('立冬 · 色彩中的温度（虚拟验收）')
             page.get_by_label('作业要求',exact=True).fill('用冷暖色表达立冬的感受。')
             page.get_by_label('提交内容',exact=True).fill('一张设计作品与创作说明')
+            page.get_by_label('上传作业示范图片',exact=True).set_input_files([str(ROOT/'apps/web/public/assignments/two-moods.webp'),str(ROOT/'apps/web/public/assignments/two-seasons.webp')])
             page.get_by_role('button',name='保存作业',exact=True).click()
             expect(page.get_by_text('作业已保存，尚未发布。请选择作业，再确认发布对象。',exact=True)).to_be_visible()
             expect(page.get_by_label('发布的作业')).to_have_value(tasks[0]['taskId'])
             assert not published
+            imgs=page.locator('dialog[open] .assignment-brief img');expect(imgs).to_have_count(2)
+            page.wait_for_function("[...document.querySelectorAll('dialog[open] .assignment-brief img')].every(i=>i.complete&&i.naturalWidth)")
+            a,b=imgs.nth(0).bounding_box(),imgs.nth(1).bounding_box();assert b['y']>=a['y']+a['height']
             page.screenshot(path=str(OUT/'saved-not-published.png'),full_page=True)
             page.get_by_role('button',name='选择发布对象',exact=True).click()
             dialog = page.get_by_role('dialog',name='确认作业发布对象')
@@ -93,7 +104,15 @@ with sync_playwright() as p:
             expect(page.locator('.gp-app')).to_have_count(0)
             page.get_by_role('button',name='装扮星球',exact=True).click()
             expect(page.locator('.gp-room-scene .gp-frame-preset')).to_have_count(0)
-            checks.append('student entry; own planet; 7 conditions; 12 locked previews; winter/ring trial; narrow; no saved changes')
+            unlocked.append('winter')
+            page.get_by_role('button',name='← 返回星球',exact=True).click()
+            page.get_by_role('button',name='装扮星球',exact=True).click()
+            page.get_by_role('button',name='套用边框：立冬·霜华初绽',exact=True).click()
+            expect(page.get_by_role('button',name='不使用边框装扮',exact=True)).to_be_enabled()
+            assert equipped['frameId']=='winter'
+            page.reload(wait_until='networkidle');page.get_by_role('button',name='装扮星球',exact=True).click()
+            expect(page.locator('.gp-room-scene .gp-frame-preset')).to_have_count(1)
+            checks.append('student entry, locked trials, bound label, unlocked apply and persisted reload, square and narrow preview')
         assert not unknown, unknown
         ctx.close()
     assert not errors, errors

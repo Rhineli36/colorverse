@@ -1314,3 +1314,23 @@
   height: auto;
   aspect-ratio: 1;
 }
+
+.gp-save-controls {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid #8ea0c544;
+  border-radius: 12px;
+}
+.gp-save-controls button {
+  margin: 6px;
+  padding: 12px 20px;
+  border: 1px solid #bcaff0;
+  border-radius: 9px;
+  background: #8673b82b;
+}
+.gp-save-controls button:disabled {
+  opacity: 0.45;
+}
+.gp-save-controls [role="alert"] {
+  color: #ffc0bf;
+}

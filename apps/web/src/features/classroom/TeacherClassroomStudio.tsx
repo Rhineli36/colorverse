@@ -321,10 +321,11 @@ export function TeacherClassroomStudio(props: Props) {
       disabled={busy}
       catalog={catalog}
       onPublish={async (id) => beginPublish(id)}
-      onCreate={async (definition, image, requestId) => {
+      onCreate={async (definition, image, requestId, images = []) => {
         const body = new FormData();
         body.set("metadata", JSON.stringify({ requestId, definition }));
         if (image) body.set("image", image);
+        for (const f of images) body.append("images", f);
         const r = await (
           await classroomRequest(root + "learning-tasks", {
             method: "POST",

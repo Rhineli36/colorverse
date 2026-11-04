@@ -16,6 +16,7 @@ export function NewAssignmentForm({
     draft: CustomAssignmentDraft,
     image: File | null,
     requestId: string,
+    images?: File[],
   ) => Promise<void>;
   onBack: () => void;
   onDirtyChange: (dirty: boolean) => void;
@@ -28,6 +29,13 @@ export function NewAssignmentForm({
     inspiration: "",
     exampleObservation: "",
   });
+  const [extraFiles, setExtraFiles] = useState<File[]>([]);
+  const [extraUrls, setExtraUrls] = useState<string[]>([]);
+  useEffect(() => {
+    const urls = extraFiles.map((f) => URL.createObjectURL(f));
+    setExtraUrls(urls);
+    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+  }, [extraFiles]);
   const [file, setFile] = useState<File | null>(null),
     [url, setUrl] = useState(""),
     [preview, setPreview] = useState(false),
@@ -101,27 +109,40 @@ export function NewAssignmentForm({
             </label>
           ))}
           <label>
-            上传示范图片（可选）
+            {saveOnly
+              ? "上传参考图片（可多选，最多6张，合计8MB）"
+              : "上传示范图片（可选）"}
             <input
               aria-label="上传作业示范图片"
               type="file"
+              multiple={saveOnly}
               accept="image/png,image/jpeg,image/webp"
               disabled={busy}
               onChange={(e) => {
-                const f = e.target.files?.[0] ?? null;
+                const chosen = Array.from(e.target.files ?? []);
+                if (!chosen.length) return;
+                const next = saveOnly
+                  ? [...(file ? [file] : []), ...extraFiles, ...chosen]
+                  : chosen.slice(0, 1);
                 if (
-                  f &&
-                  (!["image/png", "image/jpeg", "image/webp"].includes(
-                    f.type,
+                  next.length > 6 ||
+                  next.some(
+                    (f) =>
+                      !["image/png", "image/jpeg", "image/webp"].includes(
+                        f.type,
+                      ),
                   ) ||
-                    f.size > 8388608)
+                  next.reduce((n, f) => n + f.size, 0) > 8388608
                 ) {
-                  setError("请选择8MB以内的PNG、JPEG或WebP图片");
+                  setError("最多6张PNG、JPEG或WebP参考图，合计不超过8MB。");
+                  e.target.value = "";
                   return;
                 }
                 setError("");
                 requestId.current = crypto.randomUUID();
-                setFile(f);
+                setFile(next[0]);
+                setExtraFiles(next.slice(1));
+                e.target.value = "";
               }}
             />
           </label>
@@ -134,13 +155,32 @@ export function NewAssignmentForm({
                 disabled={busy}
                 onClick={() => {
                   requestId.current = crypto.randomUUID();
-                  setFile(null);
+                  setFile(extraFiles[0] ?? null);
+                  setExtraFiles(extraFiles.slice(1));
                 }}
               >
                 移除图片
               </button>
             </div>
           )}
+          {extraFiles.map((f, index) => (
+            <div className="assignment-file-preview" key={index}>
+              <img
+                src={extraUrls[index]}
+                alt={`新增作业示范预览 ${index + 2}`}
+              />
+              <span>{f.name}</span>
+              <button
+                disabled={busy}
+                onClick={() => {
+                  requestId.current = crypto.randomUUID();
+                  setExtraFiles(extraFiles.filter((_, i) => i !== index));
+                }}
+              >
+                移除图片 {index + 2}
+              </button>
+            </div>
+          ))}
         </div>
       ) : (
         <AssignmentBrief
@@ -148,6 +188,7 @@ export function NewAssignmentForm({
             ...validate(),
             id: `custom-${requestId.current}`,
             image: url,
+            images: [url, ...extraUrls].filter(Boolean),
           })}
           showTitle
         />
@@ -193,7 +234,7 @@ export function NewAssignmentForm({
               }
               setBusy(true);
               setError("");
-              void onCreate(value, file, requestId.current)
+              void onCreate(value, file, requestId.current, extraFiles)
                 .catch((e) =>
                   setError(
                     e instanceof Error

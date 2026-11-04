@@ -1,0 +1,24 @@
+.gp-app.equipped-planet-decorations {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  min-height: 0;
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
+}
+.equipped-planet-decorations .gp-draggable-charm {
+  pointer-events: none;
+}
+.decoration-retry {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 5;
+  font-size: 13px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .equipped-planet-decorations * {
+    animation-play-state: paused !important;
+  }
+}

@@ -32,7 +32,15 @@ export function PresetCatalog({
   exteriorSrc,
   onFrame,
   onRing,
+  unlocked = [],
+  onApply,
+  winterLabel,
+  saving = false,
 }: {
+  unlocked?: FrameId[];
+  onApply?: (id: FrameId) => void;
+  winterLabel?: string;
+  saving?: boolean;
   frame?: FrameId;
   ring?: RingId;
   background: string;
@@ -47,11 +55,14 @@ export function PresetCatalog({
           <p className="gp-eyebrow">THE ORNAMENT COLLECTION</p>
           <h2>收藏下一份光芒</h2>
           <p>
-            解锁条件显示在各款卡片下方，自动解锁与套用保存尚未开放。现在可以临时试戴，比较不同风格。
+            {onApply
+              ? "已解锁的款式可直接套用，未解锁的款式可先试戴。"
+              : "解锁条件显示在各款卡片下方，此独立预览可临时试戴，不发放解锁资格。"}
           </p>
         </div>
         <span className="gp-catalog-count">
-          <LockIcon /> {framePresets.length + ringPresets.length} 款待解锁
+          <LockIcon />{" "}
+          {framePresets.length + ringPresets.length - unlocked.length} 款待解锁
         </span>
       </div>
       <div className="gp-collection-title">
@@ -64,7 +75,7 @@ export function PresetCatalog({
             className={`gp-preset-card ${frame === p.id ? "trial-selected" : ""}`}
             key={p.id}
             id={p.id === "winter" ? "winter-theme" : undefined}
-            data-locked={p.locked}
+            data-locked={!unlocked.includes(p.id)}
           >
             <div className="gp-frame-swatch">
               <img src={background} alt="" />
@@ -74,7 +85,7 @@ export function PresetCatalog({
               </div>
               <span className="gp-lock-badge">
                 <LockIcon />
-                已锁定
+                {unlocked.includes(p.id) ? "已解锁" : "已锁定"}
               </span>
             </div>
             <div className="gp-preset-info">
@@ -90,10 +101,24 @@ export function PresetCatalog({
                 {frame === p.id ? "试戴中" : "试戴"}
                 <span aria-hidden="true"> ↗</span>
               </button>
+              {onApply && unlocked.includes(p.id) && (
+                <button
+                  disabled={saving}
+                  onClick={() => onApply(p.id)}
+                  aria-label={`套用边框：${p.name}`}
+                >
+                  {saving ? "正在保存…" : "套用"}
+                </button>
+              )}
             </div>
             <p className="gp-preset-description">{p.description}</p>
             <p className="gp-charm-caption">配套浮饰 · {charmNames[p.id]}</p>
-            <small className="gp-unlock-rule">{frameUnlockLabels[p.id]}</small>
+            <small className="gp-unlock-rule">
+              {p.id === "winter" && winterLabel
+                ? `提交「${winterLabel}」并获得教师评分后解锁`
+                : frameUnlockLabels[p.id]}
+              {unlocked.includes(p.id) ? " · 已达成" : ""}
+            </small>
           </article>
         ))}
       </div>

@@ -69,6 +69,7 @@ export function AssignmentPublisher({
     draft: CustomAssignmentDraft,
     image: File | null,
     requestId: string,
+    images?: File[],
   ) => Promise<string | void>;
   catalog?: AssignmentDefinition[];
   disabled?: boolean;
