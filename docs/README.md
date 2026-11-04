@@ -139,3 +139,5 @@
 - [75 · 星球成长独立云端测试预览](75-isolated-growth-preview.md)
 
 - [76 课堂作业先保存后发布与装扮星球入口](76-assignment-save-and-planet-wardrobe.md)
+
+- [77 多张作业参考图与立冬装扮绑定](77-multiple-references-and-winter-unlock.md)
