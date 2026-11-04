@@ -32,6 +32,7 @@ if (command === "migrate") {
       [12, "012-classroom-management"],
       [13, "013-submission-content-history"],
       [14, "014-assignment-media-and-skins"],
+      [15, "015-count-skin-unlocks"],
     ]) {
       const sql = await readFile(`apps/api/migrations/${file}.sql`, "utf8"),
         hash = createHash("sha256").update(sql).digest("hex");
@@ -59,7 +60,7 @@ if (command === "migrate") {
     console.log(
       JSON.stringify({
         status: "classroom_migration_ready",
-        version: 14,
+        version: 15,
         reviewRecordsUpdated: false,
       }),
     );

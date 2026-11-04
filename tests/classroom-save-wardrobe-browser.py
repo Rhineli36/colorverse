@@ -11,6 +11,7 @@ subject, cls, owner, teacher, planet = [str(uuid.uuid4()) for _ in range(5)]
 tasks, published, checks, errors = [], [], [], []
 equipped={'frameId':None,'placement':{'x':.85,'y':.35,'amplitude':'gentle'},'options':{'particles':True,'lantern':True},'revision':0}
 unlocked=[]
+progress={k:{"current":0,"target":v,"detail":"虚拟验证进度"} for k,v in {"silver":2,"gold":20,"sapphire":10,"emerald":5,"glass":10,"floral":50}.items()}
 def enc(v): return base64.urlsafe_b64encode(json.dumps(v).encode()).decode().rstrip('=')
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, channel='chrome', args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
@@ -27,7 +28,7 @@ with sync_playwright() as p:
             if path == 'session': data = {'identity':{'id':subject,'email':user['email']},'access':'active','database':'connected','cloudWrites':True,'memberships':[{'enrollmentId':actor,'classId':cls,'title':'虚拟验收班','timezone':'Asia/Shanghai','role':role}]}
             elif item == 'decorations':
                 if route.request.method=='PUT': equipped.update(route.request.post_data_json); equipped['revision']+=1
-                data={'planetId':planet,'unlocked':unlocked,'bindings':[{'skin_id':'winter','task_id':'T02','title':'绑定立冬作业'}],'settings':equipped}
+                data={'planetId':planet,'unlocked':unlocked,'progress':progress,'bindings':[{'skin_id':'winter','task_id':'T02','title':'绑定立冬作业'}],'settings':equipped}
             elif item == 'image':
                 route.fulfill(body=(ROOT/'apps/web/public/assignments/two-moods.webp').read_bytes(),content_type='image/webp');return
             elif item == 'profile': data = {'profile':{'studentNumber':'00001','name':'虚拟学生'}}
@@ -112,7 +113,20 @@ with sync_playwright() as p:
             assert equipped['frameId']=='winter'
             page.reload(wait_until='networkidle');page.get_by_role('button',name='装扮星球',exact=True).click()
             expect(page.locator('.gp-room-scene .gp-frame-preset')).to_have_count(1)
-            checks.append('student entry, locked trials, bound label, unlocked apply and persisted reload, square and narrow preview')
+            for skin in ['silver','gold','sapphire','emerald','glass','floral']:
+                unlocked.append(skin);progress[skin]['current']=progress[skin]['target']
+            page.get_by_role('button',name='刷新解锁进度',exact=True).click()
+            expect(page.get_by_role('button',name='套用边框：月辉银饰',exact=True)).to_be_visible()
+            expect(page.locator('.gp-unlock-progress progress')).to_have_count(6)
+            expect(page.get_by_role('progressbar',name='日冕鎏金解锁进度')).to_have_attribute('value','20')
+            expect(page.get_by_role('progressbar',name='繁花绘梦解锁进度')).to_have_attribute('value','50')
+            page.get_by_role('button',name='套用边框：翡翠秘境',exact=True).click()
+            expect(page.get_by_role('button',name='不使用边框装扮',exact=True)).to_be_enabled()
+            assert equipped['frameId']=='emerald'
+            expect(page.locator('[data-locked="true"]')).to_have_count(5)
+            page.screenshot(path=str(OUT/'all-count-skins-unlocked.png'),full_page=True)
+            checks.append('all 6 count progress bars, explicit refresh, unlocked apply and undecided rings remain locked')
+
         assert not unknown, unknown
         ctx.close()
     assert not errors, errors

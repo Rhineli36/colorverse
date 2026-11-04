@@ -1,3 +1,7 @@
+import {
+  awardCountSkins,
+  skinCountEvidence,
+} from "../apps/worker/src/classroom-skin-counts";
 import { classroomDecorations } from "../apps/worker/src/classroom-decorations";
 import { handleShowcaseCloud } from "../apps/worker/src/showcase-cloud";
 import { learningTasks } from "../apps/worker/src/learning";
@@ -116,6 +120,7 @@ beforeAll(async () => {
     "012-classroom-management",
     "013-submission-content-history",
     "014-assignment-media-and-skins",
+    "015-count-skin-unlocks",
   ])
     await db.exec(await readFile(`apps/api/migrations/${name}.sql`, "utf8"));
   for (let i = 0; i < 5; i++)
@@ -934,5 +939,251 @@ describe("multiple private assignment reference images", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+async function countFixture() {
+  const cls = randomUUID();
+  await sql.query(
+    "INSERT INTO colorverse.classes(id,course_id,title,term,timezone) VALUES($1,$2,'成长验收班','2026','Asia/Shanghai')",
+    [cls, id[7]],
+  );
+  const people = [];
+  for (let i = 0; i < 2; i++) {
+    const uid = randomUUID(),
+      eid = randomUUID(),
+      pid = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.users(id,auth_issuer,auth_subject,display_name) VALUES($1,$2,$1::uuid::text,'虚拟同学')",
+      [uid, issuer],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,'student')",
+      [eid, cls, uid],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,$3)",
+      [
+        pid,
+        eid,
+        JSON.stringify({
+          metadata: { name: "成长星球" },
+          useDefaultExterior: true,
+        }),
+      ],
+    );
+    people.push({
+      uid,
+      eid,
+      pid,
+      identity: { issuer, subject: uid, email: "count@example.test" },
+    });
+  }
+  const [owner, peer] = people;
+  const read = () =>
+    classroomDecorations(sql, owner.identity, cls, "GET", null);
+  const react = async (
+    who: typeof owner,
+    planetId: string,
+    kind: string,
+    content: string,
+    workId: string | null = null,
+    rid = randomUUID(),
+  ) =>
+    handleShowcaseCloud(
+      new Request("https://classroom.test/", {
+        method: "POST",
+        body: JSON.stringify({
+          requestId: rid,
+          planetId,
+          workId,
+          kind,
+          content,
+        }),
+      }),
+      { ...env, IMAGES: {} } as never,
+      who.identity,
+      cls,
+      "interactions",
+      () =>
+        ({
+          ...sql,
+          connect: async () => {},
+          end: async () => {},
+        }) as unknown as Pick<Client, "connect" | "query" | "end">,
+    );
+  const work = async (planetId: string, publication: string | null = null) => {
+    const wid = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id,publication_id) VALUES($1,$2,'成长作品',$1::uuid::text,10,'crystal',$1,$3)",
+      [wid, planetId, publication],
+    );
+    return wid;
+  };
+  return { cls, owner, peer, read, react, work };
+}
+describe("six classroom skin milestones from authoritative evidence", () => {
+  it("unlocks upload milestone without any work, preserves it after switching defaults and only reveals own progress", async () => {
+    const f = await countFixture();
+    expect((await f.read()).progress.silver.current).toBe(0);
+    await sql.query(
+      "UPDATE colorverse.planets SET document=jsonb_set(document,'{media}',$1) WHERE id=$2",
+      [
+        JSON.stringify({
+          exterior: { id: "image-a", key: "private-a", bytes: 100 },
+        }),
+        f.owner.pid,
+      ],
+    );
+    expect((await f.read()).progress.silver.current).toBe(1);
+    expect((await f.read()).unlocked).not.toContain("silver");
+    await sql.query(
+      "UPDATE colorverse.planets SET document=jsonb_set(document,'{media,interior}',$1) WHERE id=$2",
+      [
+        JSON.stringify({ id: "image-b", key: "private-b", bytes: 100 }),
+        f.owner.pid,
+      ],
+    );
+    expect((await f.read()).unlocked).toContain("silver");
+    const proof = (
+      await sql.query(
+        "SELECT proof_work_id,evidence FROM colorverse.classroom_skin_unlocks WHERE enrollment_id=$1 AND skin_id='silver'",
+        [f.owner.eid],
+      )
+    ).rows[0];
+    expect(proof.proof_work_id).toBeNull();
+    expect(proof.evidence).toMatchObject({
+      exteriorUploaded: true,
+      interiorUploaded: true,
+    });
+    await sql.query(
+      "UPDATE colorverse.planets SET document=jsonb_set(document,'{media}','{}') WHERE id=$1",
+      [f.owner.pid],
+    );
+    const retained = await f.read();
+    expect(retained.unlocked).toContain("silver");
+    expect(retained.progress.silver.current).toBe(0);
+    const other = await classroomDecorations(
+      sql,
+      f.peer.identity,
+      f.cls,
+      "GET",
+      f.owner.pid,
+    );
+    expect(other.unlocked).toEqual([]);
+    expect(other.progress).toEqual({});
+  });
+  it("awards interaction thresholds at 20/50 on successful posts, deduplicates comments/retries and excludes self and removed works", async () => {
+    const f = await countFixture();
+    for (let i = 0; i < 19; i++)
+      await f.react(f.owner, f.peer.pid, "comment", "观察 " + i);
+    expect((await f.read()).progress.gold.current).toBe(19);
+    expect((await f.read()).unlocked).not.toContain("gold");
+    await f.react(f.owner, f.peer.pid, "comment", " 观察 0 ");
+    expect((await f.read()).progress.gold.current).toBe(19);
+    await f.react(f.owner, f.owner.pid, "comment", "自言自语");
+    expect((await f.read()).progress.gold.current).toBe(19);
+    const wid = await f.work(f.peer.pid);
+    await sql.query(
+      "UPDATE colorverse.showcase_works SET withdrawn_at=now(),withdrawn_by=$2 WHERE id=$1",
+      [wid, f.peer.eid],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.classroom_interactions(id,actor_enrollment_id,planet_id,work_id,kind,content,request_id) VALUES($1,$2,$3,$4,'comment','已移除作品留言',$1)",
+      [randomUUID(), f.owner.eid, f.peer.pid, wid],
+    );
+    expect((await f.read()).progress.gold.current).toBe(19);
+    const rid = randomUUID();
+    await f.react(f.owner, f.peer.pid, "emoji", "✨", null, rid);
+    await f.react(f.owner, f.peer.pid, "emoji", "✨", null, rid);
+    const awarded = (
+      await sql.query(
+        "SELECT skin_id FROM colorverse.classroom_skin_unlocks WHERE enrollment_id=$1",
+        [f.owner.eid],
+      )
+    ).rows;
+    expect(awarded.some((x) => x.skin_id === "gold")).toBe(true);
+    expect((await f.read()).progress.gold.current).toBe(20);
+    for (let i = 19; i < 48; i++)
+      await f.react(f.owner, f.peer.pid, "comment", "观察 " + i);
+    expect((await f.read()).progress.floral.current).toBe(49);
+    expect((await f.read()).unlocked).not.toContain("floral");
+    await f.react(f.owner, f.peer.pid, "like", "");
+    expect((await f.read()).unlocked).toContain("floral");
+    await sql.query(
+      "DELETE FROM colorverse.classroom_interactions WHERE actor_enrollment_id=$1",
+      [f.owner.eid],
+    );
+    expect((await f.read()).unlocked).toEqual(
+      expect.arrayContaining(["gold", "floral"]),
+    );
+    expect((await f.read()).progress.gold.current).toBe(0);
+  });
+  it("combines unique received planet/work likes, awards the recipient immediately at 10 and preserves earned status after withdrawal", async () => {
+    const f = await countFixture();
+    const works = [];
+    for (let i = 0; i < 9; i++) {
+      const wid = await f.work(f.owner.pid);
+      works.push(wid);
+      await f.react(f.peer, f.owner.pid, "like", "", wid);
+    }
+    expect((await f.read()).progress.sapphire.current).toBe(9);
+    expect((await f.read()).unlocked).not.toContain("sapphire");
+    const rid = randomUUID();
+    await f.react(f.peer, f.owner.pid, "like", "", null, rid);
+    await f.react(f.peer, f.owner.pid, "like", "", null, rid);
+    expect(
+      (
+        await sql.query(
+          "SELECT skin_id FROM colorverse.classroom_skin_unlocks WHERE enrollment_id=$1 AND skin_id='sapphire'",
+          [f.owner.eid],
+        )
+      ).rows,
+    ).toHaveLength(1);
+    expect((await f.read()).progress.sapphire.current).toBe(10);
+    await sql.query(
+      "UPDATE colorverse.showcase_works SET withdrawn_at=now(),withdrawn_by=$2 WHERE id=ANY($1::uuid[])",
+      [works, f.owner.eid],
+    );
+    expect((await f.read()).progress.sapphire.current).toBe(1);
+    expect((await f.read()).unlocked).toContain("sapphire");
+  });
+  it("counts different course tasks at 5/10, excludes free work and deduplicates resubmissions and repeated publications", async () => {
+    const f = await countFixture();
+    const publish = async (task: string) => {
+      const pub = randomUUID();
+      await sql.query(
+        "INSERT INTO colorverse.classroom_publications(id,class_id,task_id,definition,target_label,publisher_enrollment_id,request_id) VALUES($1,$2,$3,'{}','验收',$4,$1)",
+        [pub, f.cls, task, f.owner.eid],
+      );
+      await sql.query(
+        "INSERT INTO colorverse.classroom_recipients(publication_id,enrollment_id) VALUES($1,$2)",
+        [pub, f.owner.eid],
+      );
+      return pub;
+    };
+    for (let i = 0; i < 4; i++)
+      await f.work(f.owner.pid, await publish("count-task-" + i));
+    await f.work(f.owner.pid);
+    await f.work(f.owner.pid, await publish("count-task-0"));
+    expect((await f.read()).progress.emerald.current).toBe(4);
+    expect((await f.read()).unlocked).not.toContain("emerald");
+    const fifth = await publish("count-task-4");
+    await f.work(f.owner.pid, fifth);
+    await f.work(f.owner.pid, fifth);
+    expect((await f.read()).unlocked).toContain("emerald");
+    expect((await f.read()).progress.emerald.current).toBe(5);
+    for (let i = 5; i < 9; i++)
+      await f.work(f.owner.pid, await publish("count-task-" + i));
+    expect((await f.read()).progress.glass.current).toBe(9);
+    expect((await f.read()).unlocked).not.toContain("glass");
+    await f.work(f.owner.pid, await publish("count-task-9"));
+    await awardCountSkins(sql, f.cls, [f.owner.eid]);
+    expect((await f.read()).unlocked).toEqual(
+      expect.arrayContaining(["emerald", "glass"]),
+    );
+    const other = await countFixture();
+    expect(await skinCountEvidence(sql, other.cls, f.owner.eid)).toBeNull();
+    expect((await f.read()).unlocked).not.toContain("winter");
   });
 });

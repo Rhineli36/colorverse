@@ -1,6 +1,4 @@
-/** Next-phase calculation only. No API uses this to award a skin yet.
- * Counts must come from server-side, deduplicated evidence, never browser input.
- */
+/** Counts come from server-side, deduplicated evidence, never browser input. */
 export interface SkinCountEvidence {
   exteriorUploaded: boolean;
   interiorUploaded: boolean;

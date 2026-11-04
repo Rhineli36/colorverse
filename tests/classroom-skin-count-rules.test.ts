@@ -10,7 +10,7 @@ const base: SkinCountEvidence = {
   receivedLikes: 0,
   submittedAssignments: 0,
 };
-describe("next-phase skin count boundary specification (not enabled online)", () => {
+describe("classroom skin count boundary specification", () => {
   it("requires both actual custom uploads, not either upload or defaults", () => {
     expect(eligibleCountSkins(base)).toEqual([]);
     expect(

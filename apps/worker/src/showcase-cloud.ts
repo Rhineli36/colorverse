@@ -1,3 +1,4 @@
+import { awardCountSkins } from "./classroom-skin-counts";
 import { studentProfile } from "./student-profile";
 import {
   nextGrowthPlacement,
@@ -957,6 +958,10 @@ export async function handleShowcaseCloud(
             id,
           ],
         );
+        if (env.CLASSROOM_NEXT === "true")
+          await awardCountSkins(client, classId, [
+            String(row.owner_enrollment_id),
+          ]);
         commitAttempted = true;
         await client.query("COMMIT");
         uploadedKeys.length = 0;
@@ -1337,6 +1342,8 @@ export async function handleShowcaseCloud(
           "UPDATE colorverse.showcase_works SET publication_id=$1 WHERE id=$2",
           [learning.publicationId, id],
         );
+      if (env.CLASSROOM_NEXT === "true")
+        await awardCountSkins(client, classId, [String(actor.id)]);
       commitAttempted = true;
       await client.query("COMMIT");
       uploadedKeys.length = 0;
@@ -1562,6 +1569,11 @@ export async function handleShowcaseCloud(
             input.observation ? JSON.stringify(input.observation) : null,
           ],
         );
+      if (env.CLASSROOM_NEXT === "true")
+        await awardCountSkins(client, classId, [
+          String(actor.id),
+          String(target.owner_enrollment_id),
+        ]);
       await client.query("COMMIT");
       return Response.json({ saved: true });
     }

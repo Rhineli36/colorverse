@@ -1,3 +1,4 @@
+import type { WardrobeData } from "./wardrobe-types";
 import { FramePresetArt, RingPresetArt } from "./PresetArt";
 import { FloatingCharm, charmNames } from "./FloatingCharms";
 import { previewAsset } from "./assets";
@@ -36,7 +37,9 @@ export function PresetCatalog({
   onApply,
   winterLabel,
   saving = false,
+  progress,
 }: {
+  progress?: WardrobeData["progress"];
   unlocked?: FrameId[];
   onApply?: (id: FrameId) => void;
   winterLabel?: string;
@@ -56,7 +59,7 @@ export function PresetCatalog({
           <h2>收藏下一份光芒</h2>
           <p>
             {onApply
-              ? "已解锁的款式可直接套用，未解锁的款式可先试戴。"
+              ? "已解锁的款式可直接套用，未解锁的款式可先试戴。达到条件后保留资格，当前进度按有效内容统计。"
               : "解锁条件显示在各款卡片下方，此独立预览可临时试戴，不发放解锁资格。"}
           </p>
         </div>
@@ -84,7 +87,11 @@ export function PresetCatalog({
                 <FloatingCharm id={p.id} />
               </div>
               <span className="gp-lock-badge">
-                <LockIcon />
+                {unlocked.includes(p.id) ? (
+                  <span aria-hidden="true">✓</span>
+                ) : (
+                  <LockIcon />
+                )}
                 {unlocked.includes(p.id) ? "已解锁" : "已锁定"}
               </span>
             </div>
@@ -119,6 +126,23 @@ export function PresetCatalog({
                 : frameUnlockLabels[p.id]}
               {unlocked.includes(p.id) ? " · 已达成" : ""}
             </small>
+            {progress?.[p.id] && (
+              <div className="gp-unlock-progress">
+                <progress
+                  aria-label={`${p.name}解锁进度`}
+                  value={Math.min(
+                    progress[p.id]!.current,
+                    progress[p.id]!.target,
+                  )}
+                  max={progress[p.id]!.target}
+                />
+                <span>
+                  当前 {progress[p.id]!.current} / {progress[p.id]!.target}
+                  {unlocked.includes(p.id) ? " · 已解锁" : ""}
+                </span>
+                <small>{progress[p.id]!.detail}</small>
+              </div>
+            )}
           </article>
         ))}
       </div>

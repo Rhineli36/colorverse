@@ -106,6 +106,10 @@ export default function ClassroomWardrobe({
       onBack={onBack}
       wardrobe={{
         data: wardrobe,
+        onRefresh: async () => {
+          const r = await classroomRequest(`classes/${classId}/decorations`);
+          setWardrobe(WardrobeState.parse(await r.json()));
+        },
         onSave: async (settings) => {
           const r = await classroomRequest(`classes/${classId}/decorations`, {
             method: "PUT",

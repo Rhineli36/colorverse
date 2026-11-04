@@ -18,6 +18,16 @@ export const WardrobeState = z.object({
       title: z.string().nullable(),
     }),
   ),
+  progress: z
+    .partialRecord(
+      Frame,
+      z.object({
+        current: z.number().int().nonnegative(),
+        target: z.number().int().positive(),
+        detail: z.string(),
+      }),
+    )
+    .default({}),
   settings: z.object({
     frameId: Frame.nullable(),
     placement: z.object({

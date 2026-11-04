@@ -77,6 +77,7 @@ export function GrowthPreview({
   wardrobe?: {
     data: WardrobeData;
     onSave: (v: WardrobeSelection) => Promise<void>;
+    onRefresh?: () => Promise<void>;
   };
 }) {
   const backgrounds = classroomPlanet
@@ -141,6 +142,7 @@ export function GrowthPreview({
     return () => clearTimeout(t);
   }, [message]);
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [saveError, setSaveError] = useState("");
   const saveFrame = async (id: FrameId | null) => {
     if (!wardrobe || saving) return;
@@ -509,6 +511,27 @@ export function GrowthPreview({
         {wardrobe && (
           <section className="gp-save-controls" aria-label="保存星球装扮">
             {saveError && <p role="alert">{saveError}</p>}
+            {wardrobe.onRefresh && (
+              <button
+                disabled={saving || refreshing}
+                onClick={async () => {
+                  setRefreshing(true);
+                  setSaveError("");
+                  try {
+                    await wardrobe.onRefresh?.();
+                    setMessage("解锁状态已刷新");
+                  } catch (e) {
+                    setSaveError(
+                      e instanceof Error ? e.message : "读取失败，请重试",
+                    );
+                  } finally {
+                    setRefreshing(false);
+                  }
+                }}
+              >
+                {refreshing ? "正在刷新…" : "刷新解锁进度"}
+              </button>
+            )}
             <button
               disabled={
                 saving ||
@@ -532,6 +555,7 @@ export function GrowthPreview({
         )}
         <PresetCatalog
           unlocked={wardrobe?.data.unlocked}
+          progress={wardrobe?.data.progress}
           winterLabel={
             wardrobe?.data.bindings.find((b) => b.skin_id === "winter")
               ?.title ?? undefined

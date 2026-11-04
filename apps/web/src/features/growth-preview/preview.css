@@ -1334,3 +1334,21 @@
 .gp-save-controls [role="alert"] {
   color: #ffc0bf;
 }
+
+.gp-unlock-progress {
+  display: grid;
+  gap: 7px;
+  margin: 12px 20px 18px;
+  font-size: 13px;
+  color: #c7d7eb;
+}
+.gp-unlock-progress progress {
+  width: 100%;
+  height: 7px;
+  accent-color: #c3abef;
+}
+.gp-unlock-progress small {
+  line-height: 1.65;
+  color: #a9bbd0;
+  font-size: 13px;
+}

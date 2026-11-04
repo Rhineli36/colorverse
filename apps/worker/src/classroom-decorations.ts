@@ -1,3 +1,4 @@
+import { awardCountSkins, skinCountProgress } from "./classroom-skin-counts";
 import { z } from "zod";
 import { classroomActor, ClassroomFailure } from "./classroom";
 import type { EnrollmentSql } from "./enrollment";
@@ -64,6 +65,12 @@ export async function classroomDecorations(
       "OWNER_REQUIRED",
       "只能为自己的星球保存装扮",
     );
+  const countEvidence =
+    own && actor.role === "student"
+      ? (await awardCountSkins(sql, classId, [String(actor.id)])).get(
+          String(actor.id),
+        )
+      : undefined;
   // A stable class/task binding, never a title match. Current-version numerical
   // teacher grades (including zero) qualify; comments alone and stale grades do not.
   if (own && actor.role === "student")
@@ -140,6 +147,7 @@ export async function classroomDecorations(
     planetId: String(planet.id),
     unlocked,
     bindings,
+    progress: skinCountProgress(countEvidence),
     settings: {
       frameId: settings?.frame_id ?? null,
       placement: settings?.placement ?? {
