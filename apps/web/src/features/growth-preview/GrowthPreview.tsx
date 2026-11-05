@@ -105,7 +105,7 @@ export function GrowthPreview({
       wardrobe?.data.settings.options.particles ?? true,
     ),
     [ring, setRing] = useState(true),
-    [moon, setMoon] = useState(true),
+    [moon, setMoon] = useState(!wardrobe),
     [lantern, setLantern] = useState(
       wardrobe?.data.settings.options.lantern ?? true,
     );
@@ -154,12 +154,23 @@ export function GrowthPreview({
         placement: id
           ? (charmPlacements[id] ?? initialCharmPlacement)
           : initialCharmPlacement,
-        options: { palette, particles, lantern },
+        options: id
+          ? { palette, particles, lantern }
+          : { particles: false, lantern: false },
         revision: wardrobe.data.settings.revision,
       });
       setFramePreset(id ?? undefined);
       setFrame(true);
-      setMessage(id ? "装扮已套用并保存" : "已取消边框装扮");
+      if (!id) {
+        setRingPreset(undefined);
+        setLantern(false);
+        setParticles(false);
+        setMoon(false);
+        setPalette(undefined);
+      }
+      setMessage(
+        id ? "装扮已套用并保存" : "已恢复无装扮，原图片和解锁资格保留",
+      );
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "保存失败，请重试");
     } finally {
@@ -543,11 +554,15 @@ export function GrowthPreview({
               {saving ? "正在保存…" : "保存当前装扮"}
             </button>
             <button
-              disabled={saving || !wardrobe.data.settings.frameId}
+              disabled={
+                saving ||
+                (!wardrobe.data.settings.frameId && !framePreset && !ringPreset)
+              }
               onClick={() => void saveFrame(null)}
             >
-              不使用边框装扮
+              恢复无装扮
             </button>
+            <p>恢复无装扮仅移除装饰，不更换星球原图，也不清除解锁资格。</p>
             <p role="status">
               {message || "未解锁款式可试戴；套用和保存仅对已解锁款式开放。"}
             </p>

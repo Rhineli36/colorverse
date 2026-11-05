@@ -461,6 +461,9 @@ export function TeacherClassroomStudio(props: Props) {
                   <option value="missing">有未交作业</option>
                 </select>
               </div>
+              <p className="classroom-help">
+                有效互动：主动向其他同学发出的点赞、表情和留言，排除重复及失效内容，与装扮解锁口径一致。
+              </p>
               <div className="classroom-table-scroll">
                 <table>
                   <thead>
@@ -471,6 +474,7 @@ export function TeacherClassroomStudio(props: Props) {
                         "星球",
                         "已交 / 应交",
                         "待批改",
+                        "有效互动",
                         "操作",
                       ].map((t) => (
                         <th key={t}>{t}</th>
@@ -511,6 +515,7 @@ export function TeacherClassroomStudio(props: Props) {
                             {s.submitted} / {s.expected}
                           </td>
                           <td>{s.pending}</td>
+                          <td>{s.interactionCount ?? "—"}</td>
                           <td>
                             <button
                               onClick={() => {
@@ -908,6 +913,10 @@ export function TeacherClassroomStudio(props: Props) {
             </button>
           </header>
           <p>学号：{student.studentNumber || "未登记"}</p>
+          <p>有效互动：{student.interactionCount ?? "—"} 次</p>
+          <p className="classroom-help">
+            向其他同学发出的有效点赞、表情和留言，统计口径同装扮解锁。
+          </p>
           <p>
             {student.loggedIn ? "已登录过" : "尚未登录"} ·{" "}
             {student.activated ? "已激活" : "未激活"}

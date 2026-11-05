@@ -48,7 +48,7 @@ with sync_playwright() as p:
             elif item == 'guide': data = {'completed':[],'hasPeers':False}
             elif item == 'interactions': data = {'interactions':[]}
             elif item == 'unlinked': data = {'works':[]}
-            elif item == 'roster': data = {'students':[{'enrollmentId':owner,'userId':str(uuid.uuid4()),'name':'虚拟学生','studentNumber':'00001','planetId':planet,'planetName':'我的验收星球','loggedIn':True,'activated':True,'mustChangePassword':False,'expected':0,'submitted':0,'pending':0}]}
+            elif item == 'roster': data = {'students':[{'enrollmentId':owner,'userId':str(uuid.uuid4()),'name':'虚拟学生','studentNumber':'00001','planetId':planet,'planetName':'我的验收星球','loggedIn':True,'activated':True,'mustChangePassword':False,'expected':0,'submitted':0,'pending':0,'interactionCount':23}]}
             else:
                 unknown.append(path); route.fulfill(status=404, json={'error':{'message':'unexpected fixture'}}); return
             route.fulfill(json=data)
@@ -56,6 +56,10 @@ with sync_playwright() as p:
         page.route('**/api/supabase/auth/v1/**', lambda r: r.fulfill(json=user))
         page.goto(URL, wait_until='networkidle')
         if role == 'teacher':
+            expect(page.get_by_role('columnheader',name='有效互动',exact=True)).to_be_visible()
+            row=page.get_by_role('row').filter(has=page.get_by_role('button',name='查看学生',exact=True));expect(row).to_contain_text('23')
+            page.get_by_role('button',name='查看学生',exact=True).click();expect(page.get_by_text('有效互动：23 次',exact=True)).to_be_visible()
+            page.get_by_role('button',name='关闭学生详情',exact=True).click()
             page.get_by_role('button', name='发布作业', exact=True).click()
             page.get_by_role('button', name='＋ 新增作业', exact=True).click()
             page.get_by_label('作业标题',exact=True).fill('立冬 · 色彩中的温度（虚拟验收）')
@@ -108,7 +112,7 @@ with sync_playwright() as p:
             unlocked.append('winter')
             page.get_by_role('button',name='刷新解锁进度',exact=True).click()
             page.get_by_role('button',name='套用边框：立冬·霜华初绽',exact=True).click()
-            expect(page.get_by_role('button',name='不使用边框装扮',exact=True)).to_be_enabled()
+            expect(page.get_by_role('button',name='恢复无装扮',exact=True)).to_be_enabled()
             assert equipped['frameId']=='winter'
             page.reload(wait_until='networkidle');page.get_by_role('button',name='装扮星球',exact=True).click()
             expect(page.locator('.gp-room-scene .gp-frame-preset')).to_have_count(1)
@@ -120,11 +124,18 @@ with sync_playwright() as p:
             expect(page.get_by_role('progressbar',name='日冕鎏金解锁进度')).to_have_attribute('value','20')
             expect(page.get_by_role('progressbar',name='繁花绘梦解锁进度')).to_have_attribute('value','50')
             page.get_by_role('button',name='套用边框：翡翠秘境',exact=True).click()
-            expect(page.get_by_role('button',name='不使用边框装扮',exact=True)).to_be_enabled()
+            expect(page.get_by_role('button',name='恢复无装扮',exact=True)).to_be_enabled()
             assert equipped['frameId']=='emerald'
             expect(page.locator('[data-locked="true"]')).to_have_count(5)
             page.screenshot(path=str(OUT/'all-count-skins-unlocked.png'),full_page=True)
-            checks.append('all 6 count progress bars, explicit refresh, unlocked apply and undecided rings remain locked')
+            page.get_by_role('button',name='恢复无装扮',exact=True).click()
+            expect(page.locator('.gp-room-scene .gp-frame-preset')).to_have_count(0)
+            expect(page.locator('.gp-room-scene .gp-draggable-charm')).to_have_count(0)
+            assert equipped['frameId'] is None
+            page.reload(wait_until='networkidle');page.get_by_role('button',name='装扮星球',exact=True).click()
+            expect(page.locator('.gp-room-scene .gp-frame-preset')).to_have_count(0)
+            expect(page.get_by_role('button',name='套用边框：翡翠秘境',exact=True)).to_be_visible()
+            checks.append('reset persists without revoking awards; all 6 count progress bars, explicit refresh, unlocked apply and undecided rings remain locked')
 
         assert not unknown, unknown
         ctx.close()

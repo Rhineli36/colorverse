@@ -1,3 +1,4 @@
+import { classroomInteractionCounts } from "./classroom-skin-counts";
 import { z } from "zod";
 import {
   AssignmentCatalog,
@@ -129,10 +130,12 @@ export async function classroomRoster(
       ),
     )
   ).flat();
+  const interactions = await classroomInteractionCounts(sql, classId);
   return students.map((s) => ({
     enrollmentId: String(s.id),
     userId: String(s.user_id),
     name: String(s.name),
+    interactionCount: interactions.get(String(s.id)) ?? 0,
     studentNumber: String(s.student_number),
     planetId: s.planet_id ? String(s.planet_id) : null,
     planetName: s.planet_name ? String(s.planet_name) : null,

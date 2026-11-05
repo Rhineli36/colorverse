@@ -1072,6 +1072,15 @@ describe("six classroom skin milestones from authoritative evidence", () => {
     );
     expect(other.unlocked).toEqual([]);
     expect(other.progress).toEqual({});
+    await sql.query("DELETE FROM colorverse.planets WHERE id=$1", [
+      f.owner.pid,
+    ]);
+    await f.react(f.owner, f.peer.pid, "comment", "未建星球时的有效互动");
+    expect(
+      (await classroomRoster(sql, f.cls)).find(
+        (s) => s.enrollmentId === f.owner.eid,
+      ),
+    ).toMatchObject({ planetId: null, interactionCount: 1 });
   });
   it("awards interaction thresholds at 20/50 on successful posts, deduplicates comments/retries and excludes self and removed works", async () => {
     const f = await countFixture();
@@ -1104,6 +1113,11 @@ describe("six classroom skin milestones from authoritative evidence", () => {
     ).rows;
     expect(awarded.some((x) => x.skin_id === "gold")).toBe(true);
     expect((await f.read()).progress.gold.current).toBe(20);
+    expect(
+      (await classroomRoster(sql, f.cls)).find(
+        (s) => s.enrollmentId === f.owner.eid,
+      )?.interactionCount,
+    ).toBe(20);
     for (let i = 19; i < 48; i++)
       await f.react(f.owner, f.peer.pid, "comment", "观察 " + i);
     expect((await f.read()).progress.floral.current).toBe(49);

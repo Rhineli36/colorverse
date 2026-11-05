@@ -4,15 +4,15 @@ import {
   type SkinCountEvidence,
 } from "./classroom-skin-rules";
 
-export async function skinCountEvidence(
+async function skinEvidenceRows(
   sql: EnrollmentSql,
   classId: string,
-  enrollmentId: string,
-): Promise<SkinCountEvidence | null> {
+  enrollmentId: string | null,
+) {
   const row = (
     await sql.query(
       `
-    SELECT p.document,
+    SELECT e.id enrollment_id,p.document,
       (SELECT count(*)::int FROM (
         SELECT i.kind,i.planet_id,i.work_id,
           CASE WHEN i.kind='comment' THEN btrim(i.content) ELSE '' END signature
@@ -43,13 +43,16 @@ export async function skinCountEvidence(
         WHERE w.planet_id=p.id AND w.withdrawn_at IS NULL) submitted_assignments
     FROM colorverse.enrollments e JOIN colorverse.users u ON u.id=e.user_id
     JOIN colorverse.classes c ON c.id=e.class_id
-    JOIN colorverse.planets p ON p.owner_enrollment_id=e.id
-    WHERE e.id=$1 AND e.class_id=$2 AND e.role='student' AND e.status='active'
+    LEFT JOIN colorverse.planets p ON p.owner_enrollment_id=e.id
+    WHERE ($1::uuid IS NULL OR e.id=$1) AND e.class_id=$2 AND e.role='student' AND e.status='active'
       AND u.status='active' AND c.archived_at IS NULL`,
       [enrollmentId, classId],
     )
-  ).rows[0];
-  if (!row) return null;
+  ).rows;
+  return row;
+}
+
+function decodeEvidence(row: Record<string, unknown>): SkinCountEvidence {
   const media = (
     row.document as {
       media?: Record<string, { id?: string; key?: string; bytes?: number }>;
@@ -66,6 +69,26 @@ export async function skinCountEvidence(
     receivedLikes: Number(row.received_likes),
     submittedAssignments: Number(row.submitted_assignments),
   };
+}
+
+export async function skinCountEvidence(
+  sql: EnrollmentSql,
+  classId: string,
+  enrollmentId: string,
+): Promise<SkinCountEvidence | null> {
+  const row = (await skinEvidenceRows(sql, classId, enrollmentId))[0];
+  return row ? decodeEvidence(row) : null;
+}
+
+/** Read-only batch for the teacher roster; qualification rules remain shared. */
+export async function classroomInteractionCounts(
+  sql: EnrollmentSql,
+  classId: string,
+) {
+  const rows = await skinEvidenceRows(sql, classId, null);
+  return new Map(
+    rows.map((row) => [String(row.enrollment_id), Number(row.interactions)]),
+  );
 }
 
 /** Caller owns a classroom transaction. Locks are sorted across affected students

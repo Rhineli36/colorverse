@@ -37,6 +37,7 @@ export const PublicationSchema = z.object({
 });
 export type Publication = z.infer<typeof PublicationSchema>;
 export const RosterStudentSchema = z.object({
+  interactionCount: z.number().int().nonnegative().optional(),
   enrollmentId: z.uuid(),
   userId: z.uuid(),
   name: z.string(),
