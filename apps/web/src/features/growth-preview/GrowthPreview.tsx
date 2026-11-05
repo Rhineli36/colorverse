@@ -65,7 +65,9 @@ export function GrowthPreview({
   classroomPlanet,
   onBack,
   wardrobe,
+  extraFramePreview,
 }: {
+  extraFramePreview?: ReactNode;
   classroomPlanet?: {
     name: string;
     interiorSrc: string;
@@ -569,6 +571,7 @@ export function GrowthPreview({
           </section>
         )}
         <PresetCatalog
+          extraFramePreview={extraFramePreview}
           unlocked={wardrobe?.data.unlocked}
           progress={wardrobe?.data.progress}
           winterLabel={

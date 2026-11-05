@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { WardrobeData } from "./wardrobe-types";
 import { FramePresetArt, RingPresetArt } from "./PresetArt";
 import { FloatingCharm, charmNames } from "./FloatingCharms";
@@ -38,7 +39,9 @@ export function PresetCatalog({
   winterLabel,
   saving = false,
   progress,
+  extraFramePreview,
 }: {
+  extraFramePreview?: ReactNode;
   progress?: WardrobeData["progress"];
   unlocked?: FrameId[];
   onApply?: (id: FrameId) => void;
@@ -146,6 +149,7 @@ export function PresetCatalog({
           </article>
         ))}
       </div>
+      {extraFramePreview}
       <div className="gp-collection-title">
         <h3>外部星环与主题外观</h3>
         <span>前后分层，细节环绕 · {ringPresets.length} 款</span>
