@@ -1,8 +1,8 @@
 # 2026设计色彩年度最佳：仅本地概念预览
 
-2026-11-05，分支 `codex/annual-laureate-preview`。没有部署云端或更新EXE，也没有上传这份预览分支。
+2026-11-05，分支 `codex/annual-laureate-preview`。初版仅本地预览；用户确认后于当日接入并发布云端课堂，记录见下方。EXE保持不变。
 
-本地入口：http://127.0.0.1:5186/growth-preview.html#annual2026 。放在现有立冬边框之后、普通星环列表之前。年度套装预览采用独立组件，只有独立预览入口传入；课堂装扮组件未接入。
+本地入口：http://127.0.0.1:5186/growth-preview.html#annual2026 。放在现有立冬边框之后、普通星环列表之前。年度套装预览采用独立组件。初版仅由独立预览入口传入；用户确认后课堂装扮入口也传入同一组件。
 
 设计：创作桂冠主题，金属多层边框、四角月桂花丝、切面宝石、珠链、悬浮星徽与多重桂冠星环。图案保留问号定制徽章位。文字使用真实文本，装饰为可编辑SVG及CSS，无新增位图、WebGL或外部素材。
 
@@ -11,3 +11,14 @@
 实际验证：TypeScript、相关ESLint、独立预览构建通过。浏览器验证位置在节气卡之后、图像加载、三组材质色切换、背景切换、暂停/放大及390px无横向溢出，页面无脚本错误。
 
 真实截图在忽略目录 `outputs/annual-laureate/`：annual-gold.png、annual-silver.png、annual-enamel-warm.png、annual-mobile.png；checks.json记录浏览器结果。
+
+
+## 用户确认后的云端发布
+
+- 课堂源码 `38bcf3e`；release `2026-11-05T13:28:58.116Z-38bcf3e`；最终 Worker `b3579ac3-acee-427d-9fc7-0bcfe413963e`（100%）。入口 https://colorverse.de5.net/ ，学生进入“装扮星球”，年度样例位于节气卡下方。
+- 免登录预览 https://colorverse.de5.net/growth-preview/#annual2026 ，Worker `fc971712-bc81-422d-af8f-92ba18519ea2`，同一源码。
+- 只展示概念和配色/背景/微光/放大交互，未开放年度套用、排名或发放；既有已解锁装扮的保存、恢复无装扮、教师互动次数沿用当前课堂版本。
+- TypeScript、ESLint、课堂与独立预览构建成功；生产前端隔离接口回归通过。真实虚拟学生账号进入课堂查看年度样例，确认无套用/发放入口、配色切换及390px无横向溢出。公开云端预览的配色、背景、暂停/放大及窄屏测试通过，均无页面脚本错误。
+- 课堂自定义域名及默认 Workers 地址的HTML/入口JS/CSS与本次构建一致。网关仍为 `17eb6e4d-0f9e-473b-be31-d3b4666e1660`；比赛 Worker仍为 `76b2e8b5-3634-456b-b00e-b6a2f68dd210`；评审/展示两域名共16项静态资源及EXE哈希与发布前完全相同。
+- 无数据库迁移或业务数据重置。验收使用既有独立虚拟班，结束后恢复原归档时间。私有凭据与真实截图/检查结果在忽略目录 `work/`、`outputs/annual-cloud/`，未推送。
+- 使用 `pnpm classroom:next deploy` 和 `pnpm growth:preview deploy`；未运行比赛发布或EXE打包命令，未推送main。

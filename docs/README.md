@@ -143,3 +143,6 @@
 - [77 多张作业参考图与立冬装扮绑定](77-multiple-references-and-winter-unlock.md)
 
 - [78 线上课堂六款成长装扮解锁](78-classroom-skin-count-unlocks.md)
+
+- [79 恢复无装扮与教师互动次数](79-reset-decoration-and-teacher-interactions.md)
+- [80 年度最佳限定套装预览及课堂发布](80-annual-laureate-local-preview.md)
