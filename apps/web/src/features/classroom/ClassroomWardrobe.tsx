@@ -1,3 +1,4 @@
+import { AnnualLaureatePreview } from "../growth-preview/AnnualLaureatePreview";
 import {
   WardrobeState,
   type WardrobeData,
@@ -103,6 +104,7 @@ export default function ClassroomWardrobe({
   return (
     <GrowthPreview
       key={own.id}
+      extraFramePreview={<AnnualLaureatePreview />}
       onBack={onBack}
       wardrobe={{
         data: wardrobe,

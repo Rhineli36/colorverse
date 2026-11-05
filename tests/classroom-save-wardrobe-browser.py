@@ -89,6 +89,11 @@ with sync_playwright() as p:
         else:
             entry=page.get_by_role('button',name='装扮星球',exact=True); expect(entry).to_be_visible(); entry.click()
             expect(page.get_by_role('heading',name='装扮星球',exact=True)).to_be_visible()
+            annual=page.get_by_role('region',name='2026年度最佳限定套装预览')
+            expect(annual).to_be_visible()
+            assert annual.get_by_role('button',name='套用',exact=True).count()==0
+            annual.get_by_role('button',name='月白钻冕',exact=True).click()
+            expect(annual.get_by_role('button',name='月白钻冕',exact=True)).to_have_attribute('aria-pressed','true')
             expect(page.get_by_role('heading',name='我的验收星球',exact=True)).to_be_visible()
             assert page.locator('img[alt="我的星球外观"]').get_attribute('src').endswith('/demo/v2/body-0.webp')
             assert page.locator('[data-locked="true"]').count()==12
