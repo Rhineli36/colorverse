@@ -5,6 +5,10 @@ import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readDatabaseConfig, connectDatabase } from "./supabase-database.mjs";
+import {
+  BytesPerMiB,
+  ClassroomImageLimitMb,
+} from "../packages/contracts/src/classroom-upload.ts";
 const name = "colorverse-classroom-next",
   command = process.argv[2];
 if (!["build", "deploy", "migrate"].includes(command))
@@ -24,7 +28,8 @@ const run = (args, env = process.env, input) =>
     );
   });
 if (command === "migrate") {
-  const db = await connectDatabase(await readDatabaseConfig());
+  const databaseConfig = await readDatabaseConfig();
+  const db = await connectDatabase(databaseConfig);
   try {
     await db.query("BEGIN");
     await db.query("SELECT pg_advisory_xact_lock(7301941)");
@@ -33,6 +38,7 @@ if (command === "migrate") {
       [13, "013-submission-content-history"],
       [14, "014-assignment-media-and-skins"],
       [15, "015-count-skin-unlocks"],
+      [16, "016-classroom-image-upload-limit"],
     ]) {
       const sql = await readFile(`apps/api/migrations/${file}.sql`, "utf8"),
         hash = createHash("sha256").update(sql).digest("hex");
@@ -57,19 +63,47 @@ if (command === "migrate") {
       }
     }
     await db.query("COMMIT");
-    console.log(
-      JSON.stringify({
-        status: "classroom_migration_ready",
-        version: 15,
-        reviewRecordsUpdated: false,
-      }),
-    );
   } catch (e) {
     await db.query("ROLLBACK");
     throw e;
   } finally {
     await db.end();
   }
+  const bucketUrl = `${databaseConfig.SUPABASE_URL}/storage/v1/bucket/colorverse-classroom`;
+  const headers = {
+    apikey: databaseConfig.SUPABASE_SECRET_KEY,
+    Authorization: `Bearer ${databaseConfig.SUPABASE_SECRET_KEY}`,
+    "Content-Type": "application/json",
+  };
+  const response = await fetch(bucketUrl, {
+    headers,
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!response.ok) throw Error(`CLASSROOM_BUCKET_READ_${response.status}`);
+  const bucket = await response.json();
+  if (bucket.id !== "colorverse-classroom" || bucket.public !== false)
+    throw Error("PRIVATE_CLASSROOM_BUCKET_REQUIRED");
+  const fileLimit = ClassroomImageLimitMb * BytesPerMiB;
+  if (bucket.file_size_limit !== null && bucket.file_size_limit < fileLimit) {
+    const updated = await fetch(bucketUrl, {
+      method: "PUT",
+      headers,
+      signal: AbortSignal.timeout(20000),
+      body: JSON.stringify({
+        public: false,
+        file_size_limit: fileLimit,
+        allowed_mime_types: bucket.allowed_mime_types,
+      }),
+    });
+    if (!updated.ok) throw Error(`CLASSROOM_BUCKET_UPDATE_${updated.status}`);
+  }
+  console.log(
+    JSON.stringify({
+      status: "classroom_migration_ready",
+      version: 16,
+      reviewRecordsUpdated: false,
+    }),
+  );
 } else {
   const publicEnv = parseEnv(await readFile("apps/web/.env.local", "utf8"));
   const site = resolve("work/classroom-next-site");

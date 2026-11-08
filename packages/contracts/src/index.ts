@@ -2,6 +2,7 @@ import { MotionSchema, MOTION_CAPABILITY } from "./motion";
 import { z } from "zod";
 import { GrowthPresetIds } from "./growth-presets";
 export * from "./growth-presets";
+export * from "./classroom-upload";
 export * from "./course";
 export * from "./cloud-session";
 

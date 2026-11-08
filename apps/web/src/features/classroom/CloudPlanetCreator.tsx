@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { cloudPlanetFromPreset, type EmotionCase } from "@colorverse/contracts";
 import { PlanetDesignEditor } from "./PlanetDesignEditor";
+import {
+  imageUploadLimitBytes,
+  imageUploadLimitMb,
+} from "./cloud-image-upload";
 import { planetAppearancePayload } from "./planet-appearance-payload";
 import { classroomRequest } from "./cloud-request";
 
@@ -126,8 +130,13 @@ export function CloudPlanetCreator({
         `${import.meta.env.BASE_URL}demo/room-${draft.skin}.png`
       }
       onFile={(kind, file) => {
-        if (!/image\/(png|jpeg|webp)/.test(file.type) || file.size > 8388608) {
-          setStatus("请选择 8 MB 以内的 PNG、JPEG 或 WebP 图片。");
+        if (
+          !/image\/(png|jpeg|webp)/.test(file.type) ||
+          file.size > imageUploadLimitBytes
+        ) {
+          setStatus(
+            `请选择 ${imageUploadLimitMb} MB 以内的 PNG、JPEG 或 WebP 图片。`,
+          );
           return;
         }
         setFiles((v) => ({ ...v, [kind]: file }));

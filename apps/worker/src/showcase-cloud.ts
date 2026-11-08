@@ -19,6 +19,9 @@ import {
   PeerObservationSchema,
   CustomAssignmentFields,
   AssignmentDefinitionSchema,
+  BytesPerMiB,
+  ClassroomImageLimitMb,
+  LegacyClassroomImageLimitMb,
 } from "@colorverse/contracts";
 import {
   learningTasks,
@@ -95,9 +98,13 @@ async function storage(
     );
   return response;
 }
-async function readLimited(request: Request, max: number) {
+async function readLimited(
+  request: Request,
+  max: number,
+  tooLarge = "图片最多 8 MB",
+) {
   if (Number(request.headers.get("Content-Length")) > max)
-    throw new ClassroomFailure(413, "TOO_LARGE", "图片最多 8 MB");
+    throw new ClassroomFailure(413, "TOO_LARGE", tooLarge);
   const reader = request.body?.getReader();
   if (!reader) throw new ClassroomFailure(400, "EMPTY_BODY", "缺少上传内容");
   const chunks: Uint8Array[] = [];
@@ -108,7 +115,7 @@ async function readLimited(request: Request, max: number) {
     size += value.length;
     if (size > max) {
       await reader.cancel();
-      throw new ClassroomFailure(413, "TOO_LARGE", "图片最多 8 MB");
+      throw new ClassroomFailure(413, "TOO_LARGE", tooLarge);
     }
     chunks.push(value);
   }
@@ -161,6 +168,12 @@ export async function handleShowcaseCloud(
       "云端作品连接正在准备",
     );
   const client = clientFactory();
+  const imageLimitMb =
+    env.CLASSROOM_NEXT === "true"
+      ? ClassroomImageLimitMb
+      : LegacyClassroomImageLimitMb;
+  const imageLimit = imageLimitMb * BytesPerMiB;
+  const imageTooLarge = `图片最多 ${imageLimitMb} MB`;
   const uploadedKeys: string[] = [];
   let commitAttempted = false;
   try {
@@ -881,7 +894,7 @@ export async function handleShowcaseCloud(
             "PLANET_CONFLICT",
             "星球已更新，请刷新后重新上传",
           );
-        const bytes = await readLimited(request, 8388608);
+        const bytes = await readLimited(request, imageLimit, imageTooLarge);
         let info;
         try {
           info = imageInfo(bytes);
@@ -1071,7 +1084,12 @@ export async function handleShowcaseCloud(
       if (
         request.headers.get("Content-Type")?.startsWith("multipart/form-data")
       ) {
-        const envelope = await readLimited(request, 8388608 + 16384);
+        const workImagesTooLarge = `本次作品图片合计最多 ${imageLimitMb} MB。`;
+        const envelope = await readLimited(
+          request,
+          imageLimit + 16384,
+          workImagesTooLarge,
+        );
         const form = await new Request("https://upload.invalid", {
           method: "POST",
           headers: { "Content-Type": request.headers.get("Content-Type")! },
@@ -1108,7 +1126,6 @@ export async function handleShowcaseCloud(
           metadata = form.get("metadata");
         if (
           !(image instanceof Blob) ||
-          image.size > 8388608 ||
           typeof metadata !== "string" ||
           new TextEncoder().encode(metadata).length > 12288
         )
@@ -1117,6 +1134,11 @@ export async function handleShowcaseCloud(
             "INVALID_UPLOAD",
             "图片或说明超出限制",
           );
+        if (
+          image.size + extraImages.reduce((sum, file) => sum + file.size, 0) >
+          imageLimit
+        )
+          throw new ClassroomFailure(413, "TOO_LARGE", workImagesTooLarge);
         uploadBytes = new Uint8Array(await image.arrayBuffer());
         uploadMetadata = z
           .strictObject({
@@ -1177,7 +1199,8 @@ export async function handleShowcaseCloud(
           "QUOTA_EXCEEDED",
           "试用期每颗星球最多 100 件作品、100 MB",
         );
-      const bytes = uploadBytes ?? (await readLimited(request, 8388608));
+      const bytes =
+        uploadBytes ?? (await readLimited(request, imageLimit, imageTooLarge));
       let info;
       try {
         info = imageInfo(bytes);

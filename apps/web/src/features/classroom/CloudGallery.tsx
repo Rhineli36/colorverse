@@ -43,6 +43,10 @@ import {
   type CloudSession,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
+import {
+  imageUploadLimitBytes,
+  imageUploadLimitMb,
+} from "./cloud-image-upload";
 import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
 import { GrowthLibraryChooser } from "../studio/GrowthLibraryChooser";
 import { download } from "../../app/download";
@@ -1918,7 +1922,8 @@ export function CloudGallery({
                 e.preventDefault();
                 void perform(async () => {
                   if (!file) throw new Error("请选择作品图片");
-                  if (file.size > 8388608) throw new Error("图片最多 8 MB");
+                  if (file.size > imageUploadLimitBytes)
+                    throw new Error(`图片最多 ${imageUploadLimitMb} MB`);
                   const query = new URLSearchParams({
                     requestId: requestId.current,
                   });
@@ -1929,9 +1934,11 @@ export function CloudGallery({
                       throw Error("每次最多六张图片。");
                     if (
                       [file, ...extraFiles].reduce((n, f) => n + f.size, 0) >
-                      8388608
+                      imageUploadLimitBytes
                     )
-                      throw Error("本次作品图片合计最多8MB。");
+                      throw Error(
+                        `本次作品图片合计最多 ${imageUploadLimitMb} MB。`,
+                      );
                     for (const image of extraFiles)
                       form.append("images", image);
                   }
@@ -1996,8 +2003,8 @@ export function CloudGallery({
                 />
               </label>
               <p id={workImageFormatHintId} className="muted">
-                支持 PNG、JPG（JPEG）和 WebP，合计最多 8 MB。TIFF
-                请先导出为上述格式。
+                支持 PNG、JPG（JPEG）和 WebP，合计最多 {imageUploadLimitMb}{" "}
+                MB。TIFF 请先导出为上述格式。
                 {import.meta.env.VITE_CLASSROOM_NEXT === "true" && "可选多图。"}
                 保留原图并优化展示图。
               </p>

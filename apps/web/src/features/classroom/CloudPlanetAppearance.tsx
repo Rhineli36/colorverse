@@ -7,6 +7,10 @@ import { z } from "zod";
 import { CloudPlanetDocumentSchema } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
 import {
+  imageUploadLimitBytes,
+  imageUploadLimitMb,
+} from "./cloud-image-upload";
+import {
   acquirePrivateImage,
   clearPrivateImages,
 } from "./private-image-resource";
@@ -302,8 +306,8 @@ export function CloudPlanetAppearance({
         `${import.meta.env.BASE_URL}demo/room-${draft.skin}.png`
       }
       onFile={(kind, file) => {
-        if (file.size > 8388608) {
-          setStatus("图片最多 8 MB");
+        if (file.size > imageUploadLimitBytes) {
+          setStatus(`图片最多 ${imageUploadLimitMb} MB`);
           return;
         }
         setFiles((v) => ({ ...v, [kind]: file }));
