@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import {
   CloudPlanetPresets,
   type CloudPlanetDocumentSchema,
@@ -57,6 +57,12 @@ export function PlanetDesignEditor({
     [elementId, setElementId] = useState(elements[0]?.id ?? ""),
     [failed, setFailed] = useState(false);
   const profileDialog = useRef<HTMLDialogElement>(null);
+  const imageFormatHintId = useId();
+  const imageFormatHint = (
+    <small id={imageFormatHintId}>
+      支持 PNG、JPG（JPEG）和 WebP，单张最多 8 MB。TIFF 请先导出为上述格式。
+    </small>
+  );
   const current = useRef(document);
   current.current = document;
   const d = document,
@@ -178,6 +184,7 @@ export function PlanetDesignEditor({
                 上传星球外观
                 <input
                   aria-label="上传星球外貌"
+                  aria-describedby={imageFormatHintId}
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   disabled={busy}
@@ -185,6 +192,7 @@ export function PlanetDesignEditor({
                     e.target.files?.[0] && onFile("exterior", e.target.files[0])
                   }
                 />
+                {imageFormatHint}
               </label>
               <label>
                 光晕效果
@@ -250,6 +258,7 @@ export function PlanetDesignEditor({
                 背景图片
                 <input
                   aria-label="上传内部背景"
+                  aria-describedby={imageFormatHintId}
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   disabled={busy}
@@ -257,6 +266,7 @@ export function PlanetDesignEditor({
                     e.target.files?.[0] && onFile("interior", e.target.files[0])
                   }
                 />
+                {imageFormatHint}
               </label>
               <fieldset>
                 <legend>内部图层</legend>

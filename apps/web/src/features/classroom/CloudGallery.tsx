@@ -17,7 +17,15 @@ import {
 } from "./LearningPanels";
 import { CloudObservatory, type ObservatoryPlanet } from "./CloudObservatory";
 import { CloudWorkReview } from "./CloudWorkReview";
-import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  lazy,
+  Suspense,
+} from "react";
 import { z } from "zod";
 import {
   AssignmentCatalog,
@@ -184,6 +192,7 @@ export function CloudGallery({
   };
 }) {
   const [creationDismissed, setCreationDismissed] = useState(false);
+  const workImageFormatHintId = useId();
   const memberships = session.access === "active" ? session.memberships : [],
     [classId, setClassId] = useState(
       memberships.find((m) => m.classId === initialClassId)?.classId ??
@@ -1974,6 +1983,7 @@ export function CloudGallery({
               <label>
                 作品图片
                 <input
+                  aria-describedby={workImageFormatHintId}
                   required
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
@@ -1985,9 +1995,11 @@ export function CloudGallery({
                   }}
                 />
               </label>
-              <p className="muted">
-                PNG / JPEG / WebP，合计最多 8
-                MB。可选多图，保留原图并优化展示图。
+              <p id={workImageFormatHintId} className="muted">
+                支持 PNG、JPG（JPEG）和 WebP，合计最多 8 MB。TIFF
+                请先导出为上述格式。
+                {import.meta.env.VITE_CLASSROOM_NEXT === "true" && "可选多图。"}
+                保留原图并优化展示图。
               </p>
               <label>
                 想表达什么
