@@ -81,12 +81,19 @@ export async function nextClassroomRequest(
         url.pathname,
       );
     if (cls) {
+      const decorations = url.pathname.endsWith("/decorations");
+      const transactional =
+        decorations || (managed && request.method !== "GET");
       const sql = databaseClient(env.HYPERDRIVE_WRITER!);
-      await sql.connect();
+      let inTransaction = false;
       try {
-        await sql.query("BEGIN");
+        await sql.connect();
+        if (transactional) {
+          await sql.query("BEGIN");
+          inTransaction = true;
+        }
         await classroomScope(sql, cls[1]);
-        if (/\/decorations$/.test(url.pathname)) {
+        if (decorations) {
           const planetId = url.searchParams.get("planetId");
           if (planetId) z.uuid().parse(planetId);
           const value = await classroomDecorations(
@@ -98,6 +105,7 @@ export async function nextClassroomRequest(
             request.method === "PUT" ? await smallJson(request) : undefined,
           );
           await sql.query("COMMIT");
+          inTransaction = false;
           return reply(200, value);
         }
         if (managed) {
@@ -131,12 +139,14 @@ export async function nextClassroomRequest(
                   ? await smallJson(request)
                   : undefined,
               );
-          await sql.query("COMMIT");
+          if (inTransaction) {
+            await sql.query("COMMIT");
+            inTransaction = false;
+          }
           return reply(200, value);
         }
-        await sql.query("ROLLBACK");
       } catch (e) {
-        await sql.query("ROLLBACK");
+        if (inTransaction) await sql.query("ROLLBACK").catch(() => {});
         throw e;
       } finally {
         await sql.end();

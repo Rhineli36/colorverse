@@ -535,7 +535,7 @@ export function TeacherClassroomStudio(props: Props) {
                   </tbody>
                 </table>
               </div>
-              {!busy && !foundStudents.length && (
+              {!busy && !error && !foundStudents.length && (
                 <p className="classroom-empty">
                   {students.length
                     ? "没有符合条件的学生。"
@@ -567,7 +567,7 @@ export function TeacherClassroomStudio(props: Props) {
                   </button>
                 </article>
               ))}
-              {!busy && !publications.length && (
+              {!busy && !error && !publications.length && (
                 <p className="classroom-empty">
                   尚未布置作业。发布时确认应交学生，历史作品不会自动归入新作业。
                 </p>

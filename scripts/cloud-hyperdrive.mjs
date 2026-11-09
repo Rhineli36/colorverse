@@ -4,7 +4,13 @@ import { X509Certificate } from "node:crypto";
 import { readDatabaseConfig } from "./supabase-database.mjs";
 
 const command = process.argv[2];
-const classroom = process.argv.includes("--classroom");
+const classroomNext = process.argv.includes("--classroom-next");
+const classroom = classroomNext || process.argv.includes("--classroom");
+const configurationName = classroomNext
+  ? "colorverse-classroom-next-writer"
+  : classroom
+    ? "colorverse-classroom-dev"
+    : "colorverse-enrollment-dev";
 const role = classroom
   ? "colorverse_classroom_writer"
   : "colorverse_identity_reader";
@@ -88,20 +94,14 @@ try {
       });
     }
     if (!certificate?.id) throw new Error("ROOT_CERTIFICATE_ID_REQUIRED");
-    const existing = configs.filter(
-      (item) =>
-        item.name ===
-        (classroom ? "colorverse-classroom-dev" : "colorverse-enrollment-dev"),
-    );
+    const existing = configs.filter((item) => item.name === configurationName);
     if (existing.length > 1)
       throw new Error("MULTIPLE_HYPERDRIVE_CONFIGURATIONS");
     let configuration = existing[0];
     if (!configuration) {
       stage = "create_restricted_hyperdrive";
       configuration = await api("/hyperdrive/configs", {
-        name: classroom
-          ? "colorverse-classroom-dev"
-          : "colorverse-enrollment-dev",
+        name: configurationName,
         origin: {
           host: db.SUPABASE_DB_HOST,
           port: 5432,
@@ -112,7 +112,7 @@ try {
         },
         caching: { disabled: true },
         mtls: { ca_certificate_id: certificate.id, sslmode: "verify-full" },
-        origin_connection_limit: 5,
+        origin_connection_limit: classroomNext ? 12 : 5,
       });
     }
     if (
@@ -126,7 +126,11 @@ try {
     )
       throw new Error("HYPERDRIVE_CONFIGURATION_REQUIRES_REVIEW");
     await writeFile(
-      classroom ? ".env.classroom-hyperdrive.local" : ".env.hyperdrive.local",
+      classroomNext
+        ? ".env.classroom-next-hyperdrive.local"
+        : classroom
+          ? ".env.classroom-hyperdrive.local"
+          : ".env.hyperdrive.local",
       `# Non-secret binding ID; database credentials stay in Hyperdrive.\nCLOUDFLARE_HYPERDRIVE_ID=${configuration.id}\n`,
     );
     console.log(

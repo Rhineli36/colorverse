@@ -131,7 +131,7 @@ if (command === "migrate") {
   );
   const reader = parseEnv(await readFile(".env.hyperdrive.local", "utf8")),
     writer = parseEnv(
-      await readFile(".env.classroom-hyperdrive.local", "utf8"),
+      await readFile(".env.classroom-next-hyperdrive.local", "utf8"),
     );
   const config = {
     name,
