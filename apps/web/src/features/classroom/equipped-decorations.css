@@ -1,3 +1,8 @@
+.story-overlay-layout .cloud-room:has(> .equipped-planet-decorations) {
+  /* Keep equipped decorations above the artwork and below the story card. */
+  isolation: isolate;
+}
+
 .gp-app.equipped-planet-decorations {
   position: absolute;
   inset: 0;
