@@ -72,7 +72,7 @@ export function AssignmentBrief({
   );
 }
 
-function AssignmentImage({ src, alt }: { src: string; alt: string }) {
+export function AssignmentImage({ src, alt }: { src: string; alt: string }) {
   const [failedImage, setFailedImage] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const [privateUrl, setPrivateUrl] = useState("");

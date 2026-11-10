@@ -355,8 +355,19 @@ export function TeacherClassroomStudio(props: Props) {
         refresh();
         return r.taskId;
       }}
-      onEdit={async (taskId, revision, definition, images) => {
-        const metadata = JSON.stringify({ taskId, revision, definition });
+      onEdit={async (
+        taskId,
+        revision,
+        definition,
+        images,
+        keepImageIndices,
+      ) => {
+        const metadata = JSON.stringify({
+          taskId,
+          revision,
+          definition,
+          keepImageIndices,
+        });
         const body = new FormData();
         body.set("metadata", metadata);
         if (images.length) {

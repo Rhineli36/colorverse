@@ -960,13 +960,19 @@ describe("multiple private assignment reference images", () => {
           factory,
         ),
       ).rejects.toMatchObject({ status: 404 });
-      const append = (count: number, revision: number, who = teacher) => {
+      const append = (
+        count: number,
+        revision: number,
+        who = teacher,
+        keepImageIndices?: number[],
+      ) => {
         const patch = new FormData();
         patch.set(
           "metadata",
           JSON.stringify({
             taskId: result.taskId,
             revision,
+            keepImageIndices,
             definition: {
               title: "补充参考图",
               description: "按顺序看图",
@@ -1023,6 +1029,35 @@ describe("multiple private assignment reference images", () => {
       );
       expect(extra.status).toBe(200);
       expect(transport.mock.calls.at(-1)?.[0]).toBe(uploaded[2]);
+      await expect(append(0, 2, teacher, [4])).rejects.toMatchObject({
+        code: "INVALID_UPLOAD",
+      });
+      const replaced = await append(1, 2, teacher, [1]);
+      expect(replaced.status).toBe(200);
+      expect(transport.mock.calls.at(-1)?.[1]).toMatchObject({
+        method: "DELETE",
+        body: JSON.stringify({
+          prefixes: [
+            `assignment-${rid}.webp`,
+            uploaded[2].split("/").at(-1),
+          ].map((key) => `${teacher.subject}/${key}`),
+        }),
+      });
+      const getImage = (index: number) =>
+        handleShowcaseCloud(
+          new Request(`https://classroom.test/?index=${index}`),
+          imageEnv,
+          teacher,
+          id[5],
+          `learning-tasks/${result.taskId}/image`,
+          factory,
+        );
+      await getImage(0);
+      expect(transport.mock.calls.at(-1)?.[0]).toBe(uploaded[1]);
+      await getImage(1);
+      expect(transport.mock.calls.at(-1)?.[0]).toBe(uploaded[3]);
+      expect((await append(0, 3, teacher, [])).status).toBe(200);
+      await expect(getImage(0)).rejects.toMatchObject({ status: 404 });
     } finally {
       vi.unstubAllGlobals();
     }

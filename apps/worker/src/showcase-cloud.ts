@@ -505,6 +505,7 @@ export async function handleShowcaseCloud(
         request.headers.get("Content-Type")?.startsWith("multipart/form-data")
           ? await readAssignmentUpload(request, true)
           : undefined;
+      const removed: string[] = [];
       const result = await learningTasks(
         client,
         actor,
@@ -517,27 +518,36 @@ export async function handleShowcaseCloud(
                 new TextDecoder().decode(await readLimited(request, 48000)),
               )
             : undefined,
-        upload?.files.length
-          ? async (remaining) => {
-              if (upload.files.length > remaining)
-                throw new ClassroomFailure(
-                  400,
-                  "INVALID_UPLOAD",
-                  "每份作业最多保留6张参考图片",
-                );
-              return uploadAssignmentImages(
-                env,
-                identity,
-                crypto.randomUUID(),
-                upload.files,
-                uploadedKeys,
-              );
+        editDraft
+          ? {
+              removed,
+              append: upload?.files.length
+                ? async (remaining) => {
+                    if (upload.files.length > remaining)
+                      throw new ClassroomFailure(
+                        400,
+                        "INVALID_UPLOAD",
+                        "每份作业最多保留6张参考图片",
+                      );
+                    return uploadAssignmentImages(
+                      env,
+                      identity,
+                      crypto.randomUUID(),
+                      upload.files,
+                      uploadedKeys,
+                    );
+                  }
+                : undefined,
             }
           : undefined,
       );
       if (uploadedKeys.length) commitAttempted = true;
       await client.query("COMMIT");
       uploadedKeys.length = 0;
+      if (removed.length)
+        await removeStoredImages(env, removed).catch(() =>
+          console.warn("assignment_media_cleanup_pending"),
+        );
       return Response.json(result);
     }
     const review = /^works\/([a-f0-9-]+)\/review$/.exec(resource);

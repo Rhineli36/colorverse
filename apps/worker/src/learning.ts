@@ -27,7 +27,10 @@ export async function learningTasks(
   classId: string,
   method: string,
   body?: unknown,
-  appendImages?: (remaining: number) => Promise<string[]>,
+  media?: {
+    append?: (remaining: number) => Promise<string[]>;
+    removed: string[];
+  },
 ) {
   if (method === "PATCH") {
     if (!["teacher", "assistant"].includes(String(actor.role)))
@@ -41,6 +44,13 @@ export async function learningTasks(
         taskId: z.string().regex(/^custom-[a-f0-9-]{36}$/),
         revision: z.number().int().nonnegative(),
         definition: CustomAssignmentFields,
+        keepImageIndices: z
+          .array(z.number().int().min(0).max(5))
+          .max(6)
+          .refine((indices) =>
+            indices.every((index, i) => i === 0 || indices[i - 1] < index),
+          )
+          .optional(),
       })
       .parse(body);
     await sql.query(
@@ -75,27 +85,39 @@ export async function learningTasks(
       : draft.image_storage_key
         ? [String(draft.image_storage_key)]
         : [];
-    const appended = appendImages ? await appendImages(6 - saved.length) : [];
-    const images = [...saved, ...appended];
+    if (v.keepImageIndices?.some((index) => index >= saved.length))
+      throw new ClassroomFailure(
+        400,
+        "INVALID_UPLOAD",
+        "参考图片已变化，请重新打开草稿。",
+      );
+    const kept = v.keepImageIndices
+      ? v.keepImageIndices.map((index) => saved[index])
+      : saved;
+    const appended = media?.append ? await media.append(6 - kept.length) : [];
+    const images = [...kept, ...appended];
+    const mediaChanged = appended.length > 0 || kept.length !== saved.length;
     const definition = AssignmentDefinitionSchema.parse({
       ...AssignmentDefinitionSchema.parse(draft.definition),
       ...v.definition,
       formatting: v.definition.formatting,
-      ...(appended.length
+      ...(mediaChanged
         ? assignmentReferenceMedia(classId, v.taskId, images)
         : {}),
     });
     await sql.query(
       `UPDATE colorverse.learning_task_settings SET definition=$3,revision=revision+1,updated_at=now()
-       ${appended.length ? ",image_storage_key=$4,image_storage_keys=$5" : ""}
+       ${mediaChanged ? ",image_storage_key=$4,image_storage_keys=$5" : ""}
        WHERE class_id=$1 AND task_id=$2`,
       [
         classId,
         v.taskId,
         JSON.stringify(definition),
-        ...(appended.length ? [images[0], JSON.stringify(images)] : []),
+        ...(mediaChanged ? [images[0] ?? null, JSON.stringify(images)] : []),
       ],
     );
+    if (media)
+      media.removed.push(...saved.filter((key) => !kept.includes(key)));
   } else if (method === "PUT") {
     if (!["teacher", "assistant"].includes(String(actor.role)))
       throw new ClassroomFailure(

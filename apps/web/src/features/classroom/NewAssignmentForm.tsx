@@ -6,7 +6,7 @@ import {
   type AssignmentMark,
   type AssignmentDefinition,
 } from "@colorverse/contracts";
-import { AssignmentBrief } from "./AssignmentBrief";
+import { AssignmentBrief, AssignmentImage } from "./AssignmentBrief";
 import { AssignmentTextEditor, sliceMarks } from "./AssignmentText";
 export function NewAssignmentForm({
   onCreate,
@@ -22,6 +22,7 @@ export function NewAssignmentForm({
     image: File | null,
     requestId: string,
     images?: File[],
+    keepImageIndices?: number[],
   ) => Promise<void>;
   onBack: () => void;
   onDirtyChange: (dirty: boolean) => void;
@@ -67,17 +68,24 @@ export function NewAssignmentForm({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const requestId = useRef(crypto.randomUUID());
-  const savedImages = initialTask?.images?.length
+  const initialImages = initialTask?.images?.length
     ? initialTask.images
     : initialTask?.image
       ? [initialTask.image]
       : [];
+  const [removedImages, setRemovedImages] = useState<number[]>([]);
+  const savedImages = initialImages
+    .map((src, index) => ({ src, index }))
+    .filter(({ index }) => !removedImages.includes(index));
+  const dirty =
+    !!file ||
+    (initialTask
+      ? changed || removedImages.length > 0
+      : Object.values(draft).some(Boolean));
   useEffect(() => {
-    onDirtyChange(
-      !!file || (initialTask ? changed : Object.values(draft).some(Boolean)),
-    );
+    onDirtyChange(dirty);
     return () => onDirtyChange(false);
-  }, [draft, file, onDirtyChange, initialTask, changed]);
+  }, [dirty, onDirtyChange]);
   useEffect(() => {
     if (!file) {
       setUrl("");
@@ -199,7 +207,7 @@ export function NewAssignmentForm({
           )}
           <label>
             {initialTask
-              ? `追加参考图片（已保存 ${savedImages.length} 张，最多 6 张）`
+              ? `上传参考图片（已保留 ${savedImages.length} 张，最多 6 张）`
               : saveOnly
                 ? "上传参考图片（可多选，最多6张，合计8MB）"
                 : "上传示范图片（可选）"}
@@ -243,11 +251,28 @@ export function NewAssignmentForm({
             />
             {initialTask && (
               <small>
-                已有参考图会保留，本次新增图片合计最多 8
-                MB，可在「预览作业」中查看。
+                可添加或移除参考图，保存后生效。本次新增图片合计最多 8 MB。
               </small>
             )}
           </label>
+          {savedImages.map(({ src, index }, position) => (
+            <div className="assignment-file-preview" key={index}>
+              <AssignmentImage
+                src={src}
+                alt={`已保存的参考图片 ${position + 1}`}
+              />
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setError("");
+                  setRemovedImages((removed) => [...removed, index]);
+                }}
+              >
+                移除参考图片 {position + 1}
+              </button>
+            </div>
+          ))}
           {file && (
             <div className="assignment-file-preview">
               <img src={url} alt="新增作业示范预览" />
@@ -289,8 +314,11 @@ export function NewAssignmentForm({
           task={AssignmentDefinitionSchema.parse({
             ...validate(),
             id: initialTask?.id ?? `custom-${requestId.current}`,
-            image: initialTask?.image || url,
-            images: [...savedImages, ...[url, ...extraUrls].filter(Boolean)],
+            image: savedImages[0]?.src || url,
+            images: [
+              ...savedImages.map((image) => image.src),
+              ...[url, ...extraUrls].filter(Boolean),
+            ],
           })}
           showTitle
         />
@@ -323,7 +351,7 @@ export function NewAssignmentForm({
           </button>
           <button
             className="primary"
-            disabled={busy || (!!initialTask && !changed && !file)}
+            disabled={busy || (!!initialTask && !dirty)}
             onClick={() => {
               let value: CustomAssignmentDraft;
               try {
@@ -336,7 +364,15 @@ export function NewAssignmentForm({
               }
               setBusy(true);
               setError("");
-              void onCreate(value, file, requestId.current, extraFiles)
+              void onCreate(
+                value,
+                file,
+                requestId.current,
+                extraFiles,
+                removedImages.length
+                  ? savedImages.map((image) => image.index)
+                  : undefined,
+              )
                 .catch((e) =>
                   setError(
                     e instanceof Error
