@@ -97,10 +97,12 @@ export async function learningTasks(
     const appended = media?.append ? await media.append(6 - kept.length) : [];
     const images = [...kept, ...appended];
     const mediaChanged = appended.length > 0 || kept.length !== saved.length;
+    const storedDefinition = AssignmentDefinitionSchema.parse(draft.definition);
     const definition = AssignmentDefinitionSchema.parse({
-      ...AssignmentDefinitionSchema.parse(draft.definition),
+      ...storedDefinition,
       ...v.definition,
       formatting: v.definition.formatting,
+      stepLayout: v.definition.stepLayout ?? storedDefinition.stepLayout,
       ...(mediaChanged
         ? assignmentReferenceMedia(classId, v.taskId, images)
         : {}),

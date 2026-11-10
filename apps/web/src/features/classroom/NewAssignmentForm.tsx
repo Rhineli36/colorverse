@@ -36,6 +36,10 @@ export function NewAssignmentForm({
     exampleObservation: initialTask?.exampleObservation ?? "",
   }));
   const [changed, setChanged] = useState(false);
+  const [stepLayout, setStepLayout] = useState(
+    initialTask?.stepLayout ??
+      (initialTask || !saveOnly ? "automatic" : "manual"),
+  );
   const [extraFiles, setExtraFiles] = useState<File[]>([]);
   const [marks, setMarks] = useState<
     Record<"description" | "steps" | "deliverables", AssignmentMark[]>
@@ -100,10 +104,14 @@ export function NewAssignmentForm({
     const steps = draft.steps.split("\n").flatMap((line) => {
       const start = offset;
       offset += line.length + 1;
-      const withoutNumber = line.trimStart().replace(/^\d+[.、]\s*/, "");
-      const text = withoutNumber.trimEnd();
+      const trimmed = line.trimStart();
+      const content =
+        stepLayout === "automatic"
+          ? trimmed.replace(/^\d+(?:\.\s+|、\s*|．\s*)/, "")
+          : trimmed;
+      const text = content.trimEnd();
       if (!text) return [];
-      const from = start + line.length - withoutNumber.length;
+      const from = start + line.length - content.length;
       return [
         { text, marks: sliceMarks(marks.steps, from, from + text.length) },
       ];
@@ -121,6 +129,7 @@ export function NewAssignmentForm({
     return CustomAssignmentFields.parse({
       ...draft,
       steps: steps.map((s) => s.text),
+      ...(saveOnly ? { stepLayout } : {}),
       ...(formatting.description.length ||
       formatting.deliverables.length ||
       formatting.steps.some((s) => s.length)
@@ -152,6 +161,30 @@ export function NewAssignmentForm({
               key === "deliverables") ? (
               <div key={key} className="assignment-format-field">
                 <span>{label}</span>
+                {key === "steps" && (
+                  <label className="assignment-step-layout">
+                    步骤排版
+                    <select
+                      value={stepLayout}
+                      disabled={busy}
+                      onChange={(e) => {
+                        setStepLayout(
+                          e.target.value === "manual" ? "manual" : "automatic",
+                        );
+                        requestId.current = crypto.randomUUID();
+                        setChanged(true);
+                      }}
+                    >
+                      <option value="manual">保留手写编号</option>
+                      <option value="automatic">自动编号</option>
+                    </select>
+                    <small>
+                      {stepLayout === "manual"
+                        ? "按你输入的编号和符号显示，也可以不写编号。"
+                        : "主步骤自动编号。以短横线或圆点开头的行显示为子项。"}
+                    </small>
+                  </label>
+                )}
                 <AssignmentTextEditor
                   label={label}
                   text={draft[key]}

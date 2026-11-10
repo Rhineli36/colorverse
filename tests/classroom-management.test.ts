@@ -695,6 +695,8 @@ describe("saved classroom assignment lifecycle", () => {
     const edited = {
       ...definition,
       description: "先观察冬日的冷暖关系",
+      stepLayout: "manual",
+      steps: ["3、观察色彩", "- 比较冷暖", "7、提交作品"],
       formatting: { description: [{ from: 0, to: 3, style: "gold" }] },
     };
     const edit = (who = teacher, revision = 1) =>

@@ -52,6 +52,29 @@
   line-height: 1.8;
   white-space: pre-line;
 }
+.assignment-substeps {
+  margin: 4px 0 8px;
+  padding-inline-start: 1.25rem;
+  list-style: disc;
+}
+.assignment-manual-steps > p {
+  margin: 0 0 8px;
+}
+.assignment-fields .assignment-step-layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.assignment-fields .assignment-step-layout select {
+  width: auto;
+  max-width: 100%;
+  padding: 6px 10px;
+}
+.assignment-step-layout small {
+  color: #acc0d8;
+}
 .assignment-image-fallback {
   border: 1px dashed #7b9a9b66;
   border-radius: 10px;

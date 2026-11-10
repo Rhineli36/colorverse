@@ -17,6 +17,7 @@ export const CustomAssignmentFields = z.strictObject({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().min(1).max(2000),
   steps: z.array(z.string().trim().min(1).max(500)).max(10),
+  stepLayout: z.enum(["automatic", "manual"]).optional(),
   deliverables: z.string().trim().min(1).max(2000),
   inspiration: z.string().trim().max(500).default(""),
   exampleObservation: z.string().trim().max(2000).default(""),

@@ -2,7 +2,76 @@ import { useEffect, useState } from "react";
 import type { AssignmentDefinition } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
 import "./classroom-mail.css";
-import { AssignmentText } from "./AssignmentText";
+import { AssignmentText, sliceMarks } from "./AssignmentText";
+
+function AssignmentSteps({ task }: { task: AssignmentDefinition }) {
+  if (task.stepLayout === "manual")
+    return (
+      <div className="assignment-manual-steps">
+        {task.steps.map((step, index) => (
+          <p key={index}>
+            <AssignmentText
+              text={step}
+              marks={task.formatting?.steps?.[index]}
+            />
+          </p>
+        ))}
+      </div>
+    );
+
+  type Step = { index: number; prefixLength: number };
+  const leading: Step[] = [];
+  const groups: { index: number; children: Step[] }[] = [];
+  task.steps.forEach((step, index) => {
+    const marker = /^(?:[-–—*]\s+|[•·]\s*)/.exec(step);
+    if (marker) {
+      (groups.at(-1)?.children ?? leading).push({
+        index,
+        prefixLength: marker[0].length,
+      });
+    } else {
+      groups.push({ index, children: [] });
+    }
+  });
+  const substeps = (steps: Step[]) =>
+    steps.length > 0 && (
+      <ul className="assignment-substeps">
+        {steps.map(({ index, prefixLength }) => {
+          const text = task.steps[index];
+          return (
+            <li key={index}>
+              <AssignmentText
+                text={text.slice(prefixLength)}
+                marks={sliceMarks(
+                  task.formatting?.steps?.[index] ?? [],
+                  prefixLength,
+                  text.length,
+                )}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    );
+  return (
+    <>
+      {substeps(leading)}
+      {groups.length > 0 && (
+        <ol>
+          {groups.map(({ index, children }) => (
+            <li key={index}>
+              <AssignmentText
+                text={task.steps[index]}
+                marks={task.formatting?.steps?.[index]}
+              />
+              {substeps(children)}
+            </li>
+          ))}
+        </ol>
+      )}
+    </>
+  );
+}
 
 /** Shared by teacher previews, assignment mail and the submission form. */
 export function AssignmentBrief({
@@ -23,16 +92,7 @@ export function AssignmentBrief({
         />
       </p>
       <Heading>创作步骤</Heading>
-      <ol>
-        {task.steps.map((step, index) => (
-          <li key={index}>
-            <AssignmentText
-              text={step}
-              marks={task.formatting?.steps?.[index]}
-            />
-          </li>
-        ))}
-      </ol>
+      <AssignmentSteps task={task} />
       <Heading>提交内容</Heading>
       <p>
         <AssignmentText
