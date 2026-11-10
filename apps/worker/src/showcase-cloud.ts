@@ -472,12 +472,15 @@ export async function handleShowcaseCloud(
       return Response.json(result);
     }
     if (resource === "learning-tasks") {
+      const editDraft = request.method === "PATCH";
+      if (editDraft && env.CLASSROOM_NEXT !== "true")
+        throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
       const result = await learningTasks(
         client,
         actor,
         classId,
         request.method,
-        request.method === "PUT"
+        request.method === "PUT" || editDraft
           ? JSON.parse(
               new TextDecoder().decode(await readLimited(request, 48000)),
             )

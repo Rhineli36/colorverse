@@ -3,15 +3,20 @@ import {
   AssignmentDefinitionSchema,
   CustomAssignmentFields,
   type CustomAssignmentDraft,
+  type AssignmentMark,
+  type AssignmentDefinition,
 } from "@colorverse/contracts";
 import { AssignmentBrief } from "./AssignmentBrief";
+import { AssignmentTextEditor, sliceMarks } from "./AssignmentText";
 export function NewAssignmentForm({
   onCreate,
   onBack,
   onDirtyChange,
   saveOnly = false,
+  initialTask,
 }: {
   saveOnly?: boolean;
+  initialTask?: AssignmentDefinition;
   onCreate: (
     draft: CustomAssignmentDraft,
     image: File | null,
@@ -21,15 +26,35 @@ export function NewAssignmentForm({
   onBack: () => void;
   onDirtyChange: (dirty: boolean) => void;
 }) {
-  const [draft, setDraft] = useState({
-    title: "",
-    description: "",
-    steps: "",
-    deliverables: "",
-    inspiration: "",
-    exampleObservation: "",
-  });
+  const [draft, setDraft] = useState(() => ({
+    title: initialTask?.title ?? "",
+    description: initialTask?.description ?? "",
+    steps: initialTask?.steps.join("\n") ?? "",
+    deliverables: initialTask?.deliverables ?? "",
+    inspiration: initialTask?.inspiration ?? "",
+    exampleObservation: initialTask?.exampleObservation ?? "",
+  }));
+  const [changed, setChanged] = useState(false);
   const [extraFiles, setExtraFiles] = useState<File[]>([]);
+  const [marks, setMarks] = useState<
+    Record<"description" | "steps" | "deliverables", AssignmentMark[]>
+  >(() => {
+    let offset = 0;
+    return {
+      description: initialTask?.formatting?.description ?? [],
+      deliverables: initialTask?.formatting?.deliverables ?? [],
+      steps:
+        initialTask?.steps.flatMap((step, i) => {
+          const start = offset;
+          offset += step.length + 1;
+          return (initialTask.formatting?.steps?.[i] ?? []).map((mark) => ({
+            ...mark,
+            from: mark.from + start,
+            to: mark.to + start,
+          }));
+        }) ?? [],
+    };
+  });
   const [extraUrls, setExtraUrls] = useState<string[]>([]);
   useEffect(() => {
     const urls = extraFiles.map((f) => URL.createObjectURL(f));
@@ -43,9 +68,11 @@ export function NewAssignmentForm({
     [error, setError] = useState("");
   const requestId = useRef(crypto.randomUUID());
   useEffect(() => {
-    onDirtyChange(!!file || Object.values(draft).some(Boolean));
+    onDirtyChange(
+      initialTask ? changed : !!file || Object.values(draft).some(Boolean),
+    );
     return () => onDirtyChange(false);
-  }, [draft, file, onDirtyChange]);
+  }, [draft, file, onDirtyChange, initialTask, changed]);
   useEffect(() => {
     if (!file) {
       setUrl("");
@@ -55,17 +82,45 @@ export function NewAssignmentForm({
     setUrl(value);
     return () => URL.revokeObjectURL(value);
   }, [file]);
-  const validate = () =>
-    CustomAssignmentFields.parse({
-      ...draft,
-      steps: draft.steps
-        .split("\n")
-        .map((s) => s.trim().replace(/^\d+[.、]\s*/, ""))
-        .filter(Boolean),
+  const validate = () => {
+    let offset = 0;
+    const steps = draft.steps.split("\n").flatMap((line) => {
+      const start = offset;
+      offset += line.length + 1;
+      const withoutNumber = line.trimStart().replace(/^\d+[.、]\s*/, "");
+      const text = withoutNumber.trimEnd();
+      if (!text) return [];
+      const from = start + line.length - withoutNumber.length;
+      return [
+        { text, marks: sliceMarks(marks.steps, from, from + text.length) },
+      ];
     });
+    const trimMarks = (field: "description" | "deliverables") => {
+      const text = draft[field];
+      const start = text.length - text.trimStart().length;
+      return sliceMarks(marks[field], start, start + text.trim().length);
+    };
+    const formatting = {
+      description: trimMarks("description"),
+      deliverables: trimMarks("deliverables"),
+      steps: steps.map((s) => s.marks),
+    };
+    return CustomAssignmentFields.parse({
+      ...draft,
+      steps: steps.map((s) => s.text),
+      ...(formatting.description.length ||
+      formatting.deliverables.length ||
+      formatting.steps.some((s) => s.length)
+        ? { formatting }
+        : {}),
+    });
+  };
   return (
-    <section className="new-assignment" aria-label="新增作业">
-      <h3>新增作业</h3>
+    <section
+      className="new-assignment"
+      aria-label={initialTask ? "编辑作业草稿" : "新增作业"}
+    >
+      <h3>{initialTask ? "编辑作业草稿" : "新增作业"}</h3>
       {!preview ? (
         <div className="assignment-fields">
           {(
@@ -77,75 +132,110 @@ export function NewAssignmentForm({
               ["inspiration", "灵感入口（可选）"],
               ["exampleObservation", "范例观察（可选）"],
             ] as const
-          ).map(([key, label]) => (
-            <label key={key}>
-              {label}
-              {key === "title" ? (
-                <input
-                  aria-label={label}
-                  maxLength={120}
-                  value={draft[key]}
-                  disabled={busy}
-                  onChange={(e) => {
-                    requestId.current = crypto.randomUUID();
-                    setDraft({ ...draft, [key]: e.target.value });
-                  }}
-                />
-              ) : (
-                <textarea
-                  aria-label={label}
+          ).map(([key, label]) =>
+            saveOnly &&
+            (key === "description" ||
+              key === "steps" ||
+              key === "deliverables") ? (
+              <div key={key} className="assignment-format-field">
+                <span>{label}</span>
+                <AssignmentTextEditor
+                  label={label}
+                  text={draft[key]}
+                  marks={marks[key]}
                   rows={key === "steps" ? 5 : 3}
-                  maxLength={
-                    key === "steps" ? 5000 : key === "inspiration" ? 500 : 2000
-                  }
-                  value={draft[key]}
+                  maxLength={key === "steps" ? 5000 : 2000}
                   disabled={busy}
-                  onChange={(e) => {
+                  onChange={(text, nextMarks) => {
+                    setChanged(true);
                     requestId.current = crypto.randomUUID();
-                    setDraft({ ...draft, [key]: e.target.value });
+                    setDraft({ ...draft, [key]: text });
+                    setMarks({ ...marks, [key]: nextMarks });
                   }}
                 />
-              )}
-            </label>
-          ))}
-          <label>
-            {saveOnly
-              ? "上传参考图片（可多选，最多6张，合计8MB）"
-              : "上传示范图片（可选）"}
-            <input
-              aria-label="上传作业示范图片"
-              type="file"
-              multiple={saveOnly}
-              accept="image/png,image/jpeg,image/webp"
-              disabled={busy}
-              onChange={(e) => {
-                const chosen = Array.from(e.target.files ?? []);
-                if (!chosen.length) return;
-                const next = saveOnly
-                  ? [...(file ? [file] : []), ...extraFiles, ...chosen]
-                  : chosen.slice(0, 1);
-                if (
-                  next.length > 6 ||
-                  next.some(
-                    (f) =>
-                      !["image/png", "image/jpeg", "image/webp"].includes(
-                        f.type,
-                      ),
-                  ) ||
-                  next.reduce((n, f) => n + f.size, 0) > 8388608
-                ) {
-                  setError("最多6张PNG、JPEG或WebP参考图，合计不超过8MB。");
+              </div>
+            ) : (
+              <label key={key}>
+                {label}
+                {key === "title" ? (
+                  <input
+                    aria-label={label}
+                    maxLength={120}
+                    value={draft[key]}
+                    disabled={busy}
+                    onChange={(e) => {
+                      setChanged(true);
+                      requestId.current = crypto.randomUUID();
+                      setDraft({ ...draft, [key]: e.target.value });
+                    }}
+                  />
+                ) : (
+                  <textarea
+                    aria-label={label}
+                    rows={key === "steps" ? 5 : 3}
+                    maxLength={
+                      key === "steps"
+                        ? 5000
+                        : key === "inspiration"
+                          ? 500
+                          : 2000
+                    }
+                    value={draft[key]}
+                    disabled={busy}
+                    onChange={(e) => {
+                      setChanged(true);
+                      requestId.current = crypto.randomUUID();
+                      setDraft({ ...draft, [key]: e.target.value });
+                    }}
+                  />
+                )}
+              </label>
+            ),
+          )}
+          {initialTask ? (
+            <p className="muted">
+              这里可编辑作业文字和排版。已保存的参考图会随草稿保留，可在预览中查看。
+            </p>
+          ) : (
+            <label>
+              {saveOnly
+                ? "上传参考图片（可多选，最多6张，合计8MB）"
+                : "上传示范图片（可选）"}
+              <input
+                aria-label="上传作业示范图片"
+                type="file"
+                multiple={saveOnly}
+                accept="image/png,image/jpeg,image/webp"
+                disabled={busy}
+                onChange={(e) => {
+                  const chosen = Array.from(e.target.files ?? []);
+                  if (!chosen.length) return;
+                  const next = saveOnly
+                    ? [...(file ? [file] : []), ...extraFiles, ...chosen]
+                    : chosen.slice(0, 1);
+                  if (
+                    next.length > 6 ||
+                    next.some(
+                      (f) =>
+                        !["image/png", "image/jpeg", "image/webp"].includes(
+                          f.type,
+                        ),
+                    ) ||
+                    next.reduce((n, f) => n + f.size, 0) > 8388608
+                  ) {
+                    setError("最多6张PNG、JPEG或WebP参考图，合计不超过8MB。");
+                    e.target.value = "";
+                    return;
+                  }
+                  setError("");
+                  requestId.current = crypto.randomUUID();
+                  setFile(next[0]);
+                  setExtraFiles(next.slice(1));
                   e.target.value = "";
-                  return;
-                }
-                setError("");
-                requestId.current = crypto.randomUUID();
-                setFile(next[0]);
-                setExtraFiles(next.slice(1));
-                e.target.value = "";
-              }}
-            />
-          </label>
+                }}
+              />
+            </label>
+          )}
           {file && (
             <div className="assignment-file-preview">
               <img src={url} alt="新增作业示范预览" />
@@ -186,9 +276,9 @@ export function NewAssignmentForm({
         <AssignmentBrief
           task={AssignmentDefinitionSchema.parse({
             ...validate(),
-            id: `custom-${requestId.current}`,
-            image: url,
-            images: [url, ...extraUrls].filter(Boolean),
+            id: initialTask?.id ?? `custom-${requestId.current}`,
+            image: initialTask?.image ?? url,
+            images: initialTask?.images ?? [url, ...extraUrls].filter(Boolean),
           })}
           showTitle
         />
@@ -221,7 +311,7 @@ export function NewAssignmentForm({
           </button>
           <button
             className="primary"
-            disabled={busy}
+            disabled={busy || (!!initialTask && !changed)}
             onClick={() => {
               let value: CustomAssignmentDraft;
               try {
@@ -252,7 +342,9 @@ export function NewAssignmentForm({
                 ? "正在保存…"
                 : "正在发布…"
               : saveOnly
-                ? "保存作业"
+                ? initialTask
+                  ? "保存修改"
+                  : "保存作业"
                 : "发布新作业"}
           </button>
         </div>

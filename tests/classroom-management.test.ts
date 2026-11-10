@@ -692,6 +692,27 @@ describe("saved classroom assignment lifecycle", () => {
       ).notifications.some((n) => n.taskId === taskId),
     ).toBe(false);
     await expect(save(student)).rejects.toMatchObject({ status: 403 });
+    const edited = {
+      ...definition,
+      description: "先观察冬日的冷暖关系",
+      formatting: { description: [{ from: 0, to: 3, style: "gold" }] },
+    };
+    const edit = (who = teacher, revision = 1) =>
+      handleShowcaseCloud(
+        new Request("https://classroom.test/", {
+          method: "PATCH",
+          body: JSON.stringify({ taskId, revision, definition: edited }),
+        }),
+        { ...env, IMAGES: {} } as never,
+        who,
+        id[5],
+        "learning-tasks",
+        client,
+      );
+    await expect(edit(student)).rejects.toMatchObject({ status: 403 });
+    expect((await edit()).status).toBe(200);
+    await expect(edit()).rejects.toMatchObject({ code: "TASK_CONFLICT" });
+    expect((await publications(sql, id[5])).length).toBe(before);
     const publication = (await action("publications", "POST", {
       requestId: randomUUID(),
       taskId,
@@ -700,7 +721,10 @@ describe("saved classroom assignment lifecycle", () => {
     })) as { id: string };
     expect(
       (await publications(sql, id[5])).find((p) => p.id === publication.id),
-    ).toMatchObject({ expected: 1, submitted: 0 });
+    ).toMatchObject({ expected: 1, submitted: 0, definition: edited });
+    await expect(edit(teacher, 3)).rejects.toMatchObject({
+      code: "TASK_PUBLISHED",
+    });
     expect(
       (await learningTasks(sql, pupil, id[5], "GET")).tasks.find(
         (t) => t.taskId === taskId,

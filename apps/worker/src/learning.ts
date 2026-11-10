@@ -4,7 +4,10 @@ import {
   LearningTaskSettingSchema,
   WorkLearningInput,
   WorkLearningSchema,
+  AssignmentDefinitionSchema,
+  CustomAssignmentFields,
 } from "@colorverse/contracts";
+import { z } from "zod";
 import { ClassroomFailure } from "./classroom";
 import type { EnrollmentSql } from "./enrollment";
 export async function learningTasks(
@@ -14,7 +17,56 @@ export async function learningTasks(
   method: string,
   body?: unknown,
 ) {
-  if (method === "PUT") {
+  if (method === "PATCH") {
+    if (!["teacher", "assistant"].includes(String(actor.role)))
+      throw new ClassroomFailure(
+        403,
+        "TEACHER_REQUIRED",
+        "只有本班教师可以编辑作业草稿",
+      );
+    const v = z
+      .strictObject({
+        taskId: z.string().regex(/^custom-[a-f0-9-]{36}$/),
+        revision: z.number().int().nonnegative(),
+        definition: CustomAssignmentFields,
+      })
+      .parse(body);
+    await sql.query(
+      "SELECT pg_advisory_xact_lock(hashtextextended($1,7301948))",
+      [classId],
+    );
+    const draft = (
+      await sql.query(
+        `SELECT s.definition,s.published,s.revision,
+       EXISTS(SELECT 1 FROM colorverse.classroom_publications p WHERE p.class_id=s.class_id AND p.task_id=s.task_id) AS previously_published
+       FROM colorverse.learning_task_settings s WHERE s.class_id=$1 AND s.task_id=$2`,
+        [classId, v.taskId],
+      )
+    ).rows[0];
+    if (!draft?.definition)
+      throw new ClassroomFailure(404, "TASK_NOT_FOUND", "找不到这份作业草稿。");
+    if (draft.published || draft.previously_published)
+      throw new ClassroomFailure(
+        409,
+        "TASK_PUBLISHED",
+        "这份作业已经发布，不能改写发布记录。",
+      );
+    if (draft.revision !== v.revision)
+      throw new ClassroomFailure(
+        409,
+        "TASK_CONFLICT",
+        "草稿已在其他页面更新，请重新打开后编辑。",
+      );
+    const definition = AssignmentDefinitionSchema.parse({
+      ...AssignmentDefinitionSchema.parse(draft.definition),
+      ...v.definition,
+      formatting: v.definition.formatting,
+    });
+    await sql.query(
+      "UPDATE colorverse.learning_task_settings SET definition=$3,revision=revision+1,updated_at=now() WHERE class_id=$1 AND task_id=$2",
+      [classId, v.taskId, JSON.stringify(definition)],
+    );
+  } else if (method === "PUT") {
     if (!["teacher", "assistant"].includes(String(actor.role)))
       throw new ClassroomFailure(
         403,

@@ -56,6 +56,7 @@ export function CloudExperienceView() {
   }, [labOpen]);
   const [session, setSession] = useState<CloudSession | null>(null);
   const [reviewWorkId, setReviewWorkId] = useState<string>();
+  const [reviewPublicationId, setReviewPublicationId] = useState<string>();
   const [reviewWorkRequest, setReviewWorkRequest] = useState(0);
   const TeacherView =
     import.meta.env.VITE_CLASSROOM_NEXT === "true"
@@ -69,6 +70,7 @@ export function CloudExperienceView() {
   const [loginRequest, setLoginRequest] = useState(0);
   const [notice, setNotice] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingReviewsRequest, setPendingReviewsRequest] = useState(0);
   const [initialColor, setInitialColor] = useState<EmotionCase>();
   const [navigation, setNavigation] = useState<{
     action: "universe" | "room" | "edit" | "knowledge" | "submit" | "feedback";
@@ -186,6 +188,11 @@ export function CloudExperienceView() {
               : undefined
           }
           pendingCount={pendingCount}
+          onPendingReviews={
+            import.meta.env.VITE_CLASSROOM_NEXT === "true"
+              ? () => setPendingReviewsRequest((v) => v + 1)
+              : undefined
+          }
           role={role}
           disabled={pending}
           onNavigate={navigate}
@@ -194,6 +201,7 @@ export function CloudExperienceView() {
               {active && (
                 <CloudInbox
                   onPendingCount={setPendingCount}
+                  pendingReviewsRequest={pendingReviewsRequest}
                   session={active}
                   disabled={pending}
                   onSubmit={(id, taskId, publicationId) =>
@@ -207,7 +215,10 @@ export function CloudExperienceView() {
                     ) {
                       setClassId(id);
                       setReviewWorkId(n.workId);
+                      setReviewPublicationId(n.publicationId);
                       setReviewWorkRequest((v) => v + 1);
+                      if (labOpen || studyOpen)
+                        labNavigate(import.meta.env.BASE_URL);
                       setTeacher(true);
                     } else jump(id, "feedback", n);
                   }}
@@ -277,6 +288,7 @@ export function CloudExperienceView() {
                 {...(import.meta.env.VITE_CLASSROOM_NEXT === "true"
                   ? {
                       initialWorkId: reviewWorkId,
+                      initialPublicationId: reviewPublicationId,
                       initialWorkRequest: reviewWorkRequest,
                     }
                   : {})}

@@ -43,6 +43,7 @@ import {
   type CloudSession,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
+import { CommentComposer } from "./CommentComposer";
 import {
   imageUploadLimitBytes,
   imageUploadLimitMb,
@@ -1761,19 +1762,15 @@ export function CloudGallery({
                 </span>{" "}
                 {likeCounts.planet ?? 0}
               </strong>
-              <input
-                aria-label="星球留言"
-                maxLength={500}
+              <CommentComposer
+                label="星球留言"
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
+                disabled={busy}
+                onChange={setComment}
+                onSend={() => interact("comment", comment)}
                 placeholder="欢迎来串门，给朋友们留一句话～"
+                sendLabel="发送留言"
               />
-              <button
-                disabled={busy || !comment.trim()}
-                onClick={() => interact("comment", comment)}
-              >
-                发送留言
-              </button>
             </section>
           )}
           {!owned && !work && (
@@ -1809,19 +1806,15 @@ export function CloudGallery({
                   {emoji}
                 </button>
               ))}
-              <input
-                aria-label="星球留言"
-                maxLength={500}
+              <CommentComposer
+                label="星球留言"
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
+                disabled={busy}
+                onChange={setComment}
+                onSend={() => interact("comment", comment)}
                 placeholder="这一趟星球旅行，让你想到什么？留下感受或建议…"
+                sendLabel="发送留言"
               />
-              <button
-                disabled={busy || !comment.trim()}
-                onClick={() => interact("comment", comment)}
-              >
-                发送留言
-              </button>
             </section>
           )}
         </>
@@ -2224,19 +2217,15 @@ export function CloudGallery({
                   </span>{" "}
                   {likeCounts[work.id] ?? 0}
                 </h3>
-                <input
-                  aria-label="作品留言"
-                  maxLength={500}
+                <CommentComposer
+                  label="作品留言"
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  disabled={busy}
+                  onChange={setComment}
+                  onSend={() => interact("comment", comment)}
                   placeholder="回应同学的感受，说说你的新想法…"
+                  sendLabel="发送回复"
                 />
-                <button
-                  disabled={busy || !comment.trim()}
-                  onClick={() => interact("comment", comment)}
-                >
-                  发送回复
-                </button>
               </section>
             )}
             {!owned && !work.withdrawn && (
@@ -2303,22 +2292,15 @@ export function CloudGallery({
                     </button>
                   </details>
                 )}
-                <label className="quick-peer-comment">
-                  写下你的感受
-                  <input
-                    aria-label="作品留言"
-                    value={comment}
-                    maxLength={500}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="这件作品让你想到了什么？"
-                  />
-                </label>
-                <button
-                  disabled={busy || !comment.trim()}
-                  onClick={() => interact("comment", comment)}
-                >
-                  发送留言
-                </button>
+                <CommentComposer
+                  label="作品留言"
+                  value={comment}
+                  disabled={busy}
+                  onChange={setComment}
+                  onSend={() => interact("comment", comment)}
+                  placeholder="这件作品让你想到了什么？"
+                  sendLabel="发送留言"
+                />
               </section>
             )}
           </section>

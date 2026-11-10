@@ -218,3 +218,70 @@
 .assignment-brief figure > img + img {
   margin-top: 16px;
 }
+.assignment-format-field,
+.assignment-text-editor {
+  display: grid;
+  gap: 8px;
+}
+.assignment-format-field {
+  margin: 18px 0;
+}
+.assignment-mail .assignment-edit-entry {
+  margin-bottom: 12px;
+}
+.assignment-format-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #8ea9cb38;
+  border-radius: 8px;
+  background: #0b1a29;
+}
+.assignment-mail .assignment-format-tools button {
+  min-width: 34px;
+  padding: 4px 8px;
+  background: transparent;
+}
+.assignment-mail .assignment-format-tools button[data-ink="gold"] {
+  color: #ffe29c;
+}
+.assignment-mail .assignment-format-tools button[data-ink="blue"] {
+  color: #a7d8ff;
+}
+.assignment-mail .assignment-format-tools button[data-ink="purple"] {
+  color: #d9bcff;
+}
+.assignment-format-preview {
+  display: grid;
+  gap: 6px;
+  max-height: 160px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-left: 2px solid #9f8beb;
+  background: #0b1a29;
+  overflow-wrap: anywhere;
+}
+.assignment-format-preview > small {
+  color: #acc0d8;
+}
+.assignment-formatted-text {
+  white-space: pre-wrap;
+}
+.assignment-formatted-text strong {
+  font-weight: 700;
+}
+.assignment-formatted-text em {
+  font-style: italic;
+  font-synthesis: style;
+}
+[data-ink="gold"] {
+  color: #ffe29c;
+}
+[data-ink="blue"] {
+  color: #a7d8ff;
+}
+[data-ink="purple"] {
+  color: #d9bcff;
+}

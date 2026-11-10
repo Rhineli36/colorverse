@@ -1,0 +1,49 @@
+.comment-composer {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 100%;
+  padding: 8px 10px;
+  border: 1px solid #7896ad59;
+  border-radius: 10px;
+  background: #0a1a28;
+}
+.comment-composer textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+.comment-composer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.comment-composer-actions button:first-child {
+  font-size: 19px;
+  padding: 2px 8px;
+}
+.comment-emoji-picker {
+  position: absolute;
+  z-index: 2;
+  bottom: 44px;
+  left: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 38px);
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #86a6c060;
+  border-radius: 10px;
+  background: #142638;
+  box-shadow: 0 8px 24px #0005;
+}
+.comment-emoji-picker button {
+  font-size: 19px;
+  padding: 4px;
+}

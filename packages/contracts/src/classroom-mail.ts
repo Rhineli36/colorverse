@@ -4,6 +4,15 @@ export const LearningTaskIdSchema = z.union([
   z.enum(["T01", "T02", "T03"]),
   z.string().regex(/^custom-[a-f0-9-]{36}$/),
 ]);
+const AssignmentMarkSchema = z
+  .strictObject({
+    from: z.number().int().min(0).max(5000),
+    to: z.number().int().min(1).max(5000),
+    style: z.enum(["bold", "italic", "gold", "blue", "purple"]),
+  })
+  .refine((mark) => mark.from < mark.to);
+const AssignmentMarksSchema = z.array(AssignmentMarkSchema).max(24);
+export type AssignmentMark = z.infer<typeof AssignmentMarkSchema>;
 export const CustomAssignmentFields = z.strictObject({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().min(1).max(2000),
@@ -11,6 +20,13 @@ export const CustomAssignmentFields = z.strictObject({
   deliverables: z.string().trim().min(1).max(2000),
   inspiration: z.string().trim().max(500).default(""),
   exampleObservation: z.string().trim().max(2000).default(""),
+  formatting: z
+    .strictObject({
+      description: AssignmentMarksSchema.optional(),
+      deliverables: AssignmentMarksSchema.optional(),
+      steps: z.array(AssignmentMarksSchema).max(10).optional(),
+    })
+    .optional(),
 });
 export const AssignmentDefinitionSchema = CustomAssignmentFields.extend({
   id: LearningTaskIdSchema,

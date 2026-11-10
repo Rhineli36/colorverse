@@ -10,6 +10,7 @@ export function ExperienceHeader({
   account,
   disabled = false,
   pendingCount = 0,
+  onPendingReviews,
   modeLabel,
   current = "universe",
   wardrobeEnabled = false,
@@ -20,6 +21,7 @@ export function ExperienceHeader({
   account: ReactNode;
   disabled?: boolean;
   pendingCount?: number;
+  onPendingReviews?: () => void;
   modeLabel?: string;
   current?: ExperienceDestination;
 }) {
@@ -119,14 +121,32 @@ export function ExperienceHeader({
           色彩的奥秘
         </button>
         {role === "teacher" && (
-          <button
-            aria-current={activeDestination === "teacher" ? "page" : undefined}
-            disabled={disabled}
-            onClick={() => onNavigate("teacher")}
-          >
-            教师管理{" "}
-            {pendingCount > 0 && <b className="inbox-count">{pendingCount}</b>}
-          </button>
+          <span className="teacher-nav-group">
+            <button
+              aria-current={
+                activeDestination === "teacher" ? "page" : undefined
+              }
+              disabled={disabled}
+              onClick={() => onNavigate("teacher")}
+            >
+              教师管理{" "}
+              {!onPendingReviews && pendingCount > 0 && (
+                <b className="inbox-count">{pendingCount}</b>
+              )}
+            </button>
+            {onPendingReviews && pendingCount > 0 && (
+              <button
+                type="button"
+                className="pending-review-entry"
+                aria-label={`查看待评价作品，共 ${pendingCount} 件`}
+                title="查看待评价作品"
+                disabled={disabled}
+                onClick={onPendingReviews}
+              >
+                <b className="inbox-count">{pendingCount}</b>
+              </button>
+            )}
+          </span>
         )}
       </nav>
       <div className="offline-account-controls">

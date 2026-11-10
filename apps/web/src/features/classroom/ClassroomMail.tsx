@@ -57,6 +57,8 @@ export function AssignmentMail({
 export function AssignmentPublisher({
   onPublish,
   onCreate,
+  onEdit,
+  draftRevisions = {},
   catalog = AssignmentCatalog,
   disabled = false,
   saveBeforePublish = false,
@@ -64,6 +66,12 @@ export function AssignmentPublisher({
 }: {
   saveBeforePublish?: boolean;
   unpublishedTaskIds?: string[];
+  draftRevisions?: Record<string, number>;
+  onEdit?: (
+    taskId: string,
+    revision: number,
+    definition: CustomAssignmentDraft,
+  ) => Promise<void>;
   onPublish: (taskId: string) => Promise<void>;
   onCreate?: (
     draft: CustomAssignmentDraft,
@@ -80,14 +88,20 @@ export function AssignmentPublisher({
     [status, setStatus] = useState("");
   const ref = useRef<HTMLDialogElement>(null),
     dirty = useRef(false);
-  const [mode, setMode] = useState<"templates" | "new">("templates");
+  const [mode, setMode] = useState<"templates" | "new" | "edit">("templates");
+  const [editing, setEditing] = useState<{
+    task: AssignmentDefinition;
+    revision: number;
+  }>();
+  const discard = () =>
+    !dirty.current || window.confirm("作业尚有未保存的修改，确定放弃吗？");
   const close = () => {
     if (busy) return;
     if (
       dirty.current &&
       !window.confirm(
         saveBeforePublish
-          ? "新增作业尚未保存，确定放弃这些内容吗？"
+          ? "作业尚有未保存的修改，确定放弃吗？"
           : "新增作业尚未发布，确定放弃这些内容吗？",
       )
     )
@@ -140,16 +154,7 @@ export function AssignmentPublisher({
                 aria-pressed={mode === "templates"}
                 disabled={busy}
                 onClick={() => {
-                  if (
-                    dirty.current &&
-                    !window.confirm(
-                      saveBeforePublish
-                        ? "确定放弃尚未保存的新作业吗？"
-                        : "确定放弃尚未发布的新作业吗？",
-                    )
-                  )
-                    return;
-                  setMode("templates");
+                  if (discard()) setMode("templates");
                 }}
               >
                 现有作业
@@ -157,13 +162,38 @@ export function AssignmentPublisher({
               <button
                 aria-pressed={mode === "new"}
                 disabled={busy}
-                onClick={() => setMode("new")}
+                onClick={() => {
+                  if (mode !== "new" && discard()) setMode("new");
+                }}
               >
                 ＋ 新增作业
               </button>
             </nav>
           )}
-          {mode === "new" && onCreate ? (
+          {mode === "edit" && editing && onEdit ? (
+            <NewAssignmentForm
+              key={editing.task.id}
+              initialTask={editing.task}
+              saveOnly
+              onDirtyChange={(v) => {
+                dirty.current = v;
+              }}
+              onBack={() => {
+                if (discard()) setMode("templates");
+              }}
+              onCreate={async (definition) => {
+                setBusy(true);
+                try {
+                  await onEdit(editing.task.id, editing.revision, definition);
+                  dirty.current = false;
+                  setStatus("草稿修改已保存，可以继续编辑或选择发布对象。");
+                  setMode("templates");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            />
+          ) : mode === "new" && onCreate ? (
             <NewAssignmentForm
               saveOnly={saveBeforePublish}
               onDirtyChange={(v) => {
@@ -215,6 +245,22 @@ export function AssignmentPublisher({
                   ))}
                 </select>
               </label>
+              {onEdit &&
+                task.id.startsWith("custom-") &&
+                draftRevisions[task.id] != null && (
+                  <button
+                    type="button"
+                    className="assignment-edit-entry"
+                    disabled={busy}
+                    onClick={() => {
+                      setStatus("");
+                      setEditing({ task, revision: draftRevisions[task.id] });
+                      setMode("edit");
+                    }}
+                  >
+                    编辑草稿
+                  </button>
+                )}
               <AssignmentBrief task={task} showTitle />
               <button disabled={busy} onClick={() => setOpen(false)}>
                 取消
@@ -258,6 +304,7 @@ export function ClassroomInbox({
   onRead,
   onAssignment,
   onReaction,
+  pendingReviewsRequest,
 }: {
   disabled?: boolean;
   status?: string;
@@ -267,10 +314,24 @@ export function ClassroomInbox({
   onRead: (id: string) => void;
   onAssignment: (taskId: string, notification: ClassroomNotification) => void;
   onReaction?: (n: ClassroomNotification) => void;
+  pendingReviewsRequest?: number;
 }) {
   const [open, setOpen] = useState(false),
+    [pendingOnly, setPendingOnly] = useState(false),
     ref = useRef<HTMLDialogElement>(null);
   const scrollPosition = useRef(0);
+  const lastPendingRequest = useRef(pendingReviewsRequest);
+  const refresh = useRef(onRefresh);
+  refresh.current = onRefresh;
+  useEffect(() => {
+    if (pendingReviewsRequest === lastPendingRequest.current) return;
+    lastPendingRequest.current = pendingReviewsRequest;
+    if (!pendingReviewsRequest) return;
+    scrollPosition.current = 0;
+    setPendingOnly(true);
+    setOpen(true);
+    refresh.current?.();
+  }, [pendingReviewsRequest]);
   useEffect(() => {
     if (open && ref.current) {
       ref.current.showModal();
@@ -278,6 +339,9 @@ export function ClassroomInbox({
     }
   }, [open]);
   const unread = notifications.filter((n) => !readIds.includes(n.id)).length;
+  const visible = pendingOnly
+    ? notifications.filter((n) => n.kind === "submission" && n.pending)
+    : notifications;
   return (
     <>
       <button
@@ -285,6 +349,7 @@ export function ClassroomInbox({
         title={disabled ? "请先完成当前加载或保存、取消编辑" : "查看信息"}
         className="inbox-entry"
         onClick={() => {
+          setPendingOnly(false);
           setOpen(true);
           onRefresh?.();
         }}
@@ -298,7 +363,7 @@ export function ClassroomInbox({
           onScroll={(e) => {
             scrollPosition.current = e.currentTarget.scrollTop;
           }}
-          aria-label="我的信息"
+          aria-label={pendingOnly ? "待评价作品" : "我的信息"}
           onCancel={() => setOpen(false)}
         >
           <button
@@ -308,48 +373,52 @@ export function ClassroomInbox({
           >
             ×
           </button>
-          <h2>来自这片宇宙的信息</h2>
+          <h2>{pendingOnly ? "待评价作品" : "来自这片宇宙的信息"}</h2>
           {status && <p role="status">{status}</p>}
           {onRefresh && <button onClick={onRefresh}>重新读取信息</button>}
-          {notifications.length === 0 ? (
-            <p>还没有新信息。新的作业、点赞和留言会出现在这里。</p>
-          ) : (
-            notifications.map((n) => (
-              <button
-                key={n.id}
-                className={`inbox-row ${readIds.includes(n.id) ? "read" : ""}`}
-                onClick={() => {
-                  onRead(n.id);
-                  setOpen(false);
-                  if (n.kind === "assignment" && n.taskId)
-                    onAssignment(n.taskId, n);
-                  else onReaction?.(n);
-                }}
-              >
-                <span>
-                  {n.kind === "assignment"
-                    ? "✉"
-                    : n.kind === "like"
-                      ? "♡"
-                      : "✦"}
-                </span>
-                <div>
-                  <strong>{n.title}</strong>
-                  {n.content && <p>{n.content}</p>}
-                  {n.kind === "planet-created" && <p>前往星球 →</p>}
-                  {n.kind === "submission" && (
-                    <p>{n.pending ? "待评价" : "已评价"} · 查看作品 →</p>
-                  )}
-                  <time>
-                    {new Date(n.createdAt).toLocaleString("zh-CN", {
-                      hour12: false,
-                    })}
-                  </time>
-                </div>
-                {!readIds.includes(n.id) && <i />}
-              </button>
-            ))
-          )}
+          {visible.length === 0
+            ? !status && (
+                <p>
+                  {pendingOnly
+                    ? "暂时没有待评价作品。"
+                    : "还没有新信息。新的作业、点赞和留言会出现在这里。"}
+                </p>
+              )
+            : visible.map((n) => (
+                <button
+                  key={n.id}
+                  className={`inbox-row ${readIds.includes(n.id) ? "read" : ""}`}
+                  onClick={() => {
+                    onRead(n.id);
+                    setOpen(false);
+                    if (n.kind === "assignment" && n.taskId)
+                      onAssignment(n.taskId, n);
+                    else onReaction?.(n);
+                  }}
+                >
+                  <span>
+                    {n.kind === "assignment"
+                      ? "✉"
+                      : n.kind === "like"
+                        ? "♡"
+                        : "✦"}
+                  </span>
+                  <div>
+                    <strong>{n.title}</strong>
+                    {n.content && <p>{n.content}</p>}
+                    {n.kind === "planet-created" && <p>前往星球 →</p>}
+                    {n.kind === "submission" && (
+                      <p>{n.pending ? "待评价" : "已评价"} · 查看作品 →</p>
+                    )}
+                    <time>
+                      {new Date(n.createdAt).toLocaleString("zh-CN", {
+                        hour12: false,
+                      })}
+                    </time>
+                  </div>
+                  {!readIds.includes(n.id) && <i />}
+                </button>
+              ))}
         </dialog>
       )}
     </>

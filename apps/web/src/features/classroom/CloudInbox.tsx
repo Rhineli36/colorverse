@@ -12,12 +12,14 @@ export function CloudInbox({
   onSubmit,
   onReaction,
   onPendingCount,
+  pendingReviewsRequest,
 }: {
   session: CloudSession;
   disabled?: boolean;
   onSubmit: (classId: string, taskId: string, publicationId?: string) => void;
   onReaction: (classId: string, n: ClassroomNotification) => void;
   onPendingCount?: (count: number) => void;
+  pendingReviewsRequest?: number;
 }) {
   const [items, setItems] = useState<
       (ClassroomNotification & { classId: string })[]
@@ -111,6 +113,7 @@ export function CloudInbox({
   return (
     <>
       <ClassroomInbox
+        pendingReviewsRequest={pendingReviewsRequest}
         disabled={disabled}
         status={status}
         onRefresh={() => refreshRef.current()}

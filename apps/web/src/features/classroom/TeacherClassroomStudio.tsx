@@ -9,6 +9,7 @@ import {
   type Publication,
   type RosterStudent,
   type SubmissionRow,
+  type LearningTaskSetting,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
 import { CloudClassroomView } from "./CloudClassroomView";
@@ -21,6 +22,7 @@ import {
 } from "./CloudPlanetAppearance";
 import { StudentImporter } from "./StudentImporter";
 import { AssignmentPublisher } from "./ClassroomMail";
+import { AssignmentText } from "./AssignmentText";
 import { download } from "../../app/download";
 import "./classroom-studio.css";
 const json = async (path: string, body?: unknown) =>
@@ -86,6 +88,7 @@ type Props = {
     workId?: string,
   ) => void;
   initialWorkId?: string;
+  initialPublicationId?: string;
   initialWorkRequest?: number;
 };
 export function TeacherClassroomStudio(props: Props) {
@@ -126,6 +129,24 @@ export function TeacherClassroomStudio(props: Props) {
     AssignmentCatalog.map((t) => ({ ...t })),
   );
   const [unpublishedTaskIds, setUnpublishedTaskIds] = useState<string[]>([]);
+  const [draftRevisions, setDraftRevisions] = useState<Record<string, number>>(
+    {},
+  );
+  const applyTaskSettings = (tasks: LearningTaskSetting[]) => {
+    const unpublished = tasks.filter((t) => !t.published);
+    setUnpublishedTaskIds(unpublished.map((t) => t.taskId));
+    setDraftRevisions(
+      Object.fromEntries(
+        unpublished
+          .filter((t) => t.definition)
+          .map((t) => [t.taskId, t.revision]),
+      ),
+    );
+    setCatalog([
+      ...AssignmentCatalog,
+      ...tasks.flatMap((t) => (t.definition ? [t.definition] : [])),
+    ]);
+  };
   const root = `classes/${classId}/`,
     generation = useRef(0),
     handledNotice = useRef(""),
@@ -169,18 +190,7 @@ export function TeacherClassroomStudio(props: Props) {
         setPublications(z.array(PublicationSchema).parse(p.publications));
         setGallery(Gallery.parse(g));
         setUnlinked(u.works);
-        setUnpublishedTaskIds(
-          t.tasks
-            .filter((x: { taskId: string; published: boolean }) => !x.published)
-            .map((x: { taskId: string }) => x.taskId),
-        );
-        setCatalog([
-          ...AssignmentCatalog,
-          ...t.tasks.flatMap(
-            (x: { definition?: (typeof AssignmentCatalog)[number] }) =>
-              x.definition ? [x.definition] : [],
-          ),
-        ]);
+        applyTaskSettings(t.tasks);
       })
       .catch((e) => {
         if (attempt === generation.current) setError(e.message);
@@ -213,8 +223,11 @@ export function TeacherClassroomStudio(props: Props) {
     const noticeKey = `${classId}:${props.initialWorkId}:${props.initialWorkRequest ?? 0}`;
     if (handledNotice.current === noticeKey) return;
     let active = true;
+    const candidates = props.initialPublicationId
+      ? publications.filter((p) => p.id === props.initialPublicationId)
+      : publications;
     Promise.all(
-      publications.map(async (p) => ({
+      candidates.map(async (p) => ({
         p,
         data: await json(root + "publications/" + p.id),
       })),
@@ -254,6 +267,7 @@ export function TeacherClassroomStudio(props: Props) {
     };
   }, [
     props.initialWorkId,
+    props.initialPublicationId,
     props.initialWorkRequest,
     props.initialClassId,
     classId,
@@ -318,6 +332,11 @@ export function TeacherClassroomStudio(props: Props) {
     <AssignmentPublisher
       saveBeforePublish
       unpublishedTaskIds={unpublishedTaskIds}
+      draftRevisions={Object.fromEntries(
+        Object.entries(draftRevisions).filter(
+          ([taskId]) => !publications.some((p) => p.taskId === taskId),
+        ),
+      )}
       disabled={busy}
       catalog={catalog}
       onPublish={async (id) => beginPublish(id)}
@@ -332,20 +351,20 @@ export function TeacherClassroomStudio(props: Props) {
             body,
           })
         ).json();
-        setUnpublishedTaskIds(
-          r.tasks
-            .filter((x: { taskId: string; published: boolean }) => !x.published)
-            .map((x: { taskId: string }) => x.taskId),
-        );
-        setCatalog([
-          ...AssignmentCatalog,
-          ...r.tasks.flatMap(
-            (t: { definition?: (typeof AssignmentCatalog)[number] }) =>
-              t.definition ? [t.definition] : [],
-          ),
-        ]);
+        applyTaskSettings(r.tasks);
         refresh();
         return r.taskId;
+      }}
+      onEdit={async (taskId, revision, definition) => {
+        const r = await (
+          await classroomRequest(root + "learning-tasks", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ taskId, revision, definition }),
+          })
+        ).json();
+        applyTaskSettings(r.tasks);
+        refresh();
       }}
     />
   );
@@ -598,7 +617,12 @@ export function TeacherClassroomStudio(props: Props) {
                   ← 返回作业列表
                 </button>
                 <h2>{selected.definition.title}</h2>
-                <p>{selected.definition.description}</p>
+                <p>
+                  <AssignmentText
+                    text={selected.definition.description}
+                    marks={selected.definition.formatting?.description}
+                  />
+                </p>
                 <p className="muted">
                   截止时间：
                   {selected.dueAt

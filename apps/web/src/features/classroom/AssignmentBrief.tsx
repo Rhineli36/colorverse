@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AssignmentDefinition } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
 import "./classroom-mail.css";
+import { AssignmentText } from "./AssignmentText";
 
 /** Shared by teacher previews, assignment mail and the submission form. */
 export function AssignmentBrief({
@@ -15,15 +16,30 @@ export function AssignmentBrief({
   return (
     <div className="assignment-brief" data-task-id={task.id}>
       {showTitle && <h3>{task.title}</h3>}
-      <p>{task.description}</p>
+      <p>
+        <AssignmentText
+          text={task.description}
+          marks={task.formatting?.description}
+        />
+      </p>
       <Heading>创作步骤</Heading>
       <ol>
         {task.steps.map((step, index) => (
-          <li key={index}>{step}</li>
+          <li key={index}>
+            <AssignmentText
+              text={step}
+              marks={task.formatting?.steps?.[index]}
+            />
+          </li>
         ))}
       </ol>
       <Heading>提交内容</Heading>
-      <p>{task.deliverables}</p>
+      <p>
+        <AssignmentText
+          text={task.deliverables}
+          marks={task.formatting?.deliverables}
+        />
+      </p>
       {task.inspiration && (
         <>
           <Heading>灵感入口</Heading>

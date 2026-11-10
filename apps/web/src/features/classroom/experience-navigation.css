@@ -41,6 +41,16 @@
   color: #e1eaca;
   border-color: #dcebc10c;
 }
+.teacher-nav-group {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+.competition-app .competition-header nav .pending-review-entry {
+  justify-content: center;
+  min-width: 36px;
+  padding: 6px !important;
+}
 .competition-app .competition-header nav button[aria-current="page"]::before {
   content: "";
   width: 7px;
