@@ -418,7 +418,12 @@ describe("classroom roster and assignment snapshots", () => {
       `INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id) VALUES($1,$2,'自由创作',$1::uuid::text,10,'crystal',$1)`,
       [independentId, id[17]],
     );
-    const pending = async () => (await action("unlinked")).pendingIndependent;
+    const pending = async () => {
+      const result = await action("unlinked");
+      if (!("pendingIndependent" in result))
+        throw new Error("Missing independent review queue");
+      return result.pendingIndependent;
+    };
     expect(await pending()).toEqual([
       expect.objectContaining({ id: independentId, needs_link: false }),
     ]);
