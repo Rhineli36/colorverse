@@ -10,12 +10,24 @@ import {
 import { z } from "zod";
 import { ClassroomFailure } from "./classroom";
 import type { EnrollmentSql } from "./enrollment";
+export function assignmentReferenceMedia(
+  classId: string,
+  taskId: string,
+  keys: string[],
+) {
+  const route = `private:classes/${classId}/learning-tasks/${taskId}/image`;
+  return {
+    image: keys.length ? route : "",
+    images: keys.map((_, index) => `${route}?index=${index}`),
+  };
+}
 export async function learningTasks(
   sql: EnrollmentSql,
   actor: Record<string, unknown>,
   classId: string,
   method: string,
   body?: unknown,
+  appendImages?: (remaining: number) => Promise<string[]>,
 ) {
   if (method === "PATCH") {
     if (!["teacher", "assistant"].includes(String(actor.role)))
@@ -37,7 +49,7 @@ export async function learningTasks(
     );
     const draft = (
       await sql.query(
-        `SELECT s.definition,s.published,s.revision,
+        `SELECT s.definition,s.published,s.revision,s.image_storage_keys,s.image_storage_key,
        EXISTS(SELECT 1 FROM colorverse.classroom_publications p WHERE p.class_id=s.class_id AND p.task_id=s.task_id) AS previously_published
        FROM colorverse.learning_task_settings s WHERE s.class_id=$1 AND s.task_id=$2`,
         [classId, v.taskId],
@@ -57,14 +69,32 @@ export async function learningTasks(
         "TASK_CONFLICT",
         "草稿已在其他页面更新，请重新打开后编辑。",
       );
+    const keys = draft.image_storage_keys as string[];
+    const saved = keys?.length
+      ? keys
+      : draft.image_storage_key
+        ? [String(draft.image_storage_key)]
+        : [];
+    const appended = appendImages ? await appendImages(6 - saved.length) : [];
+    const images = [...saved, ...appended];
     const definition = AssignmentDefinitionSchema.parse({
       ...AssignmentDefinitionSchema.parse(draft.definition),
       ...v.definition,
       formatting: v.definition.formatting,
+      ...(appended.length
+        ? assignmentReferenceMedia(classId, v.taskId, images)
+        : {}),
     });
     await sql.query(
-      "UPDATE colorverse.learning_task_settings SET definition=$3,revision=revision+1,updated_at=now() WHERE class_id=$1 AND task_id=$2",
-      [classId, v.taskId, JSON.stringify(definition)],
+      `UPDATE colorverse.learning_task_settings SET definition=$3,revision=revision+1,updated_at=now()
+       ${appended.length ? ",image_storage_key=$4,image_storage_keys=$5" : ""}
+       WHERE class_id=$1 AND task_id=$2`,
+      [
+        classId,
+        v.taskId,
+        JSON.stringify(definition),
+        ...(appended.length ? [images[0], JSON.stringify(images)] : []),
+      ],
     );
   } else if (method === "PUT") {
     if (!["teacher", "assistant"].includes(String(actor.role)))

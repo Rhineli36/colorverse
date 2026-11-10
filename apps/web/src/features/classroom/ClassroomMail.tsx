@@ -71,6 +71,7 @@ export function AssignmentPublisher({
     taskId: string,
     revision: number,
     definition: CustomAssignmentDraft,
+    images: File[],
   ) => Promise<void>;
   onPublish: (taskId: string) => Promise<void>;
   onCreate?: (
@@ -181,10 +182,20 @@ export function AssignmentPublisher({
               onBack={() => {
                 if (discard()) setMode("templates");
               }}
-              onCreate={async (definition) => {
+              onCreate={async (
+                definition,
+                image,
+                _requestId,
+                extraImages = [],
+              ) => {
                 setBusy(true);
                 try {
-                  await onEdit(editing.task.id, editing.revision, definition);
+                  await onEdit(
+                    editing.task.id,
+                    editing.revision,
+                    definition,
+                    image ? [image, ...extraImages] : [],
+                  );
                   dirty.current = false;
                   setStatus("草稿修改已保存，可以继续编辑或选择发布对象。");
                   setMode("templates");

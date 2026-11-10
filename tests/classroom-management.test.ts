@@ -960,6 +960,69 @@ describe("multiple private assignment reference images", () => {
           factory,
         ),
       ).rejects.toMatchObject({ status: 404 });
+      const append = (count: number, revision: number, who = teacher) => {
+        const patch = new FormData();
+        patch.set(
+          "metadata",
+          JSON.stringify({
+            taskId: result.taskId,
+            revision,
+            definition: {
+              title: "补充参考图",
+              description: "按顺序看图",
+              steps: [],
+              deliverables: "一张作品",
+            },
+          }),
+        );
+        for (let i = 0; i < count; i++)
+          patch.append(
+            i ? "images" : "image",
+            new Blob([bytes]),
+            `extra-${i}.webp`,
+          );
+        return handleShowcaseCloud(
+          new Request("https://classroom.test/", {
+            method: "PATCH",
+            body: patch,
+          }),
+          imageEnv,
+          who,
+          id[5],
+          "learning-tasks",
+          factory,
+        );
+      };
+      await expect(append(1, 1, student)).rejects.toMatchObject({
+        status: 403,
+      });
+      await expect(append(5, 1)).rejects.toMatchObject({
+        code: "INVALID_UPLOAD",
+      });
+      expect(uploaded).toHaveLength(2);
+      const updated = await append(1, 1);
+      expect(updated.status).toBe(200);
+      const updatedTask = ((await updated.json()) as typeof result).tasks.find(
+        (t) => t.taskId === result.taskId,
+      );
+      expect(updatedTask?.definition?.images).toEqual([
+        ...images!,
+        images![0].replace("index=0", "index=2"),
+      ]);
+      await expect(append(1, 1)).rejects.toMatchObject({
+        code: "TASK_CONFLICT",
+      });
+      expect(uploaded).toHaveLength(3);
+      const extra = await handleShowcaseCloud(
+        new Request("https://classroom.test/?index=2"),
+        imageEnv,
+        teacher,
+        id[5],
+        `learning-tasks/${result.taskId}/image`,
+        factory,
+      );
+      expect(extra.status).toBe(200);
+      expect(transport.mock.calls.at(-1)?.[0]).toBe(uploaded[2]);
     } finally {
       vi.unstubAllGlobals();
     }

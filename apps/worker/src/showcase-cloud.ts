@@ -25,6 +25,7 @@ import {
 } from "@colorverse/contracts";
 import {
   learningTasks,
+  assignmentReferenceMedia,
   validateWorkLearning,
   visibleLearning,
 } from "./learning";
@@ -126,6 +127,121 @@ async function readLimited(
     offset += c.length;
   }
   return bytes;
+}
+async function readAssignmentUpload(request: Request, multiple: boolean) {
+  if (!request.headers.get("Content-Type")?.startsWith("multipart/form-data"))
+    throw new ClassroomFailure(
+      400,
+      "INVALID_UPLOAD",
+      "请上传作业说明与示范图片",
+    );
+  const envelope = await readLimited(request, 8388608 + 50000);
+  const form = await new Request("https://upload.invalid", {
+    method: "POST",
+    headers: { "Content-Type": request.headers.get("Content-Type") ?? "" },
+    body: envelope as BodyInit,
+  }).formData();
+  if (
+    [...form.keys()].some(
+      (k) =>
+        !["metadata", "image", ...(multiple ? ["images"] : [])].includes(k),
+    ) ||
+    form.getAll("metadata").length !== 1 ||
+    form.getAll("image").length > 1 ||
+    form.getAll("images").length > 5
+  )
+    throw new ClassroomFailure(
+      400,
+      "INVALID_UPLOAD",
+      "请提交作业说明与最多6张参考图片",
+    );
+  const metadata = form.get("metadata");
+  if (
+    typeof metadata !== "string" ||
+    new TextEncoder().encode(metadata).length > 42000
+  )
+    throw new ClassroomFailure(400, "INVALID_INPUT", "作业说明过长");
+  const files = [...form.getAll("image"), ...form.getAll("images")];
+  if (
+    files.reduce(
+      (size, file) => size + (file instanceof Blob ? file.size : 0),
+      0,
+    ) > 8388608
+  )
+    throw new ClassroomFailure(
+      413,
+      "TOO_LARGE",
+      "本次上传的参考图片合计最多 8 MB",
+    );
+  return {
+    metadata: JSON.parse(metadata) as unknown,
+    files,
+  };
+}
+async function uploadAssignmentImages(
+  env: ShowcaseCloudEnvironment,
+  identity: VerifiedIdentity,
+  requestId: string,
+  files: FormDataEntryValue[],
+  uploadedKeys: string[],
+) {
+  const imageKeys: string[] = [];
+  for (const [index, file] of files.entries()) {
+    if (!(file instanceof Blob) || file.size > 8388608)
+      throw new ClassroomFailure(
+        400,
+        "INVALID_IMAGE",
+        "请选择8MB以内的示范图片",
+      );
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let info;
+    try {
+      info = imageInfo(bytes);
+    } catch {
+      throw new ClassroomFailure(
+        400,
+        "INVALID_IMAGE",
+        "请选择有效的PNG、JPEG或WebP图片",
+      );
+    }
+    if (info.width * info.height > 16000000)
+      throw new ClassroomFailure(
+        400,
+        "IMAGE_DIMENSIONS",
+        "图片请控制在1600万像素以内",
+      );
+    let display: Uint8Array;
+    try {
+      const output = await env
+        .IMAGES!.input(new Blob([bytes as BlobPart]).stream())
+        .transform({ width: 2048, height: 2048, fit: "scale-down" })
+        .output({ format: "image/webp", quality: 88, anim: false });
+      display = new Uint8Array(await output.response().arrayBuffer());
+    } catch {
+      throw new ClassroomFailure(
+        400,
+        "IMAGE_DECODE_FAILED",
+        "示范图片无法完整读取，请重新选择",
+      );
+    }
+    if (display.length > 2097152)
+      throw new ClassroomFailure(
+        400,
+        "IMAGE_TOO_LARGE",
+        "请缩小示范图片后重试",
+      );
+    const key = `${identity.subject}/assignment-${requestId}${index ? "-" + index : ""}.webp`;
+    imageKeys.push(key);
+    uploadedKeys.push(key);
+    await storage(
+      env,
+      `colorverse-classroom/${key}`,
+      "POST",
+      display,
+      "image/webp",
+    );
+  }
+  return imageKeys;
 }
 async function removeStoredImages(
   env: ShowcaseCloudEnvironment,
@@ -298,50 +414,16 @@ export async function handleShowcaseCloud(
           "TEACHER_REQUIRED",
           "只有本班教师可以新增作业",
         );
-      if (
-        !request.headers.get("Content-Type")?.startsWith("multipart/form-data")
-      )
-        throw new ClassroomFailure(
-          400,
-          "INVALID_UPLOAD",
-          "请上传作业说明与示范图片",
-        );
-      const envelope = await readLimited(request, 8388608 + 50000);
-      const form = await new Request("https://upload.invalid", {
-        method: "POST",
-        headers: { "Content-Type": request.headers.get("Content-Type") ?? "" },
-        body: envelope as BodyInit,
-      }).formData();
-      if (
-        [...form.keys()].some(
-          (k) =>
-            ![
-              "metadata",
-              "image",
-              ...(env.CLASSROOM_NEXT === "true" ? ["images"] : []),
-            ].includes(k),
-        ) ||
-        form.getAll("metadata").length !== 1 ||
-        form.getAll("image").length > 1 ||
-        form.getAll("images").length > 5
-      )
-        throw new ClassroomFailure(
-          400,
-          "INVALID_UPLOAD",
-          "请提交作业说明与最多6张参考图片",
-        );
-      const metadata = form.get("metadata");
-      if (
-        typeof metadata !== "string" ||
-        new TextEncoder().encode(metadata).length > 42000
-      )
-        throw new ClassroomFailure(400, "INVALID_INPUT", "作业说明过长");
+      const { metadata, files } = await readAssignmentUpload(
+        request,
+        env.CLASSROOM_NEXT === "true",
+      );
       const input = z
         .strictObject({
           requestId: z.uuid(),
           definition: CustomAssignmentFields,
         })
-        .parse(JSON.parse(metadata));
+        .parse(metadata);
       const taskId = `custom-${input.requestId}`;
       await client.query(
         "SELECT pg_advisory_xact_lock(hashtextextended($1,7301948))",
@@ -370,75 +452,18 @@ export async function handleShowcaseCloud(
           "TASK_LIMIT",
           "当前班级最多新增50份作业",
         );
-      let imageKey: string | null = null;
-      const imageKeys: string[] = [];
-      const files = [...form.getAll("image"), ...form.getAll("images")];
-      for (const [index, file] of files.entries()) {
-        if (!(file instanceof Blob) || file.size > 8388608)
-          throw new ClassroomFailure(
-            400,
-            "INVALID_IMAGE",
-            "请选择8MB以内的示范图片",
-          );
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        let info;
-        try {
-          info = imageInfo(bytes);
-        } catch {
-          throw new ClassroomFailure(
-            400,
-            "INVALID_IMAGE",
-            "请选择有效的PNG、JPEG或WebP图片",
-          );
-        }
-        if (info.width * info.height > 16000000)
-          throw new ClassroomFailure(
-            400,
-            "IMAGE_DIMENSIONS",
-            "图片请控制在1600万像素以内",
-          );
-        let display: Uint8Array;
-        try {
-          const output = await env
-            .IMAGES!.input(new Blob([bytes as BlobPart]).stream())
-            .transform({ width: 2048, height: 2048, fit: "scale-down" })
-            .output({ format: "image/webp", quality: 88, anim: false });
-          display = new Uint8Array(await output.response().arrayBuffer());
-        } catch {
-          throw new ClassroomFailure(
-            400,
-            "IMAGE_DECODE_FAILED",
-            "示范图片无法完整读取，请重新选择",
-          );
-        }
-        if (display.length > 2097152)
-          throw new ClassroomFailure(
-            400,
-            "IMAGE_TOO_LARGE",
-            "请缩小示范图片后重试",
-          );
-        const key = `${identity.subject}/assignment-${input.requestId}${index ? "-" + index : ""}.webp`;
-        if (index === 0) imageKey = key;
-        imageKeys.push(key);
-        uploadedKeys.push(key);
-        await storage(
-          env,
-          `colorverse-classroom/${key}`,
-          "POST",
-          display,
-          "image/webp",
-        );
-      }
+      const imageKeys = await uploadAssignmentImages(
+        env,
+        identity,
+        input.requestId,
+        files,
+        uploadedKeys,
+      );
+      const imageKey = imageKeys[0] ?? null;
       const definition = AssignmentDefinitionSchema.parse({
         ...input.definition,
         id: taskId,
-        images: imageKeys.map(
-          (_, index) =>
-            `private:classes/${classId}/learning-tasks/${taskId}/image?index=${index}`,
-        ),
-        image: imageKey
-          ? `private:classes/${classId}/learning-tasks/${taskId}/image`
-          : "",
+        ...assignmentReferenceMedia(classId, taskId, imageKeys),
       });
       const columns =
         env.CLASSROOM_NEXT === "true" ? ",image_storage_keys" : "";
@@ -475,18 +500,44 @@ export async function handleShowcaseCloud(
       const editDraft = request.method === "PATCH";
       if (editDraft && env.CLASSROOM_NEXT !== "true")
         throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
+      const upload =
+        editDraft &&
+        request.headers.get("Content-Type")?.startsWith("multipart/form-data")
+          ? await readAssignmentUpload(request, true)
+          : undefined;
       const result = await learningTasks(
         client,
         actor,
         classId,
         request.method,
-        request.method === "PUT" || editDraft
-          ? JSON.parse(
-              new TextDecoder().decode(await readLimited(request, 48000)),
-            )
+        upload
+          ? upload.metadata
+          : request.method === "PUT" || editDraft
+            ? JSON.parse(
+                new TextDecoder().decode(await readLimited(request, 48000)),
+              )
+            : undefined,
+        upload?.files.length
+          ? async (remaining) => {
+              if (upload.files.length > remaining)
+                throw new ClassroomFailure(
+                  400,
+                  "INVALID_UPLOAD",
+                  "每份作业最多保留6张参考图片",
+                );
+              return uploadAssignmentImages(
+                env,
+                identity,
+                crypto.randomUUID(),
+                upload.files,
+                uploadedKeys,
+              );
+            }
           : undefined,
       );
+      if (uploadedKeys.length) commitAttempted = true;
       await client.query("COMMIT");
+      uploadedKeys.length = 0;
       return Response.json(result);
     }
     const review = /^works\/([a-f0-9-]+)\/review$/.exec(resource);

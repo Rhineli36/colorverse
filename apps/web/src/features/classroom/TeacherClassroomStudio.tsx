@@ -355,12 +355,23 @@ export function TeacherClassroomStudio(props: Props) {
         refresh();
         return r.taskId;
       }}
-      onEdit={async (taskId, revision, definition) => {
+      onEdit={async (taskId, revision, definition, images) => {
+        const metadata = JSON.stringify({ taskId, revision, definition });
+        const body = new FormData();
+        body.set("metadata", metadata);
+        if (images.length) {
+          body.set("image", images[0]);
+          for (const image of images.slice(1)) body.append("images", image);
+        }
         const r = await (
           await classroomRequest(root + "learning-tasks", {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ taskId, revision, definition }),
+            ...(images.length
+              ? { body }
+              : {
+                  headers: { "Content-Type": "application/json" },
+                  body: metadata,
+                }),
           })
         ).json();
         applyTaskSettings(r.tasks);

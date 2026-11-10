@@ -67,9 +67,14 @@ export function NewAssignmentForm({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const requestId = useRef(crypto.randomUUID());
+  const savedImages = initialTask?.images?.length
+    ? initialTask.images
+    : initialTask?.image
+      ? [initialTask.image]
+      : [];
   useEffect(() => {
     onDirtyChange(
-      initialTask ? changed : !!file || Object.values(draft).some(Boolean),
+      !!file || (initialTask ? changed : Object.values(draft).some(Boolean)),
     );
     return () => onDirtyChange(false);
   }, [draft, file, onDirtyChange, initialTask, changed]);
@@ -192,50 +197,57 @@ export function NewAssignmentForm({
               </label>
             ),
           )}
-          {initialTask ? (
-            <p className="muted">
-              这里可编辑作业文字和排版。已保存的参考图会随草稿保留，可在预览中查看。
-            </p>
-          ) : (
-            <label>
-              {saveOnly
+          <label>
+            {initialTask
+              ? `追加参考图片（已保存 ${savedImages.length} 张，最多 6 张）`
+              : saveOnly
                 ? "上传参考图片（可多选，最多6张，合计8MB）"
                 : "上传示范图片（可选）"}
-              <input
-                aria-label="上传作业示范图片"
-                type="file"
-                multiple={saveOnly}
-                accept="image/png,image/jpeg,image/webp"
-                disabled={busy}
-                onChange={(e) => {
-                  const chosen = Array.from(e.target.files ?? []);
-                  if (!chosen.length) return;
-                  const next = saveOnly
-                    ? [...(file ? [file] : []), ...extraFiles, ...chosen]
-                    : chosen.slice(0, 1);
-                  if (
-                    next.length > 6 ||
-                    next.some(
-                      (f) =>
-                        !["image/png", "image/jpeg", "image/webp"].includes(
-                          f.type,
-                        ),
-                    ) ||
-                    next.reduce((n, f) => n + f.size, 0) > 8388608
-                  ) {
-                    setError("最多6张PNG、JPEG或WebP参考图，合计不超过8MB。");
-                    e.target.value = "";
-                    return;
-                  }
-                  setError("");
-                  requestId.current = crypto.randomUUID();
-                  setFile(next[0]);
-                  setExtraFiles(next.slice(1));
+            <input
+              aria-label="上传作业示范图片"
+              type="file"
+              multiple={saveOnly}
+              accept="image/png,image/jpeg,image/webp"
+              disabled={
+                busy ||
+                savedImages.length + (file ? 1 : 0) + extraFiles.length >= 6
+              }
+              onChange={(e) => {
+                const chosen = Array.from(e.target.files ?? []);
+                if (!chosen.length) return;
+                const next = saveOnly
+                  ? [...(file ? [file] : []), ...extraFiles, ...chosen]
+                  : chosen.slice(0, 1);
+                if (
+                  savedImages.length + next.length > 6 ||
+                  next.some(
+                    (f) =>
+                      !["image/png", "image/jpeg", "image/webp"].includes(
+                        f.type,
+                      ),
+                  ) ||
+                  next.reduce((n, f) => n + f.size, 0) > 8388608
+                ) {
+                  setError(
+                    "每份作业最多 6 张参考图，本次上传的 PNG、JPG 或 WebP 合计不超过 8 MB。",
+                  );
                   e.target.value = "";
-                }}
-              />
-            </label>
-          )}
+                  return;
+                }
+                setError("");
+                requestId.current = crypto.randomUUID();
+                setFile(next[0]);
+                setExtraFiles(next.slice(1));
+                e.target.value = "";
+              }}
+            />
+            {initialTask && (
+              <small>
+                已有参考图会保留，本次新增图片合计最多 8
+                MB，可在「预览作业」中查看。
+              </small>
+            )}
+          </label>
           {file && (
             <div className="assignment-file-preview">
               <img src={url} alt="新增作业示范预览" />
@@ -277,8 +289,8 @@ export function NewAssignmentForm({
           task={AssignmentDefinitionSchema.parse({
             ...validate(),
             id: initialTask?.id ?? `custom-${requestId.current}`,
-            image: initialTask?.image ?? url,
-            images: initialTask?.images ?? [url, ...extraUrls].filter(Boolean),
+            image: initialTask?.image || url,
+            images: [...savedImages, ...[url, ...extraUrls].filter(Boolean)],
           })}
           showTitle
         />
@@ -311,7 +323,7 @@ export function NewAssignmentForm({
           </button>
           <button
             className="primary"
-            disabled={busy || (!!initialTask && !changed)}
+            disabled={busy || (!!initialTask && !changed && !file)}
             onClick={() => {
               let value: CustomAssignmentDraft;
               try {
