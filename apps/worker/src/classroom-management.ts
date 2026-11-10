@@ -313,6 +313,27 @@ export async function managementAction(
           [classId],
         )
       ).rows,
+      pendingIndependent: (
+        await sql.query(
+          `SELECT w.id,w.title,w.created_at,p.id AS planet_id,u.display_name,
+              (w.learning_context->>'taskId' IS NOT NULL) AS needs_link
+            FROM colorverse.showcase_works w
+            JOIN colorverse.planets p ON p.id=w.planet_id
+            JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id
+            JOIN colorverse.users u ON u.id=e.user_id
+            LEFT JOIN LATERAL (
+              SELECT r.score,r.comment FROM colorverse.showcase_reviews r
+              WHERE r.work_id=w.id AND r.source='teacher'
+                AND r.submission_revision=w.submission_revision
+              ORDER BY r.revision DESC LIMIT 1
+            ) review ON true
+            WHERE e.class_id=$1 AND e.role='student' AND e.status='active' AND u.status='active'
+              AND w.publication_id IS NULL AND w.withdrawn_at IS NULL
+              AND review.score IS NULL AND coalesce(btrim(review.comment),'')=''
+            ORDER BY w.created_at DESC,w.id DESC`,
+          [classId],
+        )
+      ).rows,
     };
   throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效。");
 }

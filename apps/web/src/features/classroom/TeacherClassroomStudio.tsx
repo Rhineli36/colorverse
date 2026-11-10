@@ -38,6 +38,16 @@ const json = async (path: string, body?: unknown) =>
         : undefined,
     )
   ).json();
+const PendingIndependentWorks = z.array(
+  z.object({
+    id: z.uuid(),
+    title: z.string(),
+    created_at: z.iso.datetime(),
+    planet_id: z.uuid(),
+    display_name: z.string(),
+    needs_link: z.boolean(),
+  }),
+);
 const statusLabel = (r: SubmissionRow) =>
   r.status === "missing"
     ? "未提交"
@@ -125,6 +135,13 @@ export function TeacherClassroomStudio(props: Props) {
   const [unlinked, setUnlinked] = useState<
     { id: string; title: string; owner_enrollment_id: string }[]
   >([]);
+  const [pendingIndependent, setPendingIndependent] = useState<
+    z.infer<typeof PendingIndependentWorks>
+  >([]);
+  const pendingPublications = publications.filter((p) => p.pending > 0);
+  const pendingTotal =
+    pendingIndependent.length +
+    pendingPublications.reduce((sum, p) => sum + p.pending, 0);
   const [catalog, setCatalog] = useState(
     AssignmentCatalog.map((t) => ({ ...t })),
   );
@@ -162,6 +179,7 @@ export function TeacherClassroomStudio(props: Props) {
       setStudent(undefined);
       setGallery(undefined);
       setPublications([]);
+      setPendingIndependent([]);
       setQuery("");
       setFilter("all");
     }
@@ -190,6 +208,9 @@ export function TeacherClassroomStudio(props: Props) {
         setPublications(z.array(PublicationSchema).parse(p.publications));
         setGallery(Gallery.parse(g));
         setUnlinked(u.works);
+        setPendingIndependent(
+          PendingIndependentWorks.parse(u.pendingIndependent ?? []),
+        );
         applyTaskSettings(t.tasks);
       })
       .catch((e) => {
@@ -400,6 +421,8 @@ export function TeacherClassroomStudio(props: Props) {
           disabled={dirty}
           onChange={(e) => {
             setClassId(e.target.value);
+            setPublications([]);
+            setPendingIndependent([]);
             setSelected(undefined);
             setStudent(undefined);
             setWork(undefined);
@@ -416,6 +439,7 @@ export function TeacherClassroomStudio(props: Props) {
         <nav aria-label="教师管理分区">
           {[
             ["roster", "学生名单"],
+            ["pending", pendingTotal ? `待批改 ${pendingTotal}` : "待批改"],
             ["assignments", "作业管理"],
             ["planets", "星球管理"],
           ].map(([id, label]) => (
@@ -471,7 +495,78 @@ export function TeacherClassroomStudio(props: Props) {
             {publisher}
           </div>
           {busy && <p role="status">正在读取或保存课堂数据…</p>}
-          {tab === "roster" ? (
+          {tab === "pending" ? (
+            <div className="classroom-board">
+              <h2>待批改作品</h2>
+              <section
+                className="classroom-pending-section"
+                aria-label="自主上传与未关联作品"
+              >
+                <h3>自主上传与未关联作品 · {pendingIndependent.length} 件</h3>
+                {pendingIndependent.map((item) => (
+                  <article className="classroom-pending-row" key={item.id}>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p className="muted">
+                        {item.display_name} ·{" "}
+                        {item.needs_link ? "未关联作业" : "自主上传"} ·{" "}
+                        {new Date(item.created_at).toLocaleString("zh-CN")}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        props.onPlanetAction?.(
+                          item.planet_id,
+                          "feedback",
+                          classId,
+                          item.id,
+                        )
+                      }
+                    >
+                      查看并批改 →
+                    </button>
+                  </article>
+                ))}
+                {!busy && !error && !pendingIndependent.length && (
+                  <p className="classroom-empty">
+                    暂无待批改的自主上传或未关联作品。
+                  </p>
+                )}
+              </section>
+              <section
+                className="classroom-pending-section"
+                aria-label="已布置作业"
+              >
+                <h3>
+                  已布置作业 · {pendingTotal - pendingIndependent.length}{" "}
+                  份待批改
+                </h3>
+                {pendingPublications.map((p) => (
+                  <article className="classroom-pending-row" key={p.id}>
+                    <div>
+                      <strong>{p.definition.title}</strong>
+                      <p className="muted">{p.pending} 份待批改</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelected(p);
+                        setQuery("");
+                        setFilter("pending");
+                        setTab("assignments");
+                      }}
+                    >
+                      查看待批改提交 →
+                    </button>
+                  </article>
+                ))}
+                {!busy && !error && !pendingPublications.length && (
+                  <p className="classroom-empty">
+                    已布置的作业暂无待批改提交。
+                  </p>
+                )}
+              </section>
+            </div>
+          ) : tab === "roster" ? (
             <div className="classroom-board">
               <div className="roster-metrics">
                 {[

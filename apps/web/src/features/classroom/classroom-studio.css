@@ -418,3 +418,18 @@
     padding-top: 18px;
   }
 }
+.classroom-pending-section + .classroom-pending-section {
+  margin-top: 24px;
+}
+.classroom-pending-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #8ba4cb2e;
+}
+.classroom-pending-row p {
+  margin: 4px 0 0;
+}

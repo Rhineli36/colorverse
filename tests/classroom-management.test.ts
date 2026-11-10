@@ -413,10 +413,46 @@ describe("classroom roster and assignment snapshots", () => {
     });
   });
   it("keeps free creations outside completion rate and returns explicit zero-recipient counts", async () => {
+    const independentId = randomUUID();
     await sql.query(
       `INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id) VALUES($1,$2,'自由创作',$1::uuid::text,10,'crystal',$1)`,
-      [randomUUID(), id[17]],
+      [independentId, id[17]],
     );
+    const pending = async () => (await action("unlinked")).pendingIndependent;
+    expect(await pending()).toEqual([
+      expect.objectContaining({ id: independentId, needs_link: false }),
+    ]);
+    await expect(
+      action("unlinked", "GET", undefined, student),
+    ).rejects.toMatchObject({ status: 403 });
+    await showcaseReview(
+      sql,
+      await classroomActor(sql, teacher, id[5]),
+      id[5],
+      independentId,
+      "POST",
+      {
+        score: 0,
+        comment: "",
+        revision: 0,
+        submissionRevision: 0,
+        requestId: randomUUID(),
+      },
+      true,
+    );
+    expect(await pending()).toHaveLength(0);
+    await sql.query(
+      "UPDATE colorverse.showcase_works SET submission_revision=1 WHERE id=$1",
+      [independentId],
+    );
+    expect(await pending()).toEqual([
+      expect.objectContaining({ id: independentId }),
+    ]);
+    await sql.query(
+      "UPDATE colorverse.showcase_works SET withdrawn_at=now(),withdrawn_by=$2 WHERE id=$1",
+      [independentId, id[8]],
+    );
+    expect(await pending()).toHaveLength(0);
     expect((await publications(sql, id[5]))[0].submitted).toBe(1);
     const p = (await action("publications", "POST", {
       requestId: randomUUID(),
