@@ -103,6 +103,25 @@
 .student-tasks-filters input::placeholder {
   color: #acbad0;
 }
+.cloud-experience .student-task-free-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 1px solid #bfa6f0a6;
+  border-radius: 10px;
+  background: #bba6f21a;
+  color: #e3d7ff;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cloud-experience .student-task-free-submit:hover:not(:disabled) {
+  border-color: #d0bdff;
+  background: #bba6f22e;
+}
 .student-task-group {
   margin-top: 26px;
   --task-accent: #99caff;
@@ -376,6 +395,9 @@
   }
   .student-tasks-filters select {
     max-width: 100%;
+  }
+  .cloud-experience .student-task-free-submit {
+    width: 100%;
   }
   .student-task-row {
     grid-template-columns: 72px minmax(0, 1fr);

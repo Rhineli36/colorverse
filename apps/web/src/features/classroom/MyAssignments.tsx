@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { StudentAssignment, StudentWork } from "@colorverse/contracts";
 import { AssignmentMail } from "./ClassroomMail";
 import { InterfaceIcon } from "./InterfaceIcon";
-import { usePrivateImage } from "./CloudPlanetAppearance";
+import { ClassroomThumbnail } from "./ClassroomThumbnail";
 import type { StudentAssignmentClass } from "./useStudentAssignments";
 import "./my-assignments.css";
 
@@ -25,56 +25,6 @@ function dueTime(date: string, timezone: string) {
     timeZone: timezone,
   }).format(new Date(date));
 }
-function Thumbnail({
-  source,
-  identity,
-}: {
-  source?: string;
-  identity: string;
-}) {
-  const host = useRef<HTMLSpanElement>(null);
-  const [near, setNear] = useState(false);
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setNear(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "160px" },
-    );
-    if (host.current) observer.observe(host.current);
-    return () => observer.disconnect();
-  }, [source]);
-  const resource = source?.startsWith("private:") ? source.slice(8) : "";
-  const thumbnail = resource
-    ? resource + (resource.includes("?") ? "&" : "?") + "thumbnail=1"
-    : "";
-  const image = usePrivateImage(
-    thumbnail,
-    near && thumbnail ? identity : undefined,
-  );
-  const src = resource ? image.url : source;
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
-  return (
-    <span ref={host} className="student-task-thumbnail" aria-hidden="true">
-      {src && !failed ? (
-        <img
-          src={src}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <InterfaceIcon name="picture" />
-      )}
-    </span>
-  );
-}
-
 export default function MyAssignments({
   classes,
   loading,
@@ -84,6 +34,7 @@ export default function MyAssignments({
   onViewChange,
   onBack,
   onSubmit,
+  onFreeSubmit,
   onOpenWork,
 }: {
   classes: StudentAssignmentClass[];
@@ -94,6 +45,7 @@ export default function MyAssignments({
   onViewChange: (v: MyAssignmentsView) => void;
   onBack: () => void;
   onSubmit: (item: AssignmentItem) => void;
+  onFreeSubmit: (classId?: string) => void;
   onOpenWork: (item: WorkItem) => void;
 }) {
   const [task, setTask] = useState<AssignmentItem>();
@@ -253,6 +205,14 @@ export default function MyAssignments({
             )}
           </select>
         </div>
+        <button
+          className="student-task-free-submit"
+          disabled={loading}
+          onClick={() => onFreeSubmit(view.classId || undefined)}
+        >
+          <InterfaceIcon name="picture" />
+          自由提交作业
+        </button>
       </div>
       {loading && (
         <p role="status" className="student-tasks-notice">
@@ -313,7 +273,8 @@ export default function MyAssignments({
                     className="student-task-row"
                     data-publication-id={a.id}
                   >
-                    <Thumbnail
+                    <ClassroomThumbnail
+                      className="student-task-thumbnail"
                       source={a.definition.images?.[0] || a.definition.image}
                       identity={a.id}
                     />
@@ -389,7 +350,8 @@ export default function MyAssignments({
                   className={`student-task-row is-submitted ${w.withdrawn ? "is-withdrawn" : ""}`}
                   data-work-id={w.id}
                 >
-                  <Thumbnail
+                  <ClassroomThumbnail
+                    className="student-task-thumbnail"
                     source={`private:classes/${w.classroom.classId}/works/${w.id}/image`}
                     identity={`${w.id}:${w.submissionRevision}`}
                   />

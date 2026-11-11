@@ -28,7 +28,7 @@ assignments[3]['latestWorkId'] = works[0]['id']; assignments[4]['latestWorkId'] 
 user = {'id':subject,'email':'fixture@example.test','aud':'authenticated','role':'authenticated','app_metadata':{},'user_metadata':{}}
 session = {'access_token':enc({'alg':'HS256'})+'.'+enc({'sub':subject,'exp':int(time.time())+3600,'role':'authenticated'})+'.fixture','refresh_token':'fixture','expires_at':int(time.time())+3600,'expires_in':3600,'token_type':'bearer','user':user}
 errors, requests, unexpected, checks = [], [], [], []
-state = {'fail':False,'hasPlanet':True}
+state = {'fail':False,'hasPlanet':True,'submissionFailure':False}
 def gallery_work(w):
     return {'id':w['id'],'title':w['title'],'description':'作品的创作说明','presetId':'crystal','color':'#91c4dd','createdAt':w['submittedAt'],'params':{'x':.5,'y':.6,'size':.65,'motion':'float'},'revision':0,'withdrawn':w['withdrawn']}
 with sync_playwright() as p:
@@ -59,9 +59,15 @@ with sync_playwright() as p:
         elif item=='works' and route.request.method=='POST':
             raw=route.request.post_data_buffer.decode(errors='ignore')
             meta=json.loads(re.search(r'name="metadata"\r\n\r\n(.*?)\r\n--',raw,re.S).group(1))
-            assert meta['learning']['publicationId']==assignments[0]['id']
-            w={'id':uid(),'planetId':planet,'publicationId':assignments[0]['id'],'taskId':assignments[0]['taskId'],'title':meta['title'],'submittedAt':iso(now),'status':'pending','score':None,'comment':'','updated':False,'withdrawn':False,'submissionRevision':0}
-            works.append(w); assignments[0]['latestWorkId']=w['id']; data={'id':w['id'],'presetId':'crystal','created':True}
+            publication=meta['learning']['publicationId']
+            assert publication in [None,assignments[0]['id']]
+            if publication is None: assert meta['learning']['taskId'] is None
+            if state['submissionFailure']:
+                route.fulfill(status=503,json={'error':{'message':'模拟提交失败，内容已保留'}});return
+            w={'id':uid(),'planetId':planet,'publicationId':publication,'taskId':meta['learning']['taskId'],'title':meta['title'],'submittedAt':iso(now),'status':'pending','score':None,'comment':'','updated':False,'withdrawn':False,'submissionRevision':0}
+            works.append(w)
+            if publication: assignments[0]['latestWorkId']=w['id']
+            data={'id':w['id'],'presetId':'crystal','created':True}
         else: unexpected.append(path);route.fulfill(status=404,json={'error':{'message':'unexpected fixture'}});return
         route.fulfill(json=data)
     page.route('**/api/v1/cloud/**',api)
@@ -111,6 +117,27 @@ with sync_playwright() as p:
     expect(center.locator('[data-publication-id]')).to_have_count(2)
     center.get_by_role('button',name=re.compile('已提交')).click()
     expect(center.locator('[data-work-id]')).to_have_count(6)
+    center.get_by_role('button',name='自由提交作业',exact=True).click()
+    expect(upload).to_be_visible()
+    expect(upload.get_by_label('选择教学任务',exact=True)).to_have_value('')
+    expect(upload.get_by_label('作品名称',exact=True)).to_have_value('')
+    upload.get_by_label('作品名称',exact=True).fill('我的自由创作')
+    upload.get_by_label('作品图片',exact=True).set_input_files(str(ROOT/'apps/web/public/assignments/two-moods.webp'))
+    upload.get_by_label('想表达什么',exact=True).fill('独立创作，不关联老师布置的作业')
+    state['submissionFailure']=True
+    upload.get_by_role('button',name='提交并点亮星球',exact=True).click()
+    expect(upload).to_contain_text('模拟提交失败，内容已保留')
+    expect(upload.get_by_label('作品名称',exact=True)).to_have_value('我的自由创作')
+    assert upload.get_by_label('作品图片',exact=True).evaluate('(el)=>el.files.length')==1
+    assert len(works)==6
+    state['submissionFailure']=False
+    upload.get_by_role('button',name='提交并点亮星球',exact=True).click()
+    expect(upload).to_have_count(0)
+    expect(entry).to_be_enabled();expect(entry).to_have_attribute('title','待提交 2 项作业');entry.click()
+    center.get_by_role('button',name=re.compile('已提交')).click()
+    expect(center.locator('[data-work-id]')).to_have_count(7)
+    expect(center.locator('[data-work-id]').filter(has=page.get_by_role('heading',name='我的自由创作',exact=True))).to_contain_text('自主上传 · 不计课程作业完成率')
+    checks.append('free submit clears previous course association, retains inputs on failure, retries successfully, updates history without completing a course task')
     page.screenshot(path=str(OUT/'submitted-desktop.png'),full_page=True)
     checks.append('history, zero score, free and legacy work, versioned re-review, direct feedback and successful submission update')
     page.set_viewport_size({'width':390,'height':844})
@@ -128,6 +155,10 @@ with sync_playwright() as p:
     center.get_by_role('button',name=re.compile('待提交')).click()
     center.get_by_role('button',name='刷新作业',exact=True).click()
     expect(center.get_by_role('button',name='创建星球后提交',exact=True)).to_have_count(2)
+    center.get_by_role('button',name='自由提交作业',exact=True).click()
+    expect(page.get_by_role('heading',name=re.compile('编辑星球'))).to_be_visible()
+    expect(page.get_by_text('请先创建自己的星球，再从「我的作业」自由提交作品。',exact=True)).to_be_visible()
+    expect(upload).to_have_count(0)
     checks.append('mobile layout, no results, recoverable API failure and not-yet-created planet state')
     assert not errors,errors
     assert not unexpected,unexpected

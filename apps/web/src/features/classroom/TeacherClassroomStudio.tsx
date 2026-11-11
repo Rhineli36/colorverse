@@ -23,6 +23,7 @@ import {
 import { StudentImporter } from "./StudentImporter";
 import { AssignmentPublisher } from "./ClassroomMail";
 import { AssignmentText } from "./AssignmentText";
+import { ClassroomThumbnail } from "./ClassroomThumbnail";
 import { download } from "../../app/download";
 import "./classroom-studio.css";
 const json = async (path: string, body?: unknown) =>
@@ -682,25 +683,67 @@ export function TeacherClassroomStudio(props: Props) {
           ) : !selected ? (
             <div className="classroom-board">
               <h2>已发布的作业</h2>
-              {publications.map((p) => (
-                <article className="publication-card" key={p.id}>
-                  <h3>{p.definition.title}</h3>
-                  <p>
-                    {p.targetLabel} · 截止：
-                    {p.dueAt
-                      ? new Date(p.dueAt).toLocaleString("zh-CN")
-                      : "未设置"}
-                  </p>
+              {publications.map((p, index) => (
+                <article
+                  className="publication-card"
+                  key={p.id}
+                  data-publication-id={p.id}
+                  data-review-state={
+                    p.pending ? "pending" : p.submitted ? "reviewed" : "waiting"
+                  }
+                >
+                  <div className="publication-summary">
+                    <ClassroomThumbnail
+                      className="publication-thumbnail"
+                      source={p.definition.images?.[0] || p.definition.image}
+                      identity={p.id}
+                    />
+                    <div className="publication-copy">
+                      <p className="publication-series">
+                        作业 {String(index + 1).padStart(2, "0")} ·{" "}
+                        {new Date(p.publishedAt).toLocaleDateString("zh-CN")}{" "}
+                        发布
+                      </p>
+                      <h3>{p.definition.title}</h3>
+                      <p className="publication-target">{p.targetLabel}</p>
+                      <p className="publication-deadline">
+                        {p.dueAt ? (
+                          <>
+                            <time dateTime={p.dueAt}>
+                              {new Date(p.dueAt).toLocaleString("zh-CN")}
+                            </time>{" "}
+                            截止
+                          </>
+                        ) : (
+                          "未设置截止时间"
+                        )}
+                      </p>
+                    </div>
+                    <div className="publication-actions">
+                      <span
+                        className={`publication-review-status ${p.pending ? "has-pending" : ""}`}
+                      >
+                        {p.pending
+                          ? `${p.pending} 份待批改`
+                          : !p.expected
+                            ? "尚无应交学生"
+                            : p.submitted
+                              ? "当前提交均已批改"
+                              : "等待学生提交"}
+                      </span>
+                      <button
+                        className="publication-open"
+                        onClick={() => {
+                          setSelected(p);
+                          setQuery("");
+                          setFilter("all");
+                        }}
+                      >
+                        查看提交 →
+                      </button>
+                    </div>
+                  </div>
                   {metrics(p)}
-                  <button
-                    onClick={() => {
-                      setSelected(p);
-                      setQuery("");
-                      setFilter("all");
-                    }}
-                  >
-                    查看提交 →
-                  </button>
                 </article>
               ))}
               {!busy && !error && !publications.length && (

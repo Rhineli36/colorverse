@@ -324,6 +324,18 @@ export function CloudExperienceView() {
                   view={assignmentView}
                   onViewChange={setAssignmentView}
                   onBack={() => navigate("universe")}
+                  onFreeSubmit={(targetClassId = membership.classId) => {
+                    const classroom = studentAssignments.classes.find(
+                      (c) => c.classId === targetClassId,
+                    );
+                    if (classroom && !classroom.planetId) {
+                      setClassId(targetClassId);
+                      navigate("edit");
+                      setNotice(
+                        "请先创建自己的星球，再从「我的作业」自由提交作品。",
+                      );
+                    } else jump(targetClassId, "submit", {});
+                  }}
                   onSubmit={(a) => {
                     if (!a.classroom.planetId) {
                       setClassId(a.classroom.classId);

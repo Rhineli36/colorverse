@@ -229,11 +229,143 @@
   accent-color: #b39af6;
 }
 .publication-card {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--studio-line);
+  margin-top: 16px;
+  padding: 20px;
+  border: 1px solid #8296b451;
+  border-left: 5px solid #ac9fd6;
+  border-radius: 14px;
+  background: #142238;
 }
 .publication-card:last-child {
+  margin-bottom: 0;
+}
+.publication-card[data-review-state="pending"] {
+  border-left-color: #efc582;
+}
+.publication-summary {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+}
+.publication-thumbnail {
+  --classroom-thumbnail-width: 128px;
+  --classroom-thumbnail-height: 94px;
+}
+.publication-copy {
+  min-width: 0;
+}
+.publication-copy .publication-series {
+  margin: 0 0 6px;
+  color: #b7a6e2;
+  font-size: 13px;
+}
+.publication-copy h3 {
+  margin: 0 0 8px;
+  color: #f0f3fb;
+  font-size: 19px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.publication-copy .publication-target,
+.publication-copy .publication-deadline {
+  margin: 4px 0 0;
+  color: #bac9df;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.publication-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+.publication-review-status {
+  padding: 4px 9px;
+  border: 1px solid #92a8c254;
+  border-radius: 7px;
+  color: #c6d5e7;
+  background: #0002;
+  font-size: 13px;
+}
+.publication-review-status.has-pending {
+  border-color: #efc58280;
+  color: #f6d399;
+  background: #efc5820d;
+}
+.cloud-experience .publication-open {
+  padding: 10px 18px;
+  min-height: 44px;
+  border: 1px solid #bba5ed9c;
+  border-radius: 9px;
+  color: #e2d6ff;
+  background: #bba5ed1c;
+  font-size: 16px;
+  white-space: nowrap;
+}
+.cloud-experience .publication-open:hover:not(:disabled) {
+  background: #bba5ed30;
+  border-color: #cab4fa;
+}
+.publication-card .assignment-metrics {
+  display: flex;
+  gap: 0;
+  margin: 18px 0 0;
+  overflow: hidden;
+  border: 1px solid #8296b436;
+  border-radius: 10px;
+  background: #0d192b;
+}
+.publication-card .assignment-metrics > div {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 16px;
   border: 0;
+  border-right: 1px solid #8296b436;
+  border-radius: 0;
+  background: transparent;
+}
+.publication-card .assignment-metrics > div:last-child {
+  border-right: 0;
+}
+.publication-card .assignment-metrics strong {
+  font-size: 22px;
+  line-height: 1.5;
+}
+.publication-card[data-review-state="pending"]
+  .assignment-metrics
+  > div:nth-child(4)
+  strong {
+  color: #f6d399;
+}
+@media (max-width: 760px) {
+  .publication-summary {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .publication-thumbnail {
+    --classroom-thumbnail-width: 92px;
+    --classroom-thumbnail-height: 86px;
+  }
+  .publication-copy h3 {
+    font-size: 17px;
+  }
+  .publication-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .publication-card {
+    padding: 14px;
+  }
+  .publication-card .assignment-metrics {
+    flex-wrap: wrap;
+  }
+  .publication-card .assignment-metrics > div {
+    flex: 1 0 22%;
+    padding: 9px;
+  }
 }
 .classroom-empty {
   padding: 24px;
