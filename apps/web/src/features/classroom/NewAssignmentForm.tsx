@@ -14,7 +14,9 @@ export function NewAssignmentForm({
   onDirtyChange,
   saveOnly = false,
   initialTask,
+  editLabel = "编辑作业草稿",
 }: {
+  editLabel?: string;
   saveOnly?: boolean;
   initialTask?: AssignmentDefinition;
   onCreate: (
@@ -140,9 +142,9 @@ export function NewAssignmentForm({
   return (
     <section
       className="new-assignment"
-      aria-label={initialTask ? "编辑作业草稿" : "新增作业"}
+      aria-label={initialTask ? editLabel : "新增作业"}
     >
-      <h3>{initialTask ? "编辑作业草稿" : "新增作业"}</h3>
+      <h3>{initialTask ? editLabel : "新增作业"}</h3>
       {!preview ? (
         <div className="assignment-fields">
           {(

@@ -306,6 +306,27 @@
   background: #bba5ed30;
   border-color: #cab4fa;
 }
+.publication-action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cloud-experience .publication-edit {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #91a4bf65;
+  border-radius: 9px;
+  color: #d5e0ef;
+  background: #15263b;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.cloud-experience .publication-edit:hover:not(:disabled) {
+  border-color: #b9a7e9;
+  background: #23314b;
+}
 .publication-card .assignment-metrics {
   display: flex;
   gap: 0;

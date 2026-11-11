@@ -1,4 +1,8 @@
-import { beforeAll, afterAll, describe, expect, it } from "vitest";
+import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
+import {
+  editPublishedAssignment,
+  publishedAssignmentRequest,
+} from "../apps/worker/src/published-assignment";
 import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -58,6 +62,7 @@ beforeAll(async () => {
     "013-submission-content-history",
     "014-assignment-media-and-skins",
     "015-count-skin-unlocks",
+    "017-published-assignment-edits",
   ])
     await db.exec(await readFile(`apps/api/migrations/${file}.sql`, "utf8"));
   for (const user of [teacherId, studentId, peerId])
@@ -238,5 +243,365 @@ describe("student assignment center uses own published recipients and actual wor
         enrollmentId: peerEnrollment,
       }),
     ).rejects.toMatchObject({ status: 405 });
+  });
+});
+
+describe("published assignment content edits", () => {
+  const taskId = "custom-" + randomUUID();
+  const definition = {
+    ...AssignmentCatalog[0],
+    id: taskId,
+    title: "原发布要求",
+    image: "private:original-image",
+    images: ["private:original-image", "private:second-image"],
+  };
+  const fields = {
+    title: "修改后的要求",
+    description: "更新文字细节",
+    steps: ["保留手动编号"],
+    stepLayout: "manual",
+    deliverables: "提交要求保持清楚",
+  };
+  const seed = async () => {
+    await sql.query(
+      "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,revision,definition,image_storage_key,image_storage_keys) VALUES($1,$2,true,1,$3,'legacy-a.webp',$4)",
+      [
+        classId,
+        taskId,
+        JSON.stringify(definition),
+        JSON.stringify(["legacy-a.webp", "legacy-b.webp"]),
+      ],
+    );
+    await sql.query(
+      "UPDATE colorverse.classroom_publications SET task_id=$3,definition=$4 WHERE class_id=$1 AND id=ANY($2::uuid[])",
+      [classId, [assigned, peerAssignment], taskId, JSON.stringify(definition)],
+    );
+  };
+  it("replaces images and text only for the chosen publication, preserving recipients, works, grades and old media references", async () => {
+    await sql.query("BEGIN");
+    try {
+      await seed();
+      const before = (
+        await sql.query(
+          "SELECT id,task_id,target_label,due_at,published_at,request_id FROM colorverse.classroom_publications WHERE id=$1",
+          [assigned],
+        )
+      ).rows[0];
+      const recipients = (
+        await sql.query(
+          "SELECT * FROM colorverse.classroom_recipients ORDER BY publication_id,enrollment_id",
+        )
+      ).rows;
+      const grades = (
+        await sql.query("SELECT * FROM colorverse.showcase_reviews ORDER BY id")
+      ).rows;
+      const workRecords = (
+        await sql.query("SELECT * FROM colorverse.showcase_works ORDER BY id")
+      ).rows;
+      const edited = await editPublishedAssignment(
+        sql,
+        teacher,
+        classId,
+        assigned,
+        { revision: 0, definition: fields, keepImageIndices: [1] },
+        async (remaining) => {
+          expect(remaining).toBe(5);
+          return ["replacement.webp"];
+        },
+      );
+      expect(edited).toMatchObject({
+        id: assigned,
+        revision: 1,
+        definition: {
+          title: fields.title,
+          description: fields.description,
+          stepLayout: "manual",
+        },
+      });
+      expect(edited.definition.images).toEqual(
+        [0, 1].map(
+          (index) =>
+            `private:classes/${classId}/publications/${assigned}/image?revision=1&index=${index}`,
+        ),
+      );
+      const row = (
+        await sql.query(
+          "SELECT * FROM colorverse.classroom_publications WHERE id=$1",
+          [assigned],
+        )
+      ).rows[0];
+      expect(row.image_storage_keys).toEqual([
+        "legacy-b.webp",
+        "replacement.webp",
+      ]);
+      expect(row.content_history).toMatchObject([
+        {
+          revision: 0,
+          definition: { title: definition.title },
+          imageStorageKeys: ["legacy-a.webp", "legacy-b.webp"],
+        },
+      ]);
+      expect(
+        (
+          await sql.query(
+            "SELECT id,task_id,target_label,due_at,published_at,request_id FROM colorverse.classroom_publications WHERE id=$1",
+            [assigned],
+          )
+        ).rows[0],
+      ).toEqual(before);
+      expect(
+        (
+          await sql.query(
+            "SELECT * FROM colorverse.classroom_recipients ORDER BY publication_id,enrollment_id",
+          )
+        ).rows,
+      ).toEqual(recipients);
+      expect(
+        (
+          await sql.query(
+            "SELECT * FROM colorverse.showcase_reviews ORDER BY id",
+          )
+        ).rows,
+      ).toEqual(grades);
+      expect(
+        (await sql.query("SELECT * FROM colorverse.showcase_works ORDER BY id"))
+          .rows,
+      ).toEqual(workRecords);
+      expect(
+        (
+          await sql.query(
+            "SELECT definition FROM colorverse.classroom_publications WHERE id=$1",
+            [peerAssignment],
+          )
+        ).rows[0].definition,
+      ).toEqual(definition);
+      expect((await read()).assignments[0].definition).toEqual(
+        edited.definition,
+      );
+      await editPublishedAssignment(sql, teacher, classId, assigned, {
+        revision: 1,
+        definition: fields,
+        keepImageIndices: [],
+      });
+      expect((await read()).assignments[0].definition.images).toEqual([]);
+    } finally {
+      await sql.query("ROLLBACK");
+    }
+  });
+  it("rejects stale edits, student edits, cross-class requests, and invalid retained image indices before upload", async () => {
+    await sql.query("BEGIN");
+    try {
+      await seed();
+      const append = vi.fn(async () => ["new.webp"]);
+      await expect(
+        editPublishedAssignment(
+          sql,
+          student,
+          classId,
+          assigned,
+          { revision: 0, definition: fields },
+          append,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(
+        editPublishedAssignment(
+          sql,
+          teacher,
+          otherClass,
+          assigned,
+          { revision: 0, definition: fields },
+          append,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(
+        editPublishedAssignment(
+          sql,
+          teacher,
+          classId,
+          randomUUID(),
+          { revision: 0, definition: fields },
+          append,
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(
+        editPublishedAssignment(
+          sql,
+          teacher,
+          classId,
+          assigned,
+          { revision: 1, definition: fields },
+          append,
+        ),
+      ).rejects.toMatchObject({ code: "TASK_CONFLICT" });
+      await expect(
+        editPublishedAssignment(
+          sql,
+          teacher,
+          classId,
+          assigned,
+          { revision: 0, definition: fields, keepImageIndices: [4] },
+          append,
+        ),
+      ).rejects.toMatchObject({ code: "TASK_CONFLICT" });
+      expect(append).not.toHaveBeenCalled();
+      expect(
+        (
+          await sql.query(
+            "SELECT content_revision FROM colorverse.classroom_publications WHERE id=$1",
+            [assigned],
+          )
+        ).rows[0].content_revision,
+      ).toBe(0);
+    } finally {
+      await sql.query("ROLLBACK");
+    }
+  });
+  it("serves the correct private publication image and blocks peers and stale media versions", async () => {
+    await sql.query("BEGIN");
+    const fetcher = vi.fn(async (url: unknown) => {
+      expect(String(url)).toContain("storage/v1/object");
+      return new Response("private-image");
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const env = {
+      CLASSROOM_NEXT: "true",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SECRET_KEY: "test",
+    };
+    try {
+      await seed();
+      await editPublishedAssignment(sql, teacher, classId, assigned, {
+        revision: 0,
+        definition: fields,
+        keepImageIndices: [1],
+      });
+      const request = () =>
+        new Request("https://classroom.test/?revision=1&index=0");
+      const response = await publishedAssignmentRequest(
+        request(),
+        env,
+        student,
+        classId,
+        assigned,
+        "image",
+        sql,
+        [],
+      );
+      expect(await response.text()).toBe("private-image");
+      expect(String(fetcher.mock.calls[0][0])).toContain("legacy-b.webp");
+      await expect(
+        publishedAssignmentRequest(
+          request(),
+          env,
+          peer,
+          classId,
+          assigned,
+          "image",
+          sql,
+          [],
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(
+        publishedAssignmentRequest(
+          new Request("https://classroom.test/?revision=0"),
+          env,
+          student,
+          classId,
+          assigned,
+          "image",
+          sql,
+          [],
+        ),
+      ).rejects.toMatchObject({ code: "TASK_CONFLICT" });
+      await expect(
+        publishedAssignmentRequest(
+          request(),
+          env,
+          student,
+          classId,
+          assigned,
+          "content",
+          sql,
+          [],
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+      await sql.query("ROLLBACK");
+    }
+  });
+  it("accepts a real multipart image replacement through the published edit request handler", async () => {
+    await sql.query("BEGIN");
+    const bytes = new Uint8Array(
+      await readFile("apps/web/public/assignments/two-moods.webp"),
+    );
+    const uploads: string[] = [];
+    const transport = vi.fn(async (url: unknown, options?: RequestInit) => {
+      expect(options?.method).toBe("POST");
+      expect(String(url)).toContain("colorverse-classroom/");
+      return new Response("{}");
+    });
+    vi.stubGlobal("fetch", transport);
+    try {
+      await seed();
+      const form = new FormData();
+      form.set(
+        "metadata",
+        JSON.stringify({
+          revision: 0,
+          definition: fields,
+          keepImageIndices: [],
+        }),
+      );
+      form.set(
+        "image",
+        new Blob([bytes], { type: "image/webp" }),
+        "replacement.webp",
+      );
+      const env = {
+        CLASSROOM_NEXT: "true",
+        SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SECRET_KEY: "test",
+        IMAGES: {
+          input: () => ({
+            transform: () => ({
+              output: async () => ({ response: () => new Response(bytes) }),
+            }),
+          }),
+        },
+      };
+      const response = await publishedAssignmentRequest(
+        new Request("https://classroom.test/", { method: "PATCH", body: form }),
+        env,
+        teacher,
+        classId,
+        assigned,
+        "content",
+        sql,
+        uploads,
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        id: assigned,
+        revision: 1,
+        definition: { title: fields.title },
+      });
+      expect(uploads).toHaveLength(1);
+      expect(transport).toHaveBeenCalledTimes(1);
+      const saved = (
+        await sql.query(
+          "SELECT image_storage_keys,content_history FROM colorverse.classroom_publications WHERE id=$1",
+          [assigned],
+        )
+      ).rows[0];
+      expect(saved.image_storage_keys).toEqual(uploads);
+      expect(saved.content_history).toMatchObject([
+        { imageStorageKeys: ["legacy-a.webp", "legacy-b.webp"] },
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+      await sql.query("ROLLBACK");
+    }
   });
 });

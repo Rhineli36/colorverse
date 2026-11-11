@@ -88,6 +88,7 @@ export async function publications(
         reviewed = all.filter((s) => s.status === "reviewed").length;
       return {
         id: String(p.id),
+        contentRevision: Number(p.content_revision ?? 0),
         taskId: String(p.task_id),
         definition: AssignmentDefinitionSchema.parse(p.definition),
         targetLabel: String(p.target_label),

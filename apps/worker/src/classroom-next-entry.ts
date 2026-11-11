@@ -7,6 +7,8 @@ import { accountRequest, resetStudentPassword } from "./classroom-accounts";
 import { classroomScope, managementAction } from "./classroom-management";
 import { smallJson } from "./student-import";
 import { z } from "zod";
+import { publishedAssignmentRequest } from "./published-assignment";
+import { removeStoredImages } from "./showcase-cloud";
 
 const reply = (status: number, value: unknown) =>
   Response.json(value, {
@@ -86,6 +88,8 @@ export async function nextClassroomRequest(
         decorations || (managed && request.method !== "GET");
       const sql = databaseClient(env.HYPERDRIVE_WRITER!);
       let inTransaction = false;
+      let commitAttempted = false;
+      const uploadedKeys: string[] = [];
       try {
         await sql.connect();
         if (transactional) {
@@ -111,6 +115,29 @@ export async function nextClassroomRequest(
         if (managed) {
           const resource =
             managed[3] ?? "publications" + (managed[4] ? "/" + managed[4] : "");
+          const published =
+            /^publications\/([a-f0-9-]{36})\/(content|image)$/.exec(resource);
+          if (published) {
+            const response = await publishedAssignmentRequest(
+              request,
+              env,
+              identity,
+              cls[1],
+              published[1],
+              published[2],
+              sql,
+              uploadedKeys,
+            );
+            if (inTransaction) {
+              commitAttempted = true;
+              await sql.query("COMMIT");
+              inTransaction = false;
+            }
+            response.headers.set("Cache-Control", "private, no-store");
+            response.headers.set("X-Content-Type-Options", "nosniff");
+            response.headers.set("Vary", "Authorization, Origin");
+            return response;
+          }
           const reset = /^students\/([a-f0-9-]{36})\/reset-password$/.exec(
             resource,
           );
@@ -147,6 +174,10 @@ export async function nextClassroomRequest(
         }
       } catch (e) {
         if (inTransaction) await sql.query("ROLLBACK").catch(() => {});
+        if (!commitAttempted && uploadedKeys.length)
+          await removeStoredImages(env, uploadedKeys).catch(() =>
+            console.warn("published_assignment_upload_cleanup_pending"),
+          );
         throw e;
       } finally {
         await sql.end();

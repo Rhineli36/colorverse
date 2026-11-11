@@ -23,6 +23,7 @@ export const SubmissionRowSchema = z.object({
 });
 export type SubmissionRow = z.infer<typeof SubmissionRowSchema>;
 export const PublicationSchema = z.object({
+  contentRevision: z.number().int().nonnegative().default(0),
   id: z.uuid(),
   taskId: z.string(),
   definition: AssignmentDefinitionSchema,

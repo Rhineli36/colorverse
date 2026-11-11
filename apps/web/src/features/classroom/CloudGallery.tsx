@@ -41,6 +41,7 @@ import {
   CloudGuideSchema,
   type CloudGuideStepId,
   type CloudSession,
+  type AssignmentDefinition,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
 import { CommentComposer } from "./CommentComposer";
@@ -239,7 +240,7 @@ export function CloudGallery({
     [taskId, setTaskId] = useState(""),
     [publicationId, setPublicationId] = useState(""),
     [publications, setPublications] = useState<
-      { id: string; taskId: string; definition: { title: string } }[]
+      { id: string; taskId: string; definition: AssignmentDefinition }[]
     >([]),
     [intent, setIntent] = useState<LearningIntent>(blankIntent),
     [comparisonGroup, setComparisonGroup] = useState(""),
@@ -1911,7 +1912,10 @@ export function CloudGallery({
             </label>
             <TaskPrompt
               id={taskId}
-              definition={tasks.find((t) => t.taskId === taskId)?.definition}
+              definition={
+                publications.find((p) => p.id === publicationId)?.definition ??
+                tasks.find((t) => t.taskId === taskId)?.definition
+              }
             />
             <form
               onSubmit={(e) => {

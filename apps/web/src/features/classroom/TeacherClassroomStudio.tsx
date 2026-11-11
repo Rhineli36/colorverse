@@ -24,6 +24,7 @@ import { StudentImporter } from "./StudentImporter";
 import { AssignmentPublisher } from "./ClassroomMail";
 import { AssignmentText } from "./AssignmentText";
 import { ClassroomThumbnail } from "./ClassroomThumbnail";
+import { PublishedAssignmentEditor } from "./PublishedAssignmentEditor";
 import { download } from "../../app/download";
 import "./classroom-studio.css";
 const json = async (path: string, body?: unknown) =>
@@ -132,6 +133,8 @@ export function TeacherClassroomStudio(props: Props) {
     [publishRequest, setPublishRequest] = useState(""),
     [resetMessage, setResetMessage] = useState("");
   const [imageIndex, setImageIndex] = useState(0);
+  const [editingPublication, setEditingPublication] = useState<string>();
+  const [publicationPending, setPublicationPending] = useState(false);
   useEffect(() => setImageIndex(0), [work?.workId]);
   const [unlinked, setUnlinked] = useState<
     { id: string; title: string; owner_enrollment_id: string }[]
@@ -186,8 +189,8 @@ export function TeacherClassroomStudio(props: Props) {
     }
   }, [props.initialClassId, props.initialWorkRequest]);
   useEffect(() => {
-    props.onPendingChange?.(dirty);
-  }, [dirty, props.onPendingChange]);
+    props.onPendingChange?.(dirty || publicationPending);
+  }, [dirty, publicationPending, props.onPendingChange]);
   useEffect(
     () => () => props.onPendingChange?.(false),
     [props.onPendingChange],
@@ -414,6 +417,39 @@ export function TeacherClassroomStudio(props: Props) {
   );
   return (
     <section className="classroom-studio" aria-label="课堂教师管理">
+      {editingPublication && (
+        <PublishedAssignmentEditor
+          key={`${classId}:${editingPublication}`}
+          classId={classId}
+          publicationId={editingPublication}
+          onPendingChange={setPublicationPending}
+          onClose={() => setEditingPublication(undefined)}
+          onSaved={(value) => {
+            setPublications((items) =>
+              items.map((p) =>
+                p.id === value.id
+                  ? {
+                      ...p,
+                      definition: value.definition,
+                      contentRevision: value.revision,
+                    }
+                  : p,
+              ),
+            );
+            setSelected((p) =>
+              p?.id === value.id
+                ? {
+                    ...p,
+                    definition: value.definition,
+                    contentRevision: value.revision,
+                  }
+                : p,
+            );
+            setEditingPublication(undefined);
+            refresh();
+          }}
+        />
+      )}
       <header className="classroom-studio-heading">
         <h1>教师管理</h1>
         <select
@@ -731,16 +767,25 @@ export function TeacherClassroomStudio(props: Props) {
                               ? "当前提交均已批改"
                               : "等待学生提交"}
                       </span>
-                      <button
-                        className="publication-open"
-                        onClick={() => {
-                          setSelected(p);
-                          setQuery("");
-                          setFilter("all");
-                        }}
-                      >
-                        查看提交 →
-                      </button>
+                      <div className="publication-action-buttons">
+                        <button
+                          className="publication-edit"
+                          disabled={busy}
+                          onClick={() => setEditingPublication(p.id)}
+                        >
+                          修改作业
+                        </button>
+                        <button
+                          className="publication-open"
+                          onClick={() => {
+                            setSelected(p);
+                            setQuery("");
+                            setFilter("all");
+                          }}
+                        >
+                          查看提交 →
+                        </button>
+                      </div>
                     </div>
                   </div>
                   {metrics(p)}

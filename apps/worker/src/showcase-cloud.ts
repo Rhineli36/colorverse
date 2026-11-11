@@ -49,7 +49,7 @@ export interface ShowcaseCloudEnvironment extends AuthEnvironment {
   SUPABASE_SECRET_KEY?: string;
   IMAGES?: ImagesBinding;
 }
-async function classroomThumbnail(
+export async function classroomThumbnail(
   request: Request,
   env: ShowcaseCloudEnvironment,
   image: Response,
@@ -95,7 +95,7 @@ export function cloudUploadsReady(env: ShowcaseCloudEnvironment) {
     env.HYPERDRIVE_WRITER && env.SUPABASE_SECRET_KEY && env.IMAGES,
   );
 }
-async function storage(
+export async function storage(
   env: ShowcaseCloudEnvironment,
   path: string,
   method = "GET",
@@ -153,7 +153,10 @@ async function readLimited(
   }
   return bytes;
 }
-async function readAssignmentUpload(request: Request, multiple: boolean) {
+export async function readAssignmentUpload(
+  request: Request,
+  multiple: boolean,
+) {
   if (!request.headers.get("Content-Type")?.startsWith("multipart/form-data"))
     throw new ClassroomFailure(
       400,
@@ -203,7 +206,7 @@ async function readAssignmentUpload(request: Request, multiple: boolean) {
     files,
   };
 }
-async function uploadAssignmentImages(
+export async function uploadAssignmentImages(
   env: ShowcaseCloudEnvironment,
   identity: VerifiedIdentity,
   requestId: string,
@@ -268,7 +271,7 @@ async function uploadAssignmentImages(
   }
   return imageKeys;
 }
-async function removeStoredImages(
+export async function removeStoredImages(
   env: ShowcaseCloudEnvironment,
   keys: string[],
 ) {
