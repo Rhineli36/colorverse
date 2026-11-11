@@ -113,6 +113,7 @@ export function PresetCatalog({
               </button>
               {onApply && unlocked.includes(p.id) && (
                 <button
+                  className="gp-apply-preset"
                   disabled={saving}
                   onClick={() => onApply(p.id)}
                   aria-label={`套用边框：${p.name}`}

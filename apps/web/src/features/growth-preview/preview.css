@@ -1352,3 +1352,43 @@
   color: #a9bbd0;
   font-size: 13px;
 }
+
+.cloud-experience .gp-preset-card[data-locked="false"] {
+  border-color: #c4e5bf99;
+  background: #172c38;
+  box-shadow:
+    0 0 0 1px #c4e5bf1a,
+    0 5px 20px #0002;
+}
+.cloud-experience .gp-preset-card[data-locked="false"] .gp-frame-swatch > img {
+  opacity: 0.92;
+}
+.cloud-experience .gp-preset-card[data-locked="false"] .gp-frame-preset,
+.cloud-experience .gp-preset-card[data-locked="false"] .gp-mini-charm {
+  filter: brightness(1.2) drop-shadow(0 0 3px #fff4);
+}
+.cloud-experience .gp-preset-card[data-locked="false"] .gp-lock-badge {
+  border-color: #d8efba;
+  background: #d8efba;
+  color: #162c28;
+  font-weight: 600;
+  font-size: 13px;
+}
+.cloud-experience .gp-preset-card[data-locked="false"] .gp-unlock-rule {
+  color: #d8efba;
+}
+.cloud-experience .gp-preset-card[data-locked="false"] .gp-apply-preset {
+  border-color: #d8efba;
+  background: #d8efba;
+  color: #162c28;
+  font-weight: 600;
+}
+.cloud-experience .gp-preset-card[data-locked="false"] progress {
+  accent-color: #d8efba;
+}
+.cloud-experience .gp-preset-card[data-locked="false"].trial-selected {
+  border-color: #deceff;
+  box-shadow:
+    0 0 0 2px #c8ade97a,
+    0 5px 20px #0002;
+}
