@@ -427,3 +427,4 @@ export * from "./classroom-mail";
 export * from "./experience";
 export * from "./student-import";
 export * from "./classroom-management";
+export * from "./student-assignments";

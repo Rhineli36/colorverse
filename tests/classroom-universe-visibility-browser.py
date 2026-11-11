@@ -62,6 +62,7 @@ with sync_playwright() as p:
                 data = {"profile": {"studentNumber": "00001", "name": "虚拟学生"}}
             elif item == "learning-tasks": data = {"tasks": []}
             elif item == "publications": data = {"publications": []}
+            elif item == "my-assignments": data = {"planetId": planets[0]["id"], "assignments": [], "works": []}
             elif item == "notifications": data = {"notifications": [], "readIds": []}
             elif item == "guide": data = {"completed": [], "hasPeers": True}
             elif item == "interactions": data = {"interactions": []}

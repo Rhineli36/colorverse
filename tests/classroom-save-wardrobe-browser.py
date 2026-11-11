@@ -44,6 +44,7 @@ with sync_playwright() as p:
             elif item == 'publications':
                 if route.request.method == 'POST': published.append(route.request.post_data_json)
                 data = {'publications':[]} if route.request.method == 'GET' else {'id':str(uuid.uuid4())}
+            elif item == 'my-assignments': data = {'planetId':planet,'assignments':[],'works':[]}
             elif item == 'notifications': data = {'notifications':[],'readIds':[]}
             elif item == 'guide': data = {'completed':[],'hasPeers':False}
             elif item == 'interactions': data = {'interactions':[]}

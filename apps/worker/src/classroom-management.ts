@@ -12,6 +12,7 @@ import { classroomActor, ClassroomFailure } from "./classroom";
 import type { EnrollmentSql } from "./enrollment";
 import type { VerifiedIdentity } from "./auth";
 import { learningTasks } from "./learning";
+import { studentAssignments } from "./student-assignments";
 
 export async function classroomScope(sql: EnrollmentSql, classId: string) {
   z.uuid().parse(classId);
@@ -219,6 +220,17 @@ export async function managementAction(
   await classroomScope(sql, classId);
   const actor = await classroomActor(sql, identity, classId);
   const staff = ["teacher", "assistant"].includes(String(actor.role));
+  if (resource === "my-assignments") {
+    if (method !== "GET")
+      throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效。");
+    if (actor.role !== "student")
+      throw new ClassroomFailure(
+        403,
+        "STUDENT_REQUIRED",
+        "请使用本班学生账户查看自己的作业。",
+      );
+    return studentAssignments(sql, classId, String(actor.id));
+  }
   if (resource === "publications" && method === "GET") {
     const all = await publications(sql, classId);
     if (staff) return { publications: all };

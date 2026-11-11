@@ -49,6 +49,31 @@ export interface ShowcaseCloudEnvironment extends AuthEnvironment {
   SUPABASE_SECRET_KEY?: string;
   IMAGES?: ImagesBinding;
 }
+async function classroomThumbnail(
+  request: Request,
+  env: ShowcaseCloudEnvironment,
+  image: Response,
+) {
+  if (
+    env.CLASSROOM_NEXT !== "true" ||
+    new URL(request.url).searchParams.get("thumbnail") !== "1"
+  )
+    return image;
+  try {
+    if (!env.IMAGES || !image.body) throw new Error("THUMBNAIL_UNAVAILABLE");
+    return (
+      await env.IMAGES.input(image.body)
+        .transform({ width: 240, height: 160, fit: "scale-down" })
+        .output({ format: "image/webp", quality: 65, anim: false })
+    ).response();
+  } catch {
+    throw new ClassroomFailure(
+      503,
+      "THUMBNAIL_UNAVAILABLE",
+      "缩略图暂不可用，请重试。",
+    );
+  }
+}
 const planetInput = z.union([
   CloudPlanetAppearanceInput,
   z.strictObject({ random: z.literal(true) }),
@@ -400,7 +425,8 @@ export async function handleShowcaseCloud(
         throw new ClassroomFailure(404, "NOT_FOUND", "作业示范图片不存在");
       await client.query("COMMIT");
       const image = await storage(env, `colorverse-classroom/${keys[index]}`);
-      return new Response(image.body, {
+      const display = await classroomThumbnail(request, env, image);
+      return new Response(display.body, {
         headers: {
           "Content-Type": "image/webp",
           "Cache-Control": "private, no-store",
@@ -1091,7 +1117,10 @@ export async function handleShowcaseCloud(
         env,
         `colorverse-classroom/${original ? row.original_storage_key : row.storage_key}`,
       );
-      return new Response(image.body, {
+      const display = original
+        ? image
+        : await classroomThumbnail(request, env, image);
+      return new Response(display.body, {
         headers: {
           "Content-Type": original ? row.original_mime : "image/webp",
           "Cache-Control": "private, no-store",

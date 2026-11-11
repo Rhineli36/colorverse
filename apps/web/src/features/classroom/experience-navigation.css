@@ -46,6 +46,14 @@
   align-items: center;
   flex: none;
 }
+.cloud-experience .competition-header nav .student-assignments-entry b {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 14px;
+  background: #c9b6f2;
+  color: #251d3b;
+  font-size: 12px;
+}
 .competition-app .competition-header nav .pending-review-entry {
   justify-content: center;
   min-width: 36px;

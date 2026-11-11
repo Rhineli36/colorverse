@@ -11,6 +11,8 @@ import { CloudStudentGate } from "./CloudStudentGate";
 import { TeacherClassroomStudio } from "./TeacherClassroomStudio";
 import { CloudClassroomView } from "./CloudClassroomView";
 import { CloudInbox } from "./CloudInbox";
+import { useStudentAssignments } from "./useStudentAssignments";
+import type { MyAssignmentsView } from "./MyAssignments";
 import "./classroom.css";
 import "../competition/competition.css";
 import "../competition/offline-experience.css";
@@ -24,6 +26,7 @@ import {
 } from "../color-lab/lab-navigation";
 import { experiments } from "../color-lab/experiments";
 const ClassroomWardrobe = lazy(() => import("./ClassroomWardrobe"));
+const MyAssignments = lazy(() => import("./MyAssignments"));
 const JellyfishLab = lazy(experiments[0].load);
 const TreeLab = lazy(() => import("../color-lab/TreeLab"));
 const WeightLab = lazy(() => import("../color-lab/WeightLab"));
@@ -65,6 +68,13 @@ export function CloudExperienceView() {
   const [classId, setClassId] = useState("");
   const [screen, setScreen] = useState("universe");
   const [wardrobe, setWardrobe] = useState(false);
+  const [assignmentsOpen, setAssignmentsOpen] = useState(false);
+  const [assignmentView, setAssignmentView] = useState<MyAssignmentsView>({
+    tab: "missing",
+    query: "",
+    classId: "",
+    sort: "deadline",
+  });
   const [teacher, setTeacher] = useState(false);
   const [pending, setPending] = useState(false);
   const [loginRequest, setLoginRequest] = useState(0);
@@ -94,6 +104,10 @@ export function CloudExperienceView() {
     : membership.role === "student"
       ? "student"
       : "teacher";
+  const studentAssignments = useStudentAssignments(
+    active,
+    labEnabled && role === "student",
+  );
   useEffect(() => {
     setPending(false);
     setNotice("");
@@ -108,6 +122,13 @@ export function CloudExperienceView() {
     );
     setScreen("universe");
     setWardrobe(false);
+    setAssignmentsOpen(false);
+    setAssignmentView({
+      tab: "missing",
+      query: "",
+      classId: "",
+      sort: "deadline",
+    });
   }, [session?.identity.id]);
   useEffect(() => {
     if (!notice) return;
@@ -125,6 +146,7 @@ export function CloudExperienceView() {
     }
     if (labEnabled) {
       if (destination === "knowledge") {
+        setAssignmentsOpen(false);
         labNavigate(STUDY_PATH);
         return;
       }
@@ -132,6 +154,15 @@ export function CloudExperienceView() {
     }
     if (!active) {
       setGuestNavigation((n) => ({ destination, sequence: n.sequence + 1 }));
+      return;
+    }
+    setAssignmentsOpen(
+      destination === "assignments" && labEnabled && role === "student",
+    );
+    if (destination === "assignments") {
+      setWardrobe(false);
+      setTeacher(false);
+      studentAssignments.refresh();
       return;
     }
     setWardrobe(destination === "wardrobe" && labEnabled && role === "student");
@@ -154,32 +185,38 @@ export function CloudExperienceView() {
     setClassId(targetClass);
     setTeacher(false);
     setWardrobe(false);
+    setAssignmentsOpen(false);
+    if (labOpen || studyOpen) labNavigate(import.meta.env.BASE_URL);
     setNavigation((n) => ({ ...data, action, sequence: n.sequence + 1 }));
   };
   return (
     <ColorLabEnabled.Provider value={labEnabled}>
       <div
-        className={`competition-app offline-app cloud-experience ${!wardrobe && !labOpen && !studyOpen && screen === "universe" && !teacher ? "universe-active" : ""} ${labOpen ? "lab-open" : ""} ${labOpen && labLocation.classroom ? "lab-classroom" : ""}`}
+        className={`competition-app offline-app cloud-experience ${!assignmentsOpen && !wardrobe && !labOpen && !studyOpen && screen === "universe" && !teacher ? "universe-active" : ""} ${labOpen ? "lab-open" : ""} ${labOpen && labLocation.classroom ? "lab-classroom" : ""}`}
         data-experience-mode="cloud"
       >
         <ExperienceHeader
           wardrobeEnabled={labEnabled}
+          assignmentsEnabled={labEnabled}
+          assignmentPendingCount={studentAssignments.pendingCount}
           current={
             labOpen || studyOpen
               ? "knowledge"
-              : wardrobe
-                ? "wardrobe"
-                : teacher
-                  ? "teacher"
-                  : screen === "learning"
-                    ? "knowledge"
-                    : screen === "gallery"
-                      ? "room"
-                      : screen === "create"
-                        ? "edit"
-                        : ["room", "edit", "knowledge"].includes(screen)
-                          ? (screen as ExperienceDestination)
-                          : "universe"
+              : assignmentsOpen
+                ? "assignments"
+                : wardrobe
+                  ? "wardrobe"
+                  : teacher
+                    ? "teacher"
+                    : screen === "learning"
+                      ? "knowledge"
+                      : screen === "gallery"
+                        ? "room"
+                        : screen === "create"
+                          ? "edit"
+                          : ["room", "edit", "knowledge"].includes(screen)
+                            ? (screen as ExperienceDestination)
+                            : "universe"
           }
           modeLabel={
             location.pathname.startsWith("/review") ||
@@ -233,6 +270,7 @@ export function CloudExperienceView() {
                 onEnter={async (m) => {
                   if (pending) return false;
                   setWardrobe(false);
+                  setAssignmentsOpen(false);
                   setClassId(m.classId);
                   setTeacher(m.role !== "student");
                   setNavigation((n) => ({
@@ -276,7 +314,38 @@ export function CloudExperienceView() {
           </main>
         ) : active && membership ? (
           <main className="competition-main">
-            {wardrobe && role === "student" && labEnabled ? (
+            {assignmentsOpen && role === "student" && labEnabled ? (
+              <Suspense fallback={<p role="status">正在载入我的作业…</p>}>
+                <MyAssignments
+                  classes={studentAssignments.classes}
+                  loading={studentAssignments.loading}
+                  errors={studentAssignments.errors}
+                  onRefresh={studentAssignments.refresh}
+                  view={assignmentView}
+                  onViewChange={setAssignmentView}
+                  onBack={() => navigate("universe")}
+                  onSubmit={(a) => {
+                    if (!a.classroom.planetId) {
+                      setClassId(a.classroom.classId);
+                      navigate("edit");
+                      setNotice(
+                        "请先创建自己的星球，再从「我的作业」提交作品。",
+                      );
+                    } else
+                      jump(a.classroom.classId, "submit", {
+                        taskId: a.taskId,
+                        publicationId: a.id,
+                      });
+                  }}
+                  onOpenWork={(w) =>
+                    jump(w.classroom.classId, "feedback", {
+                      planetId: w.planetId,
+                      workId: w.id,
+                    })
+                  }
+                />
+              </Suspense>
+            ) : wardrobe && role === "student" && labEnabled ? (
               <Suspense fallback={<p role="status">正在载入星球装扮…</p>}>
                 <ClassroomWardrobe
                   classId={membership.classId}

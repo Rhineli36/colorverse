@@ -1,0 +1,402 @@
+.cloud-experience .student-assignments {
+  max-width: 1440px;
+  margin: 20px auto;
+  padding: clamp(18px, 2.4vw, 36px);
+  border: 1px solid #8796b45c;
+  border-radius: 22px;
+  background: #101b2cf5;
+  color: #e8eef8;
+  font-size: 16px;
+  box-shadow: 0 18px 60px #0003;
+}
+.student-tasks-heading,
+.student-tasks-toolbar,
+.student-tasks-heading-actions,
+.student-tasks-filters,
+.student-tasks-toolbar nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.student-tasks-heading {
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.student-tasks-heading .eyebrow {
+  margin: 0 0 8px;
+  color: #ada6d5;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+}
+.student-tasks-heading h1 {
+  margin: 0 0 10px;
+  font-size: clamp(26px, 2.5vw, 36px);
+  line-height: 1.3;
+}
+.student-tasks-heading p {
+  margin: 0;
+  color: #b6c3d7;
+  line-height: 1.65;
+}
+.student-tasks-heading-actions button {
+  min-height: 44px;
+}
+.student-tasks-heading-actions button:last-child {
+  width: 44px;
+  padding: 0;
+  font-size: 26px;
+}
+.student-tasks-toolbar {
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #8898b44a;
+}
+.cloud-experience .student-tasks-toolbar nav button {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px 18px;
+  background: #23314a;
+  border: 1px solid #899ab442;
+  color: #e0e8f4;
+  border-radius: 10px;
+  font-size: 16px;
+}
+.cloud-experience .student-tasks-toolbar nav button[aria-pressed="true"] {
+  background: #bba6f2;
+  border-color: #d0c2ff;
+  color: #211b3e;
+  font-weight: 600;
+}
+.student-tasks-toolbar b {
+  min-width: 24px;
+  text-align: center;
+  border-radius: 14px;
+  background: #0002;
+  padding: 1px 5px;
+}
+.student-tasks-toolbar small {
+  font-size: 13px;
+}
+.student-tasks-filters {
+  flex: 1;
+  justify-content: flex-end;
+}
+.student-tasks-filters input {
+  width: min(260px, 100%);
+}
+.student-tasks-filters input,
+.student-tasks-filters select {
+  box-sizing: border-box;
+  min-height: 44px;
+  border: 1px solid #8597b257;
+  border-radius: 9px;
+  padding: 10px 12px;
+  background: #18263b;
+  color: #e4ecf9;
+  font-size: 15px;
+  max-width: 100%;
+}
+.student-tasks-filters input::placeholder {
+  color: #acbad0;
+}
+.student-task-group {
+  margin-top: 26px;
+  --task-accent: #99caff;
+  --task-tint: #1b2a41;
+}
+.student-task-group.is-overdue {
+  --task-accent: #ffa4ac;
+  --task-tint: #362633;
+}
+.student-task-group.is-soon {
+  --task-accent: #f3ce8b;
+  --task-tint: #332e29;
+}
+.student-task-group h2 {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 18px;
+  margin: 0 0 12px;
+  color: var(--task-accent);
+}
+.student-task-group h2 small {
+  color: #c2ccdc;
+  font-size: 14px;
+  font-weight: 400;
+}
+.student-task-group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--task-accent);
+}
+.student-task-rows {
+  display: grid;
+  gap: 12px;
+}
+.student-task-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 112px minmax(180px, 1fr) minmax(190px, 0.6fr) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid #8597b24a;
+  border-left: 5px solid var(--task-accent, #9cabc6);
+  border-radius: 12px;
+  background: var(--task-tint, #1a293e);
+}
+.student-task-thumbnail {
+  width: 112px;
+  height: 78px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #0d192b;
+  border: 1px solid #96a4c238;
+}
+.student-task-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.student-task-thumbnail .interface-icon {
+  width: 30px;
+  height: 30px;
+  color: #a7b5d0;
+}
+.student-task-copy {
+  min-width: 0;
+}
+.student-task-copy h3 {
+  margin: 0 0 7px;
+  line-height: 1.5;
+  font-size: 18px;
+  color: #f0f3fc;
+  overflow-wrap: anywhere;
+}
+.student-task-copy p {
+  margin: 0;
+  color: #c2ccdb;
+  font-size: 14px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.student-task-copy small,
+.student-task-meta small {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+  color: #b8c7dc;
+}
+.student-task-meta {
+  border-left: 1px solid #94a3bc35;
+  padding-left: 18px;
+  font-size: 14px;
+}
+.student-task-meta p {
+  margin: 8px 0 0;
+  color: #ced8e9;
+  line-height: 1.5;
+}
+.student-task-status {
+  display: inline-block;
+  padding: 4px 9px;
+  border: 1px solid #9caec36b;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--task-accent, #c1d5ee);
+  background: #0002;
+}
+.student-task-status.is-reviewed {
+  color: #a4e6d3;
+  border-color: #a4e6d36b;
+}
+.cloud-experience .student-task-requirements {
+  margin-top: 6px;
+  padding: 5px 0;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  color: #cbbafa;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 14px;
+}
+.cloud-experience .student-task-submit,
+.cloud-experience .student-task-view {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 11px 18px;
+  border-radius: 9px;
+  white-space: nowrap;
+  font-size: 15px;
+}
+.cloud-experience .student-task-submit {
+  background: #aae5d7;
+  border-color: #aae5d7;
+  color: #122f32;
+  font-weight: 600;
+}
+.cloud-experience .student-task-view {
+  background: transparent;
+  border-color: #a39ac582;
+  color: #d7c9ff;
+}
+.student-task-row.is-submitted {
+  border-left-color: #aaa0d4;
+}
+.student-task-row.is-withdrawn {
+  border-left-style: dashed;
+}
+.student-tasks-explanation,
+.student-tasks-notice {
+  font-size: 14px;
+  color: #b9c8de;
+  margin: 18px 0;
+  line-height: 1.7;
+}
+.student-tasks-error {
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid #edb1a87a;
+  background: #3b2530;
+  border-radius: 10px;
+  color: #ffd3c9;
+  font-size: 14px;
+}
+.student-tasks-error p {
+  margin: 0 0 8px;
+}
+.student-tasks-empty {
+  text-align: center;
+  padding: 48px 16px;
+}
+.student-tasks-empty > .interface-icon {
+  width: 34px;
+  height: 34px;
+  color: #c3b1f1;
+}
+.student-tasks-empty h2 {
+  font-size: 20px;
+  margin: 14px 0 8px;
+}
+.student-tasks-empty p {
+  font-size: 15px;
+  color: #b7c6dc;
+  line-height: 1.7;
+}
+.student-tasks-load-more {
+  display: block;
+  margin: 20px auto 0;
+}
+.student-tasks-footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid #8796b43b;
+  font-size: 14px;
+  color: #b8cbdc;
+}
+.student-tasks-footer .interface-icon {
+  color: #a2dccf;
+}
+.cloud-experience .student-assignments button:focus-visible,
+.student-assignments input:focus-visible,
+.student-assignments select:focus-visible {
+  outline: 2px solid #c8b6fb;
+  outline-offset: 3px;
+}
+.cloud-experience .competition-header nav .student-assignments-entry b {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 14px;
+  background: #c9b6f2;
+  color: #251d3b;
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .student-task-row {
+    grid-template-columns: 88px minmax(170px, 1fr) minmax(170px, 0.7fr);
+    gap: 14px;
+  }
+  .student-task-thumbnail {
+    width: 88px;
+    height: 68px;
+  }
+  .student-task-row > button {
+    grid-column: 2 / -1;
+    justify-self: end;
+  }
+}
+@media (max-width: 640px) {
+  .cloud-experience .student-assignments {
+    border-radius: 14px;
+    margin: 12px 0;
+    padding: 16px;
+  }
+  .student-tasks-heading {
+    gap: 16px;
+  }
+  .student-tasks-heading-actions {
+    margin-left: auto;
+  }
+  .student-tasks-toolbar nav {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .cloud-experience .student-tasks-toolbar nav button {
+    flex: 1;
+    padding: 10px;
+    gap: 6px;
+  }
+  .student-tasks-filters {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .student-tasks-filters input {
+    flex: 1;
+    width: 140px;
+    min-width: 100px;
+  }
+  .student-tasks-filters select {
+    max-width: 100%;
+  }
+  .student-task-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+    padding: 14px;
+    gap: 12px;
+  }
+  .student-task-thumbnail {
+    width: 72px;
+    height: 66px;
+  }
+  .student-task-copy h3 {
+    font-size: 16px;
+  }
+  .student-task-meta {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid #94a3bc35;
+    padding: 12px 0 0;
+  }
+  .student-task-row > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}

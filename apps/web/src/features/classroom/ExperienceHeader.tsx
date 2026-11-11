@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
 import { BackgroundMusic } from "./BackgroundMusic";
+import { InterfaceIcon } from "./InterfaceIcon";
 import "./experience-navigation.css";
 
 export type ExperienceDestination =
-  "universe" | "room" | "edit" | "knowledge" | "teacher" | "wardrobe";
+  | "universe"
+  | "room"
+  | "edit"
+  | "knowledge"
+  | "teacher"
+  | "wardrobe"
+  | "assignments";
 export function ExperienceHeader({
   role,
   onNavigate,
@@ -14,7 +21,11 @@ export function ExperienceHeader({
   modeLabel,
   current = "universe",
   wardrobeEnabled = false,
+  assignmentsEnabled = false,
+  assignmentPendingCount,
 }: {
+  assignmentsEnabled?: boolean;
+  assignmentPendingCount?: number;
   wardrobeEnabled?: boolean;
   role: "guest" | "student" | "teacher";
   onNavigate: (destination: ExperienceDestination) => void;
@@ -95,6 +106,24 @@ export function ExperienceHeader({
             >
               我的星球
             </button>
+            {assignmentsEnabled && (
+              <button
+                className="student-assignments-entry"
+                aria-current={current === "assignments" ? "page" : undefined}
+                title={
+                  assignmentPendingCount === undefined
+                    ? "查看要交的作业和已交的作品"
+                    : `待提交 ${assignmentPendingCount} 项作业`
+                }
+                disabled={disabled}
+                onClick={() => onNavigate("assignments")}
+              >
+                <InterfaceIcon name="clipboard" />
+                我的作业
+                {assignmentPendingCount !== undefined &&
+                  assignmentPendingCount > 0 && <b>{assignmentPendingCount}</b>}
+              </button>
+            )}
             <button
               aria-current={activeDestination === "edit" ? "page" : undefined}
               disabled={disabled}

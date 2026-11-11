@@ -930,13 +930,29 @@ describe("multiple private assignment reference images", () => {
       return new Response(bytes, { headers: { "Content-Type": "image/webp" } });
     });
     vi.stubGlobal("fetch", transport);
+    const transforms: Record<string, unknown>[] = [];
+    const thumbnailOutputs: Record<string, unknown>[] = [];
+    const thumbnailBytes = new Uint8Array([
+      82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80,
+    ]);
     const imageEnv = {
       ...env,
       IMAGES: {
         input: () => ({
-          transform: () => ({
-            output: async () => ({ response: () => new Response(bytes) }),
-          }),
+          transform: (options: Record<string, unknown>) => {
+            transforms.push(options);
+            return {
+              output: async (output: Record<string, unknown>) => {
+                if (options.width === 240) thumbnailOutputs.push(output);
+                return {
+                  response: () =>
+                    new Response(
+                      options.width === 240 ? thumbnailBytes : bytes,
+                    ),
+                };
+              },
+            };
+          },
         }),
       },
     };
@@ -993,9 +1009,32 @@ describe("multiple private assignment reference images", () => {
       expect(transport.mock.calls.at(-1)?.[0]).toContain(
         `assignment-${rid}-1.webp`,
       );
+      const thumbnail = await handleShowcaseCloud(
+        new Request("https://classroom.test/?index=1&thumbnail=1"),
+        imageEnv,
+        teacher,
+        id[5],
+        `learning-tasks/${result.taskId}/image`,
+        factory,
+      );
+      expect(transforms.at(-1)).toEqual({
+        width: 240,
+        height: 160,
+        fit: "scale-down",
+      });
+      expect(thumbnailOutputs.at(-1)).toEqual({
+        format: "image/webp",
+        quality: 65,
+        anim: false,
+      });
+      expect((await thumbnail.arrayBuffer()).byteLength).toBeLessThan(
+        bytes.length,
+      );
+      expect(thumbnail.headers.get("Cache-Control")).toBe("private, no-store");
+      const transformationsBeforeDenied = transforms.length;
       await expect(
         handleShowcaseCloud(
-          new Request("https://classroom.test/?index=1"),
+          new Request("https://classroom.test/?index=1&thumbnail=1"),
           imageEnv,
           student,
           id[5],
@@ -1003,6 +1042,7 @@ describe("multiple private assignment reference images", () => {
           factory,
         ),
       ).rejects.toMatchObject({ status: 404 });
+      expect(transforms).toHaveLength(transformationsBeforeDenied);
       const append = (
         count: number,
         revision: number,
