@@ -286,9 +286,14 @@ export function CloudGallery({
     };
   }, []);
   const detailVisible = Boolean(work && !editing);
+  // Hidden planets remain available to staff through teacher management only.
+  const visiblePlanets = useMemo(
+    () => (data?.planets ?? []).filter((p) => p.document.visible !== false),
+    [data],
+  );
   const observatoryPlanets = useMemo(
-    () => [...(data?.planets ?? []), ...samples],
-    [data, samples],
+    () => [...visiblePlanets, ...samples],
+    [visiblePlanets, samples],
   );
   useEffect(() => {
     let active = true;
@@ -878,7 +883,7 @@ export function CloudGallery({
       const peer =
         !owned && selected
           ? selected
-          : data?.planets.find((p) => p.owner_enrollment_id !== data.actorId);
+          : visiblePlanets.find((p) => p.owner_enrollment_id !== data?.actorId);
       if (!peer) return;
       setPlanetId(peer.id);
       setExploring(true);
@@ -1148,7 +1153,7 @@ export function CloudGallery({
         />
       )}
       {data &&
-        data.planets.some(
+        visiblePlanets.some(
           (p) => p.stats.likes + p.stats.emojis + p.stats.comments > 0,
         ) && (
           <section className="cloud-highlights" aria-label="班级互动亮点">
@@ -1157,7 +1162,7 @@ export function CloudGallery({
               按当前有效点赞、表情和留言总数排列，不代表成绩。
             </p>
             <div>
-              {[...data.planets]
+              {[...visiblePlanets]
                 .filter(
                   (p) => p.stats.likes + p.stats.emojis + p.stats.comments > 0,
                 )
@@ -1250,7 +1255,7 @@ export function CloudGallery({
             pending
               ? []
               : staff
-                ? data.planets.map((p) => p.id)
+                ? visiblePlanets.map((p) => p.id)
                 : student && myPlanet
                   ? [myPlanet.id]
                   : []
@@ -1269,9 +1274,7 @@ export function CloudGallery({
           }}
           focusRequest={focusRequest}
           classId={classId}
-          planets={observatoryPlanets.filter(
-            (p) => staff || p.document.visible !== false,
-          )}
+          planets={observatoryPlanets}
           ownId={myPlanet?.id}
           selectedId={planetId}
           onEnter={(id) => {
