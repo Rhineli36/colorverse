@@ -140,6 +140,15 @@ export async function handleRequest(
       response.headers.set("Vary", "Authorization");
       return response;
     } catch (error) {
+      if (
+        error instanceof ClassroomFailure &&
+        request.method === "POST" &&
+        showcase[2] === "works"
+      )
+        console.warn("classroom_work_upload_failed", {
+          code: error.code,
+          status: error.status,
+        });
       if (error instanceof AuthFailure || error instanceof ClassroomFailure)
         return json(error.status, {
           error: { code: error.code, message: error.message },

@@ -1,3 +1,4 @@
+import { TeacherSubmission } from "./TeacherSubmission";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
@@ -132,6 +133,8 @@ export function TeacherClassroomStudio(props: Props) {
     [deadline, setDeadline] = useState(""),
     [publishRequest, setPublishRequest] = useState(""),
     [resetMessage, setResetMessage] = useState("");
+  const [proxyStudent, setProxyStudent] = useState<SubmissionRow>();
+  const [proxyPending, setProxyPending] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
   const [editingPublication, setEditingPublication] = useState<string>();
   const [publicationPending, setPublicationPending] = useState(false);
@@ -146,6 +149,7 @@ export function TeacherClassroomStudio(props: Props) {
   const pendingTotal =
     pendingIndependent.length +
     pendingPublications.reduce((sum, p) => sum + p.pending, 0);
+  const [taskPolicies, setTaskPolicies] = useState<LearningTaskSetting[]>([]);
   const [catalog, setCatalog] = useState(
     AssignmentCatalog.map((t) => ({ ...t })),
   );
@@ -154,6 +158,7 @@ export function TeacherClassroomStudio(props: Props) {
     {},
   );
   const applyTaskSettings = (tasks: LearningTaskSetting[]) => {
+    setTaskPolicies(tasks);
     const unpublished = tasks.filter((t) => !t.published);
     setUnpublishedTaskIds(unpublished.map((t) => t.taskId));
     setDraftRevisions(
@@ -189,8 +194,8 @@ export function TeacherClassroomStudio(props: Props) {
     }
   }, [props.initialClassId, props.initialWorkRequest]);
   useEffect(() => {
-    props.onPendingChange?.(dirty || publicationPending);
-  }, [dirty, publicationPending, props.onPendingChange]);
+    props.onPendingChange?.(dirty || publicationPending || proxyPending);
+  }, [dirty, publicationPending, proxyPending, props.onPendingChange]);
   useEffect(
     () => () => props.onPendingChange?.(false),
     [props.onPendingChange],
@@ -417,6 +422,24 @@ export function TeacherClassroomStudio(props: Props) {
   );
   return (
     <section className="classroom-studio" aria-label="课堂教师管理">
+      {proxyStudent && selected && (
+        <TeacherSubmission
+          key={classId + selected.id + proxyStudent.enrollmentId}
+          classId={classId}
+          publication={selected}
+          student={proxyStudent}
+          requireExplanation={Boolean(
+            taskPolicies.find((t) => t.taskId === selected.taskId)
+              ?.requireExplanation,
+          )}
+          onClose={() => setProxyStudent(undefined)}
+          onPendingChange={setProxyPending}
+          onSaved={() => {
+            setProxyStudent(undefined);
+            refresh();
+          }}
+        />
+      )}
       {editingPublication && (
         <PublishedAssignmentEditor
           key={`${classId}:${editingPublication}`}
@@ -919,6 +942,7 @@ export function TeacherClassroomStudio(props: Props) {
                           <td>
                             <span className={"submission-status " + r.status}>
                               {statusLabel(r)}
+                              {r.submittedByTeacher && <small>教师代交</small>}
                             </span>
                           </td>
                           <td>
@@ -934,6 +958,19 @@ export function TeacherClassroomStudio(props: Props) {
                                   ? "查看"
                                   : "查看并评分"}{" "}
                                 →
+                              </button>
+                            ) : memberships.find((m) => m.classId === classId)
+                                ?.role === "teacher" ? (
+                              <button
+                                disabled={busy || !r.planetId}
+                                title={
+                                  r.planetId
+                                    ? "为这位学生上传当前作业"
+                                    : "学生尚未创建星球，请先让学生创建星球"
+                                }
+                                onClick={() => setProxyStudent(r)}
+                              >
+                                {r.planetId ? "代交作业" : "尚未创建星球"}
                               </button>
                             ) : (
                               <span className="muted">尚未提交</span>

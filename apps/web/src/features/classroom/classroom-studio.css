@@ -5,6 +5,36 @@
   --purple: #b39af6;
   --studio-line: #6e83ad40;
 }
+.teacher-submission-fields {
+  display: grid;
+  gap: 16px;
+  border: 0;
+  padding: 0;
+  margin: 24px 0;
+  min-width: 0;
+}
+.teacher-submission-fields > label {
+  display: grid;
+  gap: 8px;
+}
+.teacher-submission-fields > label > input,
+.teacher-submission-fields > label > textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #6e83ad70;
+  border-radius: 8px;
+  background: #132139;
+  color: #e9e9f5;
+  font: inherit;
+}
+.teacher-submission-fields > label > textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.teacher-submission [role="alert"] {
+  color: #ffc5b8;
+}
 .classroom-studio h1 {
   font-size: 30px;
   margin: 0;

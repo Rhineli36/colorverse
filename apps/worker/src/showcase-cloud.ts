@@ -1,3 +1,4 @@
+import { teacherSubmissionTarget } from "./teacher-submission";
 import { awardCountSkins } from "./classroom-skin-counts";
 import { studentProfile } from "./student-profile";
 import {
@@ -296,6 +297,73 @@ export async function removeStoredImages(
       "旧图片清理暂未完成",
     );
 }
+async function readWorkUpload(
+  request: Request,
+  imageLimit: number,
+  imageLimitMb: number,
+  multiple: boolean,
+) {
+  let extraImages: Blob[] = [];
+  let uploadBytes: Uint8Array | undefined,
+    uploadMetadata:
+      { title: string; description: string; learning?: unknown } | undefined;
+  if (request.headers.get("Content-Type")?.startsWith("multipart/form-data")) {
+    const workImagesTooLarge = `本次作品图片合计最多 ${imageLimitMb} MB。`;
+    const envelope = await readLimited(
+      request,
+      imageLimit + 16384,
+      workImagesTooLarge,
+    );
+    const form = await new Request("https://upload.invalid", {
+      method: "POST",
+      headers: { "Content-Type": request.headers.get("Content-Type")! },
+      body: envelope as BodyInit,
+    }).formData();
+    if (
+      [...form.keys()].some(
+        (k) =>
+          !["image", "metadata", ...(multiple ? ["images"] : [])].includes(k),
+      ) ||
+      form.getAll("image").length !== 1 ||
+      form.getAll("metadata").length !== 1
+    )
+      throw new ClassroomFailure(400, "INVALID_UPLOAD", "请提交一张图片及说明");
+    if (multiple) {
+      const extras = form.getAll("images");
+      if (extras.length > 5 || extras.some((f) => !(f instanceof Blob)))
+        throw new ClassroomFailure(
+          400,
+          "INVALID_UPLOAD",
+          "每次最多提交六张作品图片。",
+        );
+      extraImages = extras as Blob[];
+    }
+    const image = form.get("image"),
+      metadata = form.get("metadata");
+    if (
+      !(image instanceof Blob) ||
+      typeof metadata !== "string" ||
+      new TextEncoder().encode(metadata).length > 12288
+    )
+      throw new ClassroomFailure(400, "INVALID_UPLOAD", "图片或说明超出限制");
+    if (
+      image.size + extraImages.reduce((sum, file) => sum + file.size, 0) >
+      imageLimit
+    )
+      throw new ClassroomFailure(413, "TOO_LARGE", workImagesTooLarge);
+    uploadBytes = new Uint8Array(await image.arrayBuffer());
+    uploadMetadata = z
+      .strictObject({
+        title: z.string(),
+        description: z.string().default(""),
+        learning: z.unknown().optional(),
+      })
+      .parse(JSON.parse(metadata));
+  }
+
+  return { extraImages, uploadBytes, uploadMetadata };
+}
+
 export async function handleShowcaseCloud(
   request: Request,
   env: ShowcaseCloudEnvironment,
@@ -311,13 +379,41 @@ export async function handleShowcaseCloud(
       "UPLOADS_NOT_READY",
       "云端作品连接正在准备",
     );
-  const client = clientFactory();
   const imageLimitMb =
     env.CLASSROOM_NEXT === "true"
       ? ClassroomImageLimitMb
       : LegacyClassroomImageLimitMb;
   const imageLimit = imageLimitMb * BytesPerMiB;
   const imageTooLarge = `图片最多 ${imageLimitMb} MB`;
+  // Read mobile request bodies before reserving a database connection.
+  let preloadedUpload: Awaited<ReturnType<typeof readWorkUpload>> | undefined;
+  if (
+    env.CLASSROOM_NEXT === "true" &&
+    resource === "works" &&
+    request.method === "POST"
+  ) {
+    try {
+      preloadedUpload = await readWorkUpload(
+        request,
+        imageLimit,
+        imageLimitMb,
+        true,
+      );
+    } catch (error) {
+      if (
+        error instanceof z.ZodError ||
+        error instanceof SyntaxError ||
+        error instanceof TypeError
+      )
+        throw new ClassroomFailure(
+          400,
+          "INVALID_INPUT",
+          "图片或填写内容无法读取，请重新选择后重试",
+        );
+      throw error;
+    }
+  }
+  const client = clientFactory();
   const uploadedKeys: string[] = [];
   let commitAttempted = false;
   try {
@@ -1135,7 +1231,18 @@ export async function handleShowcaseCloud(
       });
     }
     if (resource === "works" && request.method === "POST") {
-      if (actor.role !== "student")
+      const url = new URL(request.url);
+      const delegated = url.searchParams.has("onBehalfOf");
+      if (delegated && env.CLASSROOM_NEXT !== "true")
+        throw new ClassroomFailure(
+          403,
+          "TEACHER_REQUIRED",
+          "此入口不支持代交作业",
+        );
+      const owner = delegated
+        ? await teacherSubmissionTarget(client, actor, classId, url)
+        : actor;
+      if (owner.role !== "student")
         throw new ClassroomFailure(
           403,
           "STUDENT_REQUIRED",
@@ -1144,12 +1251,12 @@ export async function handleShowcaseCloud(
       // Serialize this student's writes and quotas, including simultaneous browser tabs.
       await client.query(
         "SELECT pg_advisory_xact_lock(hashtextextended($1,7301942))",
-        [String(actor.id)],
+        [String(owner.id)],
       );
       const planet = (
         await client.query(
           "SELECT id,document FROM colorverse.planets WHERE owner_enrollment_id=$1",
-          [actor.id],
+          [owner.id],
         )
       ).rows[0];
       if (!planet)
@@ -1158,7 +1265,6 @@ export async function handleShowcaseCloud(
           "PLANET_REQUIRED",
           "请先创建你的云端星球",
         );
-      const url = new URL(request.url);
       const requestId = z.uuid().parse(url.searchParams.get("requestId"));
       const saved = await client.query(
         "SELECT id,preset_id FROM colorverse.showcase_works WHERE planet_id=$1 AND request_id=$2",
@@ -1172,91 +1278,51 @@ export async function handleShowcaseCloud(
           created: false,
         });
       }
-      let extraImages: Blob[] = [];
-      let uploadBytes: Uint8Array | undefined,
-        uploadMetadata:
-          | { title: string; description: string; learning?: unknown }
-          | undefined;
       if (
-        request.headers.get("Content-Type")?.startsWith("multipart/form-data")
-      ) {
-        const workImagesTooLarge = `本次作品图片合计最多 ${imageLimitMb} MB。`;
-        const envelope = await readLimited(
-          request,
-          imageLimit + 16384,
-          workImagesTooLarge,
+        delegated &&
+        (
+          await client.query(
+            "SELECT 1 FROM colorverse.showcase_works WHERE planet_id=$1 AND publication_id=$2 AND withdrawn_at IS NULL LIMIT 1",
+            [planet.id, owner.publicationId],
+          )
+        ).rows.length
+      )
+        throw new ClassroomFailure(
+          409,
+          "ALREADY_SUBMITTED",
+          "该学生已经提交这份作业，请刷新列表查看，未覆盖已有作品",
         );
-        const form = await new Request("https://upload.invalid", {
-          method: "POST",
-          headers: { "Content-Type": request.headers.get("Content-Type")! },
-          body: envelope as BodyInit,
-        }).formData();
-        if (
-          [...form.keys()].some(
-            (k) =>
-              ![
-                "image",
-                "metadata",
-                ...(env.CLASSROOM_NEXT === "true" ? ["images"] : []),
-              ].includes(k),
-          ) ||
-          form.getAll("image").length !== 1 ||
-          form.getAll("metadata").length !== 1
-        )
-          throw new ClassroomFailure(
-            400,
-            "INVALID_UPLOAD",
-            "请提交一张图片及说明",
-          );
-        if (env.CLASSROOM_NEXT === "true") {
-          const extras = form.getAll("images");
-          if (extras.length > 5 || extras.some((f) => !(f instanceof Blob)))
-            throw new ClassroomFailure(
-              400,
-              "INVALID_UPLOAD",
-              "每次最多提交六张作品图片。",
-            );
-          extraImages = extras as Blob[];
-        }
-        const image = form.get("image"),
-          metadata = form.get("metadata");
-        if (
-          !(image instanceof Blob) ||
-          typeof metadata !== "string" ||
-          new TextEncoder().encode(metadata).length > 12288
-        )
-          throw new ClassroomFailure(
-            400,
-            "INVALID_UPLOAD",
-            "图片或说明超出限制",
-          );
-        if (
-          image.size + extraImages.reduce((sum, file) => sum + file.size, 0) >
-          imageLimit
-        )
-          throw new ClassroomFailure(413, "TOO_LARGE", workImagesTooLarge);
-        uploadBytes = new Uint8Array(await image.arrayBuffer());
-        uploadMetadata = z
-          .strictObject({
-            title: z.string(),
-            description: z.string().default(""),
-            learning: z.unknown().optional(),
-          })
-          .parse(JSON.parse(metadata));
-      }
+      const { extraImages, uploadBytes, uploadMetadata } =
+        preloadedUpload ??
+        (await readWorkUpload(
+          request,
+          imageLimit,
+          imageLimitMb,
+          env.CLASSROOM_NEXT === "true",
+        ));
       const learning = await validateWorkLearning(
         client,
-        actor,
+        owner,
         classId,
         uploadMetadata?.learning,
       );
+      if (
+        delegated &&
+        (learning?.publicationId !== owner.publicationId ||
+          learning?.taskId !== owner.task_id)
+      )
+        throw new ClassroomFailure(
+          400,
+          "ASSIGNMENT_REQUIRED",
+          "代交作品必须关联当前选定的作业",
+        );
       if (env.CLASSROOM_NEXT === "true" && learning?.taskId) {
         if (
           !learning.publicationId ||
           !(
             await client.query(
               "SELECT 1 FROM colorverse.classroom_publications p JOIN colorverse.classroom_recipients r ON r.publication_id=p.id WHERE p.id=$1 AND p.class_id=$2 AND p.task_id=$3 AND r.enrollment_id=$4",
-              [learning.publicationId, classId, learning.taskId, actor.id],
+              [learning.publicationId, classId, learning.taskId, owner.id],
             )
           ).rows.length
         )
@@ -1342,8 +1408,11 @@ export async function handleShowcaseCloud(
             crypto.getRandomValues(new Uint32Array(1))[0] %
               GrowthPresetIds.length
           ];
-      const displayKey = `${identity.subject}/${id}.webp`,
-        originalKey = `${identity.subject}/${id}-original.${info.mimeType.split("/")[1]}`;
+      const storageOwner = delegated
+        ? String(owner.auth_subject)
+        : identity.subject;
+      const displayKey = `${storageOwner}/${id}.webp`,
+        originalKey = `${storageOwner}/${id}-original.${info.mimeType.split("/")[1]}`;
       uploadedKeys.push(displayKey, originalKey);
       await storage(
         env,
@@ -1432,8 +1501,8 @@ export async function handleShowcaseCloud(
               "QUOTA_EXCEEDED",
               "星球素材空间已达上限。",
             );
-          const displayKey = `${identity.subject}/${id}-gallery-${i + 1}.webp`,
-            originalKey = `${identity.subject}/${id}-gallery-${i + 1}-original.${infoExtra.mimeType.split("/")[1]}`;
+          const displayKey = `${storageOwner}/${id}-gallery-${i + 1}.webp`,
+            originalKey = `${storageOwner}/${id}-gallery-${i + 1}-original.${infoExtra.mimeType.split("/")[1]}`;
           uploadedKeys.push(displayKey, originalKey);
           await storage(
             env,
@@ -1461,8 +1530,13 @@ export async function handleShowcaseCloud(
           "UPDATE colorverse.showcase_works SET publication_id=$1 WHERE id=$2",
           [learning.publicationId, id],
         );
+      if (delegated)
+        await client.query(
+          "UPDATE colorverse.showcase_works SET submission_history=submission_history||jsonb_build_array(jsonb_build_object('event','teacher_submission','submittedByEnrollmentId',$1::text,'studentEnrollmentId',$2::text,'publicationId',$3::text,'savedAt',now())) WHERE id=$4",
+          [actor.id, owner.id, owner.publicationId, id],
+        );
       if (env.CLASSROOM_NEXT === "true")
-        await awardCountSkins(client, classId, [String(actor.id)]);
+        await awardCountSkins(client, classId, [String(owner.id)]);
       commitAttempted = true;
       await client.query("COMMIT");
       uploadedKeys.length = 0;

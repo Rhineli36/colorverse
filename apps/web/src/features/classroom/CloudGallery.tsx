@@ -48,6 +48,7 @@ import { CommentComposer } from "./CommentComposer";
 import {
   imageUploadLimitBytes,
   imageUploadLimitMb,
+  validateWorkImages,
 } from "./cloud-image-upload";
 import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
 import { GrowthLibraryChooser } from "../studio/GrowthLibraryChooser";
@@ -1922,6 +1923,22 @@ export function CloudGallery({
                 e.preventDefault();
                 void perform(async () => {
                   if (!file) throw new Error("请选择作品图片");
+                  if (
+                    taskId &&
+                    tasks.find((t) => t.taskId === taskId)
+                      ?.requireExplanation &&
+                    (!(
+                      intent.intendedMoods.length || intent.customMood.trim()
+                    ) ||
+                      !intent.colorRationale.trim())
+                  )
+                    throw new Error(
+                      "这份课程作业需要填写「目标氛围」和「配色理由」（在上传窗口下方），填写后再提交；图片尚未上传。",
+                    );
+                  await validateWorkImages([file, ...extraFiles]);
+                  setNotice(
+                    "正在上传并保存，请保持浏览器在前台，不要切换到其他应用。",
+                  );
                   if (file.size > imageUploadLimitBytes)
                     throw new Error(`图片最多 ${imageUploadLimitMb} MB`);
                   const query = new URLSearchParams({
@@ -2004,7 +2021,8 @@ export function CloudGallery({
               </label>
               <p id={workImageFormatHintId} className="muted">
                 支持 PNG、JPG（JPEG）和 WebP，合计最多 {imageUploadLimitMb}{" "}
-                MB。TIFF 请先导出为上述格式。
+                MB，单张不超过 1600 万像素（如 4000 × 4000）。HEIC、TIFF
+                请先导出为上述格式。
                 {import.meta.env.VITE_CLASSROOM_NEXT === "true" && "可选多图。"}
                 保留原图并优化展示图。
               </p>
@@ -2075,7 +2093,7 @@ export function CloudGallery({
                 className="primary"
                 disabled={busy || !file || !title.trim()}
               >
-                {busy ? "正在保存和生成元素…" : "提交并点亮星球"}
+                {busy ? "正在上传并保存，请稍候…" : "提交并点亮星球"}
               </button>
             </form>
           </section>

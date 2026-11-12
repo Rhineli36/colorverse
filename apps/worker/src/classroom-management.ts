@@ -40,6 +40,7 @@ export async function publicationRows(
       `SELECT e.id enrollment_id,u.id user_id,
     coalesce(nullif(a.real_name,''),nullif(u.real_name,''),u.display_name) name,
     coalesce(a.student_number,u.student_number,'') student_number,p.id planet_id,
+    (w.submission_history @> '[{"event":"teacher_submission"}]'::jsonb) submitted_by_teacher,
     w.id work_id,w.title,w.created_at,r.score::float8 score,r.comment,r.revision,
     EXISTS(SELECT 1 FROM colorverse.showcase_works old JOIN colorverse.showcase_reviews oldr ON oldr.work_id=old.id AND oldr.source='teacher'
       WHERE old.publication_id=$1 AND old.planet_id=p.id AND ((old.id<>w.id AND old.created_at<=w.created_at) OR (old.id=w.id AND oldr.submission_revision<>w.submission_revision))) updated
@@ -54,6 +55,7 @@ export async function publicationRows(
     )
   ).rows;
   return rows.map((r) => ({
+    submittedByTeacher: Boolean(r.submitted_by_teacher),
     enrollmentId: String(r.enrollment_id),
     userId: String(r.user_id),
     name: String(r.name),

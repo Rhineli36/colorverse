@@ -7,6 +7,7 @@ export const PublicationInput = z.strictObject({
   dueAt: z.iso.datetime({ offset: true }).nullable().default(null),
 });
 export const SubmissionRowSchema = z.object({
+  submittedByTeacher: z.boolean().optional(),
   enrollmentId: z.uuid(),
   userId: z.uuid(),
   name: z.string(),

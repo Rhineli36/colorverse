@@ -46,7 +46,7 @@ with sync_playwright() as p:
         elif item=='account': data={'name':'虚拟学生','studentNumber':'00001','mustChangePassword':False}
         elif item=='profile': data={'profile':{'studentNumber':'00001','name':'虚拟学生'}}
         elif item=='planets': data={'actorId':actor,'planets':[{'id':planet,'owner_enrollment_id':actor,'display_name':'虚拟学生','document':{'metadata':{'name':'验收星球'},'skin':0},'works':[gallery_work(w) for w in works]}] if state['hasPlanet'] else []}
-        elif item=='learning-tasks': data={'tasks':[]}
+        elif item=='learning-tasks': data={'tasks':[{'taskId':a['taskId'],'definition':a['definition'],'published':True,'revision':1,'requireExplanation':True,'allowPeerReview':True,'showIntentToPeers':True} for a in assignments]}
         elif item=='publications': data={'publications':assignments}
         elif item=='notifications': data={'notifications':[],'readIds':[]}
         elif item=='guide': data={'completed':[],'hasPeers':False}
@@ -111,6 +111,11 @@ with sync_playwright() as p:
     upload.get_by_label('作品名称',exact=True).fill('从我的作业完成提交')
     upload.get_by_label('作品图片',exact=True).set_input_files(str(ROOT/'apps/web/public/assignments/two-moods.webp'))
     upload.get_by_label('想表达什么',exact=True).fill('测试真实关联的提交流程')
+    upload.get_by_role('button',name='提交并点亮星球',exact=True).click()
+    expect(upload).to_contain_text('图片尚未上传')
+    assert not any('/works?requestId=' in u for u in requests)
+    upload.get_by_label('自己的氛围描述',exact=True).fill('宁静')
+    upload.get_by_label('配色理由',exact=True).fill('冷色为主，暖色点缀')
     upload.get_by_role('button',name='提交并点亮星球',exact=True).click()
     expect(upload).to_have_count(0)
     expect(entry).to_be_enabled(); expect(entry).to_have_attribute('title','待提交 2 项作业'); entry.click()

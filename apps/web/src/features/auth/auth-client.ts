@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { requestDeadline } from "./request-deadline";
 
 export interface AuthConfig {
   enabled: boolean;
@@ -40,9 +41,7 @@ export function getAuthClient() {
         fetch: (input, init) =>
           fetch(input, {
             ...init,
-            signal: init?.signal
-              ? AbortSignal.any([init.signal, AbortSignal.timeout(10000)])
-              : AbortSignal.timeout(10000),
+            signal: requestDeadline(20000, init?.signal),
           }),
       },
       auth: {
