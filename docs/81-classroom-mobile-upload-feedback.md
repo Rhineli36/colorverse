@@ -19,3 +19,11 @@
 - 浏览器上传验收使用隔离 HTTP 夹具，不在真实学生记录中创建验收作品。未使用实体 iPhone/Safari；录像不能证明此前所有上传失败均由此引起。
 
 本轮不需要数据库迁移，不重置已有账号、作品、评分或班级成员状态。发布版本及冻结资源比对保存在 `outputs/gradebook/isolation-after.json`。
+
+## 实际发布状态
+
+代码与验证版本为 `c8e71e4`，已推送 `codex/annual-laureate-preview`。本轮尚未发布成功：配置内的 `pnpm classroom:next deploy` 经代理两次、直连一次均在上传程序版本时收到 Cloudflare HTTP 500／10013。使用临时 Wrangler 4.161.0 及现有 Wrangler 的兼容 PUT 上传流程也收到相同错误；没有修改项目的依赖锁定版本或部署配置。静态文件上传成功不代表新程序已上线。
+
+失败后线上健康检查仍返回 200，课堂实际版本保持 `2026-11-13T09:40:54.900Z-970045d`，Worker 版本为 `6a9f779b-2ceb-4bfa-8368-39336f741237`；因此新上限与反馈修复尚未在公网生效。`/review/`、`/exhibition/` 的 8 项页面与资源、冻结 Worker、EXE 校验未变。
+
+部署接口恢复后，继续执行 `pnpm classroom:next deploy`，成功后核对公网 `release.json` 的 `sourceRevision` 与实际构建提交，并重新执行浏览器验收和 `node work/gradebook-isolation.mjs`。目前不能将本地浏览器夹具验收标为线上真实学生上传成功。
