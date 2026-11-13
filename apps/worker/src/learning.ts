@@ -201,6 +201,7 @@ export async function validateWorkLearning(
   actor: Record<string, unknown>,
   classId: string,
   input: unknown,
+  allowClosedTask = false,
 ) {
   if (input == null) return null;
   const v = WorkLearningInput.parse(input);
@@ -214,19 +215,19 @@ export async function validateWorkLearning(
     const task = (await learningTasks(sql, actor, classId, "GET")).tasks.find(
       (t) => t.taskId === v.taskId,
     );
-    if (!task?.published)
+    if (!task?.published && !allowClosedTask)
       throw new ClassroomFailure(
         409,
         "TASK_UNAVAILABLE",
         "此教学模板尚未启用或已关闭，请重新选择",
       );
     taskTitle =
-      task.definition?.title ??
+      task?.definition?.title ??
       AssignmentCatalog.find((t) => t.id === v.taskId)?.title;
     policy = {
-      requireExplanation: task.requireExplanation as boolean,
-      allowPeerReview: task.allowPeerReview as boolean,
-      showIntentToPeers: task.showIntentToPeers as boolean,
+      requireExplanation: (task?.requireExplanation ?? true) as boolean,
+      allowPeerReview: (task?.allowPeerReview ?? true) as boolean,
+      showIntentToPeers: (task?.showIntentToPeers ?? true) as boolean,
     };
     if (
       policy.requireExplanation &&

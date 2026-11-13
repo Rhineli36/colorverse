@@ -23,6 +23,7 @@ export async function studentAssignments(
   const rows = (
     await sql.query(
       `SELECT p.id planet_id,w.id,w.publication_id,w.learning_context->>'taskId' task_id,
+       EXISTS(SELECT 1 FROM colorverse.showcase_reviews locked WHERE locked.work_id=w.id AND locked.source='teacher' AND locked.score IS NOT NULL) scored,
        w.title,w.created_at,w.submission_revision,w.withdrawn_at,r.score::float8 score,r.comment,r.revision,
        EXISTS(SELECT 1 FROM colorverse.showcase_works old
          JOIN colorverse.showcase_reviews oldr ON oldr.work_id=old.id AND oldr.source='teacher'
@@ -44,6 +45,7 @@ export async function studentAssignments(
   const works: StudentWork[] = rows
     .filter((r) => r.id)
     .map((r) => ({
+      canEdit: !r.scored && r.withdrawn_at == null,
       id: String(r.id),
       planetId: String(r.planet_id),
       publicationId: r.publication_id ? String(r.publication_id) : null,

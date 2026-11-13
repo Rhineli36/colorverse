@@ -422,3 +422,50 @@
     width: 100%;
   }
 }
+
+.student-work-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  max-width: 330px;
+}
+.student-work-actions small {
+  width: 100%;
+  text-align: right;
+  color: #b8c4d9;
+}
+.student-work-editor fieldset {
+  border: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.student-work-editor label {
+  display: grid;
+  gap: 8px;
+}
+.student-work-editor input,
+.student-work-editor textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  font: inherit;
+}
+.student-work-editor .learning-moods label {
+  display: flex;
+}
+.student-work-images {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.student-work-images > div {
+  display: grid;
+  gap: 8px;
+  width: 145px;
+}
+.student-work-editor [role="alert"] {
+  color: #ffc5b8;
+}

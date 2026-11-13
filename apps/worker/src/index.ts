@@ -122,7 +122,7 @@ export async function handleRequest(
     }
   }
   const showcase =
-    /^\/api\/v1\/cloud\/classes\/([^/]+)\/(profile|notifications|notification-read|learning-tasks|learning-tasks\/custom-[a-f0-9-]{36}\/image|guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior|position|visibility)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review|description)|interactions|interactions\/[a-f0-9-]+)$/.exec(
+    /^\/api\/v1\/cloud\/classes\/([^/]+)\/(profile|notifications|notification-read|learning-tasks|learning-tasks\/custom-[a-f0-9-]{36}\/image|guide|planets|planets\/[a-f0-9-]+\/(appearance|exterior|interior|position|visibility)|works|works\/[a-f0-9-]+\/(image|original|element|visibility|review|description|content)|interactions|interactions\/[a-f0-9-]+)$/.exec(
       url.pathname,
     );
   if (showcase) {

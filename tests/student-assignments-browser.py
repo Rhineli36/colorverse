@@ -52,13 +52,26 @@ with sync_playwright() as p:
         elif item=='guide': data={'completed':[],'hasPeers':False}
         elif item=='interactions': data={'interactions':[]}
         elif item=='decorations': data={'planetId':planet,'unlocked':[],'progress':{},'bindings':[],'settings':{'frameId':None,'placement':{'x':.85,'y':.35,'amplitude':'gentle'},'options':{'particles':True,'lantern':True},'revision':0}}
-        elif item=='image': route.fulfill(body=(ROOT/'apps/web/public/assignments/two-moods.webp').read_bytes(),content_type='image/webp'); return
+        elif item in ['image','original']: route.fulfill(body=(ROOT/'apps/web/public/assignments/two-moods.webp').read_bytes(),content_type='image/webp'); return
+        elif item=='content':
+            w=next(w for w in works if w['id']==path.split('/')[-2])
+            data={'id':w['id'],'title':w['title'],'description':w.get('description','原说明'),'learning':None,'revision':w.get('revision',0),'imageCount':1,'locked':w['score'] is not None,'withdrawn':w['withdrawn']}
+        elif item=='visibility' and route.request.method=='PUT':
+            w=next(w for w in works if w['id']==path.split('/')[-2]);w['withdrawn']=True
+            data={'saved':True,'revision':w.get('revision',0)+1}
         elif item=='review':
             w=next(w for w in works if w['id']==path.split('/')[-2])
             data={'scoreVisible':True,'submissionRevision':w['submissionRevision'],'review':{'id':uid(),'revision':1,'score':w['score'],'comment':w['comment'],'source':'teacher','created_at':w['submittedAt'],'reviewer_name':'验收教师'} if w['status']=='reviewed' else None}
         elif item=='works' and route.request.method=='POST':
             raw=route.request.post_data_buffer.decode(errors='ignore')
             meta=json.loads(re.search(r'name="metadata"\r\n\r\n(.*?)\r\n--',raw,re.S).group(1))
+            if 'replaceWorkId=' in route.request.url:
+                from urllib.parse import urlparse,parse_qs
+                wid=parse_qs(urlparse(route.request.url).query)['replaceWorkId'][0]
+                w=next(w for w in works if w['id']==wid)
+                if state['submissionFailure']:route.fulfill(status=503,json={'error':{'message':'模拟修改失败，内容已保留'}});return
+                w.update(title=meta['title'],description=meta['description'],revision=w.get('revision',0)+1,submissionRevision=w['submissionRevision']+1)
+                route.fulfill(json={'id':wid,'created':False,'updated':True});return
             publication=meta['learning']['publicationId']
             assert publication in [None,assignments[0]['id']]
             if publication is None: assert meta['learning']['taskId'] is None
@@ -94,6 +107,31 @@ with sync_playwright() as p:
     expect(center.get_by_text('教师评分 0 分',exact=True)).to_be_visible()
     expect(center.get_by_text('已更新，待复核',exact=True)).to_be_visible()
     expect(center.get_by_text('自主上传 · 不计课程作业完成率',exact=True)).to_be_visible()
+    zero=center.locator('[data-work-id="'+works[0]['id']+'"]')
+    expect(zero.get_by_role('button',name='修改作业',exact=True)).to_have_count(0)
+    expect(zero.get_by_role('button',name='撤回作业',exact=True)).to_have_count(0)
+    free=center.locator('[data-work-id="'+works[3]['id']+'"]')
+    free.get_by_role('button',name='修改作业',exact=True).click()
+    editor=page.get_by_role('dialog',name='修改已提交作业',exact=True)
+    expect(editor.get_by_label('作品名称',exact=True)).to_have_value('自由创作作品')
+    editor.get_by_label('作品名称',exact=True).fill('自由创作修改后')
+    editor.get_by_role('button',name='移除原图片 1',exact=True).click()
+    editor.get_by_label('添加或替换作品图片',exact=True).set_input_files(str(ROOT/'apps/web/public/assignments/two-moods.webp'))
+    editor.get_by_label('创作说明',exact=True).fill('更新创作说明')
+    state['submissionFailure']=True
+    editor.get_by_role('button',name='保存修改',exact=True).click()
+    expect(editor.get_by_role('alert')).to_contain_text('模拟修改失败')
+    expect(editor.get_by_label('作品名称',exact=True)).to_have_value('自由创作修改后')
+    state['submissionFailure']=False
+    editor.get_by_role('button',name='保存修改',exact=True).click()
+    expect(editor).to_have_count(0)
+    expect(free.get_by_role('heading',name='自由创作修改后',exact=True)).to_be_visible()
+    expect(center.locator('[data-work-id]')).to_have_count(5)
+    page.once('dialog',lambda d:d.accept())
+    free.get_by_role('button',name='撤回作业',exact=True).click()
+    expect(free).to_contain_text('已撤下')
+    expect(free.get_by_role('button',name='修改作业',exact=True)).to_have_count(0)
+    checks.append('edit text and replace images, failed save retention, same work ID after retry, withdrawal preserves history, zero score hides mutations')
     center.get_by_label('搜索我的作业').fill('零分')
     expect(center.locator('[data-work-id]')).to_have_count(1)
     center.get_by_role('button',name='查看作品与反馈',exact=True).click()
@@ -113,7 +151,7 @@ with sync_playwright() as p:
     upload.get_by_label('想表达什么',exact=True).fill('测试真实关联的提交流程')
     upload.get_by_role('button',name='提交并点亮星球',exact=True).click()
     expect(upload).to_contain_text('图片尚未上传')
-    assert not any('/works?requestId=' in u for u in requests)
+    assert not any('/works?requestId=' in u and 'replaceWorkId=' not in u for u in requests)
     upload.get_by_label('自己的氛围描述',exact=True).fill('宁静')
     upload.get_by_label('配色理由',exact=True).fill('冷色为主，暖色点缀')
     upload.get_by_role('button',name='提交并点亮星球',exact=True).click()

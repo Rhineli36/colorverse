@@ -1,3 +1,5 @@
+import { StudentWorkEditor } from "./StudentWorkEditor";
+import { classroomRequest } from "./cloud-request";
 import { useEffect, useState } from "react";
 import type { StudentAssignment, StudentWork } from "@colorverse/contracts";
 import { AssignmentMail } from "./ClassroomMail";
@@ -48,6 +50,9 @@ export default function MyAssignments({
   onFreeSubmit: (classId?: string) => void;
   onOpenWork: (item: WorkItem) => void;
 }) {
+  const [editingWork, setEditingWork] = useState<WorkItem>();
+  const [actionBusy, setActionBusy] = useState(false),
+    [actionError, setActionError] = useState("");
   const [task, setTask] = useState<AssignmentItem>();
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -394,13 +399,65 @@ export default function MyAssignments({
                       </small>
                     )}
                   </div>
-                  <button
-                    className="student-task-view"
-                    onClick={() => onOpenWork(w)}
-                  >
-                    查看作品与反馈
-                    <InterfaceIcon name="arrow" />
-                  </button>
+                  <div className="student-work-actions">
+                    {!w.withdrawn && (w.canEdit ?? w.score === null) ? (
+                      <>
+                        <button
+                          disabled={actionBusy}
+                          onClick={() => setEditingWork(w)}
+                        >
+                          修改作业
+                        </button>
+                        <button
+                          disabled={actionBusy}
+                          onClick={async () => {
+                            if (
+                              !window.confirm(
+                                "确认撤回这份作业？撤回后不再展示，课程作业将重新显示为待提交；作品记录会保留。",
+                              )
+                            )
+                              return;
+                            setActionBusy(true);
+                            setActionError("");
+                            try {
+                              const root = `classes/${w.classroom.classId}/works/${w.id}/`;
+                              const value = await (
+                                await classroomRequest(root + "content")
+                              ).json();
+                              await classroomRequest(root + "visibility", {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  withdrawn: true,
+                                  revision: value.revision,
+                                }),
+                              });
+                              onRefresh();
+                            } catch (e) {
+                              setActionError(
+                                e instanceof Error
+                                  ? e.message
+                                  : "撤回失败，请重试",
+                              );
+                            } finally {
+                              setActionBusy(false);
+                            }
+                          }}
+                        >
+                          撤回作业
+                        </button>
+                      </>
+                    ) : (
+                      !w.withdrawn && <small>已评分 · 不可修改或撤回</small>
+                    )}
+                    <button
+                      className="student-task-view"
+                      onClick={() => onOpenWork(w)}
+                    >
+                      查看作品与反馈
+                      <InterfaceIcon name="arrow" />
+                    </button>
+                  </div>
                 </article>
               );
             })}
@@ -415,6 +472,19 @@ export default function MyAssignments({
             </button>
           )}
         </>
+      )}
+      {actionError && <p role="alert">{actionError}</p>}
+      {editingWork && (
+        <StudentWorkEditor
+          key={editingWork.id}
+          classId={editingWork.classroom.classId}
+          workId={editingWork.id}
+          onClose={() => setEditingWork(undefined)}
+          onSaved={() => {
+            setEditingWork(undefined);
+            onRefresh();
+          }}
+        />
       )}
       <footer className="student-tasks-footer">
         <InterfaceIcon name="planet" />

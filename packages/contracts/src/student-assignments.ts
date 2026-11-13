@@ -2,6 +2,7 @@ import { z } from "zod";
 import { AssignmentDefinitionSchema } from "./classroom-mail";
 
 export const StudentWorkSchema = z.object({
+  canEdit: z.boolean().optional(),
   id: z.uuid(),
   planetId: z.uuid(),
   publicationId: z.uuid().nullable(),

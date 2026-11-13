@@ -113,182 +113,6 @@ beforeAll(async () => {
 }, 30000);
 afterAll(async () => db?.close());
 
-describe("authorized teacher submission uses the student's existing work pipeline", () => {
-  it("scopes recipients, preserves idempotency and originals, and updates student/teacher counts with audit history", async () => {
-    const publicationId = randomUUID(),
-      requestId = randomUUID(),
-      targetPlanet = randomUUID();
-    await sql.query(
-      "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,$3)",
-      [
-        targetPlanet,
-        peerEnrollment,
-        JSON.stringify({
-          color: "#abcdee",
-          metadata: { name: "代交验收星球" },
-        }),
-      ],
-    );
-    await sql.query(
-      "INSERT INTO colorverse.classroom_publications(id,class_id,task_id,definition,target_label,publisher_enrollment_id,request_id) VALUES($1,$2,'T02',$3,'验收学生',$4,$1)",
-      [
-        publicationId,
-        classId,
-        JSON.stringify(AssignmentCatalog[1]),
-        teacherEnrollment,
-      ],
-    );
-    await sql.query(
-      "INSERT INTO colorverse.classroom_recipients(publication_id,enrollment_id) VALUES($1,$2)",
-      [publicationId, peerEnrollment],
-    );
-    await sql.query(
-      "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,require_explanation,allow_peer_review,show_intent_to_peers,revision) VALUES($1,'T02',true,true,true,true,1) ON CONFLICT(class_id,task_id) DO UPDATE SET published=true,require_explanation=true",
-      [classId],
-    );
-    const bytes = new Uint8Array(
-      await readFile("apps/web/public/assignments/two-moods.webp"),
-    );
-    const images = {
-      input: () => ({
-        transform: () => ({
-          output: async () => ({ response: () => new Response(bytes) }),
-        }),
-      }),
-    };
-    const storage = vi.fn(async () => new Response(null, { status: 200 }));
-    vi.stubGlobal("fetch", storage);
-    const client = () => ({
-      ...sql,
-      connect: async () => {},
-      end: async () => {},
-    });
-    const upload = (
-      who = teacher,
-      target = peerEnrollment,
-      pub = publicationId,
-      retry = requestId,
-      explanation = true,
-      cls = classId,
-    ) => {
-      const form = new FormData();
-      form.set("image", new Blob([bytes], { type: "image/webp" }), "work.webp");
-      form.set(
-        "metadata",
-        JSON.stringify({
-          title: "教师代交验收作品",
-          description: "学生提供的说明",
-          learning: {
-            taskId: "T02",
-            publicationId: pub,
-            customMood: explanation ? "宁静" : "",
-            colorRationale: explanation ? "冷暖对照" : "",
-          },
-        }),
-      );
-      return handleShowcaseCloud(
-        new Request(
-          `https://classroom.test/?requestId=${retry}&onBehalfOf=${target}&publicationId=${pub}`,
-          { method: "POST", body: form },
-        ),
-        {
-          CLASSROOM_NEXT: "true",
-          HYPERDRIVE_WRITER: { connectionString: "test" },
-          SUPABASE_SECRET_KEY: "test",
-          SUPABASE_URL: "https://test.supabase.co",
-          IMAGES: images,
-        } as never,
-        who,
-        cls,
-        "works",
-        client as never,
-      );
-    };
-    try {
-      await expect(upload(student)).rejects.toMatchObject({ status: 403 });
-      await expect(upload(teacher, enrollment)).rejects.toMatchObject({
-        code: "RECIPIENT_REQUIRED",
-      });
-      await expect(
-        upload(
-          teacher,
-          peerEnrollment,
-          peerAssignment,
-          randomUUID(),
-          true,
-          otherClass,
-        ),
-      ).rejects.toMatchObject({ status: 403 });
-      await expect(
-        upload(teacher, peerEnrollment, publicationId, requestId, false),
-      ).rejects.toMatchObject({ code: "LEARNING_EXPLANATION_REQUIRED" });
-      expect(storage).not.toHaveBeenCalled();
-      const result = await (await upload()).json();
-      expect(result.created).toBe(true);
-      expect(await (await upload()).json()).toMatchObject({
-        id: result.id,
-        created: false,
-      });
-      await expect(
-        upload(teacher, peerEnrollment, publicationId, randomUUID()),
-      ).rejects.toMatchObject({ code: "ALREADY_SUBMITTED" });
-      expect(storage).toHaveBeenCalledTimes(2);
-      const saved = (
-        await sql.query("SELECT * FROM colorverse.showcase_works WHERE id=$1", [
-          result.id,
-        ])
-      ).rows[0];
-      expect(saved.planet_id).toBe(targetPlanet);
-      expect(saved.original_byte_size).toBe(bytes.length);
-      expect(saved.original_storage_key).toContain(peerId + "/");
-      expect(saved.submission_history).toEqual([
-        expect.objectContaining({
-          event: "teacher_submission",
-          submittedByEnrollmentId: teacherEnrollment,
-          studentEnrollmentId: peerEnrollment,
-          publicationId,
-        }),
-      ]);
-      const row = (await publicationRows(sql, classId, publicationId))[0];
-      expect(row).toMatchObject({
-        workId: result.id,
-        status: "pending",
-        submittedByTeacher: true,
-      });
-      const mine = await read(peer);
-      expect(
-        mine.assignments.find((a) => a.id === publicationId)?.latestWorkId,
-      ).toBe(result.id);
-      const notices = await classroomNotifications(
-        sql,
-        { id: teacherEnrollment, role: "teacher" },
-        classId,
-        true,
-      );
-      expect(notices.notifications).toContainEqual(
-        expect.objectContaining({ workId: result.id, pending: true }),
-      );
-    } finally {
-      vi.unstubAllGlobals();
-      await sql.query(
-        "DELETE FROM colorverse.showcase_works WHERE planet_id=$1",
-        [targetPlanet],
-      );
-      await sql.query("DELETE FROM colorverse.planets WHERE id=$1", [
-        targetPlanet,
-      ]);
-      await sql.query(
-        "DELETE FROM colorverse.classroom_recipients WHERE publication_id=$1",
-        [publicationId],
-      );
-      await sql.query(
-        "DELETE FROM colorverse.classroom_publications WHERE id=$1",
-        [publicationId],
-      );
-    }
-  });
-});
-
 describe("student assignment center uses own published recipients and actual work versions", () => {
   it("lists assigned work before creating a planet, without leaking another student's assignments", async () => {
     const data = await read();
@@ -781,6 +605,330 @@ describe("published assignment content edits", () => {
     } finally {
       vi.unstubAllGlobals();
       await sql.query("ROLLBACK");
+    }
+  });
+});
+
+describe("authorized teacher submission uses the student's existing work pipeline", () => {
+  it("scopes recipients, preserves idempotency and originals, and updates student/teacher counts with audit history", async () => {
+    const publicationId = randomUUID(),
+      requestId = randomUUID(),
+      targetPlanet = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,$3)",
+      [
+        targetPlanet,
+        peerEnrollment,
+        JSON.stringify({
+          color: "#abcdee",
+          metadata: { name: "代交验收星球" },
+        }),
+      ],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.classroom_publications(id,class_id,task_id,definition,target_label,publisher_enrollment_id,request_id) VALUES($1,$2,'T02',$3,'验收学生',$4,$1)",
+      [
+        publicationId,
+        classId,
+        JSON.stringify(AssignmentCatalog[1]),
+        teacherEnrollment,
+      ],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.classroom_recipients(publication_id,enrollment_id) VALUES($1,$2)",
+      [publicationId, peerEnrollment],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,require_explanation,allow_peer_review,show_intent_to_peers,revision) VALUES($1,'T02',true,true,true,true,1) ON CONFLICT(class_id,task_id) DO UPDATE SET published=true,require_explanation=true",
+      [classId],
+    );
+    const bytes = new Uint8Array(
+      await readFile("apps/web/public/assignments/two-moods.webp"),
+    );
+    const images = {
+      input: () => ({
+        transform: () => ({
+          output: async () => ({ response: () => new Response(bytes) }),
+        }),
+      }),
+    };
+    const storage = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", storage);
+    const client = () => ({
+      ...sql,
+      connect: async () => {},
+      end: async () => {},
+    });
+    const upload = (
+      who = teacher,
+      target = peerEnrollment,
+      pub = publicationId,
+      retry = requestId,
+      explanation = true,
+      cls = classId,
+    ) => {
+      const form = new FormData();
+      form.set("image", new Blob([bytes], { type: "image/webp" }), "work.webp");
+      form.set(
+        "metadata",
+        JSON.stringify({
+          title: "教师代交验收作品",
+          description: "学生提供的说明",
+          learning: {
+            taskId: "T02",
+            publicationId: pub,
+            customMood: explanation ? "宁静" : "",
+            colorRationale: explanation ? "冷暖对照" : "",
+          },
+        }),
+      );
+      return handleShowcaseCloud(
+        new Request(
+          `https://classroom.test/?requestId=${retry}&onBehalfOf=${target}&publicationId=${pub}`,
+          { method: "POST", body: form },
+        ),
+        {
+          CLASSROOM_NEXT: "true",
+          HYPERDRIVE_WRITER: { connectionString: "test" },
+          SUPABASE_SECRET_KEY: "test",
+          SUPABASE_URL: "https://test.supabase.co",
+          IMAGES: images,
+        } as never,
+        who,
+        cls,
+        "works",
+        client as never,
+      );
+    };
+    try {
+      await expect(upload(student)).rejects.toMatchObject({ status: 403 });
+      await expect(upload(teacher, enrollment)).rejects.toMatchObject({
+        code: "RECIPIENT_REQUIRED",
+      });
+      await expect(
+        upload(
+          teacher,
+          peerEnrollment,
+          peerAssignment,
+          randomUUID(),
+          true,
+          otherClass,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(
+        upload(teacher, peerEnrollment, publicationId, requestId, false),
+      ).rejects.toMatchObject({ code: "LEARNING_EXPLANATION_REQUIRED" });
+      expect(storage).not.toHaveBeenCalled();
+      const result = await (await upload()).json();
+      expect(result.created).toBe(true);
+      expect(await (await upload()).json()).toMatchObject({
+        id: result.id,
+        created: false,
+      });
+      await expect(
+        upload(teacher, peerEnrollment, publicationId, randomUUID()),
+      ).rejects.toMatchObject({ code: "ALREADY_SUBMITTED" });
+      expect(storage).toHaveBeenCalledTimes(2);
+      const saved = (
+        await sql.query("SELECT * FROM colorverse.showcase_works WHERE id=$1", [
+          result.id,
+        ])
+      ).rows[0];
+      expect(saved.planet_id).toBe(targetPlanet);
+      expect(saved.original_byte_size).toBe(bytes.length);
+      expect(saved.original_storage_key).toContain(peerId + "/");
+      expect(saved.submission_history).toEqual([
+        expect.objectContaining({
+          event: "teacher_submission",
+          submittedByEnrollmentId: teacherEnrollment,
+          studentEnrollmentId: peerEnrollment,
+          publicationId,
+        }),
+      ]);
+      const row = (await publicationRows(sql, classId, publicationId))[0];
+      expect(row).toMatchObject({
+        workId: result.id,
+        status: "pending",
+        submittedByTeacher: true,
+      });
+      const mine = await read(peer);
+      expect(
+        mine.assignments.find((a) => a.id === publicationId)?.latestWorkId,
+      ).toBe(result.id);
+      const notices = await classroomNotifications(
+        sql,
+        { id: teacherEnrollment, role: "teacher" },
+        classId,
+        true,
+      );
+      expect(notices.notifications).toContainEqual(
+        expect.objectContaining({ workId: result.id, pending: true }),
+      );
+      const runtime = {
+        CLASSROOM_NEXT: "true",
+        HYPERDRIVE_WRITER: { connectionString: "test" },
+        SUPABASE_SECRET_KEY: "test",
+        SUPABASE_URL: "https://test.supabase.co",
+        IMAGES: images,
+      } as never;
+      const editId = randomUUID();
+      const edit = (who = peer, revision = 0, rid = editId) => {
+        const form = new FormData();
+        form.set(
+          "image",
+          new Blob([bytes], { type: "image/webp" }),
+          "replacement.webp",
+        );
+        form.append(
+          "images",
+          new Blob([bytes], { type: "image/webp" }),
+          "second.webp",
+        );
+        form.set(
+          "metadata",
+          JSON.stringify({
+            title: "学生修改后的标题",
+            description: "修改说明",
+            learning: {
+              taskId: "T02",
+              publicationId,
+              customMood: "宁静",
+              colorRationale: "重新分析配色",
+            },
+          }),
+        );
+        return handleShowcaseCloud(
+          new Request(
+            `https://classroom.test/?requestId=${rid}&replaceWorkId=${result.id}&revision=${revision}`,
+            { method: "POST", body: form },
+          ),
+          runtime,
+          who,
+          classId,
+          "works",
+          client as never,
+        );
+      };
+      await expect(edit(student)).rejects.toMatchObject({ status: 403 });
+      await expect(edit(peer, 9)).rejects.toMatchObject({
+        code: "WORK_CONFLICT",
+      });
+      expect(await (await edit()).json()).toMatchObject({
+        id: result.id,
+        updated: true,
+        created: false,
+      });
+      const changed = (
+        await sql.query("SELECT * FROM colorverse.showcase_works WHERE id=$1", [
+          result.id,
+        ])
+      ).rows[0];
+      expect(changed).toMatchObject({
+        title: "学生修改后的标题",
+        revision: 1,
+        submission_revision: 1,
+        publication_id: publicationId,
+      });
+      expect(changed.gallery_images).toHaveLength(1);
+      expect(
+        (await read(peer)).works.find((w) => w.id === result.id)?.canEdit,
+      ).toBe(true);
+      expect(await (await edit()).json()).toMatchObject({
+        id: result.id,
+        created: false,
+      });
+      const visibility = (withdrawn: boolean, revision: number) =>
+        handleShowcaseCloud(
+          new Request("https://classroom.test/", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ withdrawn, revision }),
+          }),
+          runtime,
+          peer,
+          classId,
+          `works/${result.id}/visibility`,
+          client as never,
+        );
+      await visibility(true, 1);
+      expect(
+        (await read(peer)).assignments.find((a) => a.id === publicationId)
+          ?.latestWorkId,
+      ).toBeNull();
+      await visibility(false, 2);
+      await showcaseReview(
+        sql,
+        { id: teacherEnrollment, role: "teacher" },
+        classId,
+        result.id,
+        "POST",
+        {
+          score: 0,
+          comment: "零分也锁定",
+          revision: 0,
+          submissionRevision: 1,
+          requestId: randomUUID(),
+        },
+        true,
+      );
+      expect(
+        (await read(peer)).works.find((w) => w.id === result.id)?.canEdit,
+      ).toBe(false);
+      await expect(visibility(true, 3)).rejects.toMatchObject({
+        code: "WORK_GRADED",
+      });
+      await expect(edit(peer, 3, randomUUID())).rejects.toMatchObject({
+        code: "WORK_GRADED",
+      });
+      await expect(edit(peer, 3)).resolves.toBeDefined(); // Replaying a successful request cannot modify content.
+      const blocked = await handleShowcaseCloud(
+        new Request("https://classroom.test/", { method: "GET" }),
+        runtime,
+        peer,
+        classId,
+        `works/${result.id}/content`,
+        client as never,
+      );
+      expect(await blocked.json()).toMatchObject({ locked: true });
+      await expect(
+        handleShowcaseCloud(
+          new Request("https://classroom.test/", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ description: "绕过修改", revision: 3 }),
+          }),
+          runtime,
+          peer,
+          classId,
+          `works/${result.id}/description`,
+          client as never,
+        ),
+      ).rejects.toMatchObject({ code: "WORK_GRADED" });
+    } finally {
+      vi.unstubAllGlobals();
+      const graded = (
+        await sql.query(
+          "SELECT 1 FROM colorverse.showcase_reviews WHERE work_id IN (SELECT id FROM colorverse.showcase_works WHERE planet_id=$1)",
+          [targetPlanet],
+        )
+      ).rows.length;
+      if (!graded) {
+        await sql.query(
+          "DELETE FROM colorverse.showcase_works WHERE planet_id=$1",
+          [targetPlanet],
+        );
+        await sql.query("DELETE FROM colorverse.planets WHERE id=$1", [
+          targetPlanet,
+        ]);
+        await sql.query(
+          "DELETE FROM colorverse.classroom_recipients WHERE publication_id=$1",
+          [publicationId],
+        );
+        await sql.query(
+          "DELETE FROM colorverse.classroom_publications WHERE id=$1",
+          [publicationId],
+        );
+      }
     }
   });
 });

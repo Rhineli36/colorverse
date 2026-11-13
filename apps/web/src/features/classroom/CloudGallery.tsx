@@ -2212,7 +2212,20 @@ export function CloudGallery({
               {(owned || staff) &&
                 (!work.withdrawn || staff || work.canRestore) && (
                   <button
-                    disabled={busy || reviewPending}
+                    disabled={
+                      busy ||
+                      reviewPending ||
+                      (import.meta.env.VITE_CLASSROOM_NEXT === "true" &&
+                        !staff &&
+                        work.score != null)
+                    }
+                    title={
+                      import.meta.env.VITE_CLASSROOM_NEXT === "true" &&
+                      !staff &&
+                      work.score != null
+                        ? "教师已评分，不能撤回"
+                        : undefined
+                    }
                     onClick={() =>
                       setConfirmation({
                         kind: "work",

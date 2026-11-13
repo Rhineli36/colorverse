@@ -1,3 +1,4 @@
+import { studentWorkLock } from "./student-work-lock";
 import { teacherSubmissionTarget } from "./teacher-submission";
 import { awardCountSkins } from "./classroom-skin-counts";
 import { studentProfile } from "./student-profile";
@@ -1230,6 +1231,27 @@ export async function handleShowcaseCloud(
         },
       });
     }
+    const content = /^works\/([a-f0-9-]+)\/content$/.exec(resource);
+    if (content && request.method === "GET" && env.CLASSROOM_NEXT === "true") {
+      const row = await studentWorkLock(
+        client,
+        actor,
+        classId,
+        z.uuid().parse(content[1]),
+        true,
+      );
+      await client.query("COMMIT");
+      return Response.json({
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        learning: row.learning_context,
+        revision: row.revision,
+        imageCount: 1 + (row.gallery_images as unknown[]).length,
+        withdrawn: Boolean(row.withdrawn_at),
+        locked: row.scored,
+      });
+    }
     if (resource === "works" && request.method === "POST") {
       const url = new URL(request.url);
       const delegated = url.searchParams.has("onBehalfOf");
@@ -1278,6 +1300,27 @@ export async function handleShowcaseCloud(
           created: false,
         });
       }
+      const replaceId = url.searchParams.get("replaceWorkId");
+      if (replaceId && (env.CLASSROOM_NEXT !== "true" || delegated))
+        throw new ClassroomFailure(403, "WORK_FORBIDDEN", "此操作仅限学生本人");
+      const previous = replaceId
+        ? await studentWorkLock(
+            client,
+            actor,
+            classId,
+            z.uuid().parse(replaceId),
+          )
+        : undefined;
+      if (
+        previous &&
+        (previous.withdrawn_at ||
+          previous.revision !== Number(url.searchParams.get("revision")))
+      )
+        throw new ClassroomFailure(
+          409,
+          "WORK_CONFLICT",
+          "作品状态已变化，请重新打开后再修改",
+        );
       if (
         delegated &&
         (
@@ -1305,6 +1348,7 @@ export async function handleShowcaseCloud(
         owner,
         classId,
         uploadMetadata?.learning,
+        Boolean(previous),
       );
       if (
         delegated &&
@@ -1316,7 +1360,31 @@ export async function handleShowcaseCloud(
           "ASSIGNMENT_REQUIRED",
           "代交作品必须关联当前选定的作业",
         );
-      if (env.CLASSROOM_NEXT === "true" && learning?.taskId) {
+      if (
+        previous &&
+        (learning?.taskId ?? null) !==
+          ((previous.learning_context as { taskId?: string } | null)?.taskId ??
+            null)
+      )
+        throw new ClassroomFailure(
+          400,
+          "ASSIGNMENT_REQUIRED",
+          "修改不能改变原作业任务",
+        );
+      if (
+        previous &&
+        (learning?.publicationId ?? null) !== (previous.publication_id ?? null)
+      )
+        throw new ClassroomFailure(
+          400,
+          "ASSIGNMENT_REQUIRED",
+          "修改不能改变原作业的关联",
+        );
+      if (
+        env.CLASSROOM_NEXT === "true" &&
+        learning?.taskId &&
+        (!previous || previous.publication_id != null)
+      ) {
         if (
           !learning.publicationId ||
           !(
@@ -1355,6 +1423,13 @@ export async function handleShowcaseCloud(
       quota.bytes +=
         (planet.document?.media?.exterior?.bytes ?? 0) +
         (planet.document?.media?.interior?.bytes ?? 0);
+      if (previous) {
+        quota.count -= 1;
+        quota.bytes -=
+          Number(previous.byte_size) +
+          Number(previous.original_byte_size) +
+          Number(previous.gallery_byte_size);
+      }
       if (quota.count >= 100 || quota.bytes >= 104857600)
         throw new ClassroomFailure(
           409,
@@ -1402,7 +1477,8 @@ export async function handleShowcaseCloud(
           "QUOTA_EXCEEDED",
           "图片或星球存储空间超过试用上限",
         );
-      const id = crypto.randomUUID(),
+      const id = previous ? String(previous.id) : crypto.randomUUID(),
+        mediaId = crypto.randomUUID(),
         preset =
           GrowthPresetIds[
             crypto.getRandomValues(new Uint32Array(1))[0] %
@@ -1411,8 +1487,8 @@ export async function handleShowcaseCloud(
       const storageOwner = delegated
         ? String(owner.auth_subject)
         : identity.subject;
-      const displayKey = `${storageOwner}/${id}.webp`,
-        originalKey = `${storageOwner}/${id}-original.${info.mimeType.split("/")[1]}`;
+      const displayKey = `${storageOwner}/${mediaId}.webp`,
+        originalKey = `${storageOwner}/${mediaId}-original.${info.mimeType.split("/")[1]}`;
       uploadedKeys.push(displayKey, originalKey);
       await storage(
         env,
@@ -1441,26 +1517,44 @@ export async function handleShowcaseCloud(
         ),
         (b) => b.toString(16).padStart(2, "0"),
       ).join("");
-      await client.query(
-        "INSERT INTO colorverse.showcase_works(id,planet_id,title,description,storage_key,byte_size,preset_id,request_id,original_storage_key,original_byte_size,original_mime,original_sha256,element_params,learning_context,color) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
-        [
-          id,
-          planet.id,
-          title,
-          description,
-          displayKey,
-          display.length,
-          preset,
-          requestId,
-          originalKey,
-          bytes.length,
-          info.mimeType,
-          digest,
-          JSON.stringify(placement),
-          learning ? JSON.stringify(learning) : null,
-          growthElementColor(planet.document.color, occupied.length),
-        ],
-      );
+      if (previous) {
+        await client.query(
+          `UPDATE colorverse.showcase_works SET title=$1,description=$2,storage_key=$3,byte_size=$4,request_id=$5,original_storage_key=$6,original_byte_size=$7,original_mime=$8,original_sha256=$9,learning_context=$10,gallery_images='[]',gallery_byte_size=0,created_at=now(),revision=revision+1,submission_revision=submission_revision+1,submission_history=submission_history||jsonb_build_array(jsonb_build_object('revision',submission_revision,'title',title,'description',description,'savedAt',now())) WHERE id=$11`,
+          [
+            title,
+            description,
+            displayKey,
+            display.length,
+            requestId,
+            originalKey,
+            bytes.length,
+            info.mimeType,
+            digest,
+            learning ? JSON.stringify(learning) : null,
+            id,
+          ],
+        );
+      } else
+        await client.query(
+          "INSERT INTO colorverse.showcase_works(id,planet_id,title,description,storage_key,byte_size,preset_id,request_id,original_storage_key,original_byte_size,original_mime,original_sha256,element_params,learning_context,color) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
+          [
+            id,
+            planet.id,
+            title,
+            description,
+            displayKey,
+            display.length,
+            preset,
+            requestId,
+            originalKey,
+            bytes.length,
+            info.mimeType,
+            digest,
+            JSON.stringify(placement),
+            learning ? JSON.stringify(learning) : null,
+            growthElementColor(planet.document.color, occupied.length),
+          ],
+        );
       if (extraImages.length) {
         const gallery: {
           displayKey: string;
@@ -1501,8 +1595,8 @@ export async function handleShowcaseCloud(
               "QUOTA_EXCEEDED",
               "星球素材空间已达上限。",
             );
-          const displayKey = `${storageOwner}/${id}-gallery-${i + 1}.webp`,
-            originalKey = `${storageOwner}/${id}-gallery-${i + 1}-original.${infoExtra.mimeType.split("/")[1]}`;
+          const displayKey = `${storageOwner}/${mediaId}-gallery-${i + 1}.webp`,
+            originalKey = `${storageOwner}/${mediaId}-gallery-${i + 1}-original.${infoExtra.mimeType.split("/")[1]}`;
           uploadedKeys.push(displayKey, originalKey);
           await storage(
             env,
@@ -1540,10 +1634,32 @@ export async function handleShowcaseCloud(
       commitAttempted = true;
       await client.query("COMMIT");
       uploadedKeys.length = 0;
-      return Response.json({ id, presetId: preset, created: true });
+      if (previous) {
+        const oldKeys = [
+          previous.storage_key,
+          previous.original_storage_key,
+          ...(
+            previous.gallery_images as {
+              displayKey: string;
+              originalKey: string;
+            }[]
+          ).flatMap((i) => [i.displayKey, i.originalKey]),
+        ].filter(Boolean) as string[];
+        await removeStoredImages(env, oldKeys).catch(() =>
+          console.warn("student_work_old_media_cleanup_pending"),
+        );
+      }
+      return Response.json({
+        id,
+        presetId: previous?.preset_id ?? preset,
+        created: !previous,
+        updated: Boolean(previous),
+      });
     }
     const description = /^works\/([a-f0-9-]+)\/description$/.exec(resource);
     if (description && request.method === "PUT") {
+      if (env.CLASSROOM_NEXT === "true")
+        await studentWorkLock(client, actor, classId, description[1]);
       const input = z
         .strictObject({
           description: z.string().trim().max(2000),
@@ -1622,6 +1738,8 @@ export async function handleShowcaseCloud(
       if (!input.success)
         throw new ClassroomFailure(400, "INVALID_VISIBILITY", "作品状态无效");
       const staff = actor.role === "teacher" || actor.role === "assistant";
+      if (env.CLASSROOM_NEXT === "true" && !staff)
+        await studentWorkLock(client, actor, classId, visibility[1]);
       const result = await client.query(
         `UPDATE colorverse.showcase_works w SET withdrawn_at=CASE WHEN $1 THEN now() ELSE NULL END,withdrawn_by=CASE WHEN $1 THEN $2::uuid ELSE NULL END,revision=w.revision+1
          FROM colorverse.planets p JOIN colorverse.enrollments e ON e.id=p.owner_enrollment_id JOIN colorverse.users u ON u.id=e.user_id
