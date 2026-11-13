@@ -14,7 +14,7 @@ unlocked=[]
 progress={k:{"current":0,"target":v,"detail":"虚拟验证进度"} for k,v in {"silver":2,"gold":20,"sapphire":10,"emerald":5,"glass":10,"floral":50}.items()}
 def enc(v): return base64.urlsafe_b64encode(json.dumps(v).encode()).decode().rstrip('=')
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True, channel='chrome', args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+    browser = p.chromium.launch(headless=True, channel='chrome', proxy={'server':'http://127.0.0.1:7892'} if URL.startswith('https://') else None, args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
     for role in ['teacher', 'student']:
         actor = teacher if role == 'teacher' else owner
         user = {'id':subject,'email':'fixture@example.test','aud':'authenticated','role':'authenticated','app_metadata':{},'user_metadata':{}}
@@ -33,7 +33,7 @@ with sync_playwright() as p:
                 route.fulfill(body=(ROOT/'apps/web/public/assignments/two-moods.webp').read_bytes(),content_type='image/webp');return
             elif item == 'profile': data = {'profile':{'studentNumber':'00001','name':'虚拟学生'}}
             elif item == 'account': data = {'name':'虚拟学生','studentNumber':'00001','mustChangePassword':False}
-            elif item == 'planets': data = {'actorId':actor,'planets':[{'id':planet,'owner_enrollment_id':owner,'display_name':'虚拟学生','document':{'metadata':{'name':'我的验收星球'},'skin':0},'works':[]}]}
+            elif item == 'planets': data = {'actorId':actor,'planets':[{'id':planet,'owner_enrollment_id':owner,'display_name':'虚拟学生','ringId':equipped['options'].get('ringId'),'document':{'metadata':{'name':'我的验收星球'},'skin':0},'works':[]}]}
             elif item == 'learning-tasks':
                 if route.request.method == 'POST':
                     metadata = re.search(r'name="metadata"\r\n\r\n(.*?)\r\n--', route.request.post_data, re.S)
@@ -141,6 +141,22 @@ with sync_playwright() as p:
             page.reload(wait_until='networkidle');page.get_by_role('button',name='装扮星球',exact=True).click()
             expect(page.locator('.gp-room-scene .gp-frame-preset')).to_have_count(0)
             expect(page.get_by_role('button',name='套用边框：翡翠秘境',exact=True)).to_be_visible()
+            for ring_id,ring_name in [('silver','银月丝轨'),('gold','鎏金冠冕'),('gem','宝石星链'),('enamel','虹彩珐琅'),('jellyfish','水母·星海巡游')]:
+                unlocked.append('ring:'+ring_id)
+                page.get_by_role('button',name='刷新解锁进度',exact=True).click()
+                page.get_by_role('button',name='套用星环：'+ring_name,exact=True).click()
+                expect(page.locator('.gp-exterior-stage .gp-ring-front')).to_have_count(1)
+                assert equipped['options']['ringId']==ring_id
+            page.reload(wait_until='networkidle');page.get_by_role('button',name='装扮星球',exact=True).click()
+            expect(page.locator('.gp-exterior-stage .gp-jelly-orbit')).to_have_count(2)
+            page.screenshot(path=str(OUT/'rings-unlocked.png'),full_page=True)
+            page.get_by_role('button',name='← 返回星球',exact=True).click()
+            expect(page.locator('.equipped-universe-ring[data-ring-id="jellyfish"]')).to_have_count(1)
+            page.screenshot(path=str(OUT/'ring-equipped-universe.png'),full_page=True)
+            page.get_by_role('button',name='装扮星球',exact=True).click()
+            page.get_by_role('button',name='恢复无装扮',exact=True).click()
+            assert equipped['options']['ringId'] is None
+            checks.append('all five rings apply, reload persistence, jellyfish universe display and reset retaining unlocks')
             checks.append('reset persists without revoking awards; all 6 count progress bars, explicit refresh, unlocked apply and undecided rings remain locked')
 
         assert not unknown, unknown

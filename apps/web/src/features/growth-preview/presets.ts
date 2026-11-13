@@ -110,3 +110,11 @@ export const paletteMaterials = {
   moon: ["#d7e6fa", "#f5fbff", "#99b8ff"],
   rose: ["#edb5dc", "#fff0fc", "#bda5ff"],
 } as const;
+
+export const ringUnlockLabels = {
+  silver: "首次提交作业并获得教师评分后解锁",
+  gold: "第二周三份作业全部提交并获得教师评分后解锁",
+  gem: "有1份作业达到90分后解锁",
+  enamel: "有3份不同作业达到90分，或1份作业达到95分后解锁",
+  jellyfish: "提交第二周水母作业并获得教师评分后解锁",
+} as const;

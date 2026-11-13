@@ -1,0 +1,32 @@
+.equipped-universe-ring {
+  position: absolute;
+  display: block !important;
+  left: 50%;
+  top: calc(-1 * var(--orb-radius) - 12px);
+  width: calc(var(--orb-radius) * 2 / 0.54);
+  aspect-ratio: 500/520;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  overflow: visible;
+  min-height: 0 !important;
+  background: none !important;
+  border: 0 !important;
+}
+.equipped-universe-ring .equipped-ring-back {
+  position: absolute;
+  inset: 0;
+  display: block;
+  mask-image: radial-gradient(
+    circle,
+    transparent calc(var(--orb-radius) - 1px),
+    #000 var(--orb-radius)
+  );
+}
+.equipped-universe-ring > .gp-ring-front {
+  z-index: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .equipped-universe-ring * {
+    animation: none !important;
+  }
+}

@@ -1,3 +1,4 @@
+import { awardGradeRings } from "./classroom-ring-unlocks";
 import { awardCountSkins, skinCountProgress } from "./classroom-skin-counts";
 import { z } from "zod";
 import { classroomActor, ClassroomFailure } from "./classroom";
@@ -22,6 +23,10 @@ const input = z.strictObject({
     amplitude: z.enum(["still", "gentle", "expressive"]),
   }),
   options: z.strictObject({
+    ringId: z
+      .enum(["silver", "gold", "gem", "enamel", "jellyfish"])
+      .nullable()
+      .optional(),
     palette: z.enum(["gold", "moon", "rose"]).optional(),
     particles: z.boolean(),
     lantern: z.boolean(),
@@ -71,6 +76,12 @@ export async function classroomDecorations(
           String(actor.id),
         )
       : undefined;
+  const ringProgress =
+    own && actor.role === "student"
+      ? (await awardGradeRings(sql, classId, String(actor.id)))[
+          String(actor.id)
+        ]
+      : {};
   // A stable class/task binding, never a title match. Current-version numerical
   // teacher grades (including zero) qualify; comments alone and stale grades do not.
   if (own && actor.role === "student")
@@ -101,6 +112,12 @@ export async function classroomDecorations(
         403,
         "SKIN_LOCKED",
         "这款装扮尚未解锁，可以先试戴",
+      );
+    if (v.options.ringId && !unlocked.includes("ring:" + v.options.ringId))
+      throw new ClassroomFailure(
+        403,
+        "SKIN_LOCKED",
+        "这款星环尚未解锁，可以先试戴",
       );
     await sql.query(
       "SELECT pg_advisory_xact_lock(hashtextextended($1,7301960))",
@@ -147,7 +164,7 @@ export async function classroomDecorations(
     planetId: String(planet.id),
     unlocked,
     bindings,
-    progress: skinCountProgress(countEvidence),
+    progress: { ...skinCountProgress(countEvidence), ...ringProgress },
     settings: {
       frameId: settings?.frame_id ?? null,
       placement: settings?.placement ?? {

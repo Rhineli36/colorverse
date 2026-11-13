@@ -100,7 +100,9 @@ export function GrowthPreview({
   const [framePreset, setFramePreset] = useState<FrameId | undefined>(
       wardrobe?.data.settings.frameId ?? undefined,
     ),
-    [ringPreset, setRingPreset] = useState<RingId>();
+    [ringPreset, setRingPreset] = useState<RingId | undefined>(
+      wardrobe?.data.settings.options.ringId ?? undefined,
+    );
   const [moving, setMoving] = useState(true),
     [frame, setFrame] = useState(true),
     [particles, setParticles] = useState(
@@ -157,8 +159,13 @@ export function GrowthPreview({
           ? (charmPlacements[id] ?? initialCharmPlacement)
           : initialCharmPlacement,
         options: id
-          ? { palette, particles, lantern }
-          : { particles: false, lantern: false },
+          ? {
+              palette,
+              particles,
+              lantern,
+              ringId: wardrobe.data.settings.options.ringId ?? null,
+            }
+          : { particles: false, lantern: false, ringId: null },
         revision: wardrobe.data.settings.revision,
       });
       setFramePreset(id ?? undefined);
@@ -175,6 +182,25 @@ export function GrowthPreview({
       );
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "保存失败，请重试");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const saveRing = async (id: RingId) => {
+    if (!wardrobe || saving) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      await wardrobe.onSave({
+        ...wardrobe.data.settings,
+        options: { ...wardrobe.data.settings.options, ringId: id },
+        revision: wardrobe.data.settings.revision,
+      });
+      setRingPreset(id);
+      setRing(true);
+      setMessage("星环已套用并保存");
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "星环保存失败");
     } finally {
       setSaving(false);
     }
@@ -276,7 +302,11 @@ export function GrowthPreview({
                 01 <b>星球外观</b>
               </span>
               <span className="gp-stage-chip">
-                {ringPreset ? "仅试戴 · 未解锁" : "原始外观"}
+                {ringPreset
+                  ? wardrobe?.data.unlocked.includes("ring:" + ringPreset)
+                    ? "已解锁 · 可保存"
+                    : "仅试戴 · 未解锁"
+                  : "原始外观"}
               </span>
             </div>
             <div className="gp-exterior-stage">
@@ -553,7 +583,7 @@ export function GrowthPreview({
               }
               onClick={() => void saveFrame(framePreset ?? null)}
             >
-              {saving ? "正在保存…" : "保存当前装扮"}
+              {saving ? "正在保存…" : "保存当前边框"}
             </button>
             <button
               disabled={
@@ -564,6 +594,17 @@ export function GrowthPreview({
             >
               恢复无装扮
             </button>
+            {ringPreset && (
+              <button
+                disabled={
+                  saving ||
+                  !wardrobe.data.unlocked.includes("ring:" + ringPreset)
+                }
+                onClick={() => void saveRing(ringPreset)}
+              >
+                保存当前星环
+              </button>
+            )}
             <p>恢复无装扮仅移除装饰，不更换星球原图，也不清除解锁资格。</p>
             <p role="status">
               {message || "未解锁款式可试戴；套用和保存仅对已解锁款式开放。"}
@@ -579,6 +620,7 @@ export function GrowthPreview({
               ?.title ?? undefined
           }
           onApply={wardrobe ? (id) => void saveFrame(id) : undefined}
+          onApplyRing={wardrobe ? (id) => void saveRing(id) : undefined}
           saving={saving}
           frame={framePreset}
           ring={ringPreset}

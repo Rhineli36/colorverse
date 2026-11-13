@@ -89,6 +89,10 @@ const Work = z.object({
   canRestore: z.boolean().default(true),
 });
 const Planet = z.object({
+  ringId: z
+    .enum(["silver", "gold", "gem", "enamel", "jellyfish"])
+    .nullable()
+    .optional(),
   id: z.uuid(),
   owner_enrollment_id: z.uuid(),
   display_name: z.string().transform(presentationName),

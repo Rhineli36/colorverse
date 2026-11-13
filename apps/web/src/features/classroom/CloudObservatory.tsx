@@ -1,3 +1,7 @@
+import { RingPresetArt } from "../growth-preview/PresetArt";
+import type { RingId } from "../growth-preview/presets";
+import "./equipped-rings.css";
+import "../growth-preview/preview.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { z } from "zod";
 import type { AssetStore } from "@colorverse/application";
@@ -19,6 +23,7 @@ import { distantPlanetField } from "./distant-planets";
 import { placedImageBlob } from "./FramedImage";
 
 export type ObservatoryPlanet = {
+  ringId?: RingId | null;
   id: string;
   display_name: string;
   document: z.infer<typeof CloudPlanetDocumentSchema>;
@@ -347,6 +352,10 @@ export function CloudObservatory({
         if (!label) continue;
         label.hidden = !point || camera.zoom < 0.1;
         if (!point) continue;
+        label.style.setProperty(
+          "--orb-radius",
+          `${256 * 0.9 * scale * camera.zoom}px`,
+        );
         label.style.transform = `translate(${(w - 1600 * scale * camera.zoom) / 2 + camera.x * scale + point.x * scale * camera.zoom}px,${(h - 900 * scale * camera.zoom) / 2 + camera.y * scale + point.y * scale * camera.zoom + 256 * 0.9 * scale * camera.zoom + 12}px) translateX(-50%)`;
       }
     };
@@ -442,6 +451,17 @@ export function CloudObservatory({
               else labels.current.delete(p.id);
             }}
           >
+            {p.ringId && (
+              <span
+                className="gp-app equipped-universe-ring"
+                data-ring-id={p.ringId}
+              >
+                <span className="equipped-ring-back">
+                  <RingPresetArt id={p.ringId} particles={false} />
+                </span>
+                <RingPresetArt id={p.ringId} front particles={false} />
+              </span>
+            )}
             <strong>{p.document.metadata.name}</strong>
             {showIdentities && <small>{p.display_name}</small>}
           </div>

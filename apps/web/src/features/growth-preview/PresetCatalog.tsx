@@ -7,6 +7,7 @@ import {
   framePresets,
   frameUnlockLabels,
   ringPresets,
+  ringUnlockLabels,
   type FrameId,
   type RingId,
 } from "./presets";
@@ -36,6 +37,7 @@ export function PresetCatalog({
   onRing,
   unlocked = [],
   onApply,
+  onApplyRing,
   winterLabel,
   saving = false,
   progress,
@@ -43,7 +45,8 @@ export function PresetCatalog({
 }: {
   extraFramePreview?: ReactNode;
   progress?: WardrobeData["progress"];
-  unlocked?: FrameId[];
+  unlocked?: string[];
+  onApplyRing?: (id: RingId) => void;
   onApply?: (id: FrameId) => void;
   winterLabel?: string;
   saving?: boolean;
@@ -158,10 +161,10 @@ export function PresetCatalog({
       <div className="gp-ring-catalog">
         {ringPresets.map((p) => (
           <article
-            className={`gp-preset-card ${ring === p.id ? "trial-selected" : ""}`}
+            className={`gp-preset-card ${unlocked.includes("ring:" + p.id) ? "is-unlocked" : ""} ${ring === p.id ? "trial-selected" : ""}`}
             key={p.id}
             id={p.id === "jellyfish" ? "jellyfish-theme" : undefined}
-            data-locked={p.locked}
+            data-locked={!unlocked.includes("ring:" + p.id)}
           >
             <div className="gp-ring-swatch">
               <div className="gp-mini-planet">
@@ -182,8 +185,13 @@ export function PresetCatalog({
                 />
               </div>
               <span className="gp-lock-badge">
-                <LockIcon />
-                已锁定
+                {unlocked.includes("ring:" + p.id) ? (
+                  "✓ 已解锁"
+                ) : (
+                  <>
+                    <LockIcon /> 已锁定
+                  </>
+                )}
               </span>
             </div>
             <div className="gp-preset-info">
@@ -200,11 +208,27 @@ export function PresetCatalog({
                 <span aria-hidden="true"> ↗</span>
               </button>
             </div>
+            {onApplyRing && unlocked.includes("ring:" + p.id) && (
+              <button
+                className="gp-apply-preset"
+                disabled={saving}
+                onClick={() => onApplyRing(p.id)}
+                aria-label={`套用星环：${p.name}`}
+              >
+                套用星环
+              </button>
+            )}
             <p className="gp-preset-description">{p.description}</p>
             <small className="gp-unlock-rule">
-              {p.id === "jellyfish"
-                ? "拟关联：水母设计作业 · 尚未配置"
-                : "解锁条件待配置"}
+              {ringUnlockLabels[p.id]}
+              {progress?.["ring:" + p.id] && (
+                <span>
+                  {" "}
+                  · {progress["ring:" + p.id].current}/
+                  {progress["ring:" + p.id].target} ·{" "}
+                  {progress["ring:" + p.id].detail}
+                </span>
+              )}
             </small>
           </article>
         ))}

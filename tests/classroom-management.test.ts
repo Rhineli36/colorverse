@@ -1,4 +1,8 @@
 import {
+  awardGradeRings,
+  gradeRingRules,
+} from "../apps/worker/src/classroom-ring-unlocks";
+import {
   awardCountSkins,
   skinCountEvidence,
 } from "../apps/worker/src/classroom-skin-counts";
@@ -173,6 +177,177 @@ beforeAll(async () => {
   }
 }, 30000);
 afterAll(async () => db?.close());
+
+describe("graded ring eligibility", () => {
+  it("uses inclusive thresholds, requires three configured tasks and both alternative enamel paths", () => {
+    const e = {
+      graded: 0,
+      ninety: 0,
+      highest: 0,
+      week: 0,
+      configured: 0,
+      jellyfish: false,
+    };
+    expect(gradeRingRules(e)).toEqual([]);
+    expect(gradeRingRules({ ...e, graded: 1 })).toEqual(["ring:silver"]);
+    expect(gradeRingRules({ ...e, ninety: 1, highest: 90 })).toEqual([
+      "ring:gem",
+    ]);
+    expect(gradeRingRules({ ...e, ninety: 2, highest: 94 })).not.toContain(
+      "ring:enamel",
+    );
+    expect(gradeRingRules({ ...e, ninety: 3, highest: 90 })).toContain(
+      "ring:enamel",
+    );
+    expect(gradeRingRules({ ...e, ninety: 1, highest: 95 })).toContain(
+      "ring:enamel",
+    );
+    expect(gradeRingRules({ ...e, week: 2, configured: 2 })).not.toContain(
+      "ring:gold",
+    );
+    expect(
+      gradeRingRules({ ...e, week: 3, configured: 3, jellyfish: true }),
+    ).toEqual(["ring:gold", "ring:jellyfish"]);
+  });
+  it("backfills real current grades, deduplicates course submissions, excludes stale/comment grades and persists valid rings", async () => {
+    const cls = randomUUID(),
+      staff = randomUUID(),
+      pupil = randomUUID(),
+      planet = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.classes(id,course_id,title,term,timezone) VALUES($1,$2,'星环验收班','2026','Asia/Shanghai')",
+      [cls, id[7]],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,'teacher'),($4,$2,$5,'student')",
+      [staff, cls, id[0], pupil, id[1]],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,$3)",
+      [
+        planet,
+        pupil,
+        JSON.stringify({ color: "#aabbcc", metadata: { name: "验收" } }),
+      ],
+    );
+    const pubIds = Array.from({ length: 3 }, () => randomUUID());
+    for (const [i, task] of ["T01", "T02", "T03"].entries()) {
+      await sql.query(
+        "INSERT INTO colorverse.learning_task_settings(class_id,task_id,published,revision) VALUES($1,$2,true,1)",
+        [cls, task],
+      );
+      await sql.query(
+        "INSERT INTO colorverse.classroom_skin_bindings(class_id,skin_id,task_id) VALUES($1,$2,$3)",
+        [cls, "ring:gold:" + i, task],
+      );
+      await sql.query(
+        "INSERT INTO colorverse.classroom_publications(id,class_id,task_id,definition,target_label,publisher_enrollment_id,request_id) VALUES($1,$2,$3,$4,'验收',$5,$1)",
+        [
+          pubIds[i],
+          cls,
+          task,
+          JSON.stringify({
+            id: task,
+            title: task,
+            description: "test",
+            steps: [],
+            deliverables: "test",
+          }),
+          staff,
+        ],
+      );
+      await sql.query(
+        "INSERT INTO colorverse.classroom_recipients(publication_id,enrollment_id) VALUES($1,$2)",
+        [pubIds[i], pupil],
+      );
+    }
+    await sql.query(
+      "INSERT INTO colorverse.classroom_skin_bindings(class_id,skin_id,task_id) VALUES($1,'ring:jellyfish','T03')",
+      [cls],
+    );
+    const add = async (pub: number, score: number | null, version = 0) => {
+      const wid = randomUUID();
+      await sql.query(
+        "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id,publication_id,submission_revision) VALUES($1,$2,'验收',$1::uuid::text,1,'crystal',$1,$3,$4)",
+        [wid, planet, pubIds[pub], version],
+      );
+      await showcaseReview(
+        sql,
+        { id: staff, role: "teacher" },
+        cls,
+        wid,
+        "POST",
+        {
+          score,
+          comment: "验收",
+          revision: 0,
+          submissionRevision: version,
+          requestId: randomUUID(),
+        },
+        true,
+      );
+      return wid;
+    };
+    const read = () => classroomDecorations(sql, student, cls, "GET", null);
+    const payload = {
+      frameId: null,
+      placement: { x: 0.8, y: 0.3, amplitude: "gentle" },
+      options: { particles: false, lantern: false, ringId: "gold" },
+      revision: 0,
+    };
+    await expect(
+      classroomDecorations(sql, student, cls, "PUT", null, payload),
+    ).rejects.toMatchObject({ code: "SKIN_LOCKED" });
+    await add(0, null);
+    expect((await read()).unlocked).toEqual([]);
+    await add(0, 90);
+    await add(0, 92);
+    expect((await read()).progress["ring:gem"].current).toBe(1);
+    expect((await read()).unlocked).toEqual(
+      expect.arrayContaining(["ring:silver", "ring:gem"]),
+    );
+    expect((await read()).unlocked).not.toContain("ring:enamel");
+    const stale = await add(2, 99);
+    await sql.query(
+      "UPDATE colorverse.showcase_works SET submission_revision=1 WHERE id=$1",
+      [stale],
+    );
+    expect((await read()).unlocked).not.toContain("ring:jellyfish");
+    await add(1, 90);
+    await add(2, 90);
+    const ready = await read();
+    expect(ready.unlocked).toEqual(
+      expect.arrayContaining(["ring:gold", "ring:enamel", "ring:jellyfish"]),
+    );
+    const saved = await classroomDecorations(
+      sql,
+      student,
+      cls,
+      "PUT",
+      null,
+      payload,
+    );
+    expect(saved.settings.options).toMatchObject({ ringId: "gold" });
+    expect((await read()).settings.options).toMatchObject({ ringId: "gold" });
+    const count = await sql.query(
+      "SELECT count(*)::int n FROM colorverse.classroom_skin_unlocks WHERE enrollment_id=$1 AND skin_id LIKE 'ring:%'",
+      [pupil],
+    );
+    expect(count.rows[0].n).toBe(5);
+    await awardGradeRings(sql, cls, pupil);
+    expect(
+      (
+        await sql.query(
+          "SELECT count(*)::int n FROM colorverse.classroom_skin_unlocks WHERE enrollment_id=$1 AND skin_id LIKE 'ring:%'",
+          [pupil],
+        )
+      ).rows[0].n,
+    ).toBe(5);
+    const peer = await classroomDecorations(sql, teacher, cls, "GET", planet);
+    expect(peer.unlocked).toEqual([]);
+    expect(peer.settings.options).toMatchObject({ ringId: "gold" });
+  });
+});
 let publicationId: string, workId: string;
 describe("classroom roster and assignment snapshots", () => {
   it("lists enrolled imported students before login and before planet creation", async () => {
@@ -804,7 +979,19 @@ describe("winter skin is bound to real class/task grades", () => {
       "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id,publication_id) VALUES($1,$2,'立冬验收',$1::uuid::text,10,'crystal',$1,$3)",
       [wid, id[17], pub.id],
     );
-    const read = () => classroomDecorations(sql, student, id[5], "GET", null);
+    const read = async () => {
+      const result = await classroomDecorations(
+        sql,
+        student,
+        id[5],
+        "GET",
+        null,
+      );
+      return {
+        ...result,
+        unlocked: result.unlocked.filter((id) => !id.startsWith("ring:")),
+      };
+    };
     const payload = {
       frameId: "winter",
       placement: { x: 0.7, y: 0.3, amplitude: "gentle" },
@@ -915,7 +1102,9 @@ describe("winter skin is bound to real class/task grades", () => {
       { ...payload, frameId: null, revision: 1 },
     );
     expect(cleared.settings.frameId).toBeNull();
-    expect(cleared.unlocked).toEqual(["winter"]);
+    expect(cleared.unlocked.filter((id) => !id.startsWith("ring:"))).toEqual([
+      "winter",
+    ]);
   });
 });
 
