@@ -125,6 +125,7 @@ beforeAll(async () => {
     "013-submission-content-history",
     "014-assignment-media-and-skins",
     "015-count-skin-unlocks",
+    "018-classroom-member-removal",
   ])
     await db.exec(await readFile(`apps/api/migrations/${name}.sql`, "utf8"));
   for (let i = 0; i < 5; i++)
@@ -1734,5 +1735,149 @@ describe("six classroom skin milestones from authoritative evidence", () => {
     const other = await countFixture();
     expect(await skinCountEvidence(sql, other.cls, f.owner.eid)).toBeNull();
     expect((await f.read()).unlocked).not.toContain("winter");
+  });
+});
+
+describe("soft class membership removal", () => {
+  it("allows only this class teacher, retains historical data and excludes the removed student from current lists", async () => {
+    const cls = randomUUID(),
+      staff = randomUUID(),
+      pupil = randomUUID(),
+      other = randomUUID(),
+      planet = randomUUID(),
+      pub = randomUUID(),
+      wid = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.classes(id,course_id,title,term,timezone) VALUES($1,$2,'移出验收班','2026','Asia/Shanghai')",
+      [cls, id[7]],
+    );
+    for (const [eid, uid, role] of [
+      [staff, id[0], "teacher"],
+      [pupil, id[1], "student"],
+      [other, id[4], "student"],
+    ])
+      await sql.query(
+        "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,$4)",
+        [eid, cls, uid, role],
+      );
+    await sql.query(
+      "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,'{}')",
+      [planet, pupil],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.classroom_publications(id,class_id,task_id,definition,target_label,publisher_enrollment_id,request_id) VALUES($1,$2,'T01',$3,'全部',$4,$1)",
+      [
+        pub,
+        cls,
+        JSON.stringify({
+          id: "T01",
+          title: "test",
+          description: "test",
+          steps: [],
+          deliverables: "test",
+        }),
+        staff,
+      ],
+    );
+    for (const eid of [pupil, other])
+      await sql.query(
+        "INSERT INTO colorverse.classroom_recipients(publication_id,enrollment_id) VALUES($1,$2)",
+        [pub, eid],
+      );
+    await sql.query(
+      "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id,publication_id) VALUES($1,$2,'保留作品',$1::uuid::text,1,'crystal',$1,$3)",
+      [wid, planet, pub],
+    );
+    await showcaseReview(
+      sql,
+      { id: staff, role: "teacher" },
+      cls,
+      wid,
+      "POST",
+      {
+        score: 88,
+        comment: "保留评分",
+        revision: 0,
+        submissionRevision: 0,
+        requestId: randomUUID(),
+      },
+      true,
+    );
+    const path = `students/${pupil}/remove`;
+    await expect(
+      managementAction(sql, student, cls, path, "POST", { confirm: true }),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      managementAction(sql, teacher, id[6], path, "POST", { confirm: true }),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      managementAction(sql, teacher, cls, `students/${staff}/remove`, "POST", {
+        confirm: true,
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(
+      managementAction(sql, teacher, cls, path, "POST", { confirm: false }),
+    ).rejects.toBeDefined();
+    await sql.query("SET ROLE colorverse_classroom_writer");
+    try {
+      expect(
+        await managementAction(sql, teacher, cls, path, "POST", {
+          confirm: true,
+        }),
+      ).toMatchObject({ removed: true, enrollmentId: pupil });
+      await expect(
+        sql.query(
+          "UPDATE colorverse.enrollments SET role='teacher' WHERE id=$1",
+          [pupil],
+        ),
+      ).rejects.toBeDefined();
+    } finally {
+      await sql.query("RESET ROLE");
+    }
+    expect(
+      await managementAction(sql, teacher, cls, path, "POST", {
+        confirm: true,
+      }),
+    ).toMatchObject({ removed: true });
+    expect(
+      (await classroomRoster(sql, cls)).map((s) => s.enrollmentId),
+    ).toEqual([other]);
+    expect(
+      (await publicationRows(sql, cls, pub)).map((s) => s.enrollmentId),
+    ).toEqual([other]);
+    const book = (await managementAction(
+      sql,
+      teacher,
+      cls,
+      "gradebook",
+      "GET",
+    )) as { students: { enrollmentId: string }[] };
+    expect(book.students.map((s) => s.enrollmentId)).toEqual([other]);
+    expect(
+      (
+        await sql.query("SELECT status FROM colorverse.users WHERE id=$1", [
+          id[1],
+        ])
+      ).rows[0].status,
+    ).toBe("active");
+    expect(
+      (
+        await sql.query(
+          "SELECT score::float8 score FROM colorverse.showcase_reviews WHERE work_id=$1",
+          [wid],
+        )
+      ).rows[0].score,
+    ).toBe(88);
+    expect(
+      (
+        await sql.query(
+          "SELECT count(*)::int n FROM colorverse.classroom_recipients WHERE publication_id=$1",
+          [pub],
+        )
+      ).rows[0].n,
+    ).toBe(2);
+    await expect(classroomActor(sql, student, cls)).rejects.toMatchObject({
+      status: 403,
+    });
   });
 });

@@ -50,7 +50,7 @@ export async function publicationRows(
     LEFT JOIN colorverse.planets p ON p.owner_enrollment_id=e.id
     LEFT JOIN LATERAL(SELECT * FROM colorverse.showcase_works WHERE publication_id=$1 AND planet_id=p.id AND withdrawn_at IS NULL ORDER BY created_at DESC,id DESC LIMIT 1) w ON true
     LEFT JOIN LATERAL(SELECT * FROM colorverse.showcase_reviews WHERE work_id=w.id AND source='teacher' AND submission_revision=w.submission_revision ORDER BY revision DESC LIMIT 1) r ON true
-    WHERE cr.publication_id=$1 AND e.class_id=$2 ORDER BY coalesce(a.student_number,u.student_number,''),u.id`,
+    WHERE cr.publication_id=$1 AND e.class_id=$2 AND e.status='active' AND u.status='active' ORDER BY coalesce(a.student_number,u.student_number,''),u.id`,
       [publicationId, classId],
     )
   ).rows;
@@ -261,6 +261,29 @@ export async function managementAction(
       "TEACHER_REQUIRED",
       "仅本班教师可查看和管理名单与提交。",
     );
+  const removal = /^students\/([a-f0-9-]{36})\/remove$/.exec(resource);
+  if (removal) {
+    if (method !== "POST")
+      throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
+    if (actor.role !== "teacher")
+      throw new ClassroomFailure(
+        403,
+        "TEACHER_REQUIRED",
+        "只有本班教师可以移出学生",
+      );
+    z.strictObject({ confirm: z.literal(true) }).parse(body);
+    const removed = await sql.query(
+      "UPDATE colorverse.enrollments SET status='inactive' WHERE id=$1 AND class_id=$2 AND role='student' RETURNING id",
+      [removal[1], classId],
+    );
+    if (!removed.rows.length)
+      throw new ClassroomFailure(
+        404,
+        "STUDENT_NOT_FOUND",
+        "学生不属于当前班级，未作修改",
+      );
+    return { removed: true, enrollmentId: String(removed.rows[0].id) };
+  }
   if (resource === "gradebook" && method === "GET")
     return classroomGradebook(sql, classId);
   if (resource === "publications" && method === "POST")

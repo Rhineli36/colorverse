@@ -94,7 +94,14 @@ export function CloudClassroomView({
     ])
       .then(([overview, planets, tasks, notices]) => {
         if (active) {
-          setData(overview);
+          setData({
+            ...overview,
+            students: overview.students.filter(
+              (s) =>
+                s.enrollment_status === "active" &&
+                s.account_status === "active",
+            ),
+          });
           setGallery(planets);
           setInbox(notices);
           setCatalog([

@@ -154,7 +154,12 @@ export function CompetitionView({
           if (!r.ok) throw Error("星球资料读取失败，请重新加载。");
           return r.json();
         })
-        .then((v) => Snapshot.parse(v)),
+        .then((v) => {
+          const parsed = Snapshot.parse(v);
+          return import.meta.env.VITE_CLASSROOM_NEXT === "true"
+            ? { ...parsed, defaults: [] }
+            : parsed;
+        }),
       readOnly ? Promise.resolve(blankExperience()) : store.current!.load(),
     ])
       .then(([d, s]) => {

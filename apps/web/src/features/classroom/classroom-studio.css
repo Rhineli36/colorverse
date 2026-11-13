@@ -616,3 +616,10 @@
 .classroom-pending-row p {
   margin: 4px 0 0;
 }
+
+.classroom-remove-student {
+  margin-left: 8px;
+  color: #edb2b9 !important;
+  border-color: #a3607255 !important;
+  background: transparent !important;
+}

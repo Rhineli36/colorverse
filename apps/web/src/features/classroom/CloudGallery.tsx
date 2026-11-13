@@ -302,6 +302,10 @@ export function CloudGallery({
     [visiblePlanets, samples],
   );
   useEffect(() => {
+    if (import.meta.env.VITE_CLASSROOM_NEXT === "true") {
+      setSamples([]);
+      return;
+    }
     let active = true;
     void fetch(`${import.meta.env.BASE_URL}competition/manifest.json`)
       .then((r) => {

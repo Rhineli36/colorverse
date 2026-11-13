@@ -732,6 +732,34 @@ export function TeacherClassroomStudio(props: Props) {
                             >
                               查看学生
                             </button>
+                            {memberships.find((m) => m.classId === classId)
+                              ?.role === "teacher" && (
+                              <button
+                                disabled={busy}
+                                className="classroom-remove-student"
+                                onClick={() => {
+                                  if (
+                                    !discard() ||
+                                    !window.confirm(
+                                      `确认将 ${s.name}（${s.studentNumber || "未登记学号"}）移出当前班级？账号、星球、作品与评分将保留，不会删除。`,
+                                    )
+                                  )
+                                    return;
+                                  void run(async () => {
+                                    await json(
+                                      root +
+                                        `management/students/${s.enrollmentId}/remove`,
+                                      { confirm: true },
+                                    );
+                                    setStudent(undefined);
+                                    setWork(undefined);
+                                    setDirty(false);
+                                  });
+                                }}
+                              >
+                                移出班级
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
