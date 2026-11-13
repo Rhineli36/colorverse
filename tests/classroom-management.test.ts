@@ -178,6 +178,147 @@ beforeAll(async () => {
 }, 30000);
 afterAll(async () => db?.close());
 
+describe("classroom gradebook", () => {
+  it("includes roster students without planets, zero grades, assignment scope and genuine free counts; columns follow publication", async () => {
+    const cls = randomUUID(),
+      staff = randomUUID(),
+      a = randomUUID(),
+      b = randomUUID(),
+      c = randomUUID(),
+      planet = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.classes(id,course_id,title,term,timezone) VALUES($1,$2,'成绩汇总验收','2026','Asia/Shanghai')",
+      [cls, id[7]],
+    );
+    for (const [eid, uid, role] of [
+      [staff, id[0], "teacher"],
+      [a, id[1], "student"],
+      [b, id[2], "student"],
+      [c, id[4], "student"],
+    ])
+      await sql.query(
+        "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,$4)",
+        [eid, cls, uid, role],
+      );
+    await sql.query(
+      "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,'{}')",
+      [planet, a],
+    );
+    const publish = async (task: string, targets: string[]) => {
+      const pub = randomUUID();
+      await sql.query(
+        "INSERT INTO colorverse.classroom_publications(id,class_id,task_id,definition,target_label,publisher_enrollment_id,request_id) VALUES($1,$2,$3,$4,'指定学生',$5,$1)",
+        [
+          pub,
+          cls,
+          task,
+          JSON.stringify({
+            id: task,
+            title: "作业 " + task,
+            description: "test",
+            steps: [],
+            deliverables: "test",
+          }),
+          staff,
+        ],
+      );
+      for (const eid of targets)
+        await sql.query(
+          "INSERT INTO colorverse.classroom_recipients(publication_id,enrollment_id) VALUES($1,$2)",
+          [pub, eid],
+        );
+      return pub;
+    };
+    const first = await publish("T01", [a, b]),
+      second = await publish("T02", [a]);
+    const add = async (
+      pub: string | null,
+      learning: unknown = null,
+      withdrawn = false,
+    ) => {
+      const wid = randomUUID();
+      await sql.query(
+        "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id,publication_id,learning_context,withdrawn_at,withdrawn_by) VALUES($1,$2,'汇总验收',$1::uuid::text,1,'crystal',$1,$3,$4,CASE WHEN $5 THEN now() ELSE NULL END,CASE WHEN $5 THEN $6::uuid ELSE NULL END)",
+        [
+          wid,
+          planet,
+          pub,
+          learning ? JSON.stringify(learning) : null,
+          withdrawn,
+          a,
+        ],
+      );
+      return wid;
+    };
+    const zero = await add(first),
+      commented = await add(second);
+    for (const [wid, score] of [
+      [zero, 0],
+      [commented, null],
+    ])
+      await showcaseReview(
+        sql,
+        { id: staff, role: "teacher" },
+        cls,
+        String(wid),
+        "POST",
+        {
+          score,
+          comment: "教师评语",
+          revision: 0,
+          submissionRevision: 0,
+          requestId: randomUUID(),
+        },
+        true,
+      );
+    await add(null);
+    await add(null, null, true);
+    await add(null, { taskId: "T03" });
+    const read = () =>
+      managementAction(sql, teacher, cls, "gradebook", "GET") as Promise<{
+        assignments: { id: string }[];
+        students: {
+          enrollmentId: string;
+          studentNumber: string;
+          freeSubmissions: number;
+          grades: Record<
+            string,
+            { status: string; score: number | null; updated: boolean }
+          >;
+        }[];
+      }>;
+    const data = await read();
+    expect(data.assignments.map((p) => p.id)).toEqual([first, second]);
+    expect(data.students).toHaveLength(3);
+    const mine = data.students.find((s) => s.enrollmentId === a)!;
+    expect(mine.studentNumber).toBe("0001");
+    expect(mine.freeSubmissions).toBe(1);
+    expect(mine.grades[first]).toMatchObject({ status: "graded", score: 0 });
+    expect(mine.grades[second]).toMatchObject({
+      status: "commented",
+      score: null,
+    });
+    const noPlanet = data.students.find((s) => s.enrollmentId === b)!;
+    expect(noPlanet.grades[first].status).toBe("missing");
+    expect(noPlanet.grades[second].status).toBe("not-assigned");
+    await sql.query(
+      "UPDATE colorverse.showcase_works SET submission_revision=1 WHERE id=$1",
+      [zero],
+    );
+    expect(
+      (await read()).students.find((s) => s.enrollmentId === a)!.grades[first],
+    ).toMatchObject({ status: "pending", score: null, updated: true });
+    const third = await publish("T03", [a]);
+    expect((await read()).assignments.map((p) => p.id)).toContain(third);
+    await expect(
+      managementAction(sql, student, cls, "gradebook", "GET"),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      managementAction(sql, teacher, id[6], "gradebook", "GET"),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
 describe("graded ring eligibility", () => {
   it("uses inclusive thresholds, requires three configured tasks and both alternative enamel paths", () => {
     const e = {

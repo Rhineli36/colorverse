@@ -261,6 +261,8 @@ export async function managementAction(
       "TEACHER_REQUIRED",
       "仅本班教师可查看和管理名单与提交。",
     );
+  if (resource === "gradebook" && method === "GET")
+    return classroomGradebook(sql, classId);
   if (resource === "publications" && method === "POST")
     return publishToRoster(sql, actor, classId, body);
   if (resource === "roster" && method === "GET")
@@ -351,4 +353,75 @@ export async function managementAction(
       ).rows,
     };
   throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效。");
+}
+
+/** Published assignment columns and latest valid submissions share the grading list logic. */
+export async function classroomGradebook(sql: EnrollmentSql, classId: string) {
+  const assignments = (
+    await sql.query(
+      "SELECT id,definition->>'title' title,target_label,published_at FROM colorverse.classroom_publications WHERE class_id=$1 ORDER BY published_at,id",
+      [classId],
+    )
+  ).rows;
+  const students = (
+    await sql.query(
+      `SELECT e.id enrollment_id,
+    coalesce(nullif(a.real_name,''),nullif(u.real_name,''),u.display_name) name,
+    coalesce(a.student_number,u.student_number,'') student_number,
+    (SELECT count(*)::int FROM colorverse.showcase_works w WHERE w.planet_id=p.id AND w.withdrawn_at IS NULL AND w.publication_id IS NULL AND coalesce(w.learning_context->>'taskId','')='') free_count
+    FROM colorverse.enrollments e JOIN colorverse.users u ON u.id=e.user_id JOIN colorverse.classes c ON c.id=e.class_id
+    LEFT JOIN colorverse.student_accounts a ON a.user_id=u.id AND a.course_id=c.course_id
+    LEFT JOIN colorverse.planets p ON p.owner_enrollment_id=e.id
+    WHERE e.class_id=$1 AND e.role='student' AND e.status='active' AND u.status='active'
+    ORDER BY coalesce(a.student_number,u.student_number,''),u.id`,
+      [classId],
+    )
+  ).rows;
+  const columns = await Promise.all(
+    assignments.map(async (a) => ({
+      id: String(a.id),
+      rows: new Map(
+        (await publicationRows(sql, classId, String(a.id))).map((r) => [
+          r.enrollmentId,
+          r,
+        ]),
+      ),
+    })),
+  );
+  return {
+    assignments: assignments.map((a) => ({
+      id: String(a.id),
+      title: String(a.title),
+      targetLabel: String(a.target_label),
+      publishedAt: new Date(a.published_at as string).toISOString(),
+    })),
+    students: students.map((s) => ({
+      enrollmentId: String(s.enrollment_id),
+      name: String(s.name),
+      studentNumber: String(s.student_number),
+      freeSubmissions: Number(s.free_count),
+      grades: Object.fromEntries(
+        columns.map((c) => {
+          const r = c.rows.get(String(s.enrollment_id));
+          return [
+            c.id,
+            {
+              score: r?.score ?? null,
+              workId: r?.workId ?? null,
+              status: !r
+                ? "not-assigned"
+                : !r.workId
+                  ? "missing"
+                  : r.score != null
+                    ? "graded"
+                    : r.comment.trim()
+                      ? "commented"
+                      : "pending",
+              updated: r?.updated ?? false,
+            },
+          ];
+        }),
+      ),
+    })),
+  };
 }

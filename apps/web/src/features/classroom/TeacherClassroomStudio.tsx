@@ -1,3 +1,4 @@
+import { ClassroomGradebook } from "./ClassroomGradebook";
 import { TeacherSubmission } from "./TeacherSubmission";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
@@ -502,6 +503,7 @@ export function TeacherClassroomStudio(props: Props) {
             ["pending", pendingTotal ? `待批改 ${pendingTotal}` : "待批改"],
             ["assignments", "作业管理"],
             ["planets", "星球管理"],
+            ["grades", "成绩管理"],
           ].map(([id, label]) => (
             <button
               key={id}
@@ -533,7 +535,13 @@ export function TeacherClassroomStudio(props: Props) {
           <button onClick={() => setResetMessage("")}>已妥善记录，关闭</button>
         </div>
       )}
-      {tab === "planets" ? (
+      {tab === "grades" ? (
+        <ClassroomGradebook
+          key={classId}
+          classId={classId}
+          revision={revision}
+        />
+      ) : tab === "planets" ? (
         <CloudClassroomView
           {...props}
           initialClassId={classId}
