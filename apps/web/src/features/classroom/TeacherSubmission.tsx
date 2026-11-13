@@ -5,7 +5,11 @@ import {
   type SubmissionRow,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
-import { validateWorkImages, imageUploadLimitMb } from "./cloud-image-upload";
+import {
+  validateWorkImages,
+  imageUploadLimitMb,
+  imagePixelHint,
+} from "./cloud-image-upload";
 import { IntentFields } from "./LearningPanels";
 
 export function TeacherSubmission({
@@ -154,7 +158,7 @@ export function TeacherSubmission({
           </label>
           <p className="muted">
             支持 PNG、JPG（JPEG）、WebP，最多 6 张，合计最多{" "}
-            {imageUploadLimitMb} MB，单张不超过 1600 万像素。HEIC、TIFF
+            {imageUploadLimitMb} MB，{imagePixelHint}。HEIC、TIFF
             请先导出为支持的格式。
           </p>
           <label>

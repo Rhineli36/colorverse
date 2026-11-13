@@ -2,13 +2,20 @@ import {
   BytesPerMiB,
   ClassroomImageLimitMb,
   LegacyClassroomImageLimitMb,
+  classroomImagePixelLimit,
+  ClassroomImageMaxSide,
 } from "@colorverse/contracts";
+import { imageInfo } from "@colorverse/package-io";
 
 export const imageUploadLimitMb =
   import.meta.env.VITE_CLASSROOM_NEXT === "true"
     ? ClassroomImageLimitMb
     : LegacyClassroomImageLimitMb;
 export const imageUploadLimitBytes = imageUploadLimitMb * BytesPerMiB;
+export const imagePixelLimit = classroomImagePixelLimit(
+  import.meta.env.VITE_CLASSROOM_NEXT === "true",
+);
+export const imagePixelHint = `单张最多 ${imagePixelLimit / 10000} 万像素，单边不超过 ${ClassroomImageMaxSide} 像素`;
 
 export async function validateWorkImages(files: File[]) {
   if (files.length > 6) throw Error("每次最多提交六张作品图片。");
@@ -27,12 +34,18 @@ export async function validateWorkImages(files: File[]) {
       throw Error(
         `「${file.name}」不是支持的 PNG、JPG 或 WebP 图片。HEIC/HEIF、TIFF 或 PDF 请先导出为 PNG/JPG，再选择上传；直接改文件后缀无效。`,
       );
-    if (png && header.length >= 24) {
-      const view = new DataView(header.buffer);
-      if (view.getUint32(16) * view.getUint32(20) > 16000000)
-        throw Error(
-          `「${file.name}」超过 1600 万像素，请缩小图片尺寸后再提交。`,
-        );
+    // Read encoded dimensions without decoding a large bitmap on the phone.
+    let info;
+    try {
+      info = imageInfo(new Uint8Array(await file.arrayBuffer()));
+    } catch (error) {
+      throw Error(
+        `「${file.name}」${error instanceof Error ? error.message : "图片无法读取，请重新导出"}。`,
+      );
     }
+    if (info.width * info.height > imagePixelLimit)
+      throw Error(
+        `「${file.name}」超过 ${imagePixelLimit / 10000} 万像素，请缩小图片尺寸后再提交。`,
+      );
   }
 }

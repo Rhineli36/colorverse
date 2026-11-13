@@ -24,6 +24,7 @@ import {
   AssignmentDefinitionSchema,
   BytesPerMiB,
   ClassroomImageLimitMb,
+  classroomImagePixelLimit,
   LegacyClassroomImageLimitMb,
 } from "@colorverse/contracts";
 import {
@@ -235,11 +236,14 @@ export async function uploadAssignmentImages(
         "请选择有效的PNG、JPEG或WebP图片",
       );
     }
-    if (info.width * info.height > 16000000)
+    if (
+      info.width * info.height >
+      classroomImagePixelLimit(env.CLASSROOM_NEXT === "true")
+    )
       throw new ClassroomFailure(
         400,
         "IMAGE_DIMENSIONS",
-        "图片请控制在1600万像素以内",
+        `图片请控制在${classroomImagePixelLimit(env.CLASSROOM_NEXT === "true") / 10000}万像素以内`,
       );
     let display: Uint8Array;
     try {
@@ -1110,11 +1114,14 @@ export async function handleShowcaseCloud(
             "请选择有效的 PNG、JPEG 或 WebP 图片",
           );
         }
-        if (info.width * info.height > 16000000)
+        if (
+          info.width * info.height >
+          classroomImagePixelLimit(env.CLASSROOM_NEXT === "true")
+        )
           throw new ClassroomFailure(
             400,
             "IMAGE_DIMENSIONS",
-            "图片像素过大，请缩小到 1600 万像素以内",
+            `图片像素过大，请缩小到 ${classroomImagePixelLimit(env.CLASSROOM_NEXT === "true") / 10000} 万像素以内`,
           );
         let display: Uint8Array;
         try {
@@ -1463,11 +1470,14 @@ export async function handleShowcaseCloud(
           "请选择有效的 PNG、JPEG 或 WebP 图片",
         );
       }
-      if (info.width * info.height > 16000000)
+      if (
+        info.width * info.height >
+        classroomImagePixelLimit(env.CLASSROOM_NEXT === "true")
+      )
         throw new ClassroomFailure(
           400,
           "IMAGE_DIMENSIONS",
-          "图片像素过大，请缩小到 1600 万像素以内",
+          `图片像素过大，请缩小到 ${classroomImagePixelLimit(env.CLASSROOM_NEXT === "true") / 10000} 万像素以内`,
         );
       let display: Uint8Array;
       try {
@@ -1589,11 +1599,14 @@ export async function handleShowcaseCloud(
               "附加图片不是有效的 PNG、JPEG 或 WebP。",
             );
           }
-          if (infoExtra.width * infoExtra.height > 16000000)
+          if (
+            infoExtra.width * infoExtra.height >
+            classroomImagePixelLimit(env.CLASSROOM_NEXT === "true")
+          )
             throw new ClassroomFailure(
               400,
               "IMAGE_DIMENSIONS",
-              "每张图片最多1600万像素。",
+              `每张图片最多${classroomImagePixelLimit(env.CLASSROOM_NEXT === "true") / 10000}万像素。`,
             );
           const output = await env
             .IMAGES!.input(new Blob([raw as BlobPart]).stream())

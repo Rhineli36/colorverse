@@ -5,7 +5,11 @@ import {
   type WorkLearning,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
-import { validateWorkImages } from "./cloud-image-upload";
+import {
+  validateWorkImages,
+  imagePixelHint,
+  imageUploadLimitMb,
+} from "./cloud-image-upload";
 import { IntentFields } from "./LearningPanels";
 import { ClassroomThumbnail } from "./ClassroomThumbnail";
 
@@ -234,8 +238,8 @@ export function StudentWorkEditor({
                 </p>
               ))}
               <p className="muted">
-                移除旧图后可上传替换图。最多6张，合计15
-                MB，单张最多1600万像素，支持PNG、JPG、WebP。
+                移除旧图后可上传替换图。最多6张，合计 {imageUploadLimitMb}
+                MB，{imagePixelHint}，支持PNG、JPG、WebP。
               </p>
               <label>
                 创作说明

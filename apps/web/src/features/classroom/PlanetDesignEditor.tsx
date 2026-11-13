@@ -1,5 +1,5 @@
 import { useState, useEffect, useId, useRef } from "react";
-import { imageUploadLimitMb } from "./cloud-image-upload";
+import { imageUploadLimitMb, imagePixelHint } from "./cloud-image-upload";
 import {
   CloudPlanetPresets,
   type CloudPlanetDocumentSchema,
@@ -61,8 +61,8 @@ export function PlanetDesignEditor({
   const imageFormatHintId = useId();
   const imageFormatHint = (
     <small id={imageFormatHintId}>
-      支持 PNG、JPG（JPEG）和 WebP，单张最多 {imageUploadLimitMb} MB。TIFF
-      请先导出为上述格式。
+      支持 PNG、JPG（JPEG）和 WebP，单张最多 {imageUploadLimitMb} MB，
+      {imagePixelHint}。TIFF 请先导出为上述格式。
     </small>
   );
   const current = useRef(document);

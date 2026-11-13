@@ -48,6 +48,7 @@ import { CommentComposer } from "./CommentComposer";
 import {
   imageUploadLimitBytes,
   imageUploadLimitMb,
+  imagePixelHint,
   validateWorkImages,
 } from "./cloud-image-upload";
 import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
@@ -240,6 +241,7 @@ export function CloudGallery({
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [uploadOpen, setUploadOpen] = useState(false),
+    [uploadAttempted, setUploadAttempted] = useState(false),
     [tasks, setTasks] = useState<LearningTaskSetting[]>([]),
     [taskPending, setTaskPending] = useState(false),
     [taskId, setTaskId] = useState(""),
@@ -297,6 +299,12 @@ export function CloudGallery({
     () => (data?.planets ?? []).filter((p) => p.document.visible !== false),
     [data],
   );
+  const uploadRequiresExplanation = Boolean(
+    taskId && tasks.find((t) => t.taskId === taskId)?.requireExplanation,
+  );
+  useEffect(() => {
+    setUploadAttempted(false);
+  }, [uploadOpen, taskId]);
   const observatoryPlanets = useMemo(
     () => [...visiblePlanets, ...samples],
     [visiblePlanets, samples],
@@ -1873,11 +1881,6 @@ export function CloudGallery({
             </button>
             <p className="eyebrow">YOUR WORK · YOUR LIGHT</p>
             <h2>展示你最满意的作品</h2>
-            {notice && (
-              <p role="status" className="cloud-notice">
-                {notice}
-              </p>
-            )}
             <label>
               选择教学任务
               <select
@@ -1929,20 +1932,27 @@ export function CloudGallery({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                const missingMood =
+                  !intent.intendedMoods.length && !intent.customMood.trim();
+                if (
+                  uploadRequiresExplanation &&
+                  (missingMood || !intent.colorRationale.trim())
+                ) {
+                  setUploadAttempted(true);
+                  setNotice(
+                    "请补全必填的目标氛围与配色理由，再点击提交；图片尚未上传。",
+                  );
+                  const field = e.currentTarget.querySelector<HTMLElement>(
+                    missingMood
+                      ? "[data-intent-moods] input"
+                      : "[data-intent-rationale]",
+                  );
+                  field?.focus({ preventScroll: true });
+                  field?.scrollIntoView({ block: "center" });
+                  return;
+                }
                 void perform(async () => {
                   if (!file) throw new Error("请选择作品图片");
-                  if (
-                    taskId &&
-                    tasks.find((t) => t.taskId === taskId)
-                      ?.requireExplanation &&
-                    (!(
-                      intent.intendedMoods.length || intent.customMood.trim()
-                    ) ||
-                      !intent.colorRationale.trim())
-                  )
-                    throw new Error(
-                      "这份课程作业需要填写「目标氛围」和「配色理由」（在上传窗口下方），填写后再提交；图片尚未上传。",
-                    );
                   await validateWorkImages([file, ...extraFiles]);
                   setNotice(
                     "正在上传并保存，请保持浏览器在前台，不要切换到其他应用。",
@@ -2028,9 +2038,8 @@ export function CloudGallery({
                 />
               </label>
               <p id={workImageFormatHintId} className="muted">
-                支持 PNG、JPG（JPEG）和 WebP，合计最多 {imageUploadLimitMb}{" "}
-                MB，单张不超过 1600 万像素（如 4000 × 4000）。HEIC、TIFF
-                请先导出为上述格式。
+                支持 PNG、JPG（JPEG）和 WebP，合计最多 {imageUploadLimitMb} MB，
+                {imagePixelHint}。HEIC、TIFF 请先导出为上述格式。
                 {import.meta.env.VITE_CLASSROOM_NEXT === "true" && "可选多图。"}
                 保留原图并优化展示图。
               </p>
@@ -2046,6 +2055,8 @@ export function CloudGallery({
                 value={intent}
                 onChange={setIntent}
                 disabled={busy}
+                required={uploadRequiresExplanation}
+                showValidation={uploadAttempted}
               />
               {taskId && (
                 <>
@@ -2096,6 +2107,11 @@ export function CloudGallery({
                       : "同伴先观察，作者意图仅本人和教师可见。"}
                   </p>
                 </>
+              )}
+              {notice && (
+                <p role="status" className="cloud-notice" data-upload-status>
+                  {notice}
+                </p>
               )}
               <button
                 className="primary"

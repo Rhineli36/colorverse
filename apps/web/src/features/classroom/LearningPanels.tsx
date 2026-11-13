@@ -2,7 +2,7 @@ import { ColorMystery } from "./ColorMystery";
 import { AssignmentBrief } from "./AssignmentBrief";
 import type { EmotionCase } from "@colorverse/contracts";
 import type { AssignmentDefinition } from "@colorverse/contracts";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   LearningContent,
   LearningIntentSchema,
@@ -102,25 +102,46 @@ export function IntentFields({
   value,
   onChange,
   disabled = false,
+  required = false,
+  showValidation = false,
 }: {
   value: LearningIntent;
   onChange: (v: LearningIntent) => void;
   disabled?: boolean;
+  required?: boolean;
+  showValidation?: boolean;
 }) {
+  const errorId = useId();
+  const missingMood =
+    required && !value.intendedMoods.length && !value.customMood.trim();
+  const missingRationale = required && !value.colorRationale.trim();
   return (
     <section className="learning-panel" aria-label="创作意图与配色说明">
-      <MoodFields
-        value={value.intendedMoods}
-        custom={value.customMood}
-        disabled={disabled}
-        label="目标氛围"
-        onChange={(intendedMoods, customMood) =>
-          onChange({ ...value, intendedMoods, customMood })
-        }
-      />
+      {required && <p className="muted">本作业必填：目标氛围、配色理由。</p>}
+      <div data-intent-moods>
+        <MoodFields
+          value={value.intendedMoods}
+          custom={value.customMood}
+          disabled={disabled}
+          label="目标氛围"
+          onChange={(intendedMoods, customMood) =>
+            onChange({ ...value, intendedMoods, customMood })
+          }
+        />
+        {showValidation && missingMood && (
+          <p className="cloud-notice">请选择目标氛围，或填写自己的氛围描述。</p>
+        )}
+      </div>
       <label>
-        配色理由
+        配色理由{required && "（必填）"}
         <textarea
+          aria-label="配色理由"
+          aria-required={required}
+          aria-invalid={showValidation && missingRationale}
+          aria-describedby={
+            showValidation && missingRationale ? errorId : undefined
+          }
+          data-intent-rationale
           disabled={disabled}
           maxLength={1000}
           rows={3}
@@ -131,6 +152,11 @@ export function IntentFields({
           placeholder="哪些颜色占主要面积？明暗、冷暖或点缀色怎样帮助表达氛围？"
         />
       </label>
+      {showValidation && missingRationale && (
+        <p id={errorId} className="cloud-notice">
+          请填写配色理由，说明主要颜色怎样表达氛围。
+        </p>
+      )}
       <p className="muted">
         参考配色可选用和修改，不是标准答案，也不会自动修改你的图片。
       </p>
