@@ -72,6 +72,9 @@ with sync_playwright() as p:
                 if state['submissionFailure']:route.fulfill(status=503,json={'error':{'message':'模拟修改失败，内容已保留'}});return
                 w.update(title=meta['title'],description=meta['description'],revision=w.get('revision',0)+1,submissionRevision=w['submissionRevision']+1)
                 route.fulfill(json={'id':wid,'created':False,'updated':True});return
+            if meta['title']=='从我的作业完成提交':
+                assert 'filename="第二张.webp"' in raw and 'filename="第三张.webp"' in raw
+                assert raw.count('Content-Type: image/webp')==2
             publication=meta['learning']['publicationId']
             assert publication in [None,assignments[0]['id']]
             if publication is None: assert meta['learning']['taskId'] is None
@@ -117,6 +120,11 @@ with sync_playwright() as p:
     editor.get_by_label('作品名称',exact=True).fill('自由创作修改后')
     editor.get_by_role('button',name='移除原图片 1',exact=True).click()
     editor.get_by_label('添加或替换作品图片',exact=True).set_input_files(str(ROOT/'apps/web/public/assignments/two-moods.webp'))
+    expect(editor.locator('.work-image-card')).to_have_count(1)
+    editor.get_by_label('添加或替换作品图片',exact=True).set_input_files(str(ROOT/'apps/web/public/assignments/two-moods.webp'))
+    expect(editor.locator('.work-image-card')).to_have_count(2)
+    editor.get_by_role('button',name='移除作品图片 1',exact=True).click()
+    expect(editor.locator('.work-image-card')).to_have_count(1)
     editor.get_by_label('创作说明',exact=True).fill('更新创作说明')
     state['submissionFailure']=True
     editor.get_by_role('button',name='保存修改',exact=True).click()
@@ -150,6 +158,25 @@ with sync_playwright() as p:
     upload.get_by_label('作品名称',exact=True).fill('从我的作业完成提交')
     upload.get_by_label('作品图片',exact=True).set_input_files(str(ROOT/'apps/web/public/assignments/two-moods.webp'))
     upload.get_by_label('想表达什么',exact=True).fill('测试真实关联的提交流程')
+    picker=upload.get_by_label('作品图片',exact=True)
+    expect(upload.locator('.work-image-card')).to_have_count(1)
+    picture=(ROOT/'apps/web/public/assignments/two-moods.webp').read_bytes()
+    for name in ['第二张.webp','第三张.webp']:
+        picker.set_input_files({'name':name,'mimeType':'image/webp','buffer':picture})
+        expect(upload.locator('.work-image-card')).to_have_count(2 if name.startswith('第二') else 3)
+    picker.set_input_files([{'name':f'超限{i}.webp','mimeType':'image/webp','buffer':picture} for i in range(4)])
+    expect(upload.locator('.work-image-error')).to_contain_text('六张')
+    expect(upload.locator('.work-image-card')).to_have_count(3)
+    picker.set_input_files({'name':'过大.webp','mimeType':'image/webp','buffer':bytes(15*1024*1024+1)})
+    expect(upload.locator('.work-image-error')).to_contain_text('15 MB')
+    expect(upload.locator('.work-image-card')).to_have_count(3)
+    upload.get_by_role('button',name='移除作品图片 1',exact=True).click()
+    expect(upload.locator('.work-image-card')).to_have_count(2)
+    expect(upload.locator('.work-image-card').first).to_contain_text('第二张.webp')
+    expect(upload.get_by_role('img',name='作品图片预览 1',exact=True)).to_be_visible()
+    page.wait_for_function("(()=>{const imgs=[...document.querySelectorAll('.work-image-card img')];return imgs.length===2&&imgs.every(i=>i.complete&&i.naturalWidth>0&&i.naturalWidth<=320&&i.naturalHeight<=320)})()")
+    upload.locator('.work-image-picker').scroll_into_view_if_needed()
+    page.screenshot(path=str(OUT/'incremental-student-mobile.png'),full_page=False)
     expect(upload).to_contain_text('3200 万像素')
     upload.get_by_role('button',name='提交并点亮星球',exact=True).click()
     expect(upload).to_contain_text('图片尚未上传')
@@ -185,7 +212,7 @@ with sync_playwright() as p:
     expect(upload.locator('[data-upload-status]')).to_be_in_viewport()
     page.screenshot(path=str(OUT/'upload-mobile-retry.png'),full_page=False)
     expect(upload.get_by_label('作品名称',exact=True)).to_have_value('我的自由创作')
-    assert upload.get_by_label('作品图片',exact=True).evaluate('(el)=>el.files.length')==1
+    expect(upload.locator('.work-image-card')).to_have_count(1)
     assert len(works)==6
     state['submissionFailure']=False
     upload.get_by_role('button',name='提交并点亮星球',exact=True).click()

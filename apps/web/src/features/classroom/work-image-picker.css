@@ -1,0 +1,76 @@
+.work-image-picker {
+  min-width: 0;
+}
+.work-image-picker .work-image-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.work-image-picker .work-image-add {
+  min-height: 44px;
+  padding: 10px 18px;
+  color: #e7dcff;
+  border: 1px solid #b7a2ee80;
+  background: #b5a0e51c;
+  font-size: 15px;
+}
+.work-image-picker input[type="file"] {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.work-image-count {
+  color: #d4c5ff;
+  font-size: 14px;
+}
+.work-image-picker .work-image-error {
+  color: #ffd2c5;
+  border: 1px solid #e899785c;
+  background: #58283040;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.work-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
+  gap: 12px;
+}
+.work-image-card {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid #a9c6d43a;
+  background: #0c1925;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.work-image-card img,
+.work-image-placeholder {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+  background: #07121e;
+}
+.work-image-placeholder {
+  display: grid;
+  place-items: center;
+  color: #adc9d5;
+}
+.work-image-card figcaption {
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+}
+.work-image-card figcaption span {
+  overflow-wrap: anywhere;
+  color: #e8efeb;
+}
+.work-image-card button {
+  padding: 8px 12px;
+  font-size: 14px;
+  min-height: 38px;
+}

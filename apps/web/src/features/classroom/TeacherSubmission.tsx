@@ -5,11 +5,8 @@ import {
   type SubmissionRow,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
-import {
-  validateWorkImages,
-  imageUploadLimitMb,
-  imagePixelHint,
-} from "./cloud-image-upload";
+import { validateWorkImages } from "./cloud-image-upload";
+import { WorkImagePicker } from "./WorkImagePicker";
 import { IntentFields } from "./LearningPanels";
 
 export function TeacherSubmission({
@@ -34,6 +31,7 @@ export function TeacherSubmission({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [imagesChecking, setImagesChecking] = useState(false);
   const [intent, setIntent] = useState(LearningIntentSchema.parse({}));
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -87,7 +85,7 @@ export function TeacherSubmission({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          if (busy) return;
+          if (busy || imagesChecking) return;
           setError("");
           setBusy(true);
           try {
@@ -146,21 +144,12 @@ export function TeacherSubmission({
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>
-          <label>
-            作品图片
-            <input
-              type="file"
-              required
-              multiple
-              accept="image/png,image/jpeg,image/webp"
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            />
-          </label>
-          <p className="muted">
-            支持 PNG、JPG（JPEG）、WebP，最多 6 张，合计最多{" "}
-            {imageUploadLimitMb} MB，{imagePixelHint}。HEIC、TIFF
-            请先导出为支持的格式。
-          </p>
+          <WorkImagePicker
+            files={files}
+            onChange={setFiles}
+            disabled={busy}
+            onCheckingChange={setImagesChecking}
+          />
           <label>
             创作说明
             <textarea
@@ -174,7 +163,11 @@ export function TeacherSubmission({
         </fieldset>
         {error && <p role="alert">{error}</p>}
         {busy && <p role="status">正在上传并保存，请保持浏览器在前台…</p>}
-        <button type="submit" className="primary" disabled={busy}>
+        <button
+          type="submit"
+          className="primary"
+          disabled={busy || imagesChecking}
+        >
           {busy ? "正在上传并保存…" : "确认代交作业"}
         </button>
       </form>

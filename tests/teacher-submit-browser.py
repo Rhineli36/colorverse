@@ -61,6 +61,7 @@ with sync_playwright() as p:
             assert query['onBehalfOf']==[student_id] and query['publicationId']==[publications[0]['id']]
             request_ids.append(query['requestId'][0])
             raw=route.request.post_data_buffer.decode(errors='ignore')
+            assert raw.count('Content-Type: image/webp')==2
             meta=json.loads(re.search(r'name="metadata"\r\n\r\n(.*?)\r\n--',raw,re.S).group(1))
             assert meta['learning']['taskId']==publications[0]['taskId'] and meta['learning']['publicationId']==publications[0]['id']
             if state['submissionFailure']:route.fulfill(status=503,json={'error':{'message':'模拟存储失败，输入已保留'}});return
@@ -82,7 +83,16 @@ with sync_playwright() as p:
     modal=page.get_by_role('dialog',name='代交作业',exact=True)
     expect(modal).to_contain_text('虚拟代交学生')
     modal.get_by_label('作品名称',exact=True).fill('代交浏览器验收')
-    modal.get_by_label('作品图片',exact=True).set_input_files(str(ROOT/'apps/web/public/assignments/two-moods.webp'))
+    with page.expect_file_chooser() as chosen:
+        modal.get_by_role('button',name='＋ 添加作品图片',exact=True).click()
+    chosen.value.set_files(str(ROOT/'apps/web/public/assignments/two-moods.webp'))
+    picture=(ROOT/'apps/web/public/assignments/two-moods.webp').read_bytes()
+    for i in range(2):
+        expect(modal.locator('.work-image-card')).to_have_count(i+1)
+        modal.get_by_label('作品图片',exact=True).set_input_files({'name':f'补充{i+1}.webp','mimeType':'image/webp','buffer':picture})
+    expect(modal.locator('.work-image-card')).to_have_count(3)
+    modal.get_by_role('button',name='移除作品图片 2',exact=True).click()
+    expect(modal.locator('.work-image-card')).to_have_count(2)
     modal.get_by_role('button',name='确认代交作业',exact=True).click()
     expect(modal.get_by_role('alert')).to_contain_text('目标氛围与配色理由')
     assert not request_ids
@@ -92,7 +102,7 @@ with sync_playwright() as p:
     modal.get_by_role('button',name='确认代交作业',exact=True).click()
     expect(modal.get_by_role('alert')).to_contain_text('模拟存储失败')
     expect(modal.get_by_label('作品名称',exact=True)).to_have_value('代交浏览器验收')
-    assert modal.get_by_label('作品图片',exact=True).evaluate('(el)=>el.files.length')==1
+    expect(modal.locator('.work-image-card')).to_have_count(2)
     page.screenshot(path=str(OUT/'teacher-submit-desktop-fixture.png'),full_page=True)
     page.set_viewport_size({'width':390,'height':844})
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')

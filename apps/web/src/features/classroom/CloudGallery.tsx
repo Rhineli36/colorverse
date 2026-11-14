@@ -1,3 +1,4 @@
+import { WorkImagePicker } from "./WorkImagePicker";
 import { SceneLayout } from "./SceneLayout";
 import { FramedImage } from "./FramedImage";
 import { CloudPlanetCreator } from "./CloudPlanetCreator";
@@ -17,15 +18,7 @@ import {
 } from "./LearningPanels";
 import { CloudObservatory, type ObservatoryPlanet } from "./CloudObservatory";
 import { CloudWorkReview } from "./CloudWorkReview";
-import {
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  lazy,
-  Suspense,
-} from "react";
+import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { z } from "zod";
 import {
   AssignmentCatalog,
@@ -48,7 +41,6 @@ import { CommentComposer } from "./CommentComposer";
 import {
   imageUploadLimitBytes,
   imageUploadLimitMb,
-  imagePixelHint,
   validateWorkImages,
 } from "./cloud-image-upload";
 import { GrowthPresetPreview } from "../studio/GrowthPresetPreview";
@@ -204,7 +196,6 @@ export function CloudGallery({
   };
 }) {
   const [creationDismissed, setCreationDismissed] = useState(false);
-  const workImageFormatHintId = useId();
   const memberships = session.access === "active" ? session.memberships : [],
     [classId, setClassId] = useState(
       memberships.find((m) => m.classId === initialClassId)?.classId ??
@@ -264,8 +255,8 @@ export function CloudGallery({
     [guideError, setGuideError] = useState(false),
     [guideRevision, setGuideRevision] = useState(0),
     [planetBirth, setPlanetBirth] = useState(""),
-    [file, setFile] = useState<File | null>(null),
-    [extraFiles, setExtraFiles] = useState<File[]>([]),
+    [files, setFiles] = useState<File[]>([]),
+    [imagesChecking, setImagesChecking] = useState(false),
     [comment, setComment] = useState(""),
     [likeCounts, setLikeCounts] = useState<Record<string, number>>({}),
     [interactions, setInteractions] = useState<
@@ -299,6 +290,8 @@ export function CloudGallery({
     () => (data?.planets ?? []).filter((p) => p.document.visible !== false),
     [data],
   );
+  const file = files[0];
+  const extraFiles = files.slice(1);
   const uploadRequiresExplanation = Boolean(
     taskId && tasks.find((t) => t.taskId === taskId)?.requireExplanation,
   );
@@ -580,7 +573,7 @@ export function CloudGallery({
       setIntent(blankIntent());
       setTitle("");
       setDescription("");
-      setFile(null);
+      setFiles([]);
       requestId.current = crypto.randomUUID();
       setUploadOpen(true);
       return;
@@ -923,7 +916,7 @@ export function CloudGallery({
       requestId.current = crypto.randomUUID();
       setTitle("");
       setDescription("");
-      setFile(null);
+      setFiles([]);
       setUploadOpen(true);
     } else if (id === "element") {
       const first = myPlanet.works.find((w) => !w.withdrawn);
@@ -1404,7 +1397,7 @@ export function CloudGallery({
                     requestId.current = crypto.randomUUID();
                     setTitle("");
                     setDescription("");
-                    setFile(null);
+                    setFiles([]);
                     setUploadOpen(true);
                   }}
                 >
@@ -1932,6 +1925,7 @@ export function CloudGallery({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (busy || imagesChecking) return;
                 const missingMood =
                   !intent.intendedMoods.length && !intent.customMood.trim();
                 if (
@@ -2022,27 +2016,12 @@ export function CloudGallery({
                   onChange={(e) => setTitle(e.target.value)}
                 />
               </label>
-              <label>
-                作品图片
-                <input
-                  aria-describedby={workImageFormatHintId}
-                  required
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  disabled={busy}
-                  multiple={import.meta.env.VITE_CLASSROOM_NEXT === "true"}
-                  onChange={(e) => {
-                    setFile(e.target.files?.[0] ?? null);
-                    setExtraFiles(Array.from(e.target.files ?? []).slice(1));
-                  }}
-                />
-              </label>
-              <p id={workImageFormatHintId} className="muted">
-                支持 PNG、JPG（JPEG）和 WebP，合计最多 {imageUploadLimitMb} MB，
-                {imagePixelHint}。HEIC、TIFF 请先导出为上述格式。
-                {import.meta.env.VITE_CLASSROOM_NEXT === "true" && "可选多图。"}
-                保留原图并优化展示图。
-              </p>
+              <WorkImagePicker
+                files={files}
+                onChange={setFiles}
+                disabled={busy}
+                onCheckingChange={setImagesChecking}
+              />
               <label>
                 想表达什么
                 <textarea
@@ -2115,7 +2094,7 @@ export function CloudGallery({
               )}
               <button
                 className="primary"
-                disabled={busy || !file || !title.trim()}
+                disabled={busy || imagesChecking || !file || !title.trim()}
               >
                 {busy ? "正在上传并保存，请稍候…" : "提交并点亮星球"}
               </button>

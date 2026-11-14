@@ -5,11 +5,8 @@ import {
   type WorkLearning,
 } from "@colorverse/contracts";
 import { classroomRequest } from "./cloud-request";
-import {
-  validateWorkImages,
-  imagePixelHint,
-  imageUploadLimitMb,
-} from "./cloud-image-upload";
+import { validateWorkImages } from "./cloud-image-upload";
+import { WorkImagePicker } from "./WorkImagePicker";
 import { IntentFields } from "./LearningPanels";
 import { ClassroomThumbnail } from "./ClassroomThumbnail";
 
@@ -44,6 +41,7 @@ export function StudentWorkEditor({
     [intent, setIntent] = useState<LearningIntent>(
       LearningIntentSchema.parse({}),
     );
+  const [imagesChecking, setImagesChecking] = useState(false);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [dirty, setDirty] = useState(false);
@@ -98,7 +96,7 @@ export function StudentWorkEditor({
       <button
         className="mail-close"
         aria-label="关闭修改作业"
-        disabled={busy}
+        disabled={busy || imagesChecking}
         onClick={close}
       >
         ×
@@ -113,7 +111,7 @@ export function StudentWorkEditor({
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              if (busy) return;
+              if (busy || imagesChecking) return;
               setBusy(true);
               setError("");
               try {
@@ -177,7 +175,7 @@ export function StudentWorkEditor({
               }
             }}
           >
-            <fieldset disabled={busy}>
+            <fieldset disabled={busy || imagesChecking}>
               <label>
                 作品名称
                 <input
@@ -209,38 +207,17 @@ export function StudentWorkEditor({
                   </div>
                 ))}
               </div>
-              <label>
-                添加或替换作品图片
-                <input
-                  type="file"
-                  multiple
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(e) => {
-                    const picked = Array.from(e.target.files ?? []);
-                    setFiles((v) => [...v, ...picked]);
-                    e.target.value = "";
-                    setDirty(true);
-                  }}
-                />
-              </label>
-              {files.map((file, i) => (
-                <p key={i}>
-                  {file.name}{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFiles((v) => v.filter((_, j) => j !== i));
-                      setDirty(true);
-                    }}
-                  >
-                    移除新增图片 {i + 1}
-                  </button>
-                </p>
-              ))}
-              <p className="muted">
-                移除旧图后可上传替换图。最多6张，合计 {imageUploadLimitMb}
-                MB，{imagePixelHint}，支持PNG、JPG、WebP。
-              </p>
+              <WorkImagePicker
+                label="添加或替换作品图片"
+                files={files}
+                existingCount={keep.length}
+                disabled={busy}
+                onCheckingChange={setImagesChecking}
+                onChange={(next) => {
+                  setFiles(next);
+                  setDirty(true);
+                }}
+              />
               <label>
                 创作说明
                 <textarea
@@ -257,7 +234,7 @@ export function StudentWorkEditor({
               {content.learning && (
                 <IntentFields
                   value={intent}
-                  disabled={busy}
+                  disabled={busy || imagesChecking}
                   onChange={(v) => {
                     setIntent(v);
                     setDirty(true);
@@ -265,7 +242,11 @@ export function StudentWorkEditor({
                 />
               )}
             </fieldset>
-            <button type="submit" className="primary" disabled={busy}>
+            <button
+              type="submit"
+              className="primary"
+              disabled={busy || imagesChecking}
+            >
               {busy ? "正在保存，请保持浏览器在前台…" : "保存修改"}
             </button>
           </form>
