@@ -1881,3 +1881,97 @@ describe("soft class membership removal", () => {
     });
   });
 });
+
+describe("batch notice reads", () => {
+  it("persists only visible messages for the current member, is idempotent and leaves pending grades and new notices alone", async () => {
+    const cls = randomUUID(),
+      staff = randomUUID(),
+      other = randomUUID(),
+      pupil = randomUUID(),
+      planet = randomUUID(),
+      work = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.classes(id,course_id,title,term,timezone) VALUES($1,$2,'通知验收','2026','Asia/Shanghai')",
+      [cls, id[7]],
+    );
+    for (const [eid, uid, role] of [
+      [staff, id[0], "teacher"],
+      [other, id[2], "teacher"],
+      [pupil, id[1], "student"],
+    ])
+      await sql.query(
+        "INSERT INTO colorverse.enrollments(id,class_id,user_id,role) VALUES($1,$2,$3,$4)",
+        [eid, cls, uid, role],
+      );
+    await sql.query(
+      "INSERT INTO colorverse.planets(id,owner_enrollment_id,document) VALUES($1,$2,$3)",
+      [
+        planet,
+        pupil,
+        JSON.stringify({
+          metadata: { name: "通知星球" },
+          createdAt: new Date().toISOString(),
+        }),
+      ],
+    );
+    await sql.query(
+      "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id) VALUES($1,$2,'待评价作品',$3,100,'crystal',$4)",
+      [work, planet, randomUUID(), randomUUID()],
+    );
+    const actor = { id: staff, role: "teacher" };
+    const before = await classroomNotifications(sql, actor, cls, true);
+    const ids = before.notifications.map((n) => n.id);
+    expect(ids).toHaveLength(2);
+    const post = (body: unknown, who = teacher) =>
+      handleShowcaseCloud(
+        new Request("https://test/notification-read", {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+        { ...env, IMAGES: {} } as never,
+        who,
+        cls,
+        "notification-read",
+        () =>
+          ({
+            ...sql,
+            connect: async () => {},
+            end: async () => {},
+          }) as unknown as Pick<Client, "connect" | "query" | "end">,
+      );
+    await expect(post({ ids: [...ids, "not-visible"] })).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(
+      (await classroomNotifications(sql, actor, cls, true)).readIds,
+    ).toHaveLength(0);
+    await expect(post({ ids }, student)).rejects.toMatchObject({ status: 404 });
+    await post({ ids: [...ids, ids[0]] });
+    await post({ ids });
+    const after = await classroomNotifications(sql, actor, cls, true);
+    expect(after.readIds.sort()).toEqual(ids.sort());
+    expect(after.notifications.find((n) => n.workId === work)?.pending).toBe(
+      true,
+    );
+    expect(
+      (
+        await classroomNotifications(
+          sql,
+          { id: other, role: "teacher" },
+          cls,
+          true,
+        )
+      ).readIds,
+    ).toHaveLength(0);
+    const late = randomUUID();
+    await sql.query(
+      "INSERT INTO colorverse.showcase_works(id,planet_id,title,storage_key,byte_size,preset_id,request_id) VALUES($1,$2,'新消息',$3,100,'crystal',$4)",
+      [late, planet, randomUUID(), randomUUID()],
+    );
+    const refreshed = await classroomNotifications(sql, actor, cls, true);
+    expect(
+      refreshed.notifications.some((n) => n.id === `submission:${late}`),
+    ).toBe(true);
+    expect(refreshed.readIds).not.toContain(`submission:${late}`);
+  });
+});

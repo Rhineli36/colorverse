@@ -33,6 +33,38 @@ export function CloudInbox({
     }>();
   const key = `colorverse.inbox.read.${session.identity.id}`;
   const [status, setStatus] = useState("");
+  const [markingRead, setMarkingRead] = useState(false);
+  const markAllRead = async () => {
+    if (markingRead) return;
+    const unread = items.filter((n) => !read.includes(n.id));
+    if (!unread.length) return;
+    setMarkingRead(true);
+    setStatus("");
+    try {
+      for (const classId of [...new Set(unread.map((n) => n.classId))]) {
+        const ids = unread
+          .filter((n) => n.classId === classId)
+          .map((n) => n.id);
+        for (let start = 0; start < ids.length; start += 1000) {
+          const response = await classroomRequest(
+            `classes/${classId}/notification-read`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ids: ids.slice(start, start + 1000) }),
+            },
+          );
+          const saved = (await response.json()) as { readIds: string[] };
+          setRead((current) => [...new Set([...current, ...saved.readIds])]);
+        }
+      }
+      setStatus("当前消息已全部标为已读，待批改作业仍保留。");
+    } catch {
+      setStatus("部分消息未能标为已读，请重试；已成功保存的状态会保留。");
+    } finally {
+      setMarkingRead(false);
+    }
+  };
   const refreshRef = useRef<() => void>(() => {});
   useEffect(() => {
     try {
@@ -119,8 +151,16 @@ export function CloudInbox({
         onRefresh={() => refreshRef.current()}
         notifications={items}
         readIds={read}
+        markingRead={markingRead}
+        onReadAll={
+          import.meta.env.VITE_CLASSROOM_NEXT === "true"
+            ? () => {
+                void markAllRead();
+              }
+            : undefined
+        }
         onRead={(id) => {
-          const next = [...new Set([...read, id])].slice(-500);
+          const next = [...new Set([...read, id])];
           setRead(next);
           const item = items.find((n) => n.id === id);
           if (item)
@@ -130,7 +170,7 @@ export function CloudInbox({
               body: JSON.stringify({ id }),
             }).catch(() => setStatus("已读状态未能保存，请重试。"));
           try {
-            localStorage.setItem(key, JSON.stringify(next));
+            localStorage.setItem(key, JSON.stringify(next.slice(-500)));
           } catch {}
         }}
         onAssignment={(taskId, notification) => {

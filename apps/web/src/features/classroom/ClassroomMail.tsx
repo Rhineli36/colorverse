@@ -324,6 +324,8 @@ export function ClassroomInbox({
   onAssignment,
   onReaction,
   pendingReviewsRequest,
+  onReadAll,
+  markingRead = false,
 }: {
   disabled?: boolean;
   status?: string;
@@ -334,6 +336,8 @@ export function ClassroomInbox({
   onAssignment: (taskId: string, notification: ClassroomNotification) => void;
   onReaction?: (n: ClassroomNotification) => void;
   pendingReviewsRequest?: number;
+  onReadAll?: () => void;
+  markingRead?: boolean;
 }) {
   const [open, setOpen] = useState(false),
     [pendingOnly, setPendingOnly] = useState(false),
@@ -394,7 +398,21 @@ export function ClassroomInbox({
           </button>
           <h2>{pendingOnly ? "待评价作品" : "来自这片宇宙的信息"}</h2>
           {status && <p role="status">{status}</p>}
-          {onRefresh && <button onClick={onRefresh}>重新读取信息</button>}
+          <div className="row-buttons">
+            {onRefresh && (
+              <button disabled={markingRead} onClick={onRefresh}>
+                重新读取信息
+              </button>
+            )}
+            {onReadAll && (
+              <button
+                disabled={markingRead || unread === 0}
+                onClick={onReadAll}
+              >
+                {markingRead ? "正在标记…" : "全部标为已读"}
+              </button>
+            )}
+          </div>
           {visible.length === 0
             ? !status && (
                 <p>

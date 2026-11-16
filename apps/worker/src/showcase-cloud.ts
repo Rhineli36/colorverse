@@ -440,27 +440,40 @@ export async function handleShowcaseCloud(
     if (resource === "notification-read") {
       if (request.method !== "POST")
         throw new ClassroomFailure(405, "METHOD_NOT_ALLOWED", "请求方式无效");
-      const body = z
-        .object({ id: z.string().min(1).max(250) })
-        .parse(
-          JSON.parse(
-            new TextDecoder().decode(await readLimited(request, 4096)),
+      const noticeId = z.string().min(1).max(250);
+      const body = (
+        env.CLASSROOM_NEXT === "true"
+          ? z.union([
+              z.strictObject({ id: noticeId }),
+              z.strictObject({ ids: z.array(noticeId).min(1).max(1000) }),
+            ])
+          : z.strictObject({ id: noticeId })
+      ).parse(
+        JSON.parse(
+          new TextDecoder().decode(
+            await readLimited(
+              request,
+              env.CLASSROOM_NEXT === "true" ? 1048576 : 4096,
+            ),
           ),
-        );
+        ),
+      );
       const available = await classroomNotifications(
         client,
         actor,
         classId,
         env.CLASSROOM_NEXT === "true",
       );
-      if (!available.notifications.some((n) => n.id === body.id))
+      const ids = [...new Set("ids" in body ? body.ids : [body.id])];
+      const visible = new Set(available.notifications.map((n) => n.id));
+      if (ids.some((id) => !visible.has(id)))
         throw new ClassroomFailure(404, "NOT_FOUND", "消息不存在或已不可查看");
       await client.query(
-        "INSERT INTO colorverse.classroom_notice_reads(enrollment_id,notice_id) VALUES($1,$2) ON CONFLICT DO NOTHING",
-        [actor.id, body.id],
+        "INSERT INTO colorverse.classroom_notice_reads(enrollment_id,notice_id) SELECT $1,notice_id FROM unnest($2::text[]) AS notice_id ON CONFLICT DO NOTHING",
+        [actor.id, ids],
       );
       await client.query("COMMIT");
-      return Response.json({ saved: true });
+      return Response.json({ saved: true, readIds: ids });
     }
     // Hiding a planet protects direct media/review/interaction URLs too, not
     // just its entry in the universe. The author can still maintain their work.
